@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>unit.steps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>걸음</string>
+		</dict>
+	</dict>
+	<key>unit.reps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>회</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.steps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d걸음</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.reps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d회</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

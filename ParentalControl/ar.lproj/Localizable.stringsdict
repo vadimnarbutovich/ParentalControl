@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>unit.steps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>خطوة</string>
+			<key>one</key>
+			<string>خطوة</string>
+			<key>two</key>
+			<string>خطوتان</string>
+			<key>few</key>
+			<string>خطوات</string>
+			<key>many</key>
+			<string>خطوة</string>
+			<key>other</key>
+			<string>خطوة</string>
+		</dict>
+	</dict>
+	<key>unit.reps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>تكرار</string>
+			<key>one</key>
+			<string>تكرار</string>
+			<key>two</key>
+			<string>تكراران</string>
+			<key>few</key>
+			<string>تكرارات</string>
+			<key>many</key>
+			<string>تكراراً</string>
+			<key>other</key>
+			<string>تكرار</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.steps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d خطوة</string>
+			<key>one</key>
+			<string>%d خطوة</string>
+			<key>two</key>
+			<string>%d خطوتين</string>
+			<key>few</key>
+			<string>%d خطوات</string>
+			<key>many</key>
+			<string>%d خطوة</string>
+			<key>other</key>
+			<string>%d خطوة</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.reps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d تكرار</string>
+			<key>one</key>
+			<string>%d تكرار</string>
+			<key>two</key>
+			<string>%d تكرارين</string>
+			<key>few</key>
+			<string>%d تكرارات</string>
+			<key>many</key>
+			<string>%d تكراراً</string>
+			<key>other</key>
+			<string>%d تكرار</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

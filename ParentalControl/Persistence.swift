@@ -2,7 +2,7 @@
 //  Persistence.swift
 //  ParentalControl
 //
-//  Created by Vadzim Narbutovich on 17.04.2026.
+//  Created by Vadzim Narbutovich on 03.03.2026.
 //
 
 import CoreData

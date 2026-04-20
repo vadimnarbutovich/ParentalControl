@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>unit.steps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>шаг</string>
+			<key>few</key>
+			<string>шага</string>
+			<key>many</key>
+			<string>шагов</string>
+			<key>other</key>
+			<string>шага</string>
+		</dict>
+	</dict>
+	<key>unit.reps.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>повторение</string>
+			<key>few</key>
+			<string>повторения</string>
+			<key>many</key>
+			<string>повторений</string>
+			<key>other</key>
+			<string>повторения</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.steps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@steps@</string>
+		<key>steps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d шаг</string>
+			<key>few</key>
+			<string>%d шага</string>
+			<key>many</key>
+			<string>%d шагов</string>
+			<key>other</key>
+			<string>%d шага</string>
+		</dict>
+	</dict>
+	<key>dashboard.earn.rate.reps.detail</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@reps@</string>
+		<key>reps</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d повтор</string>
+			<key>few</key>
+			<string>%d повтора</string>
+			<key>many</key>
+			<string>%d повторов</string>
+			<key>other</key>
+			<string>%d повтора</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

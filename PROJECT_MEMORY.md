@@ -1,15 +1,203 @@
 # PROJECT_MEMORY — ParentalControl
 
 О чём приложение  
-ParentalControl — новое iOS-приложение на SwiftUI (родительский контроль / ограничения экрана и связанные сценарии). Детали продукта и архитектуры будут дополняться по мере разработки.
+ParentalControl — iOS-приложение (SwiftUI), которое конвертирует физическую активность (шаги и упражнения) в минуты доступа к выбранным приложениям.
 
-Структура (стартовая)
-- Xcode-проект: `ParentalControl.xcodeproj`, цель приложения `ParentalControl`.
-- Шаблон: SwiftUI + Core Data (`ParentalControlApp`, `ContentView`, `Persistence`, `ParentalControl.xcdatamodeld`, `Assets.xcassets`).
-
-Репозиторий и инструменты
-- Удалённый репозиторий: https://github.com/vadimnarbutovich/ParentalControl.git
-- `.gitignore` и правила Cursor (`.cursor/rules/ios-developer.mdc`) выровнены с проектом ScreenBlocker.
+Структура (текущая)
+- `App`: `AppState` (центральное состояние, баланс минут, разрешения, фокус-сессии).
+- `Models`: `MinuteBalance`, `ConversionSettings`, `ExerciseType`, `ActivityLedgerEntry`, `DailyStats`, `BodyJoints`.
+- `Storage`: `AppGroupStore` (UserDefaults/App Group для баланса, настроек, истории, selection, флагов `didRequestInitialPermissions` / `hasCompletedOnboarding` и текущего порога DeviceActivity).
+- `Services`:
+  - `HealthKitService` (чтение шагов),
+  - `ScreenTimeService` (FamilyControls + ManagedSettings),
+  - `CameraCaptureService` (AVFoundation),
+  - `PoseDetectionService` (Vision body pose + ориентация кадра для VNRequest),
+  - `ExerciseRepCounter` (подсчет повторов),
+  - `NotificationService`,
+  - `RewardEngine`,
+  - `StepsSyncCoordinator` (периодический sync шагов в активной сцене),
+  - `DeviceActivityService` (запуск/остановка мониторинга расписания Screen Time + usage-threshold events),
+  - `SubscriptionService` (RevenueCat: offerings, purchase, restore, entitlement lookup **`ParentalControl Pro`**; ключ `RevenueCatPublicSDKKey` в Info.plist; `isSubscriptionStatusKnown` — не показывать Pro-бейдж на дашборде до первого `CustomerInfo`/ошибки refresh). Проект в RC: **ParentalControl** `proj35cefec3`; App Store app bundle `mycompny.ParentalControl`; offering **`default`** с пакетами **`$rc_weekly`** / **`$rc_annual`** и продуктами ASC `com.mycompny.parentalcontrol.pro.weekly` / `.yearly`.
+- `ViewModels`: `ExerciseSessionViewModel`.
+- `Views`: `MainTabView`, `DashboardView`, `StatisticsView`, `BlockListView`, `SettingsView`, `ExerciseSessionView`, `CameraPreviewView`, `OnboardingFlowView`, `PermissionReminderBannerView`, `PaywallView` (подписка weekly/yearly, UI в стиле AppTheme).
+- `Design`: `AppTheme`, `AppBackgroundView`, `GlassCardStyle`, `GlowModifiers`, `MinutesRingView`, `CelebrationConfettiView` (конфетти как в HabitsTracker, для финала онбординга).
+- `Website/docs`: черновик/дубликат статического сайта для App Store.
+- `Website/parentalcontrolapp`: **канон для репозитория** [parentalcontrolapp](https://github.com/vadimnarbutovich/parentalcontrolapp) — содержимое папки копируется в **корень** того репо для GitHub Pages (`index.html`, `privacy-en.html`, `styles.css`, `.nojekyll`, `assets/`, `README.md`). Поддержка: `vadim.narb@yandex.com`; политика только на английском для App Store review.
+- В `project.pbxproj` добавлены `NSCameraUsageDescription`, `NSHealthShareUsageDescription`, `CODE_SIGN_ENTITLEMENTS`.
+- Добавлен `ParentalControl.entitlements` (Family Controls + HealthKit + App Group).
+- Добавлен scaffold для extension-кода:
+  - `Extensions/DeviceActivityMonitorExtension/DeviceActivityMonitorExtension.swift` (обработка threshold-события расхода времени),
+  - `Extensions/ShieldConfigurationExtension/ShieldConfigurationExtension.swift`,
+  - `Extensions/ShieldActionExtension/ShieldActionExtension.swift`,
+  - `Extensions/README.md` (чек-лист привязки к target membership).
+- Добавлен Swift Package для логики и тестов: `Package.swift`, `Tests/ParentalControlLogicTests/*`.
+- SPM-зависимость **RevenueCat** (`purchases-ios`) на target приложения; инструкция MCP: `CURSOR_MCP_REVENUECAT.md`.
+- Добавлена двухязычная локализация `en/ru`:
+  - `ParentalControl/Localization/L10n.swift`,
+  - `ParentalControl/en.lproj/Localizable.strings`,
+  - `ParentalControl/ru.lproj/Localizable.strings`,
+  - `ParentalControl/en.lproj/InfoPlist.strings`,
+  - `ParentalControl/ru.lproj/InfoPlist.strings`.
 
 Состояние
-- Инициализирован каркас приложения и настройка git/игноров.
+- MVP-каркас реализован и **собирается** (`xcodebuild` успешен).
+- Логика шагов и повторений покрыта unit-тестами через `swift test` (RewardEngine, ExerciseRepCounter, MinuteBalance).
+- Реализованы: баланс минут, конвертация шагов/повторов, базовый UI 4 экранов, фокус-сессии, выбор приложений для блокировки, локальные уведомления.
+- Главный экран `Dashboard` переработан под модель «экономики минут»: hero-блок баланса с ring-прогрессом, секция `Заработать минуты` с карточками активностей, 2x2 блок «Сегодня» и визуально облегченный `Фокус`-блок.
+- На `Dashboard` добавлен дневной прогресс (`earnedToday / target`) и анимация награды `+N` при росте доступного баланса.
+- Диагностический UI только в `DEBUG` **и при отсутствии** флага `HIDE_DEBUG_UI`: для тестовой Debug-сборки на устройстве «как в проде» в target **ParentalControl → Debug** задано `SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) HIDE_DEBUG_UI"`; в коде условия вида `#if DEBUG && !HIDE_DEBUG_UI`, а прод-поведение вроде сброса фокуса с 1→5 мин — `#if !DEBUG || HIDE_DEBUG_UI`. Чтобы снова показать дебаг-UI, убери `HIDE_DEBUG_UI` из Debug-конфигурации приложения (или строку в `project.pbxproj`). Без флага: на `Dashboard` — тестовые кнопки и чип «1 мин»; на `Block List` — DeviceActivity-диагностика; в `Settings` — «Разрешения»; оверлей калибровки на тренировке; расширенные логи IAP/аналитики и т.д.
+- В Release из `AppState` исключены: `@Published deviceActivityDebug`, `refreshDeviceActivityDebug()`, `diagnosticsReport()`, `consumeAllEarnedTimeForTesting()` / `addTenSecondsForTesting()`; в `refreshSharedStateFromAppGroup()` обновление debug-снапшота только в `DEBUG` (фоновый цикл каждые 2 с больше не трогает heartbeat-поля в основном приложении).
+- Экран `Statistics` переведен на общий фон/карточный стиль из `Design`-слоя без изменения бизнес-логики.
+- Выполнен второй визуальный pass под референс-макет: фон усилен до «starfield/nebula» (пылевые облака + мерцающие частицы), `MinutesRingView` получил более объемный многослойный рендер (усиленный трек, inner highlight, яркий glow и светящийся end-cap), `GlassCardStyle` дополнен угловыми glow-акцентами и многослойной глубиной.
+- Реализован Vision-пайплайн для приседаний/отжиманий через фронтальную камеру.
+- Тренировки разделены на 2 отдельных entry-point на главном экране: кнопки **«Приседания»** и **«Отжимания»** открывают соответствующий экран в sheet.
+- Экран сессии упражнения без переключателя типа: сверху `Back + название упражнения`, камера на весь остаток, снизу только блок `Повторы: N`.
+- В верхней строке экрана упражнения добавлена кнопка **«Помощь»**, открывающая отдельный sheet с инструкциями по размещению телефона и технике выполнения (отдельные тексты для приседаний и отжиманий).
+- Блок `Повторы: N` увеличен визуально (крупный шрифт и увеличенная высота), чтобы значение легко читалось на расстоянии.
+- Реализована интеграция HealthKit для шагов за текущий день.
+- Реализована интеграция Screen Time API на уровне приложения (authorization + shield apply/clear).
+
+Ключевая логика
+- По умолчанию: 100 шагов = 1 минута, 5 приседаний = 1 минута, 5 отжиманий = 1 минута; коэффициенты изменяются в `Settings`.
+- При обновлении шагов начисляются только новые «порции» шагов (через `lastProcessedSteps`).
+- Шаги обновляются автоматически по таймеру в активной сцене через `StepsSyncCoordinator`.
+- Фокус-сессия списывает секунды (из выбранной длительности в минутах) и временно снимает shield; по завершении shield возвращается.
+- Снимок активной фокус-сессии (`FocusSessionSnapshot`: `startedAt` / `endsAt` / `plannedSeconds`) хранится в App Group; после kill приложения сессия восстанавливается при следующем запуске (тот же дедлайн, что у Live Activity). Если срок истёк пока приложение не работало — пишется ledger и снимается Live Activity; при живой сессии Live Activity не трогаем.
+- В блоке «Сегодня» на `Dashboard` для «Потрачено» показывается `daily.spentSeconds` из `dailyStats` (дневной расход с учётом `spentBaseline` при выключенном сбросе в полночь), а не накопительный `balance.totalSpentSeconds`.
+- Шторка помощи по упражнению (`ExerciseHelpView`): как у «Конвертации» — капсула-свайп, заголовок `exercise.help.title`, ассеты `squatHelp` / `pushupsHelp`, текст `exercise.help.squat` / `exercise.help.pushup`, фон `appScreenBackground()`, без кнопки OK; без внутреннего `ScrollView` — контент в `VStack` + `Spacer`, чтобы жест закрытия шторки не перехватывал скролл. Шапка `ExerciseSessionView`: градиент/неон в стиле приложения, те же размеры кнопок и отступов.
+- В детекции позы исправлена передача `CGImagePropertyOrientation` из `AVCaptureConnection` в Vision (`VNSequenceRequestHandler.perform(... orientation:)`), что критично для корректной работы распознавания на фронтальной камере.
+- В `ExerciseSessionViewModel` добавлен мягкий framing/readiness-check перед подсчетом:
+  - приседания: опора на `hip+knee` (и при наличии ankle),
+  - отжимания: `shoulder+elbow+wrist` + базовая симметрия по обеим рукам.
+  Пока readiness не пройден, повторы не увеличиваются.
+- Добавлены guidance-статусы (`showYourself / center / farther / closer / ready`) с цветом: красный для корректировки позиции, зеленый для состояния **«Выполняйте»**.
+- Readiness-пороги дополнительно ослаблены (более широкий center/span диапазон), чтобы статус `ready` достигался проще в портретной фронтальной камере.
+- Для Debug-сборки на экране тренировки добавлена live-плашка с метриками (`center`, `width`, доступность рук/ног) над основной подсказкой — используется для калибровки порогов на реальном устройстве.
+- Плашка «Дистанция / Опускание / Подъём» на экране упражнения и связанные `@Published`/обновления в `ExerciseSessionViewModel` ограничены `#if DEBUG`, в Release не компилируются и не публикуются.
+- Для push-up счетчика добавлена защита от ложного “бесконечного” инкремента: считаем только при наличии **обеих** рук, ограничении на рассинхрон углов левой/правой руки и минимальной длительности нижней фазы перед возвратом вверх.
+- Push-up логика дополнительно смягчена для реального UX: допускается подсчет по одной уверенно видимой руке (если вторая частично выходит из кадра), но с анти-фолс-позитив защитой через EMA-сглаживание угла, проверку глубины нижней фазы (`minAngleInDown`) и лимит на резкий левый/правый рассинхрон.
+- Для фронтального UX с “локтями в стороны” push-up дополнительно ослаблен: убран gate по вертикальной симметрии локтей в readiness и снят жесткий фильтр межрукового рассинхрона в счетчике; порог глубины сделан мягче (`minAngleInDown < 125`) и минимальная длительность нижней фазы уменьшена до `0.15s`.
+- Debug-оверлей тренировки упрощен до 3 крупных, цветных индикаторов для ручной калибровки на устройстве: **Дистанция**, **Опускание**, **Подъем** (каждый отдельно green/red). Это позволяет быстро понять, какой этап ломает счет в реальном сценарии.
+- Readiness-гейт подсчета отделён от distance/center: теперь расстояние остается информативным индикатором для пользователя/дебага, но не блокирует подсчет само по себе. Для старта подсчета важнее наличие рабочих суставов (присед: hip+knee; отжимания: shoulder+elbow+wrist).
+- Для приседаний усилена защита от ложных репов при “поиске позиции”: счетчик теперь требует обе стороны ноги (лев/прав hip-knee-ankle), сглаживает угол (EMA), дожидается устойчивой исходной стойки перед началом (`squatBaselineLocked`) и засчитывает повтор только после валидной глубины/длительности нижней фазы.
+- Исправлен баг стабильности readiness: `notReadyStreak` раньше ограничивался 30 при пороге выхода 35, из-за чего состояние `stableReady` могло “залипать”. Теперь счетчики streak расширены, а удержание ready при краткой потере позы сделано мягче (`miss < 40`).
+- Добавлен анти-ложный фильтр на перемещение пользователя к/от камеры (`repositionHoldFrames`): при резком изменении масштаба тела в кадре подсчет временно приостанавливается, а UI показывает подсказку **«Зафиксируйтесь на месте»**. Это снижает накрутку повторов при поиске дистанции.
+- Зеленая “дистанционная” зона для информационной подсказки откалибрована в более дальнюю позицию (ближе к ~1.5м): пороги `center/width` в индикаторах для приседаний/отжиманий сдвинуты так, чтобы `Выполняйте` загоралось там, где фактический подсчет на устройстве стабильнее.
+- Для пользовательской надписи (`Выполняйте/Подойдите/Отойдите`) добавлен отдельный “спокойный” distance-сигнал с более широкими порогами и усиленным гистерезисом: это уменьшает частые переключения текста при небольших смещениях, сохраняя при этом реакцию на действительно сильный выход из зоны.
+- Кнопка Start/Stop убрана: сессия и подсчет стартуют автоматически при открытии экрана упражнения.
+- Начисление за упражнения выполняется при закрытии шторки (кнопка Back или свайп вниз) через единый `submitAndStop()` с защитой от двойного начисления.
+- Экран приветствия онбординга (`onboardingHero`): общий горизонтальный inset 20 pt через `OnboardingLayout.horizontalInset` (как у кнопки «Далее»), без дополнительных отступов у картинки/подзаголовка; `maxHeight` иллюстрации увеличен для большей доли экрана.
+- `OnboardingFlowView`: шаги без `ScrollView` — область контента получает размер из `GeometryReader` (над индикатором страниц и CTA), иллюстрации с `maxHeight`/долями высоты, тексты с `minimumScaleFactor` и `lineLimit`, шаг конверсии уплотняется при `height < 640`.
+- При первом запуске — онбординг с пошаговыми запросами Health → Screen Time → уведомления, затем настройка коэффициентов, опциональный `FamilyActivityPicker`, затем экран «Фокус-сессия» (ассеты `focusSession`, `focusTime`); камера не запрашивается в онбординге, только при первом открытии экрана упражнения. После онбординга при отсутствии критичных разрешений показывается верхний баннер `PermissionReminderBannerView` (приоритет: Health → Screen Time → уведомления → Live Activities через `LiveActivityPermission` / `ActivityAuthorizationInfo`). Для уведомлений в статусе `.denied` и для Live Activities подпись кнопки — «Открыть настройки» (системный повторный диалог недоступен); для `.notDetermined` уведомлений — обычный запрос. После тапа по CTA баннер скрывается до следующего `appDidBecomeActive`. `ExerciseSessionView` при входе и при `scenePhase == .active` проверяет `AVCaptureDevice.authorizationStatus`, при отказе показывает плейсхолдер с переходом в настройки. Старые установки с `didRequestInitialPermissions` без онбординга мигрируют в `hasCompletedOnboarding`.
+- HealthKit: в `HealthKitService` при `sharingDenied` для шагов доступ сразу считается отсутствующим; пробник чтения трактует успех только при `error == nil` (раньше неизвестные `HKError` давали ложный «есть доступ»). `refreshStepsAndRewards` при потере доступа обнуляет `todaySteps`, ловит `HKError.errorAuthorizationDenied`; на дашборде без доступа к шагам — «—» и `dashboard.steps.unavailable.hint`. Баннер Health: сначала `requestHealthAccessOnly()` (нативный лист, если система его ещё показывает), при отсутствии доступа — `openHealthAppForStepPermissions()` (`x-apple-health://Sources` → корень приложения «Здоровье» → запасной вариант настройки приложения); при `sharingDenied` подпись кнопки — «Открыть „Здоровье“».
+- После выбора приложений в `FamilyActivityPicker` сохранение/применение выполняется автоматически (без отдельной кнопки подтверждения).
+- На экране `Block List` есть toggle-кнопка паузы/возобновления мониторинга (`DeviceActivity`) с сохранением состояния между запусками.
+- С экрана `Block List` убраны диагностические статусы `Screen Time`/`DeviceActivity` и блок пояснений `Как это работает`, оставлен только практический контроль (выбор приложений + пауза/возобновление).
+- Слайдер паузы/возобновления (`MonitoringSlideButton`): лёгкое покачивание ручки вдоль дорожки, пока мониторинг активен и жеста нет; при `DragGesture` цикл анимации отменяется, `hintOffset` сбрасывается без анимации, после отпускания подсказка снова запускается (если снова режим «поставить на паузу»).
+- При повторном выборе приложений в `Block List` пауза мониторинга автоматически снимается, чтобы отслеживание не оставалось случайно выключенным.
+- Пауза мониторинга в `Block List` теперь временно отключает и `DeviceActivity`, и `shield` (даже при нулевом балансе) до ручного возобновления.
+- При наличии доступного времени мониторинг `DeviceActivity` запускается чанками (до 30 секунд) с threshold-событием в секундах; extension списывает только текущий чанк, затем перезапускает следующий порог для остатка; при нуле времени включает shield и останавливает мониторинг. `includesPastActivity` **не используется** (вызывал каскадное мгновенное списание при перезапуске мониторинга).
+- В `AppState` убраны лишние повторные перезапуски `startMonitoring` (перезапуск выполняется только при необходимости или при изменении `selection`), чтобы снизить вероятность сбоев callback-цепочки на проблемных версиях iOS.
+- Добавлен временный heartbeat-debug для `DeviceActivityMonitorExtension` через App Group (count/last event/last timestamp) и UI-блок диагностики на экране `Block List`.
+- Heartbeat-debug расширен: добавлены warning callbacks (`eventWillReachThresholdWarning`, `intervalWillEndWarning`) и принудительная синхронизация App Group, а на `Block List` включено автообновление диагностики каждые 2 секунды.
+- Для iOS-регрессий warning-события используются только для диагностики (`eventWillReachThresholdWarning`) без списания времени; списание выполняется только по `eventDidReachThreshold`, чтобы исключить ложные списания на перезапуске приложения.
+- Добавлена расширенная диагностика DeviceActivity (warning/threshold counters, trigger source, threshold value, spend delta, available before/after, restart count, last start/last consumption, mirror earned/spent) и кнопка `Скопировать отчёт` на экране `Block List` для быстрой передачи полного debug-состояния.
+- В текущей диагностике на устройстве пользователя `eventDidReachThreshold` не приходит вообще, а единственный рабочий сигнал — `eventWillReachThresholdWarning`; поэтому fallback переключен на безусловное списание по warning (без gate по `mainAppIsActive`), т.к. gate полностью блокировал расход (`warningSkipped.mainAppActive`).
+- Добавлена защита от ложного раннего warning: extension игнорирует `eventWillReachThresholdWarning`, если событие пришло слишком рано после старта мониторинга (`elapsed < max(5, threshold - 3)`), что предотвращает списание времени без запуска отслеживаемого приложения.
+- `DeviceActivityService` теперь пишет `lastStartMonitoringTimestamp` и threshold в App Group уже при первом старте мониторинга, чтобы защита раннего warning корректно работала не только на рестартах чанков.
+- Размер чанка теперь адаптивный: при остатке `>= 60 сек` используется чанк `30 сек`, при остатке `< 60 сек` — чанк `10 сек` (и в app-сервисе, и в extension), что улучшает точность списания на низком остатке.
+- Добавлен live-sync чтения состояния из App Group в основном приложении (баланс + heartbeat) с фоновым refresh-loop в активной сцене, чтобы изменения extension отражались без перезапуска приложения.
+- Усилена межпроцессная синхронизация `balance` в App Group: после записи из extension и из app выполняется явная `synchronize()`, чтобы снизить задержки видимости состояния без перезапуска приложения.
+- Для устойчивого realtime-sync баланс хранится в App Group в integer keys (`deviceActivityMirrorEarnedSeconds`/`deviceActivityMirrorSpentSeconds`) как основной источник, а JSON `balance` используется как fallback.
+- Удалён `applyDeviceActivityConsumptionFromDebug` (fallback-синк по heartbeat-событиям), т.к. он вызывал ложное списание времени на рестарте приложения без реального использования отслеживаемых приложений.
+- Добавлен `defaults.synchronize()` перед чтением `loadBalance()` для корректной межпроцессной синхронизации.
+- Удалён `merge` shared/mirror в `AppState` — теперь `reloadBalanceFromSharedStore()` читает единый источник через `loadBalance()`.
+- При запуске app и при `appDidBecomeActive()` выполняется принудительный `stopDeviceActivityMonitoring()` перед новым стартом мониторинга, чтобы очищать stale system-state.
+- При изменении баланса в `reloadBalanceFromSharedStore()` (refresh-loop) теперь сразу вызывается `syncScreenTimeEnforcement`, чтобы UI и shield реагировали в реальном времени.
+- В target `ShieldConfigurationExtension` подключена кастомная конфигурация shield (title/subtitle + primary/secondary кнопки), а в target `ShieldActionExtension` подключен обработчик действий с fallback-уведомлением на открытие `ParentalControl`.
+- Для `ShieldConfigurationExtension` и `ShieldActionExtension` добавлены собственные `en/ru Localizable.strings` внутри extension-bundles, чтобы локализация работала в шторке и уведомлениях без показа raw-ключей.
+- Начисления/списания пишутся в `ActivityLedgerEntry`, а агрегаты показываются на `Statistics`.
+- Все пользовательские строки в UI и уведомлениях вынесены в локализационные ключи.
+
+Ограничения текущей итерации
+- Extension targets (`DeviceActivityMonitor/ShieldConfiguration`) еще не добавлены в проект.
+- Entitlements/capabilities (Family Controls distribution, App Groups, HealthKit capability) нужно включить в Xcode перед тестированием полного сценария блокировки на устройстве.
+- Проверка HealthKit/Screen Time должна выполняться на физическом устройстве.
+
+Обновление багфикс-итерации
+- Баланс и начисления переведены на секундную модель (`availableSeconds`, `deltaSeconds`) с обратной совместимостью старых минутных данных.
+- Формула шагов обновлена: `30 шагов = 60 секунд` (пропорциональное начисление в секундах).
+- Фокус-сессия теперь показывает явную ошибку при нехватке времени вместо «тихого» игнора нажатия.
+- Shield автоматически снимается при положительном балансе и возвращается при нуле.
+- На экране `Block List` добавлено отображение выбранных приложений/категорий/доменов и пояснение различий `Screen Time` и `DeviceActivity`.
+- Экран `Block List` переведен на единый визуальный стиль `Statistics/Dashboard`: общий `AppBackgroundView`, карточки на `glassCard`, блок `Выбранные элементы` удален, список выбранных приложений перенесен в первый блок `Выбранные приложения`, после него идут управляющие кнопки. Для снижения нагрузки тяжелый glow-рендер вынесен в `.drawingGroup()` только для неинтерактивного верхнего блока.
+- Экран `Block List` доработан по UX: в первом блоке `Выбранные приложения` кнопка `Выбрать приложения` перенесена в заголовок; в пустом состоянии показывается только текст `Пока не выбраны приложения`. Отдельный блок действий убран, вместо него добавлен drag-слайдер мониторинга: синий `pause`-handle (слева) нужно протянуть вправо для паузы, после паузы handle становится красным с `play` и возвращается влево для возобновления.
+- Для `Block List` исправлены 2 UX-багa: (1) устранен визуальный “улет” handle при отпускании drag-слайдера мониторинга (сбрасываем drag-состояние до смены `isMonitoringPaused`), (2) в списке выбранного теперь отображаются не только `applicationTokens`, но и выбранные категории/домены (count-строки с иконками), чтобы блок не выглядел пустым при category-only selection.
+- Экран `Settings` переведен на карточный стиль `Statistics/Dashboard` и разбит на блоки `Приложение`/`Помощь`; добавлена отдельная шторка `Количество упражнений за минуту` с тремя коэффициентами (`шаги/приседания/отжимания`), кнопками `Сохранить` и `Вернуть значения по умолчанию`, автосохранением при закрытии свайпом и новыми дефолтами `100/5/5`.
+- В `Settings` исправлены UX-детали шторки конвертации: динамические ключи принудительно локализуются (`LocalizedStringKey`), кнопка `Значения по умолчанию` окрашена в `neonBlue` (как активный сегмент `Использование`), убрана кнопка `Закрыть`, добавлен верхний drag-handle, а поведение клавиатуры улучшено (tap по пустому месту + dismiss first responder при drag), чтобы закрытие шторки с поднятой клавиатурой не ломало layout.
+- В блок `Приложение` экрана `Settings` добавлен пункт `Разрешения`, открывающий отдельную шторку со списком статусов (`HealthKit/Camera/Notifications/Screen Time/Live Activities`) и кнопкой `Запросить все разрешения` (вызов `appState.requestPermissions()`).
+- В шторке `Разрешения` добавлена синяя CTA-кнопка `Открыть настройки` (переход в системные настройки iOS через `UIApplication.openSettingsURLString`).
+- В блок `Приложение` экрана `Settings` добавлен toggle `Сброс времени в полночь` (по умолчанию включен): состояние хранится в App Group и управляет дневным reset баланса.
+- Добавлены scaffold-файлы для `ShieldActionExtension` с fallback через локальное уведомление.
+- Тестовая кнопка на дашборде изменена с `+1 минута` на `+10 секунд` для ускоренной ручной проверки.
+- Расход времени через `DeviceActivity` переведен с «списать всё при первом пороге» на инкрементный чанк-режим для лучшего баланса UX и энергопотребления.
+- Тесты в этой итерации **не запускались по запросу пользователя** (будут прогнаны позже при накоплении изменений).
+- Исправлено начисление времени за шаги: baseline `lastProcessedSteps` теперь привязан к текущему дню (сброс в новый день), а при нулевом начислении baseline все равно синхронизируется, чтобы корректно переживать откаты/коррекции шагов в HealthKit.
+- Проведен редизайн `Dashboard`: обновлена иерархия секций, добавлен ring-информер, отдельные карточки активностей и компактный фокус-блок; реализован статичный легкий фон без анимационного `TimelineView` для устранения лагов скролла.
+- В секции `Заработать минуты` подключены пользовательские ассеты (`walk`, `squat`, `pushups`) вместо SF Symbols; названия карточек скрыты, метрики центрированы; награда двумя строками (`dashboard.earn.rate.prefix` + `steps.detail` / `reps.detail`); у карточек заработка уменьшены только **горизонтальные** внутренние отступы (вертикальные 14 и ореол `padding(36)/drawingGroup` без изменений); длинные числа и строки награды с низким `minimumScaleFactor`, без обрезки троеточием.
+- В `Dashboard` улучшен UX локализации числовых единиц: добавлен plural-механизм (`L10n.plural`) и `Localizable.stringsdict` (ru/en) для корректных форм `шаг/шага/шагов` и `повторение/повторения/повторений`; в ring-информере возвращено отображение `сек/мин` по правилу `< 60 сек -> секунды, иначе минуты`.
+- По UX-фидбеку с главной удален отдельный блок `Сегодня` (чтобы убрать дубли/путаницу метрик), а пресеты длительности фокуса на `Dashboard` — горизонтальный скролл чипов (1, 5, 10, 15, 25, 30, 45, 60, 90, 120 мин), дефолт выбора **15** мин (`focusDurationMinutes`); `NeonChipButtonStyle` поддерживает `fillHorizontally` для компактных чипов в скролле.
+- На `Dashboard` добавлена явная индикация состояния паузы мониторинга: если `DeviceActivity` поставлен на паузу, в центральном кольце баланса вместо числового времени отображается надпись `Пауза`.
+- Добавлена интеграция `ActivityKit` для фокус-сессии: `FocusLiveActivityService` в app запускает/останавливает Live Activity при старте/завершении фокуса; новый widget-target `ParentalControlWidgetsExtension` отображает lock-screen/Dynamic Island информер с оставшимся временем `MM:SS` и общей длительностью.
+- Для app target включен ключ `NSSupportsLiveActivities = YES`; в `ParentalControlWidgets` добавлены локализованные строки Live Activity (`en/ru`).
+- Добавлен дневной сброс нашего баланса минут (без переноса на следующий день): при первом событии нового дня `balance` обнуляется и сохраняется в App Group, синхронно с дневной моделью шагов HealthKit (`startOfDay`).
+- Логика дневного reset баланса сделана управляемой настройкой `Сброс времени в полночь`:
+  - `ON` — в новый день баланс обнуляется, а при закрытом/неактивном приложении reset и блокировка выполняются в `DeviceActivityMonitorExtension`;
+  - `OFF` — баланс не обнуляется, обновляется только marker дня (чтобы при включении toggle днем не было мгновенного сброса); дневные шаги/повторы продолжают считаться корректно по `HealthKit + ledger`.
+- Во избежание регрессии расхода времени reset в extension ограничен окном у начала суток (до 2 часов после полуночи), чтобы `intervalDidStart` при обычных перезапусках мониторинга в течение дня не останавливал списание.
+- Для корректной дневной статистики `Потрачено` при выключенном ночном reset добавлен отдельный дневной baseline `totalSpentSeconds` в App Group (обновляется и в app, и в extension на границе суток): значение за сегодня считается как `currentTotalSpent - baselineOfToday`, не накапливая расход прошлых дней.
+- Экран `Statistics` полностью переработан под стиль `Dashboard`: добавлены кнопка календаря (month picker), недельная лента вокруг выбранного дня, сегмент `Activity / App Usage`, карточки дневных метрик (`Заработано`, `Потрачено`, `Шаги`, `Приседания`, `Отжимания`, `Фокус-сессии`); для шагов/приседаний/отжиманий в сетке активности используются те же ассеты `walk` / `squat` / `pushups`, что и на `Dashboard`.
+- Карточки метрик в сетке «Активность»: текст слева (`StatisticsLayout`: горизонтальный padding 16, вертикальный 24 симметрично); иконка в **правом верхнем углу** через `overlay(alignment: .topTrailing)` с минимальным inset (`iconEdgeInset`); справа у текста резерв `textTrailingReserve` под иконку; высота по контенту (без лишнего пустого поля снизу), в ряду `LazyVGrid` выравнивается по самой высокой ячейке.
+- В `AppState` добавлена дневная агрегация `dailyStats(for:)` для произвольной даты; `HealthKitService` расширен методом `fetchSteps(from:to:)`; `ActivityLedgerEntry` расширен полями `repetitionCount` и `focusDurationSeconds` для более точной дневной статистики.
+- Добавлен новый target `DeviceActivityReportExtension` и интеграция `DeviceActivityReport` в `Statistics` (режим `App Usage`) с дневным `DeviceActivityFilter` и текущим `FamilyActivitySelection`; проект собирается с новым extension-target.
+- По замечаниям UX статистики: недельная лента закреплена как неделя `понедельник-воскресенье` (без сдвига выбранного дня в центр), добавлен live-refresh метрик текущего дня при изменении `balance/ledger/steps`, а календарь дополнен раскрывающимся `month/year` wheel-picker по тапу на заголовок месяца.
+- Для `App Usage` обновлен дневной фильтр периода (корректная граница `start/end` для сегодняшнего/прошлых/будущих дней) и добавлена локализация текста в `DeviceActivityReportExtension` (`en/ru Localizable.strings`).
+- Для устранения пустого `App Usage`: фильтр `DeviceActivityReport` переведен на общий дневной срез устройства (без жесткого пересечения по selection-токенам на уровне `DeviceActivityFilter`), а отбор по отслеживаемым приложениям теперь выполняется внутри `DeviceActivityReportExtension` по `ApplicationToken` из сохраненного `FamilyActivitySelection`; в списке отчета используются `Label(token)` (иконка + название) и длительность использования.
+- В `DeviceActivityReportExtension` добавлен встроенный debug-блок в `App Usage` (в том же UI): показывает `trackedTokens`, количество сырых app-entries, entries с длительностью, совпадения/отсев по tracked-фильтру, отсутствие token, итоговый размер результата и примеры имен `raw/filtered` для быстрой диагностики “почему пусто” прямо на устройстве.
+- Для сценария, когда report-extension UI не отрисовывается/пустой, добавлен fallback-debug в основном приложении (`StatisticsView`): экран читает диагностические ключи `parentalcontrol.reportDebug.*` из App Group и показывает их под блоком `Использование приложений` (timestamp, счетчики raw/matched/skipped, sample names). Это позволяет диагностировать источник проблемы даже при пустом report-view.
+- Исправлена критичная конфигурация `DeviceActivityReportExtension`: `NSExtensionPointIdentifier` изменен на `com.apple.deviceactivityui.report-extension` (и синхронизирован с `@AppExtensionPoint.Bind`), удален лишний `NSExtensionPrincipalClass` из `Info.plist`; это необходимо, чтобы report-extension корректно поднимался системой.
+- После подтверждения корректной работы `App Usage` на устройстве удален весь временный debug-UI (в extension и в основном приложении), а также убран дублирующийся заголовок внутри report-view, из-за которого под названием блока просвечивал повтор текста.
+- Дополнительный UX/perf фикс для `Statistics`: снижена визуальная “пустота” между строками приложений в `App Usage`, добавлен принудительный `DeviceActivityReport` reload по `selectedDate + selection` (`.id(...)`) для устранения пустого списка при переключении `Активность -> Использование`, а в загрузке `dailyStats` добавлены debounce + отмена предыдущей задачи + кеш по дню, чтобы уменьшить частые запросы в HealthKit при быстрых свайпах по дням.
+- Для устранения большой пустоты внутри блока `Использование приложений` дополнительно: `DeviceActivityReport` в основном экране переведен на размер “по контенту” (`.fixedSize(vertical: true)`), а layout report-extension уплотнен (`LazyVStack` со стабильным spacing, меньшие vertical paddings, выравнивание `.topLeading`).
+- После регрессии с исчезновением списка в `App Usage` откатили подход с `fixedSize(vertical:)`; для стабильного рендера report используется фиксированный `minHeight` контейнера в основном экране и `topLeading`-выравнивание контента в extension.
+- Архитектура `App Usage` переведена на гибрид “источник + кастомный рендер”: `DeviceActivityReport` используется скрыто только для вычисления данных в extension, extension сохраняет snapshot в App Group по ключу дня, а `StatisticsView` отображает собственный адаптивный список (иконка/название/время) из snapshot без обрезаний и с контролируемыми отступами.
+- Эксперимент со snapshot/AppGroup для `App Usage` откатан из-за регрессии “всегда нет данных”; восстановлен стабильный прямой поток `DeviceActivityReport -> DeviceActivityReportExtension`, а внутри extension сохранен кастомный компактный список с прокруткой (без обрезания длинного списка и без чрезмерных отступов).
+- Исправлен сценарий повторного входа в `Statistics`: больше не сбрасываем флаг уже открытого `App Usage` при `onAppear`, а для текущего дня всегда пересчитываем `DateInterval` отчета (обновляем `end = Date()`), чтобы список приложений не появлялся с большой задержкой после возврата с других вкладок.
+- На системах **ниже iOS 26** в `StatisticsView` скрыты сегменты **«Активность» / «Использование»** и блок `DeviceActivityReport`: остаётся только сетка карточек (заработано, потрачено, шаги, упражнения, фокус). С **iOS 26** поведение с переключателем и отчётом по приложениям сохраняется (`supportsDeviceActivityAppUsageUI`).
+
+Перформанс-фикс Statistics скролл
+- Устранена причина scroll-jank на экране `Statistics`: `refreshDeviceActivityDebug()` безусловно перезаписывал `@Published deviceActivityDebug` каждые 2 секунды (через `startSharedStateRefreshLoop`), вызывая `objectWillChange` и полный пересчет body всех view, подписанных на `AppState`. Добавлена проверка equality перед присваиванием.
+- `formattedNumber` в `StatisticsView` создавал новый `NumberFormatter` при каждом вызове (3 раза за body). Заменен на `static let` кешированный форматтер.
+- Добавлен `.drawingGroup()` на каждую `statisticsCard` (6 карточек) c padding-буфером (`.padding(36) → .drawingGroup() → .padding(-36)`), чтобы рендерить glass-card в Metal-текстуру с захватом теней/glow в зону padding-а, а затем вернуть layout-frame на место. Это устраняет покадровую перекомпозицию shadow-слоёв при скролле, не обрезая визуальные эффекты.
+- `.drawingGroup()` НЕ применяется к интерактивным элементам (week strip, header button, segment buttons, focusCard), т.к. это ломает обработку tap-жестов после скролла.
+- Аналогичная оптимизация применена к `DashboardView`: `balanceCard` и 3 `earnCard` обёрнуты в `.padding(36).drawingGroup().padding(-36)`, снижая shadow-операции с ~14 до ~2 на кадр. `focusCard` и `testingCard` (интерактивные/без glow) не тронуты.
+- В `AppState.refreshStepsAndRewards()` добавлена проверка equality для `todaySteps` перед присваиванием — исключает лишний `objectWillChange` каждые 30 сек.
+- `SettingsView.helpSection` и `BlockListView.debugSection` также обёрнуты в padding+drawingGroup trick для консистентности.
+- `BlockListView.selectedAppsSection` НЕ оптимизирован `.drawingGroup()`, т.к. содержит `Label(token)` из FamilyControls (системный рендеринг иконок приложений, несовместим с Metal rasterization).
+- `ExerciseSessionView` не требует scroll-оптимизации (нет ScrollView/glassCard).
+- Добавлен `.drawingGroup()` на `StaticStarsLayer` в `AppBackgroundView`: 60 отдельных `Circle` рендерятся в одну текстуру (глобальная оптимизация для всех экранов).
+- Исправлена "вечная загрузка" paywall (`Загрузка цен...`): в `SubscriptionService` удалена рискованная цепочка `syncAttributesAndOfferingsIfNeeded()` перед `offerings()`, добавлен таймаут загрузки offerings (15 сек) и явная локализованная ошибка `paywall.error.offerings_timeout`, чтобы экран подписки не зависал без обратной связи.
+- Добавлена явная диагностика неконфигурированного RevenueCat: если в рантайме пустой `RevenueCatPublicSDKKey`, `SubscriptionService` больше не выходит молча — сразу выставляет `offeringsLoadFinished = true`, пишет понятную `lastErrorMessage` (`paywall.error.missing_public_sdk_key`) и лог `[ParentalControl][IAP] RevenueCat key is missing...`.
+- Для устранения нестабильности генерации Info.plist на отдельных сборках добавлен fallback публичного ключа в `RevenueCatConfig.defaultPublicSDKKey`; `publicSDKKey` сначала читает `RevenueCatPublicSDKKey` из `Bundle.main`, а при пустом значении использует fallback, чтобы RevenueCat всегда конфигурировался.
+- Для стабильного профиля RevenueCat между переустановками добавлен постоянный `app_user_id` в Keychain (`parentalcontrol.revenuecat.app_user_id`) и автоматический `Purchases.logIn(...)` при старте `SubscriptionService`; это устраняет распад аналитики/подписок по новым `$RCAnonymousID` после reinstall.
+- Проведена релизная чистка paywall-интеграции: технические `IAP`-логи (`[ParentalControl][IAP] ...`) ограничены `#if DEBUG`, в `Release` уровень логирования RevenueCat снижен до `.warn`, пользовательские ошибки подписки нормализованы (`paywall.error.generic`) без показа сырых `localizedDescription`; диагностический fallback-текст про Xcode-консоль показывается только в `DEBUG`.
+- Улучшен UX paywall: обновлены тексты (заголовок/описание/пункты), badge годового плана `SAVE 80%`, кнопка `Восстановить` теперь показывает понятный результат (`восстановлено / не найдено / ошибка`) через `RestoreResult`, а кнопка закрытия заменена на круговой 10-секундный прогресс-индикатор, после которого появляется крестик.
+
+Диагностика: monitor extension «не найден» на iOS < 26
+- Если в Console у `UsageTrackingAgent` ошибка **UsageTrackingErrorDomain Code=200** («Не удалось найти расширения» для `com.apple.deviceactivity.monitor-extension`), а на iOS 26 тот же билд работает: проверь **минимальную версию iOS у extension-target’ов** (в итоговом `Info.plist` appex это `MinimumOSVersion`).
+- В проекте у основного приложения было `IPHONEOS_DEPLOYMENT_TARGET = 17.6`, а **project-level** дефолт — **26.2**; расширения без своего override наследовали **26.2**, поэтому на iOS 18 система **не подхватывала** monitor/shield/widget как совместимые с устройством (хотя `.appex` лежит в `PlugIns`).
+- Исправление: для **`DeviceActivityMonitorExtension`**, **`ShieldConfigurationExtension`**, **`ShieldActionExtension`** явно задано `IPHONEOS_DEPLOYMENT_TARGET = 17.6` (как у app). **`ParentalControlWidgetsExtension`** — **18.0** (код Control Center widget требует iOS 18+). **`DeviceActivityReportExtension`** — явно **`IPHONEOS_DEPLOYMENT_TARGET = 26.0`** (нельзя ставить 17.6: `@AppExtensionPoint` / `AppExtensionPoint` доступны только с iOS 26).
+
+Важно помнить
+- Перед работой читать и при необходимости обновлять этот файл.
+- После значимых изменений — кратко обновлять разделы «Структура» и «Ключевая логика».
