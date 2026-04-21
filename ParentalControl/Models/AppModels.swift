@@ -201,3 +201,74 @@ struct DailyStats: Equatable {
     let squats: Int
     let focusSessionTotalSeconds: Int
 }
+
+enum DeviceRole: String, Codable, CaseIterable, Identifiable {
+    case parent
+    case child
+
+    var id: String { rawValue }
+}
+
+struct DevicePairingState: Codable, Equatable {
+    let familyID: UUID
+    let pairingCode: String
+    let parentDeviceID: UUID?
+    let childDeviceID: UUID?
+    let linkedAt: Date
+
+    var isLinked: Bool {
+        parentDeviceID != nil && childDeviceID != nil
+    }
+}
+
+enum RemoteFocusCommandType: String, Codable {
+    case startFocus = "start_focus"
+    case endFocus = "end_focus"
+}
+
+enum RemoteFocusCommandStatus: String, Codable {
+    case queued
+    case sent
+    case delivered
+    case applied
+    case failed
+}
+
+struct RemoteFocusCommand: Codable, Equatable {
+    let id: UUID
+    let familyID: UUID
+    let commandType: RemoteFocusCommandType
+    let durationSeconds: Int?
+    let status: RemoteFocusCommandStatus
+    let createdAt: Date
+    let updatedAt: Date
+}
+
+struct RemoteChildRuntimeState: Codable, Equatable {
+    let isFocusActive: Bool
+    let focusEndsAt: Date?
+    let lastUpdatedAt: Date
+}
+
+struct ParentCommandDeliveryState: Equatable {
+    let commandID: UUID
+    let commandType: RemoteFocusCommandType
+    let status: RemoteFocusCommandStatus
+    let queuedAt: Date
+    let updatedAt: Date
+    let appliedAt: Date?
+    let errorMessage: String?
+
+    var latencySeconds: Int? {
+        guard let appliedAt else { return nil }
+        return max(0, Int(appliedAt.timeIntervalSince(queuedAt)))
+    }
+}
+
+struct ParentLinkHealthState: Codable, Equatable {
+    let pendingCommands: Int
+    let oldestPendingAgeSeconds: Int?
+    let childLastSeenAgeSeconds: Int?
+    let childLikelyOnline: Bool
+    let recentFailedCommands30m: Int
+}

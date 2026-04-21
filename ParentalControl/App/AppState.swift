@@ -15,6 +15,8 @@ enum PermissionReminderKind: Hashable {
 
 @MainActor
 final class AppState: ObservableObject {
+    static let didReceiveRemotePayloadNotification = Notification.Name("parentalcontrol.didReceiveRemotePayload")
+    static let didRegisterAPNSTokenNotification = Notification.Name("parentalcontrol.didRegisterAPNSToken")
     @Published private(set) var balance: MinuteBalance
     @Published var settings: ConversionSettings
     @Published private(set) var ledger: [ActivityLedgerEntry]
@@ -55,10 +57,29 @@ final class AppState: ObservableObject {
     @Published var focusDurationMinutes = 15
     @Published var focusStartError: String?
     @Published private(set) var hasCompletedOnboarding = false
+    @Published private(set) var deviceRole: DeviceRole?
+    @Published private(set) var pairingState: DevicePairingState?
+    @Published var pairingCodeInput: String = ""
+    @Published private(set) var parentPairingCode: String?
+    @Published private(set) var remoteChildState = RemoteChildRuntimeState(
+        isFocusActive: false,
+        focusEndsAt: nil,
+        lastUpdatedAt: Date(timeIntervalSince1970: 0)
+    )
+    @Published private(set) var isParentChildStateResolved = false
+    @Published private(set) var parentCommandDelivery: ParentCommandDeliveryState?
+    @Published private(set) var parentLinkHealth: ParentLinkHealthState?
+    @Published private(set) var remoteCommandInFlight = false
+    @Published private(set) var remoteStatusMessage: String?
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Пока `false`, баннер разрешений не показываем — избегаем кадра с устаревшим `isHealthAuthorized` до async-обновления.
     @Published private(set) var permissionStatusesReady = false
+
+    var isRemoteChildFocusEffectivelyActive: Bool {
+        guard remoteChildState.isFocusActive, let endsAt = remoteChildState.focusEndsAt else { return false }
+        return endsAt > Date()
+    }
 
     let screenTimeService: ScreenTimeService
 
@@ -116,10 +137,14 @@ final class AppState: ObservableObject {
     private let cameraService: CameraCaptureService
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
+    private let remoteSyncService: ParentalRemoteSyncService
     private var focusTask: Task<Void, Never>?
     private var focusSessionStartedAt: Date?
     private var focusSessionPlannedSeconds: Int = 0
     private var sharedStateTask: Task<Void, Never>?
+    private var remotePollingTask: Task<Void, Never>?
+    private var parentCommandWatchTask: Task<Void, Never>?
+    private var activeParentCommandID: UUID?
     private var lifecycleCancellables = Set<AnyCancellable>()
 
     init() {
@@ -127,11 +152,13 @@ final class AppState: ObservableObject {
         let healthService: HealthKitProviding = HealthKitService()
         let notificationService: Notifying = NotificationService()
         let cameraService = CameraCaptureService()
+        let remoteSyncService = ParentalRemoteSyncService(storage: storage)
 
         self.storage = storage
         self.healthService = healthService
         self.notificationService = notificationService
         self.cameraService = cameraService
+        self.remoteSyncService = remoteSyncService
         self.screenTimeService = ScreenTimeService(appStore: storage)
         self.balance = storage.loadBalance()
         self.settings = storage.loadSettings()
@@ -148,9 +175,13 @@ final class AppState: ObservableObject {
             storage.saveHasCompletedOnboarding(true)
         }
         self.hasCompletedOnboarding = onboardingDone
+        self.deviceRole = storage.loadDeviceRole()
+        self.pairingState = storage.loadPairingState()
+        self.isParentChildStateResolved = !(self.deviceRole == .parent && self.pairingState?.isLinked == true)
         self.isHealthAuthorized = false
         self.isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
         configureMainAppActivityTracking()
+        configurePushObservers()
 
         screenTimeService.refreshAuthorizationStatus()
         storage.saveMainAppIsActive(true)
@@ -161,11 +192,14 @@ final class AppState: ObservableObject {
         syncScreenTimeEnforcement(notifyOnUnlock: false)
 
         Task { await self.refreshPermissionStatuses() }
+        Task { await self.bootstrapRemoteIfNeeded() }
     }
 
     deinit {
         focusTask?.cancel()
         sharedStateTask?.cancel()
+        remotePollingTask?.cancel()
+        parentCommandWatchTask?.cancel()
         lifecycleCancellables.removeAll()
     }
 
@@ -234,6 +268,90 @@ final class AppState: ObservableObject {
         Task {
             await refreshPermissionStatuses()
             await refreshStepsAndRewards()
+            await syncChildStatsSnapshotIfNeeded()
+        }
+    }
+
+    func chooseDeviceRole(_ role: DeviceRole) {
+        guard deviceRole != role else { return }
+        storage.saveDeviceRole(role)
+        deviceRole = role
+        isParentChildStateResolved = role != .parent
+        if role == .parent {
+            storage.saveHasCompletedOnboarding(true)
+            hasCompletedOnboarding = true
+        }
+        Task {
+            await bootstrapRemoteIfNeeded()
+        }
+    }
+
+    func clearPairing() {
+        pairingState = nil
+        parentPairingCode = nil
+        isParentChildStateResolved = true
+        storage.savePairingState(nil)
+    }
+
+    func createPairingCodeForParent() async {
+        guard deviceRole == .parent else { return }
+        do {
+            let state = try await remoteSyncService.generatePairingCode()
+            pairingState = state
+            parentPairingCode = state.pairingCode
+            remoteStatusMessage = nil
+            storage.savePairingState(state)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    func connectChildWithPairingCode() async {
+        guard deviceRole == .child else { return }
+        let trimmed = pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !trimmed.isEmpty else { return }
+        do {
+            let state = try await remoteSyncService.joinPairingCode(trimmed)
+            pairingState = state
+            storage.savePairingState(state)
+            remoteStatusMessage = nil
+            startRemotePollingIfNeeded()
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    func sendParentFocusCommand(start: Bool) async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        remoteCommandInFlight = true
+        remoteStatusMessage = L10n.tr("parent.command.processing")
+        let intentID = UUID()
+        do {
+            let command = try await remoteSyncService.replaceFocusCommand(
+                start: start,
+                durationSeconds: start ? focusDurationMinutes * 60 : nil,
+                intentID: intentID
+            )
+            parentCommandDelivery = ParentCommandDeliveryState(
+                commandID: command.id,
+                commandType: command.commandType,
+                status: command.status,
+                queuedAt: command.createdAt,
+                updatedAt: command.updatedAt,
+                appliedAt: nil,
+                errorMessage: nil
+            )
+            parentCommandWatchTask?.cancel()
+            activeParentCommandID = command.id
+            parentCommandWatchTask = Task { [weak self] in
+                guard let self else { return }
+                await self.watchParentCommandUntilTerminal(commandID: command.id, timeoutSeconds: 10)
+            }
+            await refreshParentChildState()
+        } catch {
+            activeParentCommandID = nil
+            remoteCommandInFlight = false
+            remoteStatusMessage = error.localizedDescription
         }
     }
 
@@ -459,6 +577,7 @@ final class AppState: ObservableObject {
 
         // Focus session does not modify balance; avoid "Balance updated" notification.
         syncScreenTimeEnforcement(notifyOnUnlock: false)
+        Task { await syncChildStatsSnapshotIfNeeded() }
     }
 
     /// Оставшиеся секунды до `endDate` по системным часам (как Live Activity с `endDate`).
@@ -541,6 +660,253 @@ final class AppState: ObservableObject {
         focusStartError = nil
     }
 
+    func updateAPNSToken(_ token: String) {
+        storage.saveAPNSToken(token)
+        Task {
+            do {
+                try await remoteSyncService.updateAPNSToken(token)
+            } catch {
+                // Token sync retried on next bootstrap.
+            }
+        }
+    }
+
+    func handleRemoteNotificationPayload(_ userInfo: [AnyHashable: Any]) {
+        guard let commandIDRaw = userInfo["command_id"] as? String,
+              let commandID = UUID(uuidString: commandIDRaw) else {
+            return
+        }
+        let commandTypeRaw = (userInfo["command_type"] as? String) ?? ""
+        let commandType = RemoteFocusCommandType(rawValue: commandTypeRaw) ?? .startFocus
+        let durationSeconds = userInfo["duration_seconds"] as? Int
+        Task {
+            await applyRemoteCommandIfNeeded(id: commandID, type: commandType, durationSeconds: durationSeconds)
+        }
+    }
+
+    private func bootstrapRemoteIfNeeded() async {
+        guard let role = deviceRole else { return }
+        do {
+            let bootstrap = try await remoteSyncService.registerDevice(role: role)
+            if let serverPair = bootstrap.pairingState {
+                pairingState = serverPair
+                storage.savePairingState(serverPair)
+                if role == .parent {
+                    parentPairingCode = serverPair.pairingCode
+                    isParentChildStateResolved = false
+                }
+            }
+            if let apns = storage.loadAPNSToken() {
+                try? await remoteSyncService.updateAPNSToken(apns)
+            }
+            startRemotePollingIfNeeded()
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    private func startRemotePollingIfNeeded() {
+        guard pairingState?.isLinked == true else { return }
+        remotePollingTask?.cancel()
+        remotePollingTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                if self.deviceRole == .child {
+                    await self.processPendingRemoteCommandsIfNeeded()
+                    await self.syncChildStatsSnapshotIfNeeded()
+                } else if self.deviceRole == .parent {
+                    await self.refreshParentChildState()
+                }
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+            }
+        }
+    }
+
+    private func processPendingRemoteCommandsIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let commands = try await remoteSyncService.fetchPendingCommands()
+            guard !commands.isEmpty else { return }
+            let sorted = commands.sorted { $0.createdAt < $1.createdAt }
+            if sorted.count > 1 {
+                for stale in sorted.dropLast() {
+                    // Avoid command burst after delayed delivery:
+                    // only the latest parent intent is applied.
+                    try? await remoteSyncService.ackCommand(
+                        id: stale.id,
+                        status: .failed,
+                        errorMessage: "superseded_by_newer_command"
+                    )
+                }
+            }
+            guard let latest = sorted.last else { return }
+            await applyRemoteCommandIfNeeded(
+                id: latest.id,
+                type: latest.commandType,
+                durationSeconds: latest.durationSeconds
+            )
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
+        if storage.loadLastHandledRemoteCommandID() == id.uuidString {
+            try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
+            return
+        }
+        switch type {
+        case .startFocus:
+            if let durationSeconds, durationSeconds > 0 {
+                focusDurationMinutes = max(1, durationSeconds / 60)
+            }
+            startFocusSession()
+            notificationService.notify(
+                title: L10n.tr("remote.notification.title"),
+                body: L10n.tr("remote.notification.focus_started")
+            )
+        case .endFocus:
+            endFocusSession()
+            notificationService.notify(
+                title: L10n.tr("remote.notification.title"),
+                body: L10n.tr("remote.notification.focus_ended")
+            )
+        }
+        storage.saveLastHandledRemoteCommandID(id.uuidString)
+        let newState = RemoteChildRuntimeState(
+            isFocusActive: isFocusSessionActive,
+            focusEndsAt: focusSessionEndsAt,
+            lastUpdatedAt: Date()
+        )
+        remoteChildState = newState
+        do {
+            try await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
+            try await remoteSyncService.updateChildRuntimeState(newState)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshParentChildState() async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        do {
+            let snapshot = try await remoteSyncService.fetchParentSnapshot()
+            let normalizedRuntime = normalizedRuntimeForParent(snapshot.runtime)
+            remoteChildState = normalizedRuntime
+            parentLinkHealth = try? await remoteSyncService.fetchLinkHealth()
+            reconcileParentCommandWithRuntime(normalizedRuntime)
+            isParentChildStateResolved = true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    private func watchParentCommandUntilTerminal(commandID: UUID, timeoutSeconds: Int) async {
+        // Parent keeps spinner while waiting for child apply/ack.
+        let ticks = max(1, timeoutSeconds)
+        for tick in 0..<ticks {
+            guard !Task.isCancelled else {
+                finishParentCommandWatch(commandID: commandID)
+                return
+            }
+            if tick % 3 == 0 {
+                do {
+                    let retrySummary = try await remoteSyncService.retryStuckCommands()
+                    if retrySummary.retried > 0 {
+                        remoteStatusMessage = L10n.f("parent.command.retrying_batch", retrySummary.retried)
+                    }
+                } catch {
+                    // Retry helper is best-effort and should not break command status polling.
+                }
+            }
+            do {
+                if let status = try await remoteSyncService.fetchCommandStatus(commandID: commandID) {
+                    parentCommandDelivery = ParentCommandDeliveryState(
+                        commandID: status.id,
+                        commandType: status.commandType,
+                        status: status.status,
+                        queuedAt: status.createdAt,
+                        updatedAt: status.updatedAt,
+                        appliedAt: status.appliedAt,
+                        errorMessage: status.errorMessage
+                    )
+                    if status.status == .applied {
+                        if let latency = parentCommandDelivery?.latencySeconds {
+                            remoteStatusMessage = L10n.f("parent.command.applied.latency", latency)
+                        } else {
+                            remoteStatusMessage = L10n.tr("parent.command.applied")
+                        }
+                        finishParentCommandWatch(commandID: commandID)
+                        return
+                    }
+                    if status.status == .failed {
+                        remoteStatusMessage = status.errorMessage ?? L10n.tr("parent.command.failed")
+                        finishParentCommandWatch(commandID: commandID)
+                        return
+                    }
+                }
+            } catch {
+                remoteStatusMessage = error.localizedDescription
+            }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+        }
+        remoteStatusMessage = L10n.tr("parent.command.timeout")
+        finishParentCommandWatch(commandID: commandID)
+    }
+
+    private func finishParentCommandWatch(commandID: UUID) {
+        guard activeParentCommandID == commandID else { return }
+        activeParentCommandID = nil
+        remoteCommandInFlight = false
+    }
+
+    private func reconcileParentCommandWithRuntime(_ runtime: RemoteChildRuntimeState) {
+        guard let delivery = parentCommandDelivery else { return }
+        guard delivery.status != .applied, delivery.status != .failed else { return }
+        guard runtimeMatchesCommand(runtime, commandType: delivery.commandType) else { return }
+
+        parentCommandDelivery = ParentCommandDeliveryState(
+            commandID: delivery.commandID,
+            commandType: delivery.commandType,
+            status: .applied,
+            queuedAt: delivery.queuedAt,
+            updatedAt: runtime.lastUpdatedAt,
+            appliedAt: runtime.lastUpdatedAt,
+            errorMessage: nil
+        )
+        if let latency = parentCommandDelivery?.latencySeconds {
+            remoteStatusMessage = L10n.f("parent.command.applied.latency", latency)
+        } else {
+            remoteStatusMessage = L10n.tr("parent.command.applied")
+        }
+        if activeParentCommandID == delivery.commandID {
+            finishParentCommandWatch(commandID: delivery.commandID)
+            parentCommandWatchTask?.cancel()
+        }
+    }
+
+    private func runtimeMatchesCommand(_ runtime: RemoteChildRuntimeState, commandType: RemoteFocusCommandType) -> Bool {
+        let isActiveNow = runtime.isFocusActive && (runtime.focusEndsAt ?? .distantPast) > Date()
+        switch commandType {
+        case .startFocus:
+            return isActiveNow
+        case .endFocus:
+            return !isActiveNow
+        }
+    }
+
+    private func normalizedRuntimeForParent(_ runtime: RemoteChildRuntimeState) -> RemoteChildRuntimeState {
+        guard runtime.isFocusActive else { return runtime }
+        guard let endsAt = runtime.focusEndsAt, endsAt > Date() else {
+            return RemoteChildRuntimeState(
+                isFocusActive: false,
+                focusEndsAt: nil,
+                lastUpdatedAt: runtime.lastUpdatedAt
+            )
+        }
+        return runtime
+    }
+
     #if DEBUG && !HIDE_DEBUG_UI
     func consumeAllEarnedTimeForTesting() {
         let available = balance.availableSeconds
@@ -570,6 +936,24 @@ final class AppState: ObservableObject {
     }
 
     func dailyStats(for date: Date) async -> DailyStats {
+        if deviceRole == .parent, pairingState?.isLinked == true {
+            do {
+                if let remoteDay = try await remoteSyncService.fetchChildDayStats(for: date) {
+                    return remoteDay
+                }
+            } catch {
+                remoteStatusMessage = error.localizedDescription
+            }
+            return DailyStats(
+                date: date,
+                steps: 0,
+                earnedSeconds: 0,
+                spentSeconds: 0,
+                pushUps: 0,
+                squats: 0,
+                focusSessionTotalSeconds: 0
+            )
+        }
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: date)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
@@ -637,6 +1021,22 @@ final class AppState: ObservableObject {
         )
     }
 
+    private func syncChildStatsSnapshotIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        let today = dailyStats(for: Date(), steps: todaySteps)
+        do {
+            try await remoteSyncService.upsertChildDayStats(today)
+            let runtime = RemoteChildRuntimeState(
+                isFocusActive: isFocusSessionActive,
+                focusEndsAt: focusSessionEndsAt,
+                lastUpdatedAt: Date()
+            )
+            try await remoteSyncService.updateChildRuntimeState(runtime)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
     private func addSeconds(
         _ seconds: Int,
         source: LedgerEntrySource,
@@ -653,6 +1053,7 @@ final class AppState: ObservableObject {
                 repetitionCount: repetitionCount
             )
         )
+        Task { await syncChildStatsSnapshotIfNeeded() }
     }
 
     private func prependLedger(_ entry: ActivityLedgerEntry) {
@@ -682,6 +1083,9 @@ final class AppState: ObservableObject {
             await refreshPermissionStatuses()
             permissionBannerSuppressedAfterCTA = false
             await refreshStepsAndRewards()
+            await bootstrapRemoteIfNeeded()
+            await processPendingRemoteCommandsIfNeeded()
+            await refreshParentChildState()
         }
     }
 
@@ -690,6 +1094,11 @@ final class AppState: ObservableObject {
         stepsSyncCoordinator.stop()
         sharedStateTask?.cancel()
         sharedStateTask = nil
+        // Keep remote polling alive for child mode as long as iOS allows background execution.
+        if deviceRole == .parent {
+            remotePollingTask?.cancel()
+            remotePollingTask = nil
+        }
     }
 
     func appDidBecomeInactive() {
@@ -788,6 +1197,22 @@ final class AppState: ObservableObject {
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .sink { [weak self] _ in
                 self?.storage.saveMainAppIsActive(false)
+            }
+            .store(in: &lifecycleCancellables)
+    }
+
+    private func configurePushObservers() {
+        NotificationCenter.default.publisher(for: Self.didRegisterAPNSTokenNotification)
+            .sink { [weak self] notification in
+                guard let token = notification.object as? String else { return }
+                self?.updateAPNSToken(token)
+            }
+            .store(in: &lifecycleCancellables)
+
+        NotificationCenter.default.publisher(for: Self.didReceiveRemotePayloadNotification)
+            .sink { [weak self] notification in
+                guard let payload = notification.object as? [AnyHashable: Any] else { return }
+                self?.handleRemoteNotificationPayload(payload)
             }
             .store(in: &lifecycleCancellables)
     }
@@ -905,4 +1330,389 @@ final class AppState: ObservableObject {
         let estimated = Int((Double(max(0, entry.deltaSeconds)) / 60.0) * Double(repsPerMinute))
         return max(0, estimated)
     }
+}
+
+private struct ParentSnapshotDTO: Codable {
+    let runtime: RemoteChildRuntimeState
+}
+
+private struct RegisterDeviceResponseDTO: Codable {
+    let deviceSecret: String
+    let pairingState: DevicePairingState?
+}
+
+private struct PendingCommandDTO: Codable {
+    let id: UUID
+    let familyID: UUID
+    let commandType: RemoteFocusCommandType
+    let durationSeconds: Int?
+    let status: RemoteFocusCommandStatus
+    let createdAt: Date
+    let updatedAt: Date
+}
+
+private struct CommandStatusDTO: Codable {
+    let id: UUID
+    let commandType: RemoteFocusCommandType
+    let status: RemoteFocusCommandStatus
+    let errorMessage: String?
+    let createdAt: Date
+    let updatedAt: Date
+    let appliedAt: Date?
+}
+
+private struct RetrySummaryDTO: Codable {
+    let retried: Int
+    let failed: Int
+    let skipped: Int
+}
+
+private struct LinkHealthDTO: Codable {
+    let pendingCommands: Int
+    let oldestPendingAgeSeconds: Int?
+    let childLastSeenAgeSeconds: Int?
+    let childLikelyOnline: Bool
+    let recentFailedCommands30m: Int
+}
+
+private struct BackendDayStatsDTO: Codable {
+    let dayStartISO: String
+    let steps: Int
+    let earnedSeconds: Int
+    let spentSeconds: Int
+    let pushUps: Int
+    let squats: Int
+    let focusSessionTotalSeconds: Int
+}
+
+private final class ParentalRemoteSyncService {
+    private enum Endpoint {
+        static let baseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
+        static let anonKey = "sb_publishable_Rz5hfd6b5I90Eipwk3fFrQ_5ALQnDdB"
+    }
+
+    private enum SyncError: LocalizedError {
+        case roleNotSelected
+        case missingDeviceSecret
+        case invalidServerResponse
+
+        var errorDescription: String? {
+            switch self {
+            case .roleNotSelected:
+                return L10n.tr("remote.error.role_required")
+            case .missingDeviceSecret:
+                return L10n.tr("remote.error.register_required")
+            case .invalidServerResponse:
+                return L10n.tr("remote.error.invalid_response")
+            }
+        }
+    }
+
+    private struct RequestEnvelope<T: Encodable>: Encodable {
+        let action: String
+        let payload: T
+    }
+
+    private let storage: AppGroupStore
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    private let session: URLSession
+    private let installID: String
+    private let decodeISO8601 = ISO8601DateFormatter()
+    private let decodeISO8601Fractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private let encodeISO8601Fractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    init(storage: AppGroupStore) {
+        self.storage = storage
+        self.session = .shared
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+        encoder.dateEncodingStrategy = .custom { [encodeISO8601Fractional] date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(encodeISO8601Fractional.string(from: date))
+        }
+        decoder.dateDecodingStrategy = .custom { [decodeISO8601, decodeISO8601Fractional] decoder in
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let date = decodeISO8601Fractional.date(from: raw) ?? decodeISO8601.date(from: raw) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported date format: \(raw)"
+            )
+        }
+        if let saved = storage.loadDeviceInstallID() {
+            installID = saved
+        } else {
+            let newID = UUID().uuidString
+            installID = newID
+            storage.saveDeviceInstallID(newID)
+        }
+    }
+
+    func registerDevice(role: DeviceRole) async throws -> RegisterDeviceResponseDTO {
+        struct Payload: Encodable {
+            let installID: String
+            let role: String
+        }
+        let response: RegisterDeviceResponseDTO = try await call(
+            action: "register_device",
+            payload: Payload(installID: installID, role: role.rawValue),
+            includeSecret: false
+        )
+        storage.saveDeviceSecret(response.deviceSecret)
+        return response
+    }
+
+    func generatePairingCode() async throws -> DevicePairingState {
+        struct Payload: Encodable { let installID: String }
+        return try await call(action: "generate_pairing_code", payload: Payload(installID: installID))
+    }
+
+    func joinPairingCode(_ code: String) async throws -> DevicePairingState {
+        struct Payload: Encodable {
+            let installID: String
+            let pairingCode: String
+        }
+        return try await call(
+            action: "join_pairing_code",
+            payload: Payload(installID: installID, pairingCode: code)
+        )
+    }
+
+    func updateAPNSToken(_ token: String) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let apnsToken: String
+        }
+        let _: EmptyResponse = try await call(
+            action: "update_apns_token",
+            payload: Payload(installID: installID, apnsToken: token)
+        )
+    }
+
+    func queueFocusCommand(start: Bool, durationSeconds: Int?) async throws -> RemoteFocusCommand {
+        struct Payload: Encodable {
+            let installID: String
+            let commandType: String
+            let durationSeconds: Int?
+        }
+        let commandType: String = start ? RemoteFocusCommandType.startFocus.rawValue : RemoteFocusCommandType.endFocus.rawValue
+        return try await call(
+            action: "queue_focus_command",
+            payload: Payload(installID: installID, commandType: commandType, durationSeconds: durationSeconds)
+        )
+    }
+
+    func replaceFocusCommand(start: Bool, durationSeconds: Int?, intentID: UUID) async throws -> RemoteFocusCommand {
+        struct Payload: Encodable {
+            let installID: String
+            let commandType: String
+            let durationSeconds: Int?
+            let intentID: String
+        }
+        let commandType: String = start ? RemoteFocusCommandType.startFocus.rawValue : RemoteFocusCommandType.endFocus.rawValue
+        return try await call(
+            action: "replace_focus_command",
+            payload: Payload(
+                installID: installID,
+                commandType: commandType,
+                durationSeconds: durationSeconds,
+                intentID: intentID.uuidString
+            )
+        )
+    }
+
+    func fetchPendingCommands() async throws -> [RemoteFocusCommand] {
+        struct Payload: Encodable { let installID: String }
+        let dtos: [PendingCommandDTO] = try await call(
+            action: "fetch_pending_commands",
+            payload: Payload(installID: installID)
+        )
+        return dtos.map {
+            RemoteFocusCommand(
+                id: $0.id,
+                familyID: $0.familyID,
+                commandType: $0.commandType,
+                durationSeconds: $0.durationSeconds,
+                status: $0.status,
+                createdAt: $0.createdAt,
+                updatedAt: $0.updatedAt
+            )
+        }
+    }
+
+    func fetchCommandStatus(commandID: UUID) async throws -> CommandStatusDTO? {
+        struct Payload: Encodable {
+            let installID: String
+            let commandID: String
+        }
+        return try await call(
+            action: "fetch_command_status",
+            payload: Payload(installID: installID, commandID: commandID.uuidString)
+        )
+    }
+
+    func retryStuckCommands() async throws -> RetrySummaryDTO {
+        struct Payload: Encodable {
+            let installID: String
+            let maxBatch: Int
+            let minAgeSeconds: Int
+        }
+        return try await call(
+            action: "retry_stuck_commands",
+            payload: Payload(installID: installID, maxBatch: 4, minAgeSeconds: 20)
+        )
+    }
+
+    func ackCommand(id: UUID, status: RemoteFocusCommandStatus, errorMessage: String?) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let commandID: String
+            let status: String
+            let errorMessage: String?
+        }
+        let _: EmptyResponse = try await call(
+            action: "ack_command",
+            payload: Payload(
+                installID: installID,
+                commandID: id.uuidString,
+                status: status.rawValue,
+                errorMessage: errorMessage
+            )
+        )
+    }
+
+    func upsertChildDayStats(_ stats: DailyStats) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let dayStartISO: String
+            let steps: Int
+            let earnedSeconds: Int
+            let spentSeconds: Int
+            let pushUps: Int
+            let squats: Int
+            let focusSessionTotalSeconds: Int
+        }
+        let dayStart = Calendar.current.startOfDay(for: stats.date)
+        let dayISO = ISO8601DateFormatter().string(from: dayStart)
+        let _: EmptyResponse = try await call(
+            action: "upsert_child_day_stats",
+            payload: Payload(
+                installID: installID,
+                dayStartISO: dayISO,
+                steps: stats.steps,
+                earnedSeconds: stats.earnedSeconds,
+                spentSeconds: stats.spentSeconds,
+                pushUps: stats.pushUps,
+                squats: stats.squats,
+                focusSessionTotalSeconds: stats.focusSessionTotalSeconds
+            )
+        )
+    }
+
+    func fetchChildDayStats(for date: Date) async throws -> DailyStats? {
+        struct Payload: Encodable {
+            let installID: String
+            let dayStartISO: String
+        }
+        let dayStart = Calendar.current.startOfDay(for: date)
+        let dayISO = ISO8601DateFormatter().string(from: dayStart)
+        let dto: BackendDayStatsDTO? = try await call(
+            action: "fetch_child_day_stats",
+            payload: Payload(installID: installID, dayStartISO: dayISO)
+        )
+        guard let dto else { return nil }
+        let parsedDate = ISO8601DateFormatter().date(from: dto.dayStartISO) ?? dayStart
+        return DailyStats(
+            date: parsedDate,
+            steps: dto.steps,
+            earnedSeconds: dto.earnedSeconds,
+            spentSeconds: dto.spentSeconds,
+            pushUps: dto.pushUps,
+            squats: dto.squats,
+            focusSessionTotalSeconds: dto.focusSessionTotalSeconds
+        )
+    }
+
+    func updateChildRuntimeState(_ state: RemoteChildRuntimeState) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let isFocusActive: Bool
+            let focusEndsAt: String?
+        }
+        let endISO = state.focusEndsAt.map { ISO8601DateFormatter().string(from: $0) }
+        let _: EmptyResponse = try await call(
+            action: "update_child_runtime",
+            payload: Payload(installID: installID, isFocusActive: state.isFocusActive, focusEndsAt: endISO)
+        )
+    }
+
+    func fetchParentSnapshot() async throws -> ParentSnapshotDTO {
+        struct Payload: Encodable { let installID: String }
+        return try await call(action: "fetch_parent_snapshot", payload: Payload(installID: installID))
+    }
+
+    func fetchLinkHealth() async throws -> ParentLinkHealthState {
+        struct Payload: Encodable { let installID: String }
+        let dto: LinkHealthDTO = try await call(action: "fetch_link_health", payload: Payload(installID: installID))
+        return ParentLinkHealthState(
+            pendingCommands: dto.pendingCommands,
+            oldestPendingAgeSeconds: dto.oldestPendingAgeSeconds,
+            childLastSeenAgeSeconds: dto.childLastSeenAgeSeconds,
+            childLikelyOnline: dto.childLikelyOnline,
+            recentFailedCommands30m: dto.recentFailedCommands30m
+        )
+    }
+
+    private func call<T: Decodable, P: Encodable>(
+        action: String,
+        payload: P,
+        includeSecret: Bool = true
+    ) async throws -> T {
+        var request = URLRequest(url: Endpoint.baseURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(Endpoint.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(Endpoint.anonKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(installID, forHTTPHeaderField: "x-device-install-id")
+        if includeSecret {
+            guard let secret = storage.loadDeviceSecret(), !secret.isEmpty else {
+                throw SyncError.missingDeviceSecret
+            }
+            request.setValue(secret, forHTTPHeaderField: "x-device-secret")
+        }
+        request.httpBody = try encoder.encode(RequestEnvelope(action: action, payload: payload))
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw SyncError.invalidServerResponse
+        }
+        guard (200...299).contains(http.statusCode) else {
+            if let decoded = try? decoder.decode(ErrorResponse.self, from: data),
+               let msg = decoded.error {
+                throw NSError(domain: "ParentalRemoteSync", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: msg])
+            }
+            throw NSError(
+                domain: "ParentalRemoteSync",
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: L10n.tr("remote.error.network_generic")]
+            )
+        }
+        if T.self == EmptyResponse.self {
+            return EmptyResponse() as! T
+        }
+        return try decoder.decode(T.self, from: data)
+    }
+
+    private struct EmptyResponse: Codable {}
+    private struct ErrorResponse: Codable { let error: String? }
 }

@@ -261,3 +261,53 @@
 "paywall.period.week" = "wk";
 "paywall.period.month" = "mo";
 "paywall.period.year" = "yr";
+
+"role.select.title" = "Choose device role";
+"role.select.subtitle" = "Is this a parent or child phone?";
+"role.select.parent" = "Parent phone";
+"role.select.child" = "Child phone";
+
+"parent.dashboard.title" = "Child control";
+"parent.dashboard.linked" = "Devices are linked";
+"parent.dashboard.not_linked" = "Link devices in Settings first";
+"parent.dashboard.focus_until" = "Focus active until %@";
+"parent.dashboard.focus_inactive" = "Child focus session is inactive";
+"parent.dashboard.state_syncing" = "Resolving current child device state…";
+"parent.dashboard.syncing_button" = "Syncing...";
+"parent.dashboard.start_focus" = "Block now";
+"parent.dashboard.stop_focus" = "Unblock now";
+"parent.dashboard.command_id" = "Command: %@";
+"parent.dashboard.command_status" = "Status: %@";
+"parent.dashboard.command_latency" = "Apply latency: %d sec";
+"parent.dashboard.child_offline_hint" = "Child device has not checked in recently. Status may update with delay.";
+"parent.dashboard.pending_commands" = "Commands waiting to apply: %d";
+
+"settings.parent.link.title" = "Link child device";
+"settings.parent.link.empty" = "No pairing code yet";
+"settings.parent.link.generate" = "Generate pairing code";
+"settings.parent.link.code" = "Code: %@";
+
+"settings.child.link.title" = "Connect to parent";
+"settings.child.link.placeholder" = "Enter pairing code";
+"settings.child.link.connect" = "Connect";
+"settings.child.link.connected_code" = "Connected with code: %@";
+
+"parent.command.sent.start" = "Block command sent";
+"parent.command.sent.stop" = "Unblock command sent";
+"parent.command.applied" = "Command applied on child device";
+"parent.command.applied.latency" = "Command applied in %d sec";
+"parent.command.pending" = "Waiting for child device confirmation";
+"parent.command.failed" = "Command failed";
+"parent.command.retrying" = "Retrying command delivery…";
+"parent.command.retrying_batch" = "Retrying stuck commands: %d";
+"parent.command.processing" = "Executing command, waiting up to 10 seconds for confirmation…";
+"parent.command.timeout" = "No confirmation within 10 seconds. Check child device internet connection and try again.";
+
+"remote.error.role_required" = "Select a device role first.";
+"remote.error.register_required" = "Device is not registered yet. Reopen the app.";
+"remote.error.invalid_response" = "Server returned an invalid response.";
+"remote.error.network_generic" = "Network error while syncing parental control.";
+
+"remote.notification.title" = "ParentalControl";
+"remote.notification.focus_started" = "Parent started focus session";
+"remote.notification.focus_ended" = "Parent ended focus session";
