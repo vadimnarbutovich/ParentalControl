@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var showOnboardingReplay = false
     @State private var showPaywall = false
     @State private var showShareSheet = false
+    @FocusState private var focusedField: SettingsFocusField?
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,16 @@ struct SettingsView: View {
                     }
                     .padding()
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .onTapGesture {
+                    dismissKeyboard()
+                }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 2)
+                        .onChanged { _ in
+                            dismissKeyboard()
+                        }
+                )
             }
             .scrollIndicators(.hidden)
             .sheet(item: $activeSheet) { sheet in
@@ -99,6 +110,12 @@ struct SettingsView: View {
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.95))
 
+            if appState.deviceRole == .parent {
+                parentPairingSection
+            } else {
+                childPairingSection
+            }
+
             settingsRow(titleKey: "settings.item.conversion") {
                 AppAnalytics.report("settings_conversion_open")
                 activeSheet = .conversion
@@ -135,6 +152,74 @@ struct SettingsView: View {
         }
         .padding()
         .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+    }
+
+    private var parentPairingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("settings.parent.link.title")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.9))
+            if let code = appState.parentPairingCode ?? appState.pairingState?.pairingCode {
+                Text(L10n.f("settings.parent.link.code", code))
+                    .font(.title3.bold())
+                    .foregroundStyle(AppTheme.neonGreen)
+            } else {
+                Text("settings.parent.link.empty")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            Button("settings.parent.link.generate") {
+                Task { await appState.createPairingCodeForParent() }
+            }
+            .buttonStyle(SecondaryInlineButtonStyle())
+            if let message = appState.remoteStatusMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.neonBlue)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var childPairingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("settings.child.link.title")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.9))
+            TextField(
+                L10n.tr("settings.child.link.placeholder"),
+                text: $appState.pairingCodeInput
+            )
+            .focused($focusedField, equals: .childPairingCode)
+            .textInputAutocapitalization(.characters)
+            .autocorrectionDisabled(true)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+            )
+            Button("settings.child.link.connect") {
+                Task { await appState.connectChildWithPairingCode() }
+            }
+            .buttonStyle(SecondaryInlineButtonStyle())
+            if let code = appState.pairingState?.pairingCode {
+                Text(L10n.f("settings.child.link.connected_code", code))
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.neonGreen)
+            }
+            if let message = appState.remoteStatusMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.neonBlue)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func dismissKeyboard() {
+        focusedField = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private var helpSection: some View {
@@ -215,6 +300,10 @@ struct SettingsView: View {
                 .fill(Color.white.opacity(0.06))
         )
     }
+}
+
+private enum SettingsFocusField: Hashable {
+    case childPairingCode
 }
 
 private struct ConversionSettingsSheet: View {
@@ -421,6 +510,20 @@ private struct ActivityShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct SecondaryInlineButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.08 : 0.14))
+            )
+    }
 }
 
 #if DEBUG && !HIDE_DEBUG_UI

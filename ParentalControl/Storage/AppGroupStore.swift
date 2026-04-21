@@ -43,6 +43,12 @@ enum StorageKey {
     static let spentBaselineDayStart = "parentalcontrol.spentBaselineDayStart"
     static let spentBaselineTotalSpentSeconds = "parentalcontrol.spentBaselineTotalSpentSeconds"
     static let focusSessionSnapshot = "parentalcontrol.focusSessionSnapshot"
+    static let deviceRole = "parentalcontrol.deviceRole"
+    static let pairingState = "parentalcontrol.pairingState"
+    static let deviceInstallID = "parentalcontrol.deviceInstallID"
+    static let deviceSecret = "parentalcontrol.deviceSecret"
+    static let apnsToken = "parentalcontrol.apnsToken"
+    static let lastHandledRemoteCommandID = "parentalcontrol.lastHandledRemoteCommandID"
 }
 
 /// Сохраняется в App Group, чтобы пережить kill приложения и совпадать с Live Activity по `endsAt`.
@@ -293,6 +299,59 @@ final class AppGroupStore {
         if let defaults = UserDefaults(suiteName: appGroupId) {
             defaults.synchronize()
         }
+    }
+
+    func loadDeviceRole() -> DeviceRole? {
+        guard let raw = store.string(forKey: StorageKey.deviceRole) else { return nil }
+        return DeviceRole(rawValue: raw)
+    }
+
+    func saveDeviceRole(_ role: DeviceRole) {
+        store.set(role.rawValue, forKey: StorageKey.deviceRole)
+    }
+
+    func loadPairingState() -> DevicePairingState? {
+        load(DevicePairingState.self, key: StorageKey.pairingState)
+    }
+
+    func savePairingState(_ state: DevicePairingState?) {
+        guard let state else {
+            store.set(nil, forKey: StorageKey.pairingState)
+            return
+        }
+        save(state, key: StorageKey.pairingState)
+    }
+
+    func loadDeviceInstallID() -> String? {
+        store.string(forKey: StorageKey.deviceInstallID)
+    }
+
+    func saveDeviceInstallID(_ value: String) {
+        store.set(value, forKey: StorageKey.deviceInstallID)
+    }
+
+    func loadDeviceSecret() -> String? {
+        store.string(forKey: StorageKey.deviceSecret)
+    }
+
+    func saveDeviceSecret(_ value: String?) {
+        store.set(value, forKey: StorageKey.deviceSecret)
+    }
+
+    func loadAPNSToken() -> String? {
+        store.string(forKey: StorageKey.apnsToken)
+    }
+
+    func saveAPNSToken(_ value: String?) {
+        store.set(value, forKey: StorageKey.apnsToken)
+    }
+
+    func loadLastHandledRemoteCommandID() -> String? {
+        store.string(forKey: StorageKey.lastHandledRemoteCommandID)
+    }
+
+    func saveLastHandledRemoteCommandID(_ value: String?) {
+        store.set(value, forKey: StorageKey.lastHandledRemoteCommandID)
     }
 
     func loadDeviceActivityDebugSnapshot() -> DeviceActivityDebugSnapshot {

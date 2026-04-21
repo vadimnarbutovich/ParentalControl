@@ -261,3 +261,53 @@
 "paywall.period.week" = "нед.";
 "paywall.period.month" = "мес.";
 "paywall.period.year" = "г.";
+
+"role.select.title" = "Выберите роль устройства";
+"role.select.subtitle" = "Это телефон родителя или ребенка?";
+"role.select.parent" = "Телефон родителя";
+"role.select.child" = "Телефон ребенка";
+
+"parent.dashboard.title" = "Управление ребенком";
+"parent.dashboard.linked" = "Устройства связаны";
+"parent.dashboard.not_linked" = "Сначала свяжите устройства в Настройках";
+"parent.dashboard.focus_until" = "Фокус активен до %@";
+"parent.dashboard.focus_inactive" = "Фокус-сессия у ребенка не активна";
+"parent.dashboard.state_syncing" = "Уточняем актуальное состояние устройства ребенка…";
+"parent.dashboard.syncing_button" = "Синхронизация...";
+"parent.dashboard.start_focus" = "Заблокировать сейчас";
+"parent.dashboard.stop_focus" = "Разблокировать сейчас";
+"parent.dashboard.command_id" = "Команда: %@";
+"parent.dashboard.command_status" = "Статус: %@";
+"parent.dashboard.command_latency" = "Задержка применения: %d сек";
+"parent.dashboard.child_offline_hint" = "Устройство ребенка давно не выходило на связь. Статус может обновиться с задержкой.";
+"parent.dashboard.pending_commands" = "Ожидают выполнения команд: %d";
+
+"settings.parent.link.title" = "Связать устройство ребенка";
+"settings.parent.link.empty" = "Код еще не создан";
+"settings.parent.link.generate" = "Создать код связи";
+"settings.parent.link.code" = "Код: %@";
+
+"settings.child.link.title" = "Подключение к родителю";
+"settings.child.link.placeholder" = "Введите код связи";
+"settings.child.link.connect" = "Подключить";
+"settings.child.link.connected_code" = "Подключено по коду: %@";
+
+"parent.command.sent.start" = "Команда блокировки отправлена";
+"parent.command.sent.stop" = "Команда разблокировки отправлена";
+"parent.command.applied" = "Команда применена на устройстве ребенка";
+"parent.command.applied.latency" = "Команда применена за %d сек";
+"parent.command.pending" = "Ожидаем подтверждение от устройства ребенка";
+"parent.command.failed" = "Команда завершилась ошибкой";
+"parent.command.retrying" = "Повторяем отправку команды…";
+"parent.command.retrying_batch" = "Повторно отправляем зависшие команды: %d";
+"parent.command.processing" = "Выполняем команду, ожидаем подтверждение до 10 секунд…";
+"parent.command.timeout" = "Не получили подтверждение за 10 секунд. Проверьте интернет на устройстве ребенка и повторите попытку.";
+
+"remote.error.role_required" = "Сначала выберите роль устройства.";
+"remote.error.register_required" = "Устройство не зарегистрировано. Откройте приложение еще раз.";
+"remote.error.invalid_response" = "Сервер вернул некорректный ответ.";
+"remote.error.network_generic" = "Ошибка сети при синхронизации с родительским контролем.";
+
+"remote.notification.title" = "ParentalControl";
+"remote.notification.focus_started" = "Родитель включил фокус-сессию";
+"remote.notification.focus_ended" = "Родитель отключил фокус-сессию";

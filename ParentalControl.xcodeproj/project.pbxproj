@@ -140,6 +140,13 @@
 			);
 			target = D11C11112F78000100B0C0DE /* DeviceActivityReportExtension */;
 		};
+		D19644902F96BC0700ED8EAA /* Exceptions for "ParentalControl" folder in "ParentalControl" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D1A266212F5737A7005689EB /* ParentalControl */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -185,6 +192,9 @@
 		};
 		D1A266242F5737A7005689EB /* ParentalControl */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D19644902F96BC0700ED8EAA /* Exceptions for "ParentalControl" folder in "ParentalControl" target */,
+			);
 			path = ParentalControl;
 			sourceTree = "<group>";
 		};
@@ -1057,6 +1067,7 @@
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ParentalControl/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
@@ -1065,6 +1076,9 @@
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = (
+					"remote-notification",
+				);
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1104,6 +1118,7 @@
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ParentalControl/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
@@ -1112,6 +1127,9 @@
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = (
+					"remote-notification",
+				);
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
