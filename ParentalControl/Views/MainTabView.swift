@@ -108,6 +108,17 @@ private struct ParentDashboardView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
+                            if appState.pairingState?.isLinked == true {
+                                if let availableSeconds = appState.parentChildAvailableSeconds {
+                                    Text(L10n.f("parent.dashboard.child_available", L10n.duration(seconds: availableSeconds)))
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                } else {
+                                    Text("parent.dashboard.child_available_syncing")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                             if let health = appState.parentLinkHealth {
                                 if !health.childLikelyOnline {
                                     Text("parent.dashboard.child_offline_hint")
@@ -169,6 +180,24 @@ private struct ParentDashboardView: View {
                         )
                         .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
                         .disabled(!isCommandButtonEnabled)
+
+                        HStack(spacing: 12) {
+                            Button("parent.dashboard.take_all_time") {
+                                Task { await appState.sendParentTakeAllTimeCommand() }
+                            }
+                            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonOrange))
+                            .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
+                            .disabled(!isCommandButtonEnabled)
+                            .frame(maxWidth: .infinity)
+
+                            Button("parent.dashboard.add_one_minute") {
+                                Task { await appState.sendParentAddOneMinuteCommand() }
+                            }
+                            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+                            .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
+                            .disabled(!isCommandButtonEnabled)
+                            .frame(maxWidth: .infinity)
+                        }
                     }
                     .padding()
                 }

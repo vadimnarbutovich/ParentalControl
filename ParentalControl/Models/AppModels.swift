@@ -122,6 +122,7 @@ enum LedgerEntrySource: String, Codable {
     case squat
     case pushUp
     case focusSession
+    case parentAdjustment
     case testAdjustment
 }
 
@@ -224,6 +225,8 @@ struct DevicePairingState: Codable, Equatable {
 enum RemoteFocusCommandType: String, Codable {
     case startFocus = "start_focus"
     case endFocus = "end_focus"
+    case resetEarnedBalance = "reset_earned_balance"
+    case addEarnedSeconds = "add_earned_seconds"
 }
 
 enum RemoteFocusCommandStatus: String, Codable {

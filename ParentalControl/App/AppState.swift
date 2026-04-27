@@ -72,6 +72,7 @@ final class AppState: ObservableObject {
     @Published private(set) var parentResolvedFocusActive: Bool?
     @Published private(set) var parentCommandDelivery: ParentCommandDeliveryState?
     @Published private(set) var parentLinkHealth: ParentLinkHealthState?
+    @Published private(set) var parentChildAvailableSeconds: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var remoteStatusMessage: String?
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
@@ -291,6 +292,7 @@ final class AppState: ObservableObject {
         deviceRole = role
         isParentChildStateResolved = role != .parent
         parentResolvedFocusActive = nil
+        parentChildAvailableSeconds = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
@@ -306,6 +308,7 @@ final class AppState: ObservableObject {
         parentPairingCode = nil
         isParentChildStateResolved = true
         parentResolvedFocusActive = nil
+        parentChildAvailableSeconds = nil
         lastNormalizedParentChildRuntime = nil
         storage.savePairingState(nil)
     }
@@ -339,38 +342,16 @@ final class AppState: ObservableObject {
     }
 
     func sendParentFocusCommand(start: Bool) async {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
-        remoteCommandInFlight = true
-        remoteStatusMessage = L10n.tr("parent.command.processing")
-        parentDesiredFocusActive = start
-        let intentID = UUID()
-        do {
-            let command = try await remoteSyncService.replaceFocusCommand(
-                start: start,
-                durationSeconds: nil,
-                intentID: intentID
-            )
-            parentCommandDelivery = ParentCommandDeliveryState(
-                commandID: command.id,
-                commandType: command.commandType,
-                status: command.status,
-                queuedAt: command.createdAt,
-                updatedAt: command.updatedAt,
-                appliedAt: nil,
-                errorMessage: nil
-            )
-            parentCommandWatchTask?.cancel()
-            activeParentCommandID = command.id
-            parentCommandWatchTask = Task { [weak self] in
-                guard let self else { return }
-                await self.watchParentCommandUntilTerminal(commandID: command.id, timeoutSeconds: 10)
-            }
-            await refreshParentChildState()
-        } catch {
-            activeParentCommandID = nil
-            remoteCommandInFlight = false
-            remoteStatusMessage = error.localizedDescription
-        }
+        let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
+        await sendParentCommand(commandType: commandType, durationSeconds: nil)
+    }
+
+    func sendParentTakeAllTimeCommand() async {
+        await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
+    }
+
+    func sendParentAddOneMinuteCommand() async {
+        await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: 60)
     }
 
     func handlePermissionBannerAllow(kind: PermissionReminderKind) async {
@@ -871,6 +852,25 @@ final class AppState: ObservableObject {
                 title: L10n.tr("remote.notification.title"),
                 body: L10n.tr("remote.notification.focus_ended")
             )
+        case .resetEarnedBalance:
+            applyParentResetEarnedBalance()
+            notificationService.notify(
+                title: L10n.tr("remote.notification.title"),
+                body: L10n.tr("remote.notification.time_reset")
+            )
+        case .addEarnedSeconds:
+            let secondsToAdd = max(0, durationSeconds ?? 0)
+            if secondsToAdd > 0 {
+                addSeconds(
+                    secondsToAdd,
+                    source: .parentAdjustment,
+                    note: L10n.tr("ledger.parent.add_time")
+                )
+                notificationService.notify(
+                    title: L10n.tr("remote.notification.title"),
+                    body: L10n.f("remote.notification.time_added", L10n.duration(seconds: secondsToAdd))
+                )
+            }
         }
         storage.saveLastHandledRemoteCommandID(id.uuidString)
         let newState = RemoteChildRuntimeState(
@@ -888,7 +888,10 @@ final class AppState: ObservableObject {
     }
 
     private func refreshParentChildState() async {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        guard deviceRole == .parent, pairingState?.isLinked == true else {
+            parentChildAvailableSeconds = nil
+            return
+        }
         var lastError: Error?
         for attempt in 0..<2 {
             if let desired = try? await remoteSyncService.fetchDesiredFocusState() {
@@ -920,6 +923,9 @@ final class AppState: ObservableObject {
                     } else {
                         parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
                     }
+                }
+                if let childAvailable = try? await remoteSyncService.fetchChildBalanceState() {
+                    parentChildAvailableSeconds = childAvailable
                 }
                 isParentChildStateResolved = true
                 return
@@ -1010,12 +1016,17 @@ final class AppState: ObservableObject {
                         } else {
                             remoteStatusMessage = L10n.tr("parent.command.applied")
                         }
-                        // `command_status=applied` часто приходит раньше, чем `child_runtime` в snapshot обновлён
-                        // — снимаем «Синхронизацию» только когда runtime согласован с типом команды (как в `reconcile`).
-                        await self.waitForParentSnapshotToMatchAppliedCommand(
-                            commandID: commandID,
-                            commandType: status.commandType
-                        )
+                        if status.commandType == .startFocus || status.commandType == .endFocus {
+                            // `command_status=applied` часто приходит раньше, чем `child_runtime` в snapshot обновлён
+                            // — снимаем «Синхронизацию» только когда runtime согласован с типом команды (как в `reconcile`).
+                            await self.waitForParentSnapshotToMatchAppliedCommand(
+                                commandID: commandID,
+                                commandType: status.commandType
+                            )
+                        } else {
+                            finishParentCommandWatch(commandID: commandID)
+                            await refreshParentChildState()
+                        }
                         return
                     }
                     if status.status == .failed {
@@ -1093,7 +1104,72 @@ final class AppState: ObservableObject {
             return isActiveNow
         case .endFocus:
             return !isActiveNow
+        case .resetEarnedBalance, .addEarnedSeconds:
+            return true
         }
+    }
+
+    private func sendParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        remoteCommandInFlight = true
+        remoteStatusMessage = L10n.tr("parent.command.processing")
+        if commandType == .startFocus {
+            parentDesiredFocusActive = true
+        } else if commandType == .endFocus {
+            parentDesiredFocusActive = false
+        }
+        let intentID = UUID()
+        do {
+            let command: RemoteFocusCommand
+            if commandType == .startFocus || commandType == .endFocus {
+                command = try await remoteSyncService.replaceFocusCommand(
+                    commandType: commandType,
+                    durationSeconds: durationSeconds,
+                    intentID: intentID
+                )
+            } else {
+                command = try await remoteSyncService.queueBalanceCommand(
+                    commandType: commandType,
+                    durationSeconds: durationSeconds,
+                    intentID: intentID
+                )
+            }
+            parentCommandDelivery = ParentCommandDeliveryState(
+                commandID: command.id,
+                commandType: command.commandType,
+                status: command.status,
+                queuedAt: command.createdAt,
+                updatedAt: command.updatedAt,
+                appliedAt: nil,
+                errorMessage: nil
+            )
+            parentCommandWatchTask?.cancel()
+            activeParentCommandID = command.id
+            parentCommandWatchTask = Task { [weak self] in
+                guard let self else { return }
+                await self.watchParentCommandUntilTerminal(commandID: command.id, timeoutSeconds: 10)
+            }
+            await refreshParentChildState()
+        } catch {
+            activeParentCommandID = nil
+            remoteCommandInFlight = false
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    private func applyParentResetEarnedBalance() {
+        let available = balance.availableSeconds
+        guard available > 0 else { return }
+        balance.totalSpentSeconds += available
+        persistState()
+        prependLedger(
+            ActivityLedgerEntry(
+                source: .parentAdjustment,
+                deltaSeconds: -available,
+                note: L10n.tr("ledger.parent.take_all_time")
+            )
+        )
+        Task { await syncChildStatsSnapshotIfNeeded() }
     }
 
     private func normalizedRuntimeForParent(_ runtime: RemoteChildRuntimeState) -> RemoteChildRuntimeState {
@@ -1236,6 +1312,7 @@ final class AppState: ObservableObject {
                 lastUpdatedAt: Date()
             )
             try await remoteSyncService.updateChildRuntimeState(runtime)
+            try? await remoteSyncService.updateChildBalanceState(availableSeconds: balance.availableSeconds)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1604,7 +1681,8 @@ private struct BackendDayStatsDTO: Codable {
 
 private final class ParentalRemoteSyncService {
     private enum Endpoint {
-        static let baseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
+        static let focusBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
+        static let balanceBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-balance-sync")!
         static let anonKey = "sb_publishable_Rz5hfd6b5I90Eipwk3fFrQ_5ALQnDdB"
     }
 
@@ -1730,23 +1808,76 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func replaceFocusCommand(start: Bool, durationSeconds: Int?, intentID: UUID) async throws -> RemoteFocusCommand {
+    func replaceFocusCommand(
+        commandType: RemoteFocusCommandType,
+        durationSeconds: Int?,
+        intentID: UUID
+    ) async throws -> RemoteFocusCommand {
         struct Payload: Encodable {
             let installID: String
             let commandType: String
             let durationSeconds: Int?
             let intentID: String
         }
-        let commandType: String = start ? RemoteFocusCommandType.startFocus.rawValue : RemoteFocusCommandType.endFocus.rawValue
         return try await call(
             action: "replace_focus_command",
             payload: Payload(
                 installID: installID,
-                commandType: commandType,
+                commandType: commandType.rawValue,
                 durationSeconds: durationSeconds,
                 intentID: intentID.uuidString
-            )
+            ),
+            endpoint: Endpoint.focusBaseURL
         )
+    }
+
+    func queueBalanceCommand(
+        commandType: RemoteFocusCommandType,
+        durationSeconds: Int?,
+        intentID: UUID
+    ) async throws -> RemoteFocusCommand {
+        struct Payload: Encodable {
+            let installID: String
+            let commandType: String
+            let durationSeconds: Int?
+            let intentID: String
+        }
+        return try await call(
+            action: "queue_balance_command",
+            payload: Payload(
+                installID: installID,
+                commandType: commandType.rawValue,
+                durationSeconds: durationSeconds,
+                intentID: intentID.uuidString
+            ),
+            endpoint: Endpoint.balanceBaseURL
+        )
+    }
+
+    func updateChildBalanceState(availableSeconds: Int) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let availableSeconds: Int
+        }
+        let _: EmptyResponse = try await call(
+            action: "update_child_balance",
+            payload: Payload(
+                installID: installID,
+                availableSeconds: max(0, availableSeconds)
+            ),
+            endpoint: Endpoint.balanceBaseURL
+        )
+    }
+
+    func fetchChildBalanceState() async throws -> Int {
+        struct Payload: Encodable { let installID: String }
+        struct Response: Decodable { let availableSeconds: Int }
+        let response: Response = try await call(
+            action: "fetch_child_balance",
+            payload: Payload(installID: installID),
+            endpoint: Endpoint.balanceBaseURL
+        )
+        return max(0, response.availableSeconds)
     }
 
     func fetchPendingCommands() async throws -> [RemoteFocusCommand] {
@@ -1899,9 +2030,11 @@ private final class ParentalRemoteSyncService {
     private func call<T: Decodable, P: Encodable>(
         action: String,
         payload: P,
-        includeSecret: Bool = true
+        includeSecret: Bool = true,
+        endpoint: URL? = nil
     ) async throws -> T {
-        var request = URLRequest(url: Endpoint.baseURL)
+        let endpointURL = endpoint ?? Endpoint.focusBaseURL
+        var request = URLRequest(url: endpointURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(Endpoint.anonKey, forHTTPHeaderField: "apikey")
