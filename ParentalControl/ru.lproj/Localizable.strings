@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "Все добавленные приложения будут заблокированы, чтоб сфокусироваться на задаче.";
 "dashboard.focus.error.title" = "Не удалось запустить фокус";
 "dashboard.focus.insufficient.balance" = "Недостаточно времени. Пройдите шаги или сделайте упражнения.";
+"dashboard.blocking.title" = "Блокировка";
+"dashboard.blocking.enabled" = "Блокировка включена";
+"dashboard.blocking.disabled" = "Блокировка отключена";
+"dashboard.blocking.hint.enabled" = "Родитель включил блокировку отслеживаемых приложений.";
+"dashboard.blocking.hint.disabled" = "Доступ к приложениям зависит от заработанного времени.";
+"dashboard.blocking.not_linked" = "Свяжите устройство с родителем в Настройках, чтобы видеть статус.";
 
 "unit.minutes.short" = "%d мин";
 "unit.minutes.abbrev" = "мин";

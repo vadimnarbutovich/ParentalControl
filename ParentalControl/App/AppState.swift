@@ -347,7 +347,7 @@ final class AppState: ObservableObject {
         do {
             let command = try await remoteSyncService.replaceFocusCommand(
                 start: start,
-                durationSeconds: start ? focusDurationMinutes * 60 : nil,
+                durationSeconds: nil,
                 intentID: intentID
             )
             parentCommandDelivery = ParentCommandDeliveryState(
@@ -537,23 +537,46 @@ final class AppState: ObservableObject {
         #endif
     }
 
+    /// Локальная фокус-сессия с таймером (на устройстве ребёнка UI не предлагает старт; оставлено для тестов и совместимости).
     func startFocusSession() {
-        focusStartError = nil
         let seconds = focusDurationMinutes * 60
         guard seconds > 0 else { return }
+        startTimedFocusSession(totalSeconds: seconds)
+    }
+
+    private func startTimedFocusSession(totalSeconds: Int) {
+        focusStartError = nil
+        guard totalSeconds > 0 else { return }
         screenTimeService.applyShield()
         isFocusSessionActive = true
-        focusRemainingSeconds = seconds
+        focusRemainingSeconds = totalSeconds
         let startDate = Date()
         focusSessionStartedAt = startDate
-        focusSessionPlannedSeconds = seconds
-        let endsAt = startDate.addingTimeInterval(TimeInterval(seconds))
+        focusSessionPlannedSeconds = totalSeconds
+        let endsAt = startDate.addingTimeInterval(TimeInterval(totalSeconds))
         focusSessionEndsAt = endsAt
-        focusLiveActivityService.start(endsAt: endsAt, totalSeconds: seconds)
+        focusLiveActivityService.start(endsAt: endsAt, totalSeconds: totalSeconds)
         storage.saveFocusSessionSnapshot(
-            FocusSessionSnapshot(startedAt: startDate, endsAt: endsAt, plannedSeconds: seconds)
+            FocusSessionSnapshot(startedAt: startDate, endsAt: endsAt, plannedSeconds: totalSeconds)
         )
         startFocusCountdownTask()
+    }
+
+    /// Блокировка как при фокус-сессии (shield), без дедлайна — пока родитель не отключит.
+    private func startIndefiniteFocusSession() {
+        focusStartError = nil
+        focusTask?.cancel()
+        screenTimeService.applyShield()
+        isFocusSessionActive = true
+        focusRemainingSeconds = 0
+        let startDate = Date()
+        focusSessionStartedAt = startDate
+        focusSessionPlannedSeconds = 0
+        focusSessionEndsAt = nil
+        storage.saveFocusSessionSnapshot(
+            FocusSessionSnapshot(startedAt: startDate, endsAt: nil, plannedSeconds: 0)
+        )
+        syncScreenTimeEnforcement(notifyOnUnlock: false)
     }
 
     func endFocusSession() {
@@ -568,7 +591,12 @@ final class AppState: ObservableObject {
         } else {
             elapsedByClock = 0
         }
-        let focusDurationSeconds = min(plannedSeconds, max(elapsedByTimer, elapsedByClock))
+        let focusDurationSeconds: Int
+        if focusSessionEndsAt == nil {
+            focusDurationSeconds = elapsedByClock
+        } else {
+            focusDurationSeconds = min(plannedSeconds, max(elapsedByTimer, elapsedByClock))
+        }
 
         focusTask?.cancel()
         Task { [weak self] in
@@ -644,14 +672,30 @@ final class AppState: ObservableObject {
     /// Восстановление после kill: состояние в App Group + тот же `endsAt`, что у Live Activity.
     private func restoreFocusSessionIfNeeded() {
         guard let snapshot = storage.loadFocusSessionSnapshot() else { return }
-        guard snapshot.plannedSeconds > 0, snapshot.endsAt > snapshot.startedAt else {
+
+        if snapshot.endsAt == nil {
+            guard snapshot.plannedSeconds == 0 else {
+                storage.clearFocusSessionSnapshot()
+                return
+            }
+            isFocusSessionActive = true
+            focusSessionStartedAt = snapshot.startedAt
+            focusSessionPlannedSeconds = 0
+            focusSessionEndsAt = nil
+            focusRemainingSeconds = 0
+            focusTask?.cancel()
+            syncScreenTimeEnforcement(notifyOnUnlock: false)
+            return
+        }
+
+        guard let endsAt = snapshot.endsAt, snapshot.plannedSeconds > 0, endsAt > snapshot.startedAt else {
             storage.clearFocusSessionSnapshot()
             return
         }
         let now = Date()
-        if now >= snapshot.endsAt {
+        if now >= endsAt {
             storage.clearFocusSessionSnapshot()
-            let wallSeconds = max(0, Int(snapshot.endsAt.timeIntervalSince(snapshot.startedAt)))
+            let wallSeconds = max(0, Int(endsAt.timeIntervalSince(snapshot.startedAt)))
             let focusDurationSeconds = min(snapshot.plannedSeconds, wallSeconds)
             if focusDurationSeconds > 0 {
                 prependLedger(
@@ -669,8 +713,8 @@ final class AppState: ObservableObject {
         isFocusSessionActive = true
         focusSessionStartedAt = snapshot.startedAt
         focusSessionPlannedSeconds = snapshot.plannedSeconds
-        focusSessionEndsAt = snapshot.endsAt
-        focusRemainingSeconds = Self.focusRemainingSeconds(until: snapshot.endsAt, now: now)
+        focusSessionEndsAt = endsAt
+        focusRemainingSeconds = Self.focusRemainingSeconds(until: endsAt, now: now)
         startFocusCountdownTask()
     }
 
@@ -774,14 +818,20 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         do {
             let desired = try await remoteSyncService.fetchDesiredFocusState()
-            let localIsActive = isFocusSessionActive && (focusSessionEndsAt ?? .distantPast) > Date()
+            let localIsActive: Bool = {
+                guard isFocusSessionActive else { return false }
+                if let end = focusSessionEndsAt { return end > Date() }
+                return true
+            }()
             guard desired.shouldFocusActive != localIsActive else { return }
 
             if desired.shouldFocusActive {
                 if let seconds = desired.durationSeconds, seconds > 0 {
                     focusDurationMinutes = max(1, seconds / 60)
+                    startTimedFocusSession(totalSeconds: seconds)
+                } else {
+                    startIndefiniteFocusSession()
                 }
-                startFocusSession()
             } else {
                 endFocusSession()
             }
@@ -807,8 +857,10 @@ final class AppState: ObservableObject {
         case .startFocus:
             if let durationSeconds, durationSeconds > 0 {
                 focusDurationMinutes = max(1, durationSeconds / 60)
+                startTimedFocusSession(totalSeconds: durationSeconds)
+            } else {
+                startIndefiniteFocusSession()
             }
-            startFocusSession()
             notificationService.notify(
                 title: L10n.tr("remote.notification.title"),
                 body: L10n.tr("remote.notification.focus_started")
@@ -1338,10 +1390,6 @@ final class AppState: ObservableObject {
                 body: L10n.f("notification.balance.updated.body", L10n.duration(seconds: balance.availableSeconds))
             )
         }
-    }
-
-    var canStartFocusSession: Bool {
-        balance.availableSeconds >= focusDurationMinutes * 60
     }
 
     private func configureMainAppActivityTracking() {

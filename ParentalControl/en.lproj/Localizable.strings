@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "All apps you’ve added will be blocked so you can focus on your task.";
 "dashboard.focus.error.title" = "Cannot start focus";
 "dashboard.focus.insufficient.balance" = "Not enough time. Walk or do exercises to earn more.";
+"dashboard.blocking.title" = "Blocking";
+"dashboard.blocking.enabled" = "Blocking is on";
+"dashboard.blocking.disabled" = "Blocking is off";
+"dashboard.blocking.hint.enabled" = "Your parent turned on blocking for tracked apps.";
+"dashboard.blocking.hint.disabled" = "Tracked apps follow your earned time.";
+"dashboard.blocking.not_linked" = "Pair with a parent in Settings to see status.";
 
 "unit.minutes.short" = "%d min";
 "unit.minutes.abbrev" = "min";

@@ -54,8 +54,35 @@ enum StorageKey {
 /// Сохраняется в App Group, чтобы пережить kill приложения и совпадать с Live Activity по `endsAt`.
 struct FocusSessionSnapshot: Codable, Equatable {
     let startedAt: Date
-    let endsAt: Date
+    /// Для бессрочной блокировки родителя — `nil` (таймер и Live Activity не используются).
+    let endsAt: Date?
     let plannedSeconds: Int
+
+    enum CodingKeys: String, CodingKey {
+        case startedAt
+        case endsAt
+        case plannedSeconds
+    }
+
+    init(startedAt: Date, endsAt: Date?, plannedSeconds: Int) {
+        self.startedAt = startedAt
+        self.endsAt = endsAt
+        self.plannedSeconds = plannedSeconds
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startedAt = try c.decode(Date.self, forKey: .startedAt)
+        endsAt = try c.decodeIfPresent(Date.self, forKey: .endsAt)
+        plannedSeconds = try c.decodeIfPresent(Int.self, forKey: .plannedSeconds) ?? 0
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(startedAt, forKey: .startedAt)
+        try c.encodeIfPresent(endsAt, forKey: .endsAt)
+        try c.encode(plannedSeconds, forKey: .plannedSeconds)
+    }
 }
 
 struct DeviceActivityDebugSnapshot: Equatable {

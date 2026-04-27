@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "你添加的所有应用将被屏蔽，帮助你专注于任务。";
 "dashboard.focus.error.title" = "无法开始专注";
 "dashboard.focus.insufficient.balance" = "时间不够了。走走路或做运动来赚取更多时间吧。";
+"dashboard.blocking.title" = "Blocking";
+"dashboard.blocking.enabled" = "Blocking is on";
+"dashboard.blocking.disabled" = "Blocking is off";
+"dashboard.blocking.hint.enabled" = "Your parent turned on blocking for tracked apps.";
+"dashboard.blocking.hint.disabled" = "Tracked apps follow your earned time.";
+"dashboard.blocking.not_linked" = "Pair with a parent in Settings to see status.";
 
 "unit.minutes.short" = "%d分钟";
 "unit.minutes.abbrev" = "分钟";

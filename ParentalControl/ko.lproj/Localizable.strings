@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "추가한 모든 앱이 차단되어 작업에 집중할 수 있어요.";
 "dashboard.focus.error.title" = "집중을 시작할 수 없어요";
 "dashboard.focus.insufficient.balance" = "시간이 부족해요. 걷거나 운동해서 더 벌어보세요.";
+"dashboard.blocking.title" = "Blocking";
+"dashboard.blocking.enabled" = "Blocking is on";
+"dashboard.blocking.disabled" = "Blocking is off";
+"dashboard.blocking.hint.enabled" = "Your parent turned on blocking for tracked apps.";
+"dashboard.blocking.hint.disabled" = "Tracked apps follow your earned time.";
+"dashboard.blocking.not_linked" = "Pair with a parent in Settings to see status.";
 
 "unit.minutes.short" = "%d분";
 "unit.minutes.abbrev" = "분";
