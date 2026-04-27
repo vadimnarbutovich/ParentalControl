@@ -271,6 +271,7 @@
 "parent.dashboard.linked" = "Устройства связаны";
 "parent.dashboard.not_linked" = "Сначала свяжите устройства в Настройках";
 "parent.dashboard.focus_until" = "Фокус активен до %@";
+"parent.dashboard.focus_active_no_deadline" = "Фокус активен";
 "parent.dashboard.focus_inactive" = "Фокус-сессия у ребенка не активна";
 "parent.dashboard.state_syncing" = "Уточняем актуальное состояние устройства ребенка…";
 "parent.dashboard.syncing_button" = "Синхронизация...";

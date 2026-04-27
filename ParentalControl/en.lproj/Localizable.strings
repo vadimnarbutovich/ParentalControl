@@ -271,6 +271,7 @@
 "parent.dashboard.linked" = "Devices are linked";
 "parent.dashboard.not_linked" = "Link devices in Settings first";
 "parent.dashboard.focus_until" = "Focus active until %@";
+"parent.dashboard.focus_active_no_deadline" = "Focus is active";
 "parent.dashboard.focus_inactive" = "Child focus session is inactive";
 "parent.dashboard.state_syncing" = "Resolving current child device state…";
 "parent.dashboard.syncing_button" = "Syncing...";

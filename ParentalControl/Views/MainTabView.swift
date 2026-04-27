@@ -58,14 +58,23 @@ private struct ParentDashboardView: View {
     private var isCommandButtonEnabled: Bool {
         appState.pairingState?.isLinked == true &&
         !appState.remoteCommandInFlight &&
-        appState.isParentChildStateResolved
+        appState.parentResolvedFocusActive != nil
+    }
+
+    private var shouldShowDisabledVisualState: Bool {
+        appState.remoteCommandInFlight ||
+        appState.parentResolvedFocusActive == nil ||
+        appState.pairingState?.isLinked != true
     }
 
     private var commandButtonTitleKey: LocalizedStringKey {
-        if !appState.isParentChildStateResolved {
+        if appState.remoteCommandInFlight {
             return LocalizedStringKey("parent.dashboard.syncing_button")
         }
-        return appState.isRemoteChildFocusEffectivelyActive
+        if appState.parentResolvedFocusActive == nil {
+            return LocalizedStringKey("parent.dashboard.syncing_button")
+        }
+        return (appState.parentResolvedFocusActive ?? false)
             ? LocalizedStringKey("parent.dashboard.stop_focus")
             : LocalizedStringKey("parent.dashboard.start_focus")
     }
@@ -84,14 +93,17 @@ private struct ParentDashboardView: View {
                                  ? "parent.dashboard.linked"
                                  : "parent.dashboard.not_linked")
                                 .foregroundStyle(.secondary)
-                            if let endsAt = appState.remoteChildState.focusEndsAt, appState.isRemoteChildFocusEffectivelyActive {
+                            if let endsAt = appState.remoteChildState.focusEndsAt, (appState.parentResolvedFocusActive ?? false) {
                                 Text(L10n.f("parent.dashboard.focus_until", endsAt.formatted(date: .omitted, time: .shortened)))
+                                    .foregroundStyle(.white)
+                            } else if (appState.parentResolvedFocusActive ?? false) {
+                                Text("parent.dashboard.focus_active_no_deadline")
                                     .foregroundStyle(.white)
                             } else {
                                 Text("parent.dashboard.focus_inactive")
                                     .foregroundStyle(.secondary)
                             }
-                            if !appState.isParentChildStateResolved, appState.pairingState?.isLinked == true {
+                            if appState.parentResolvedFocusActive == nil, appState.pairingState?.isLinked == true {
                                 Text("parent.dashboard.state_syncing")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
@@ -145,17 +157,17 @@ private struct ParentDashboardView: View {
                         .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
 
                         Button(commandButtonTitleKey) {
-                            let shouldStartFocus = !appState.isRemoteChildFocusEffectivelyActive
+                            let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
                             Task { await appState.sendParentFocusCommand(start: shouldStartFocus) }
                         }
                         .buttonStyle(
                             NeonPrimaryButtonStyle(
-                                tint: isCommandButtonEnabled
-                                    ? (appState.isRemoteChildFocusEffectivelyActive ? AppTheme.neonBlue : AppTheme.neonGreen)
-                                    : .gray
+                                tint: shouldShowDisabledVisualState
+                                    ? .gray
+                                    : ((appState.parentResolvedFocusActive ?? false) ? AppTheme.neonBlue : AppTheme.neonGreen)
                             )
                         )
-                        .opacity(isCommandButtonEnabled ? 1 : 0.65)
+                        .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
                         .disabled(!isCommandButtonEnabled)
                     }
                     .padding()
