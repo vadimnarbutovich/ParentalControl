@@ -42,3 +42,9 @@ XcodeBuild/
 
 # Local clone of the marketing website repo (should not be committed to the app repo)
 Website/
+
+## Supabase CLI (служебные файлы — не коммитим, но код функций/миграций коммитим)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+supabase/.env.local

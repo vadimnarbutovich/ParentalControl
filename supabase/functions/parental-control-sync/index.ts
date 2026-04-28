@@ -951,17 +951,27 @@ async function sendApnsAlert(
   const auth = await apnsAuthHeaders();
   const token = tokenRaw.replace(/\s+/g, "");
   const localized = commandLocalizedAlert(commandType, durationSeconds);
-  const payload: Record<string, unknown> = {
-    aps: {
-      alert: {
-        title: localized.title,
-        body: localized.body,
-      },
-      sound: "default",
-      "mutable-content": 1,
-      "content-available": 1,
-      "interruption-level": "time-sensitive",
+  // Уровень приоритета визуальной части. Для request_location используем `passive` —
+  // ребёнок не видит баннер на Lock Screen и не слышит звук, но пробуждение приложения,
+  // запуск NSE и доставка идут АБСОЛЮТНО ТАК ЖЕ как у time-sensitive: APNs обрабатывает
+  // alert с priority=10 одинаково независимо от interruption-level. Это поле влияет
+  // только на визуальное представление в iOS.
+  const isSilentCommand = commandType === "request_location";
+  const interruptionLevel = isSilentCommand ? "passive" : "time-sensitive";
+  const aps: Record<string, unknown> = {
+    alert: {
+      title: localized.title,
+      body: localized.body,
     },
+    "mutable-content": 1,
+    "content-available": 1,
+    "interruption-level": interruptionLevel,
+  };
+  if (!isSilentCommand) {
+    aps.sound = "default";
+  }
+  const payload: Record<string, unknown> = {
+    aps,
     command_id: commandID,
     command_type: commandType,
     duration_seconds: durationSeconds,
