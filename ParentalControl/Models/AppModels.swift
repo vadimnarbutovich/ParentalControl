@@ -227,6 +227,19 @@ enum RemoteFocusCommandType: String, Codable {
     case endFocus = "end_focus"
     case resetEarnedBalance = "reset_earned_balance"
     case addEarnedSeconds = "add_earned_seconds"
+    /// Parent → child: please capture a fresh GPS fix and push it back to the server.
+    /// Triggered manually from the parent's Map tab via the "Refresh location" button.
+    case requestLocation = "request_location"
+}
+
+/// Snapshot of the child device's last known GPS position. Stored on the backend in
+/// `child_location_state` and exposed to the parent via the Map tab.
+struct ChildLocationSnapshot: Codable, Equatable {
+    let latitude: Double
+    let longitude: Double
+    let horizontalAccuracy: Double?
+    let capturedAt: Date
+    let updatedAt: Date
 }
 
 enum RemoteFocusCommandStatus: String, Codable {
