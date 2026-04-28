@@ -727,6 +727,37 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Awaitable entry point used by `AppDelegate.didReceiveRemoteNotification` and `willPresent`.
+    /// Drains the App Group queue (commands captured by NSE while we were suspended) and
+    /// applies the freshly-arrived payload. Then performs a full backend sync so we don't
+    /// miss anything iOS may have throttled. Returns only after work is finished, allowing
+    /// iOS to keep the app alive in the background until commands are acked to the backend.
+    func applyAndDrainRemoteCommandsIfNeeded(initialPayload: [AnyHashable: Any]?) async {
+        // 1) Drain App Group queue first — these are commands NSE captured while we were suspended.
+        let pending = storage.drainPendingRemoteCommands()
+        for item in pending {
+            guard let uuid = UUID(uuidString: item.commandID) else { continue }
+            let type = RemoteFocusCommandType(rawValue: item.commandType) ?? .startFocus
+            await applyRemoteCommandIfNeeded(id: uuid, type: type, durationSeconds: item.durationSeconds)
+        }
+
+        // 2) Apply the freshly-arrived payload (idempotent via lastHandledRemoteCommandID).
+        if let userInfo = initialPayload,
+           let commandIDRaw = userInfo["command_id"] as? String,
+           let commandID = UUID(uuidString: commandIDRaw) {
+            let commandTypeRaw = (userInfo["command_type"] as? String) ?? ""
+            let commandType = RemoteFocusCommandType(rawValue: commandTypeRaw) ?? .startFocus
+            let durationSeconds = userInfo["duration_seconds"] as? Int
+            await applyRemoteCommandIfNeeded(id: commandID, type: commandType, durationSeconds: durationSeconds)
+        }
+
+        // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
+        if deviceRole == .child {
+            await syncChildWithDesiredStateIfNeeded()
+            await processPendingRemoteCommandsIfNeeded()
+        }
+    }
+
     private func bootstrapRemoteIfNeeded() async {
         guard let role = deviceRole else { return }
         do {
@@ -834,6 +865,10 @@ final class AppState: ObservableObject {
             try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
             return
         }
+        // Visible banner is now produced by the APNs alert push itself (formed on the backend
+        // with localized title/body via `commandLocalizedAlert`). We must NOT post a local
+        // UNUserNotification here — otherwise the user gets two notifications for one command:
+        // one from the server push and another from this local notify call.
         switch type {
         case .startFocus:
             if let durationSeconds, durationSeconds > 0 {
@@ -842,22 +877,10 @@ final class AppState: ObservableObject {
             } else {
                 startIndefiniteFocusSession()
             }
-            notificationService.notify(
-                title: L10n.tr("remote.notification.title"),
-                body: L10n.tr("remote.notification.focus_started")
-            )
         case .endFocus:
             endFocusSession()
-            notificationService.notify(
-                title: L10n.tr("remote.notification.title"),
-                body: L10n.tr("remote.notification.focus_ended")
-            )
         case .resetEarnedBalance:
             applyParentResetEarnedBalance()
-            notificationService.notify(
-                title: L10n.tr("remote.notification.title"),
-                body: L10n.tr("remote.notification.time_reset")
-            )
         case .addEarnedSeconds:
             let secondsToAdd = max(0, durationSeconds ?? 0)
             if secondsToAdd > 0 {
@@ -865,10 +888,6 @@ final class AppState: ObservableObject {
                     secondsToAdd,
                     source: .parentAdjustment,
                     note: L10n.tr("ledger.parent.add_time")
-                )
-                notificationService.notify(
-                    title: L10n.tr("remote.notification.title"),
-                    body: L10n.f("remote.notification.time_added", L10n.duration(seconds: secondsToAdd))
                 )
             }
         }
@@ -1365,8 +1384,9 @@ final class AppState: ObservableObject {
             permissionBannerSuppressedAfterCTA = false
             await refreshStepsAndRewards()
             await bootstrapRemoteIfNeeded()
-            await syncChildWithDesiredStateIfNeeded()
-            await processPendingRemoteCommandsIfNeeded()
+            // Drain commands captured by NSE / earlier push handlers while suspended,
+            // before pulling fresh state — ensures the latest parent intent wins.
+            await applyAndDrainRemoteCommandsIfNeeded(initialPayload: nil)
             await refreshParentChildState()
         }
     }

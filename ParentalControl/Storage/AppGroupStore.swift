@@ -49,6 +49,18 @@ enum StorageKey {
     static let deviceSecret = "parentalcontrol.deviceSecret"
     static let apnsToken = "parentalcontrol.apnsToken"
     static let lastHandledRemoteCommandID = "parentalcontrol.lastHandledRemoteCommandID"
+    /// Queue of remote commands captured by the Notification Service Extension while the main app was suspended.
+    static let pendingRemoteCommandQueue = "parentalcontrol.pendingRemoteCommandQueue"
+}
+
+/// Lightweight payload captured by either the main app or the Notification Service Extension
+/// when an APNs push for a parental command arrives. Persisted in App Group so the main app
+/// can drain and apply it on next foreground/wake cycle.
+struct PendingRemoteCommand: Codable, Equatable {
+    let commandID: String
+    let commandType: String
+    let durationSeconds: Int?
+    let receivedAt: Date
 }
 
 /// Сохраняется в App Group, чтобы пережить kill приложения и совпадать с Live Activity по `endsAt`.
@@ -379,6 +391,48 @@ final class AppGroupStore {
 
     func saveLastHandledRemoteCommandID(_ value: String?) {
         store.set(value, forKey: StorageKey.lastHandledRemoteCommandID)
+    }
+
+    /// Persistently appends a captured remote command to the App Group queue.
+    /// Called from the Notification Service Extension and as a redundancy from the main app's
+    /// push handlers, so the next foreground cycle of the main app can drain unsynced commands.
+    /// Idempotent by `commandID`: duplicates are skipped, queue is capped at 32 items.
+    func enqueuePendingRemoteCommand(_ command: PendingRemoteCommand) {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+        defaults.synchronize()
+        var queue: [PendingRemoteCommand]
+        if let data = defaults.data(forKey: StorageKey.pendingRemoteCommandQueue),
+           let decoded = try? decoder.decode([PendingRemoteCommand].self, from: data) {
+            queue = decoded
+        } else {
+            queue = []
+        }
+        if queue.contains(where: { $0.commandID == command.commandID }) {
+            return
+        }
+        queue.append(command)
+        if queue.count > 32 {
+            queue = Array(queue.suffix(32))
+        }
+        if let encoded = try? encoder.encode(queue) {
+            defaults.set(encoded, forKey: StorageKey.pendingRemoteCommandQueue)
+            defaults.synchronize()
+        }
+    }
+
+    /// Reads and clears all queued remote commands captured by NSE/main app.
+    /// The main app drains this queue on every foreground cycle and on every push receipt
+    /// so commands that arrived while the app was suspended are applied as soon as we wake up.
+    func drainPendingRemoteCommands() -> [PendingRemoteCommand] {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return [] }
+        defaults.synchronize()
+        guard let data = defaults.data(forKey: StorageKey.pendingRemoteCommandQueue),
+              let decoded = try? decoder.decode([PendingRemoteCommand].self, from: data) else {
+            return []
+        }
+        defaults.removeObject(forKey: StorageKey.pendingRemoteCommandQueue)
+        defaults.synchronize()
+        return decoded
     }
 
     func loadDeviceActivityDebugSnapshot() -> DeviceActivityDebugSnapshot {

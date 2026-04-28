@@ -118,8 +118,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        // Persist into App Group so the command is not lost even if iOS suspends us
+        // before the handler completes. Drained on next foreground cycle as a safety net.
+        Self.persistRemoteCommandToAppGroupIfNeeded(userInfo, storage: storage)
+
+        // Bridge to AppState immediately. NotificationCenter delivery is synchronous on the main thread,
+        // so the AppState observer fires before we return — giving iOS the signal that work is in progress
+        // and starting the apply pipeline as soon as possible.
         NotificationCenter.default.post(name: AppState.didReceiveRemotePayloadNotification, object: userInfo)
-        completionHandler(.newData)
+
+        // Give iOS up to ~25s to let AppState finish applying the command and ack it to the backend.
+        // We must call completionHandler eventually; if we return too early iOS may suspend before apply.
+        Task { @MainActor [weak self] in
+            await self?.appState?.applyAndDrainRemoteCommandsIfNeeded(initialPayload: userInfo)
+            completionHandler(.newData)
+        }
     }
 
     func userNotificationCenter(
@@ -127,10 +140,31 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let userInfo = notification.request.content.userInfo
+        Self.persistRemoteCommandToAppGroupIfNeeded(userInfo, storage: storage)
         NotificationCenter.default.post(
             name: AppState.didReceiveRemotePayloadNotification,
-            object: notification.request.content.userInfo
+            object: userInfo
         )
-        completionHandler([.banner, .sound])
+        Task { @MainActor [weak self] in
+            await self?.appState?.applyAndDrainRemoteCommandsIfNeeded(initialPayload: userInfo)
+            // banner + sound for visible feedback (Kidsee-style: parent sees command was delivered).
+            completionHandler([.banner, .sound, .list])
+        }
+    }
+
+    /// Best-effort persistence of an incoming remote-command payload into App Group.
+    /// Used both by the main app and (in the future) by a Notification Service Extension.
+    private static func persistRemoteCommandToAppGroupIfNeeded(_ userInfo: [AnyHashable: Any], storage: AppGroupStore) {
+        guard let commandID = userInfo["command_id"] as? String, !commandID.isEmpty else { return }
+        let commandType = (userInfo["command_type"] as? String) ?? ""
+        let duration = userInfo["duration_seconds"] as? Int
+        let pending = PendingRemoteCommand(
+            commandID: commandID,
+            commandType: commandType,
+            durationSeconds: duration,
+            receivedAt: Date()
+        )
+        storage.enqueuePendingRemoteCommand(pending)
     }
 }
