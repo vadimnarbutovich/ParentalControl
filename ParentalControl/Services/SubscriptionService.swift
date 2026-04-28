@@ -5,7 +5,7 @@ import Security
 
 @MainActor
 final class SubscriptionService: ObservableObject {
-    @Published private(set) var isPro: Bool = false
+    @Published private(set) var isPro: Bool = true
     /// `true` после первого получения `CustomerInfo` из RevenueCat (кэш, сеть или стрим), либо если SDK не настроен — чтобы не мигал Pro-бейдж до проверки подписки.
     @Published private(set) var isSubscriptionStatusKnown: Bool = false
     @Published private(set) var currentOffering: Offering?
@@ -255,7 +255,7 @@ final class SubscriptionService: ObservableObject {
     }
 
     private func updatePro(from info: CustomerInfo) {
-        isPro = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+//        isPro = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
         isSubscriptionStatusKnown = true
     }
 

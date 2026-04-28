@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "Все добавленные приложения будут заблокированы, чтоб сфокусироваться на задаче.";
 "dashboard.focus.error.title" = "Не удалось запустить фокус";
 "dashboard.focus.insufficient.balance" = "Недостаточно времени. Пройдите шаги или сделайте упражнения.";
+"dashboard.blocking.title" = "Блокировка";
+"dashboard.blocking.enabled" = "Блокировка включена";
+"dashboard.blocking.disabled" = "Блокировка отключена";
+"dashboard.blocking.hint.enabled" = "Родитель включил блокировку отслеживаемых приложений.";
+"dashboard.blocking.hint.disabled" = "Доступ к приложениям зависит от заработанного времени.";
+"dashboard.blocking.not_linked" = "Свяжите устройство с родителем в Настройках, чтобы видеть статус.";
 
 "unit.minutes.short" = "%d мин";
 "unit.minutes.abbrev" = "мин";
@@ -170,6 +176,8 @@
 "ledger.steps" = "Начислено за шаги";
 "ledger.exercise" = "Начислено за %@";
 "ledger.focus.session" = "Фокус-сессия %d мин";
+"ledger.parent.take_all_time" = "Родитель забрал все заработанное время";
+"ledger.parent.add_time" = "Родитель добавил время";
 
 "shield.title" = "Нужно заработать минуты";
 "shield.subtitle" = "Сделайте шаги или упражнения, чтобы открыть приложение.";
@@ -271,11 +279,16 @@
 "parent.dashboard.linked" = "Устройства связаны";
 "parent.dashboard.not_linked" = "Сначала свяжите устройства в Настройках";
 "parent.dashboard.focus_until" = "Фокус активен до %@";
+"parent.dashboard.focus_active_no_deadline" = "Фокус активен";
 "parent.dashboard.focus_inactive" = "Фокус-сессия у ребенка не активна";
 "parent.dashboard.state_syncing" = "Уточняем актуальное состояние устройства ребенка…";
+"parent.dashboard.child_available" = "Доступно у ребенка: %@";
+"parent.dashboard.child_available_syncing" = "Уточняем баланс ребенка…";
 "parent.dashboard.syncing_button" = "Синхронизация...";
 "parent.dashboard.start_focus" = "Заблокировать сейчас";
 "parent.dashboard.stop_focus" = "Разблокировать сейчас";
+"parent.dashboard.take_all_time" = "Забрать все время";
+"parent.dashboard.add_one_minute" = "Добавить одну минуту";
 "parent.dashboard.command_id" = "Команда: %@";
 "parent.dashboard.command_status" = "Статус: %@";
 "parent.dashboard.command_latency" = "Задержка применения: %d сек";
@@ -311,3 +324,5 @@
 "remote.notification.title" = "ParentalControl";
 "remote.notification.focus_started" = "Родитель включил фокус-сессию";
 "remote.notification.focus_ended" = "Родитель отключил фокус-сессию";
+"remote.notification.time_reset" = "Родитель обнулил заработанное время";
+"remote.notification.time_added" = "Родитель добавил %@";

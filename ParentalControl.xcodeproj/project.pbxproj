@@ -21,6 +21,7 @@
 		D11C11022F78000100B0C0DE /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D10AB06A2F647BB500B006EF /* SwiftUI.framework */; };
 		D1AE61C12F740B5C00C39708 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = D1RC00022F5737A7005689EB /* RevenueCat */; };
 		D1AM00032F580001005689EB /* AppMetricaCore in Frameworks */ = {isa = PBXBuildFile; productRef = D1AM00022F580001005689EB /* AppMetricaCore */; };
+		D1CF8F672F9FF5900077ABB8 /* NotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D1E17B5C2F859BF000B76264 /* DeviceActivityReportExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -60,6 +61,13 @@
 			remoteGlobalIDString = D11C11112F78000100B0C0DE;
 			remoteInfo = DeviceActivityReportExtension;
 		};
+		D1CF8F652F9FF5900077ABB8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D1A2661A2F5737A7005689EB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D1CF8F5F2F9FF5900077ABB8;
+			remoteInfo = NotificationServiceExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -71,6 +79,7 @@
 			files = (
 				D10229652F586576001A8F2B /* ShieldConfigurationExtension.appex in Embed Foundation Extensions */,
 				D10AB07C2F647BB600B006EF /* ParentalControlWidgetsExtension.appex in Embed Foundation Extensions */,
+				D1CF8F672F9FF5900077ABB8 /* NotificationServiceExtension.appex in Embed Foundation Extensions */,
 				D102294F2F586559001A8F2B /* DeviceActivityMonitorExtension.appex in Embed Foundation Extensions */,
 				D10229772F5865A1001A8F2B /* ShieldActionExtension.appex in Embed Foundation Extensions */,
 			);
@@ -102,6 +111,7 @@
 		D10AB06A2F647BB500B006EF /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DeviceActivityReportExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1A266222F5737A7005689EB /* ParentalControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ParentalControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -146,6 +156,13 @@
 				Info.plist,
 			);
 			target = D1A266212F5737A7005689EB /* ParentalControl */;
+		};
+		D1CF8F6B2F9FF5900077ABB8 /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D1CF8F5F2F9FF5900077ABB8 /* NotificationServiceExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -196,6 +213,14 @@
 				D19644902F96BC0700ED8EAA /* Exceptions for "ParentalControl" folder in "ParentalControl" target */,
 			);
 			path = ParentalControl;
+			sourceTree = "<group>";
+		};
+		D1CF8F612F9FF5900077ABB8 /* NotificationServiceExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D1CF8F6B2F9FF5900077ABB8 /* Exceptions for "NotificationServiceExtension" folder in "NotificationServiceExtension" target */,
+			);
+			path = NotificationServiceExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -253,6 +278,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D1CF8F5D2F9FF5900077ABB8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -277,6 +309,7 @@
 				D102295E2F586576001A8F2B /* ShieldConfigurationExtension */,
 				D10229702F5865A1001A8F2B /* ShieldActionExtension */,
 				D10AB06C2F647BB500B006EF /* ParentalControlWidgets */,
+				D1CF8F612F9FF5900077ABB8 /* NotificationServiceExtension */,
 				D10229452F586559001A8F2B /* Frameworks */,
 				D1A266232F5737A7005689EB /* Products */,
 			);
@@ -291,6 +324,7 @@
 				D10229592F586576001A8F2B /* ShieldConfigurationExtension.appex */,
 				D102296E2F5865A1001A8F2B /* ShieldActionExtension.appex */,
 				D10AB0672F647BB500B006EF /* ParentalControlWidgetsExtension.appex */,
+				D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -426,6 +460,7 @@
 				D10229642F586576001A8F2B /* PBXTargetDependency */,
 				D10229762F5865A1001A8F2B /* PBXTargetDependency */,
 				D10AB07B2F647BB600B006EF /* PBXTargetDependency */,
+				D1CF8F662F9FF5900077ABB8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D1A266242F5737A7005689EB /* ParentalControl */,
@@ -438,6 +473,28 @@
 			productName = ParentalControl;
 			productReference = D1A266222F5737A7005689EB /* ParentalControl.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D1CF8F5F2F9FF5900077ABB8 /* NotificationServiceExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1CF8F6A2F9FF5900077ABB8 /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */;
+			buildPhases = (
+				D1CF8F5C2F9FF5900077ABB8 /* Sources */,
+				D1CF8F5D2F9FF5900077ABB8 /* Frameworks */,
+				D1CF8F5E2F9FF5900077ABB8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D1CF8F612F9FF5900077ABB8 /* NotificationServiceExtension */,
+			);
+			name = NotificationServiceExtension;
+			packageProductDependencies = (
+			);
+			productName = NotificationServiceExtension;
+			productReference = D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -466,6 +523,9 @@
 					};
 					D1A266212F5737A7005689EB = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					D1CF8F5F2F9FF5900077ABB8 = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -503,6 +563,7 @@
 				D10229582F586576001A8F2B /* ShieldConfigurationExtension */,
 				D102296D2F5865A1001A8F2B /* ShieldActionExtension */,
 				D10AB0662F647BB500B006EF /* ParentalControlWidgetsExtension */,
+				D1CF8F5F2F9FF5900077ABB8 /* NotificationServiceExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -544,6 +605,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D1A266202F5737A7005689EB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1CF8F5E2F9FF5900077ABB8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -595,6 +663,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D1CF8F5C2F9FF5900077ABB8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -622,6 +697,11 @@
 			isa = PBXTargetDependency;
 			target = D11C11112F78000100B0C0DE /* DeviceActivityReportExtension */;
 			targetProxy = D11C11052F78000100B0C0DE /* PBXContainerItemProxy */;
+		};
+		D1CF8F662F9FF5900077ABB8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D1CF8F5F2F9FF5900077ABB8 /* NotificationServiceExtension */;
+			targetProxy = D1CF8F652F9FF5900077ABB8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1068,6 +1148,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ParentalControl/Info.plist;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
@@ -1076,9 +1157,7 @@
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = (
-					"remote-notification",
-				);
+				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1119,6 +1198,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ParentalControl/Info.plist;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
@@ -1127,9 +1207,7 @@
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = (
-					"remote-notification",
-				);
+				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1153,6 +1231,68 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		D1CF8F682F9FF5900077ABB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotificationServiceExtension/NotificationServiceExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L786WC7SM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotificationServiceExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotificationServiceExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.NotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D1CF8F692F9FF5900077ABB8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotificationServiceExtension/NotificationServiceExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2L786WC7SM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NotificationServiceExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotificationServiceExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.NotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1218,6 +1358,15 @@
 			buildConfigurations = (
 				D1A266332F5737A8005689EB /* Debug */,
 				D1A266342F5737A8005689EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D1CF8F6A2F9FF5900077ABB8 /* Build configuration list for PBXNativeTarget "NotificationServiceExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D1CF8F682F9FF5900077ABB8 /* Debug */,
+				D1CF8F692F9FF5900077ABB8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

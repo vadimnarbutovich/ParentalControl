@@ -8,11 +8,6 @@ struct DashboardView: View {
     @State private var previousAvailableSeconds: Int = 0
     @State private var isStepsInfoPresented = false
     @State private var showPaywall = false
-    #if DEBUG && !HIDE_DEBUG_UI
-    private let focusOptions = [1, 5, 10, 15, 25, 30, 45, 60, 90, 120]
-    #else
-    private let focusOptions = [5, 10, 15, 25, 30, 45, 60, 90, 120]
-    #endif
     private let ringBalanceCapMinutes = 240
 
     var body: some View {
@@ -24,7 +19,7 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         balanceCard(daily: daily)
                         earnMinutesSection(daily: daily)
-                        focusCard
+                        parentBlockingStatusCard
 #if DEBUG && !HIDE_DEBUG_UI
                         testingCard
 #endif
@@ -92,19 +87,6 @@ struct DashboardView: View {
             .sheet(item: $selectedExercise) { type in
                 ExerciseSessionView(type: type)
                     .environmentObject(appState)
-            }
-            .alert(
-                L10n.tr("dashboard.focus.error.title"),
-                isPresented: Binding(
-                    get: { appState.focusStartError != nil },
-                    set: { if !$0 { appState.clearFocusStartError() } }
-                )
-            ) {
-                Button("common.ok", role: .cancel) {
-                    appState.clearFocusStartError()
-                }
-            } message: {
-                Text(appState.focusStartError ?? "")
             }
         }
     }
@@ -232,78 +214,37 @@ struct DashboardView: View {
         }
     }
 
-    private var focusCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("dashboard.focus.title", systemImage: "timer")
+    private var parentBlockingStatusCard: some View {
+        let linked = appState.pairingState?.isLinked == true
+        let blocking = appState.isFocusSessionActive
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Label("dashboard.blocking.title", systemImage: "lock.shield")
                 .font(.headline.bold())
                 .foregroundStyle(.white.opacity(0.9))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(focusOptions, id: \.self) { option in
-                        Button {
-                            appState.focusDurationMinutes = option
-                        } label: {
-                            Text(L10n.f("unit.minutes.compact", option))
-                        }
-                        .buttonStyle(NeonChipButtonStyle(
-                            isActive: appState.focusDurationMinutes == option,
-                            tint: AppTheme.neonGreen,
-                            fillHorizontally: false
-                        ))
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-
-            Button {
-                if appState.isFocusSessionActive {
-                    AppAnalytics.report("dashboard_focus_control_tap", parameters: ["action": "end"])
-                    appState.endFocusSession()
-                } else {
-                    AppAnalytics.report(
-                        "dashboard_focus_control_tap",
-                        parameters: [
-                            "action": "start",
-                            "duration_minutes": appState.focusDurationMinutes,
-                        ]
-                    )
-                    appState.startFocusSession()
-                }
-            } label: {
-                Text(appState.isFocusSessionActive ? "dashboard.focus.end" : "dashboard.focus.start")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
-
-            if appState.isFocusSessionActive {
-                Text(countdownText(from: appState.focusRemainingSeconds))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                Text("dashboard.focus.remaining")
+            if !linked {
+                Text("dashboard.blocking.not_linked")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if blocking {
+                Text("dashboard.blocking.enabled")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(AppTheme.neonOrange)
+                Text("dashboard.blocking.hint.enabled")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                if let endsAt = appState.focusSessionEndsAt {
-                    Text(L10n.f("dashboard.session.until", endsAt.formatted(date: .omitted, time: .shortened)))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
             } else {
-                Text("dashboard.lock.restore")
+                Text("dashboard.blocking.disabled")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(AppTheme.neonGreen)
+                Text("dashboard.blocking.hint.disabled")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .padding()
         .glassCard(cornerRadius: 22)
-        #if !DEBUG || HIDE_DEBUG_UI
-        .onAppear {
-            if appState.focusDurationMinutes == 1 {
-                appState.focusDurationMinutes = 5
-            }
-        }
-        #endif
     }
 
     #if DEBUG && !HIDE_DEBUG_UI
@@ -427,13 +368,6 @@ struct DashboardView: View {
                 rewardToast = nil
             }
         }
-    }
-
-    private func countdownText(from seconds: Int) -> String {
-        let normalized = max(0, seconds)
-        let minutes = normalized / 60
-        let secs = normalized % 60
-        return String(format: "%02d:%02d", minutes, secs)
     }
 }
 

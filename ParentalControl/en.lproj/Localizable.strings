@@ -39,6 +39,12 @@
 "dashboard.lock.restore" = "All apps you’ve added will be blocked so you can focus on your task.";
 "dashboard.focus.error.title" = "Cannot start focus";
 "dashboard.focus.insufficient.balance" = "Not enough time. Walk or do exercises to earn more.";
+"dashboard.blocking.title" = "Blocking";
+"dashboard.blocking.enabled" = "Blocking is on";
+"dashboard.blocking.disabled" = "Blocking is off";
+"dashboard.blocking.hint.enabled" = "Your parent turned on blocking for tracked apps.";
+"dashboard.blocking.hint.disabled" = "Tracked apps follow your earned time.";
+"dashboard.blocking.not_linked" = "Pair with a parent in Settings to see status.";
 
 "unit.minutes.short" = "%d min";
 "unit.minutes.abbrev" = "min";
@@ -170,6 +176,8 @@
 "ledger.steps" = "Earned from steps";
 "ledger.exercise" = "Earned from %@";
 "ledger.focus.session" = "Focus session %d min";
+"ledger.parent.take_all_time" = "Parent took all earned time";
+"ledger.parent.add_time" = "Parent added time";
 
 "shield.title" = "Earn minutes to continue";
 "shield.subtitle" = "Do steps or exercises to unlock this app.";
@@ -271,11 +279,16 @@
 "parent.dashboard.linked" = "Devices are linked";
 "parent.dashboard.not_linked" = "Link devices in Settings first";
 "parent.dashboard.focus_until" = "Focus active until %@";
+"parent.dashboard.focus_active_no_deadline" = "Focus is active";
 "parent.dashboard.focus_inactive" = "Child focus session is inactive";
 "parent.dashboard.state_syncing" = "Resolving current child device state…";
+"parent.dashboard.child_available" = "Child available time: %@";
+"parent.dashboard.child_available_syncing" = "Resolving child balance…";
 "parent.dashboard.syncing_button" = "Syncing...";
 "parent.dashboard.start_focus" = "Block now";
 "parent.dashboard.stop_focus" = "Unblock now";
+"parent.dashboard.take_all_time" = "Take all time";
+"parent.dashboard.add_one_minute" = "Add one minute";
 "parent.dashboard.command_id" = "Command: %@";
 "parent.dashboard.command_status" = "Status: %@";
 "parent.dashboard.command_latency" = "Apply latency: %d sec";
@@ -311,3 +324,5 @@
 "remote.notification.title" = "ParentalControl";
 "remote.notification.focus_started" = "Parent started focus session";
 "remote.notification.focus_ended" = "Parent ended focus session";
+"remote.notification.time_reset" = "Parent reset earned time";
+"remote.notification.time_added" = "Parent added %@";
