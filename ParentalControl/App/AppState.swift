@@ -1,9 +1,13 @@
 import AVFoundation
 import Combine
+import CoreLocation
 import FamilyControls
 import Foundation
 import HealthKit
+import os.log
 import UIKit
+
+private let appStateLog = OSLog(subsystem: "mycompny.ParentalControl", category: "AppState")
 
 enum PermissionReminderKind: Hashable {
     case health
@@ -75,6 +79,15 @@ final class AppState: ObservableObject {
     @Published private(set) var parentChildAvailableSeconds: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var remoteStatusMessage: String?
+    /// Последняя известная координата ребёнка. Хранится также в App Group, чтобы
+    /// карта моментально показывала «вчерашнюю» точку до того, как сервер ответит.
+    @Published private(set) var childLocationSnapshot: ChildLocationSnapshot?
+    /// Флаг для UI карты: показываем спиннер, пока ждём ответ ребёнка.
+    @Published private(set) var isParentRefreshingChildLocation = false
+    /// Сообщение об ошибке последнего refresh — отображается на карте.
+    @Published private(set) var parentLocationStatusMessage: String?
+    /// Локально на ребёнке — статус разрешения геолокации (для онбординга/настроек).
+    @Published private(set) var childLocationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Пока `false`, баннер разрешений не показываем — избегаем кадра с устаревшим `isHealthAuthorized` до async-обновления.
@@ -149,6 +162,7 @@ final class AppState: ObservableObject {
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
+    private let locationService: LocationProviding
     private var focusTask: Task<Void, Never>?
     private var focusSessionStartedAt: Date?
     private var focusSessionPlannedSeconds: Int = 0
@@ -166,12 +180,14 @@ final class AppState: ObservableObject {
         let notificationService: Notifying = NotificationService()
         let cameraService = CameraCaptureService()
         let remoteSyncService = ParentalRemoteSyncService(storage: storage)
+        let locationService: LocationProviding = LocationService()
 
         self.storage = storage
         self.healthService = healthService
         self.notificationService = notificationService
         self.cameraService = cameraService
         self.remoteSyncService = remoteSyncService
+        self.locationService = locationService
         self.screenTimeService = ScreenTimeService(appStore: storage)
         self.balance = storage.loadBalance()
         self.settings = storage.loadSettings()
@@ -860,6 +876,134 @@ final class AppState: ObservableObject {
         }
     }
 
+    // MARK: - Child location
+
+    /// Запросить у пользователя‑ребёнка разрешение When-in-Use. Вызывается из онбординга.
+    /// Возвращает финальный статус. UI на онбординге может на его основе решать показывать ли алерт.
+    @discardableResult
+    func requestChildLocationPermissionIfNeeded() async -> CLAuthorizationStatus {
+        let status = await locationService.requestWhenInUseAuthorization()
+        childLocationAuthorizationStatus = status
+        return status
+    }
+
+    /// Запросить апгрейд до `Always`. Должен вызываться ПОСЛЕ того, как пользователь выдал
+    /// `When-in-Use` — это требование Apple. Возвращает финальный статус.
+    /// На устройстве ребёнка `Always` критически важен: он позволяет снимать GPS-fix по push'у,
+    /// даже когда приложение свёрнуто или выгружено из памяти. Расход батареи минимальный — мы
+    /// включаем фоновые апдейты только на момент одного capture.
+    @discardableResult
+    func requestChildLocationAlwaysAuthorizationIfNeeded() async -> CLAuthorizationStatus {
+        let status = await locationService.requestAlwaysAuthorization()
+        childLocationAuthorizationStatus = status
+        return status
+    }
+
+    /// Обновить значение `childLocationAuthorizationStatus` (нужно после возврата из Settings).
+    func refreshChildLocationAuthorizationStatus() {
+        childLocationAuthorizationStatus = locationService.authorizationStatus
+    }
+
+    /// Пользователь‑родитель нажал «Обновить местоположение» на вкладке Карта.
+    /// Шлёт ребёнку команду `request_location` (alert push) и пуллит свежую координату из БД.
+    func refreshChildLocationFromParent() async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        isParentRefreshingChildLocation = true
+        parentLocationStatusMessage = nil
+        defer { isParentRefreshingChildLocation = false }
+
+        // Запоминаем «базовый» момент — фиксацию ДО отправки команды считаем устаревшей даже
+        // если её timestamp совпадает с уже сохранённым (на случай повторного нажатия в ту же секунду).
+        let requestSentAt = Date()
+        let baselineCapturedAt = childLocationSnapshot?.capturedAt
+
+        do {
+            try await remoteSyncService.requestChildLocation()
+        } catch {
+            parentLocationStatusMessage = error.localizedDescription
+            return
+        }
+
+        // Пуллим до 30 секунд — за это время push должен дойти (alert priority=10),
+        // ребёнок при When-in-Use получит до ~30с фонового времени, снимет первый GPS fix и зальёт его.
+        let pollInterval: UInt64 = 1_500_000_000
+        let deadline = Date().addingTimeInterval(30)
+        while Date() < deadline {
+            try? await Task.sleep(nanoseconds: pollInterval)
+            if Task.isCancelled { return }
+            do {
+                if let snapshot = try await remoteSyncService.fetchChildLocation() {
+                    let isNewer = snapshot.capturedAt > (baselineCapturedAt ?? .distantPast)
+                    let isFreshAfterRequest = snapshot.updatedAt >= requestSentAt
+                    if isNewer || isFreshAfterRequest {
+                        childLocationSnapshot = snapshot
+                        storage.saveChildLocationSnapshot(snapshot)
+                        return
+                    }
+                }
+            } catch {
+                parentLocationStatusMessage = error.localizedDescription
+            }
+        }
+        parentLocationStatusMessage = L10n.tr("map.refresh.timeout")
+    }
+
+    /// Подгрузить кэш и при возможности свежую точку с бэкенда.
+    /// Вызывается при открытии вкладки и при `appDidBecomeActive` для роли parent.
+    func loadChildLocationIfNeeded() async {
+        if childLocationSnapshot == nil, let cached = storage.loadChildLocationSnapshot() {
+            childLocationSnapshot = cached
+        }
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        do {
+            if let snapshot = try await remoteSyncService.fetchChildLocation() {
+                childLocationSnapshot = snapshot
+                storage.saveChildLocationSnapshot(snapshot)
+            }
+        } catch {
+            parentLocationStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Снять одну координату на ребёнке и отправить на бэкенд.
+    /// Вызывается из `applyRemoteCommandIfNeeded` после получения push'а `request_location`.
+    private func captureAndUploadChildLocationIfNeeded() async {
+        // Намеренно НЕ требуем pairingState?.isLinked == true: при холодном пуске из push'а
+        // pairingState может быть ещё не подгружен из бэкенда, но device_secret и family-binding
+        // уже есть в storage — remoteSyncService.updateChildLocation отработает корректно.
+        guard deviceRole == .child else {
+            os_log("captureAndUpload: skipped (role != child)", log: appStateLog, type: .info)
+            return
+        }
+        let status = locationService.authorizationStatus
+        guard status == .authorizedWhenInUse || status == .authorizedAlways else {
+            os_log("captureAndUpload: skipped (auth status=%{public}d)",
+                   log: appStateLog, type: .error, status.rawValue)
+            return
+        }
+        os_log("captureAndUpload: starting capture (auth=%{public}d)",
+               log: appStateLog, type: .info, status.rawValue)
+        do {
+            let location = try await locationService.captureCurrentLocation(timeout: 25)
+            let snapshot = ChildLocationSnapshot(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                horizontalAccuracy: location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil,
+                capturedAt: location.timestamp,
+                updatedAt: Date()
+            )
+            try await remoteSyncService.updateChildLocation(snapshot)
+            storage.saveChildLocationSnapshot(snapshot)
+            os_log("captureAndUpload: success (lat=%.5f lon=%.5f acc=%.1f)",
+                   log: appStateLog, type: .info,
+                   snapshot.latitude, snapshot.longitude, snapshot.horizontalAccuracy ?? -1)
+        } catch {
+            os_log("captureAndUpload: FAILED — %{public}@",
+                   log: appStateLog, type: .error, error.localizedDescription)
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
         if storage.loadLastHandledRemoteCommandID() == id.uuidString {
             try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
@@ -890,6 +1034,13 @@ final class AppState: ObservableObject {
                     note: L10n.tr("ledger.parent.add_time")
                 )
             }
+        case .requestLocation:
+            // Parent asked for a fresh GPS fix. Capture once via LocationService and
+            // push the snapshot back to the backend. We ack the command as `applied`
+            // even before the upload completes — backend will treat next location row
+            // as the actual delivery confirmation. This avoids blocking the alert push
+            // background time budget if the GPS fix is slow.
+            await captureAndUploadChildLocationIfNeeded()
         }
         storage.saveLastHandledRemoteCommandID(id.uuidString)
         let newState = RemoteChildRuntimeState(
@@ -1123,7 +1274,7 @@ final class AppState: ObservableObject {
             return isActiveNow
         case .endFocus:
             return !isActiveNow
-        case .resetEarnedBalance, .addEarnedSeconds:
+        case .resetEarnedBalance, .addEarnedSeconds, .requestLocation:
             return true
         }
     }
@@ -1699,6 +1850,14 @@ private struct BackendDayStatsDTO: Codable {
     let focusSessionTotalSeconds: Int
 }
 
+private struct ChildLocationDTO: Codable {
+    let latitude: Double
+    let longitude: Double
+    let horizontalAccuracy: Double?
+    let capturedAtISO: String
+    let updatedAtISO: String
+}
+
 private final class ParentalRemoteSyncService {
     private enum Endpoint {
         static let focusBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
@@ -2045,6 +2204,57 @@ private final class ParentalRemoteSyncService {
     func fetchDesiredFocusState() async throws -> DesiredFocusStateDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "fetch_desired_focus_state", payload: Payload(installID: installID))
+    }
+
+    /// Parent → backend: попросить ребёнка прислать свежую координату.
+    /// Сервер ставит focus_command типа request_location и шлёт alert push на ребёнка.
+    func requestChildLocation() async throws {
+        struct Payload: Encodable { let installID: String }
+        let _: EmptyResponse = try await call(
+            action: "request_child_location",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Child → backend: записать только что снятую координату в child_location_state.
+    func updateChildLocation(_ snapshot: ChildLocationSnapshot) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let latitude: Double
+            let longitude: Double
+            let horizontalAccuracy: Double?
+            let capturedAtISO: String
+        }
+        let _: EmptyResponse = try await call(
+            action: "update_child_location",
+            payload: Payload(
+                installID: installID,
+                latitude: snapshot.latitude,
+                longitude: snapshot.longitude,
+                horizontalAccuracy: snapshot.horizontalAccuracy,
+                capturedAtISO: ISO8601DateFormatter().string(from: snapshot.capturedAt)
+            )
+        )
+    }
+
+    /// Parent → backend: достать последнюю известную координату ребёнка для своей семьи.
+    func fetchChildLocation() async throws -> ChildLocationSnapshot? {
+        struct Payload: Encodable { let installID: String }
+        let dto: ChildLocationDTO? = try await call(
+            action: "fetch_child_location",
+            payload: Payload(installID: installID)
+        )
+        guard let dto else { return nil }
+        let formatter = ISO8601DateFormatter()
+        let captured = formatter.date(from: dto.capturedAtISO) ?? Date()
+        let updated = formatter.date(from: dto.updatedAtISO) ?? captured
+        return ChildLocationSnapshot(
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            horizontalAccuracy: dto.horizontalAccuracy,
+            capturedAt: captured,
+            updatedAt: updated
+        )
     }
 
     private func call<T: Decodable, P: Encodable>(

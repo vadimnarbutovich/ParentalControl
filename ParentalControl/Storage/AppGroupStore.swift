@@ -51,6 +51,8 @@ enum StorageKey {
     static let lastHandledRemoteCommandID = "parentalcontrol.lastHandledRemoteCommandID"
     /// Queue of remote commands captured by the Notification Service Extension while the main app was suspended.
     static let pendingRemoteCommandQueue = "parentalcontrol.pendingRemoteCommandQueue"
+    /// Last known child location snapshot, cached to render the parent's Map tab instantly.
+    static let childLocationSnapshot = "parentalcontrol.childLocationSnapshot"
 }
 
 /// Lightweight payload captured by either the main app or the Notification Service Extension
@@ -433,6 +435,23 @@ final class AppGroupStore {
         defaults.removeObject(forKey: StorageKey.pendingRemoteCommandQueue)
         defaults.synchronize()
         return decoded
+    }
+
+    func loadChildLocationSnapshot() -> ChildLocationSnapshot? {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return nil }
+        defaults.synchronize()
+        guard let data = defaults.data(forKey: StorageKey.childLocationSnapshot) else { return nil }
+        return try? decoder.decode(ChildLocationSnapshot.self, from: data)
+    }
+
+    func saveChildLocationSnapshot(_ snapshot: ChildLocationSnapshot?) {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+        if let snapshot, let encoded = try? encoder.encode(snapshot) {
+            defaults.set(encoded, forKey: StorageKey.childLocationSnapshot)
+        } else {
+            defaults.removeObject(forKey: StorageKey.childLocationSnapshot)
+        }
+        defaults.synchronize()
     }
 
     func loadDeviceActivityDebugSnapshot() -> DeviceActivityDebugSnapshot {

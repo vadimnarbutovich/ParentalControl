@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 
 struct OnboardingFlowView: View {
@@ -49,7 +50,7 @@ struct OnboardingFlowView: View {
                     Text(primaryButtonTitleKey)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(NeonPrimaryButtonStyle(tint: step == 7 ? AppTheme.neonBlue : AppTheme.neonGreen))
+                .buttonStyle(NeonPrimaryButtonStyle(tint: step == 8 ? AppTheme.neonBlue : AppTheme.neonGreen))
                 .disabled(isAdvancing)
                 .opacity(isAdvancing ? 0.55 : 1)
                 .padding(.horizontal, OnboardingLayout.horizontalInset)
@@ -57,7 +58,7 @@ struct OnboardingFlowView: View {
             }
         }
         .onChange(of: step) { _, newValue in
-            if newValue == 7 {
+            if newValue == 8 {
                 confettiTrigger += 1
             }
         }
@@ -72,7 +73,7 @@ struct OnboardingFlowView: View {
     }
 
     private var primaryButtonTitleKey: LocalizedStringKey {
-        if step == 7 {
+        if step == 8 {
             return "onboarding.cta.start"
         }
         return "onboarding.cta.next"
@@ -113,8 +114,16 @@ struct OnboardingFlowView: View {
                     contentSize: size
                 )
             case 6:
-                appsPage(contentSize: size)
+                heroTextPage(
+                    titleKey: "onboarding.location.title",
+                    bodyKey: "onboarding.location.body",
+                    assetName: "location",
+                    iconGlowColor: AppTheme.neonBlue,
+                    contentSize: size
+                )
             case 7:
+                appsPage(contentSize: size)
+            case 8:
                 finalPage(contentSize: size)
             default:
                 welcomePage(contentSize: size)
@@ -464,7 +473,7 @@ struct OnboardingFlowView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 7) {
-            ForEach(0..<8, id: \.self) { index in
+            ForEach(0..<9, id: \.self) { index in
                 Circle()
                     .fill(index == step ? AppTheme.neonGreen : Color.white.opacity(0.22))
                     .frame(width: index == step ? 8 : 6, height: index == step ? 8 : 6)
@@ -500,7 +509,7 @@ struct OnboardingFlowView: View {
     }
 
     private func handleButtonGoTap() {
-        guard step == 7 else { return }
+        guard step == 8 else { return }
         Task {
             isAdvancing = true
             defer { isAdvancing = false }
@@ -544,8 +553,19 @@ struct OnboardingFlowView: View {
                 await appState.refreshPermissionStatuses()
                 step = 6
             case 6:
+                // Двухэтапный запрос геолокации:
+                // 1) When-in-Use — обязателен, без него Apple не покажет диалог Always;
+                // 2) Always — нужен, чтобы снять координату, когда приложение свёрнуто/выгружено
+                //    из памяти. Мы НЕ держим GPS постоянно — фоновые апдейты включаются строго
+                //    on-demand на момент одного capture (см. LocationService).
+                let whenInUse = await appState.requestChildLocationPermissionIfNeeded()
+                if whenInUse == .authorizedWhenInUse || whenInUse == .authorizedAlways {
+                    _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()
+                }
                 step = 7
             case 7:
+                step = 8
+            case 8:
                 completeOnboardingExit()
             default:
                 break

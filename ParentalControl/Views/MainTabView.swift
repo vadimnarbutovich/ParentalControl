@@ -2,6 +2,7 @@ import SwiftUI
 
 private enum MainTab: String, CaseIterable {
     case home
+    case map
     case statistics
     case blocklist
     case settings
@@ -19,6 +20,12 @@ struct MainTabView: View {
                         Label("tab.dashboard", systemImage: "person.2.fill")
                     }
                     .tag(MainTab.home)
+
+                MapTabView()
+                    .tabItem {
+                        Label("tab.map", systemImage: "map.fill")
+                    }
+                    .tag(MainTab.map)
 
                 StatisticsView()
                     .tabItem {

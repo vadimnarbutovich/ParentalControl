@@ -203,6 +203,8 @@
 "onboarding.screentime.body" = "This is required to track the apps you choose and limit them when your minutes run out.";
 "onboarding.notifications.title" = "Notifications";
 "onboarding.notifications.body" = "We’ll notify you when you earn time or when your balance changes, so you always know where you stand.";
+"onboarding.location.title" = "Location";
+"onboarding.location.body" = "Lets the parent see this device on the map when they tap “Refresh location” — even when the app is in the background. Coordinates are only fetched on demand, no continuous tracking — that saves the battery. Pick “Always” for it to work reliably.";
 "onboarding.conversion.title" = "Your pace";
 "onboarding.conversion.subtitle" = "How much activity earns 1 minute of app time.";
 "onboarding.apps.title" = "Apps to track";
@@ -326,3 +328,16 @@
 "remote.notification.focus_ended" = "Parent ended focus session";
 "remote.notification.time_reset" = "Parent reset earned time";
 "remote.notification.time_added" = "Parent added %@";
+"remote.notification.request_location" = "Parent requested your location";
+
+"tab.map" = "Map";
+"map.title" = "Child location";
+"map.refresh" = "Refresh location";
+"map.refreshing" = "Requesting coordinates…";
+"map.empty.title" = "Location not available yet";
+"map.empty.subtitle" = "Tap “Refresh location” to ask the child device to share its current coordinates.";
+"map.last_seen" = "Updated: %@";
+"map.accuracy" = "Accuracy: ±%d m";
+"map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure the child's device is online and that location access is granted.";
+"map.unpaired.title" = "Device is not paired";
+"map.unpaired.subtitle" = "Pair the child device in Settings to see its location.";
