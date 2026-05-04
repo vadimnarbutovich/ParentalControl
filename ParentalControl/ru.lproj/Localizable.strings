@@ -341,3 +341,56 @@
 "map.refresh.timeout" = "Не удалось получить координаты за 15 секунд. Проверьте, что устройство ребёнка онлайн и разрешён доступ к геолокации.";
 "map.unpaired.title" = "Устройство не привязано";
 "map.unpaired.subtitle" = "Привяжите устройство ребёнка в настройках, чтобы видеть его местоположение.";
+
+"tab.schedule" = "Расписание";
+"schedule.title" = "Расписание";
+"schedule.subtitle" = "Установите время, когда отвлекающие приложения будут заблокированы.";
+"schedule.create_new" = "Создать новое расписание";
+
+"schedule.empty.title" = "Расписаний пока нет";
+"schedule.empty.subtitle" = "Выберите одно из предложений ниже или создайте своё.";
+
+"schedule.suggestions.title" = "Предложения";
+"schedule.suggestions.add_accessibility" = "Добавить шаблон";
+
+"schedule.template.school.title" = "Школьные часы";
+"schedule.template.homework.title" = "Домашнее задание";
+"schedule.template.dinner.title" = "Ужин";
+
+"schedule.default.sleep.title" = "Время спать";
+"schedule.draft.default_name" = "Новое расписание";
+
+"schedule.weekday.short.mon" = "Пн";
+"schedule.weekday.short.tue" = "Вт";
+"schedule.weekday.short.wed" = "Ср";
+"schedule.weekday.short.thu" = "Чт";
+"schedule.weekday.short.fri" = "Пт";
+"schedule.weekday.short.sat" = "Сб";
+"schedule.weekday.short.sun" = "Вс";
+
+"schedule.editor.title.new" = "Новое расписание";
+"schedule.editor.title.edit" = "Редактирование";
+"schedule.editor.cancel" = "Отмена";
+"schedule.editor.save" = "Сохранить";
+"schedule.editor.delete" = "Удалить расписание";
+
+"schedule.editor.name.label" = "Название";
+"schedule.editor.name.placeholder" = "Например, Время спать";
+
+"schedule.editor.time.label" = "Время";
+"schedule.editor.time.start" = "Начало";
+"schedule.editor.time.end" = "Конец";
+"schedule.editor.time.crosses_midnight" = "Расписание переходит через полночь (завершается на следующий день).";
+
+"schedule.editor.weekdays.label" = "Дни недели";
+"schedule.editor.weekdays.required" = "Выберите хотя бы один день.";
+"schedule.editor.weekdays.preset.workdays" = "Пн–Пт";
+"schedule.editor.weekdays.preset.weekends" = "Сб, Вс";
+"schedule.editor.weekdays.preset.everyday" = "Каждый день";
+
+"schedule.editor.enabled.label" = "Включено";
+"schedule.editor.enabled.hint" = "Когда включено, блокировка начинается в указанное время в выбранные дни.";
+
+"schedule.editor.delete.confirm.title" = "Удалить расписание?";
+"schedule.editor.delete.confirm.message" = "Расписание будет удалено. Вы всегда сможете создать новое.";
+"schedule.editor.delete.confirm.delete" = "Удалить";
