@@ -368,6 +368,20 @@
 "schedule.weekday.short.sat" = "Сб";
 "schedule.weekday.short.sun" = "Вс";
 
+"schedule.weekdays.everyday" = "Каждый день";
+"schedule.weekdays.workdays" = "Будни";
+"schedule.weekdays.weekends" = "Выходные";
+
+"dashboard.active_schedule.title" = "Сейчас активно расписание";
+"dashboard.active_schedule.range" = "%1$@ — %2$@";
+"dashboard.active_schedule.hint" = "Приложения у ребёнка заблокированы по этому расписанию.";
+
+"dashboard.next_schedule.title" = "Следующее расписание";
+
+"dashboard.blocking.schedule_active" = "Заблокировано по расписанию";
+"dashboard.blocking.schedule_until" = "До %@";
+"dashboard.blocking.schedule_hint" = "Приложения автоматически разблокируются по окончании расписания.";
+
 "schedule.editor.title.new" = "Новое расписание";
 "schedule.editor.title.edit" = "Редактирование";
 "schedule.editor.cancel" = "Отмена";

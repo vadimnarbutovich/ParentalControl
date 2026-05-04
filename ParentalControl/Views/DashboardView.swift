@@ -214,37 +214,73 @@ struct DashboardView: View {
         }
     }
 
+    /// Карточка «Блокировка» на дашборде Ребёнка. Учитывает три состояния:
+    ///   1) Нет связи с Родителем — подсказка «не залинкован».
+    ///   2) Активно расписание — основной приоритет, потому что блокировка идёт **именно по нему**;
+    ///      вместо общей «Blocking is on» показываем имя расписания и до какого времени.
+    ///   3) Идёт принудительная focus-сессия (нажата «Заблокировать сейчас»).
+    ///   4) Иначе — обычное «выключено».
+    /// `TimelineView` нужен чтобы при пересечении границы окна расписания текст обновлялся
+    /// без ручных таймеров (раз в 30 секунд достаточно для UI-рендера статуса).
     private var parentBlockingStatusCard: some View {
         let linked = appState.pairingState?.isLinked == true
-        let blocking = appState.isFocusSessionActive
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Label("dashboard.blocking.title", systemImage: "lock.shield")
-                .font(.headline.bold())
-                .foregroundStyle(.white.opacity(0.9))
+        return TimelineView(.periodic(from: .now, by: 30)) { context in
+            VStack(alignment: .leading, spacing: 12) {
+                Label("dashboard.blocking.title", systemImage: "lock.shield")
+                    .font(.headline.bold())
+                    .foregroundStyle(.white.opacity(0.9))
 
-            if !linked {
-                Text("dashboard.blocking.not_linked")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else if blocking {
-                Text("dashboard.blocking.enabled")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(AppTheme.neonOrange)
-                Text("dashboard.blocking.hint.enabled")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("dashboard.blocking.disabled")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(AppTheme.neonGreen)
-                Text("dashboard.blocking.hint.disabled")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if !linked {
+                    Text("dashboard.blocking.not_linked")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if let activeSchedule = appState.activeBlockSchedules(at: context.date).first {
+                    blockingScheduleStatus(schedule: activeSchedule)
+                } else if appState.isFocusSessionActive {
+                    Text("dashboard.blocking.enabled")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(AppTheme.neonOrange)
+                    Text("dashboard.blocking.hint.enabled")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("dashboard.blocking.disabled")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(AppTheme.neonGreen)
+                    Text("dashboard.blocking.hint.disabled")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .padding()
+            .glassCard(cornerRadius: 22)
         }
-        .padding()
-        .glassCard(cornerRadius: 22)
+    }
+
+    @ViewBuilder
+    private func blockingScheduleStatus(schedule: BlockSchedule) -> some View {
+        Text("dashboard.blocking.schedule_active")
+            .font(.title2.weight(.bold))
+            .foregroundStyle(AppTheme.neonOrange)
+
+        HStack(spacing: 8) {
+            Image(systemName: schedule.icon.rawValue)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.neonOrange)
+            Text(schedule.name)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+
+        Text(L10n.f("dashboard.blocking.schedule_until", schedule.endTime.formattedShort))
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+
+        Text("dashboard.blocking.schedule_hint")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     #if DEBUG && !HIDE_DEBUG_UI

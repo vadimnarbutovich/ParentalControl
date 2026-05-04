@@ -931,6 +931,12 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Публичный refresh для UI-слоя (Dashboard / Schedules). Тонкая обёртка над приватной
+    /// логикой синхронизации с бэкендом для роли parent. Безопасно вызывать из `.task`.
+    func refreshParentBlockSchedulesIfNeeded() async {
+        await syncParentBlockSchedulesFromServerIfNeeded()
+    }
+
     private func syncParentBlockSchedulesFromServerIfNeeded() async {
         guard deviceRole == .parent, pairingState?.isLinked == true else { return }
         do {
@@ -1905,6 +1911,50 @@ final class AppState: ObservableObject {
         }
         let estimated = Int((Double(max(0, entry.deltaSeconds)) / 60.0) * Double(repsPerMinute))
         return max(0, estimated)
+    }
+
+    // MARK: - Block schedules (read-only helpers for UI)
+
+    /// Возвращает все включённые расписания, чьё окно активно прямо сейчас (с учётом
+    /// дней недели и переходов через полночь). Используется как Родителем (для карточки
+    /// «Сейчас активно расписание»), так и Ребёнком (для индикации причины блокировки).
+    /// Сортировка — по более раннему `endTime` (что первым закончится — выше в UI).
+    func activeBlockSchedules(at date: Date = Date()) -> [BlockSchedule] {
+        blockSchedules
+            .filter { $0.isActive(at: date) }
+            .sorted { $0.endTime.totalMinutes < $1.endTime.totalMinutes }
+    }
+
+    /// Ближайшее следующее расписание (которое включено, но сейчас не активно). Возвращает
+    /// пару (расписание, дата ближайшего start). Используется для UI «Следующее: ... в HH:MM».
+    /// Поиск идёт в окне ближайших 7 дней.
+    func nextScheduledBlock(after date: Date = Date(), calendar: Calendar = .current) -> (schedule: BlockSchedule, startDate: Date)? {
+        let candidates = blockSchedules.filter { $0.isEnabled }
+        guard !candidates.isEmpty else { return nil }
+
+        var best: (BlockSchedule, Date)?
+        for daysAhead in 0..<8 {
+            guard let dayDate = calendar.date(byAdding: .day, value: daysAhead, to: date) else { continue }
+            let calWeekday = calendar.component(.weekday, from: dayDate)
+            let dayWD = calWeekday == 1 ? 7 : calWeekday - 1
+            guard let dayEnum = ScheduleWeekday(rawValue: dayWD) else { continue }
+
+            for schedule in candidates where schedule.weekdays.contains(dayEnum) {
+                var components = calendar.dateComponents([.year, .month, .day], from: dayDate)
+                components.hour = schedule.startTime.hour
+                components.minute = schedule.startTime.minute
+                components.second = 0
+                guard let startDate = calendar.date(from: components) else { continue }
+                guard startDate > date else { continue }
+                if let current = best {
+                    if startDate < current.1 { best = (schedule, startDate) }
+                } else {
+                    best = (schedule, startDate)
+                }
+            }
+            if best != nil { break }
+        }
+        return best.map { ($0.0, $0.1) }
     }
 
     // MARK: - Block schedules (parent role)

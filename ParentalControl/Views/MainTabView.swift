@@ -212,8 +212,24 @@ private struct ParentDashboardView: View {
                             .disabled(!isCommandButtonEnabled)
                             .frame(maxWidth: .infinity)
                         }
+
+                        // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
+                        // Видна только если у Родителя в локальном кэше есть включённые расписания.
+                        // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
+                        // поэтому не нужно дёргать AppState на каждом тике.
+                        if appState.pairingState?.isLinked == true {
+                            ActiveBlockScheduleCard(appState: appState)
+                        }
                     }
                     .padding()
+                }
+            }
+            .task {
+                // Подтягиваем актуальные расписания с бэкенда при появлении дашборда —
+                // это страховка для случая, когда пользователь зашёл сразу на главный экран
+                // (без перехода на таб «Расписание») и локальный кэш ещё не успел синкнуться.
+                if appState.deviceRole == .parent {
+                    await appState.refreshParentBlockSchedulesIfNeeded()
                 }
             }
         }

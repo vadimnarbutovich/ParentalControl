@@ -147,6 +147,61 @@ struct BlockSchedule: Codable, Equatable, Identifiable {
     var orderedWeekdays: [ScheduleWeekday] {
         weekdays.sorted { $0.rawValue < $1.rawValue }
     }
+
+    /// Возвращает `true`, если расписание сейчас должно быть активно (с учётом
+    /// дней недели и переходов через полночь). Используется и парентом для UI
+    /// «активно сейчас», и совпадает по логике с бэкендом `isScheduleActiveAt`.
+    /// Параметр `now` — текущий момент в локальной таймзоне устройства.
+    func isActive(at now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        guard isEnabled else { return false }
+        let components = calendar.dateComponents([.hour, .minute, .weekday], from: now)
+        let hour = components.hour ?? 0
+        let minute = components.minute ?? 0
+        let minutesOfDay = hour * 60 + minute
+        let start = startTime.totalMinutes
+        let end = endTime.totalMinutes
+
+        // calendar.weekday: 1 = воскресенье ... 7 = суббота → переводим в нашу нумерацию (1 = Пн ... 7 = Вс).
+        let calWeekday = components.weekday ?? 1
+        let todayWD = calWeekday == 1 ? 7 : calWeekday - 1
+        guard let todayEnum = ScheduleWeekday(rawValue: todayWD) else { return false }
+
+        if !crossesMidnight {
+            guard weekdays.contains(todayEnum) else { return false }
+            return minutesOfDay >= start && minutesOfDay < end
+        }
+
+        // Окно через полночь: вечер сегодня от start..00:00 и утро завтра 00:00..end.
+        if minutesOfDay >= start {
+            return weekdays.contains(todayEnum)
+        }
+        if minutesOfDay < end {
+            // Утро — окно принадлежит вчерашнему дню недели.
+            let yesterdayWD = todayWD == 1 ? 7 : todayWD - 1
+            guard let yesterdayEnum = ScheduleWeekday(rawValue: yesterdayWD) else { return false }
+            return weekdays.contains(yesterdayEnum)
+        }
+        return false
+    }
+
+    /// Локализованная короткая строка диапазона: «HH:MM — HH:MM».
+    var formattedTimeRange: String {
+        "\(startTime.formattedShort) — \(endTime.formattedShort)"
+    }
+
+    /// Краткая строка из выбранных дней («Пн, Ср, Пт» / «Каждый день» / «Будни» / «Выходные»).
+    var formattedWeekdaysShort: String {
+        if weekdays == ScheduleWeekday.everyday {
+            return L10n.tr("schedule.weekdays.everyday")
+        }
+        if weekdays == ScheduleWeekday.workdays {
+            return L10n.tr("schedule.weekdays.workdays")
+        }
+        if weekdays == ScheduleWeekday.weekends {
+            return L10n.tr("schedule.weekdays.weekends")
+        }
+        return orderedWeekdays.map { $0.shortTitle }.joined(separator: ", ")
+    }
 }
 
 /// Готовый шаблон расписания, который пользователь может добавить одним нажатием.

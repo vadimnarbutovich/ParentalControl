@@ -368,6 +368,20 @@
 "schedule.weekday.short.sat" = "Sat";
 "schedule.weekday.short.sun" = "Sun";
 
+"schedule.weekdays.everyday" = "Every day";
+"schedule.weekdays.workdays" = "Weekdays";
+"schedule.weekdays.weekends" = "Weekends";
+
+"dashboard.active_schedule.title" = "Schedule active now";
+"dashboard.active_schedule.range" = "%1$@ — %2$@";
+"dashboard.active_schedule.hint" = "Apps are blocked on the child's device by this schedule.";
+
+"dashboard.next_schedule.title" = "Next schedule";
+
+"dashboard.blocking.schedule_active" = "Blocked by schedule";
+"dashboard.blocking.schedule_until" = "Until %@";
+"dashboard.blocking.schedule_hint" = "Apps will unlock automatically when the schedule ends.";
+
 "schedule.editor.title.new" = "New schedule";
 "schedule.editor.title.edit" = "Edit schedule";
 "schedule.editor.cancel" = "Cancel";
