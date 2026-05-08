@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "删除时间表?";
 "schedule.editor.delete.confirm.message" = "此时间表将被删除。你可以随时创建新的。";
 "schedule.editor.delete.confirm.delete" = "删除";
+
+"parent.dashboard.adjust_time" = "调整可用时间";
+"parent.dashboard.adjust_time.title" = "调整可用时间";
+"parent.dashboard.adjust_time.done" = "完成";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 分钟";
+
+"ledger.parent.subtract_time" = "家长扣除了时间";

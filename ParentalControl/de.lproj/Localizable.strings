@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "Zeitplan löschen?";
 "schedule.editor.delete.confirm.message" = "Dieser Zeitplan wird entfernt. Du kannst jederzeit einen neuen erstellen.";
 "schedule.editor.delete.confirm.delete" = "Löschen";
+
+"parent.dashboard.adjust_time" = "Verfügbare Zeit anpassen";
+"parent.dashboard.adjust_time.title" = "Verfügbare Zeit anpassen";
+"parent.dashboard.adjust_time.done" = "Fertig";
+"parent.dashboard.adjust_time.minutes_format" = "%@ Min";
+
+"ledger.parent.subtract_time" = "Elternteil hat Zeit abgezogen";

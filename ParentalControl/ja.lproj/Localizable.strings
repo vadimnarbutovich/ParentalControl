@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "スケジュールを削除しますか?";
 "schedule.editor.delete.confirm.message" = "このスケジュールは削除されます。いつでも新しく作成できます。";
 "schedule.editor.delete.confirm.delete" = "削除";
+
+"parent.dashboard.adjust_time" = "利用可能な時間を変更";
+"parent.dashboard.adjust_time.title" = "利用可能な時間を変更";
+"parent.dashboard.adjust_time.done" = "完了";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 分";
+
+"ledger.parent.subtract_time" = "保護者が時間を減らしました";

@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "¿Eliminar horario?";
 "schedule.editor.delete.confirm.message" = "Este horario se eliminará. Siempre puedes crear uno nuevo.";
 "schedule.editor.delete.confirm.delete" = "Eliminar";
+
+"parent.dashboard.adjust_time" = "Ajustar tiempo disponible";
+"parent.dashboard.adjust_time.title" = "Ajustar tiempo disponible";
+"parent.dashboard.adjust_time.done" = "Listo";
+"parent.dashboard.adjust_time.minutes_format" = "%@ min";
+
+"ledger.parent.subtract_time" = "Padre/madre quitó tiempo";

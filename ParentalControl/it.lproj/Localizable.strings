@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "Eliminare la pianificazione?";
 "schedule.editor.delete.confirm.message" = "Questa pianificazione verrà rimossa. Puoi sempre crearne una nuova.";
 "schedule.editor.delete.confirm.delete" = "Elimina";
+
+"parent.dashboard.adjust_time" = "Modifica tempo disponibile";
+"parent.dashboard.adjust_time.title" = "Modifica tempo disponibile";
+"parent.dashboard.adjust_time.done" = "Fatto";
+"parent.dashboard.adjust_time.minutes_format" = "%@ min";
+
+"ledger.parent.subtract_time" = "Il genitore ha tolto del tempo";

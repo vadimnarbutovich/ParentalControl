@@ -178,6 +178,7 @@
 "ledger.focus.session" = "Focus session %d min";
 "ledger.parent.take_all_time" = "Parent took all earned time";
 "ledger.parent.add_time" = "Parent added time";
+"ledger.parent.subtract_time" = "Parent took time";
 
 "shield.title" = "Earn minutes to continue";
 "shield.subtitle" = "Do steps or exercises to unlock this app.";
@@ -291,6 +292,10 @@
 "parent.dashboard.stop_focus" = "Unblock now";
 "parent.dashboard.take_all_time" = "Take all time";
 "parent.dashboard.add_one_minute" = "Add one minute";
+"parent.dashboard.adjust_time" = "Adjust available time";
+"parent.dashboard.adjust_time.title" = "Adjust available time";
+"parent.dashboard.adjust_time.done" = "Done";
+"parent.dashboard.adjust_time.minutes_format" = "%@ min";
 "parent.dashboard.command_id" = "Command: %@";
 "parent.dashboard.command_status" = "Status: %@";
 "parent.dashboard.command_latency" = "Apply latency: %d sec";

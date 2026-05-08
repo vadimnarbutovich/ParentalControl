@@ -68,6 +68,8 @@ struct MainTabView: View {
 
 private struct ParentDashboardView: View {
     @EnvironmentObject private var appState: AppState
+    /// Презентация шторки `AdjustTimeSheet` (изменить доступное время ребёнку).
+    @State private var isAdjustTimePresented = false
 
     private var isCommandButtonEnabled: Bool {
         appState.pairingState?.isLinked == true &&
@@ -178,23 +180,13 @@ private struct ParentDashboardView: View {
                         .padding()
                         .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
 
-                        HStack(spacing: 12) {
-                            Button("parent.dashboard.take_all_time") {
-                                Task { await appState.sendParentTakeAllTimeCommand() }
-                            }
-                            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonOrange))
-                            .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                            .disabled(!isCommandButtonEnabled)
-                            .frame(maxWidth: .infinity)
-
-                            Button("parent.dashboard.add_one_minute") {
-                                Task { await appState.sendParentAddOneMinuteCommand() }
-                            }
-                            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
-                            .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                            .disabled(!isCommandButtonEnabled)
-                            .frame(maxWidth: .infinity)
+                        Button("parent.dashboard.adjust_time") {
+                            isAdjustTimePresented = true
                         }
+                        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
+                        .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
+                        .disabled(!isCommandButtonEnabled)
+                        .frame(maxWidth: .infinity)
 
                         // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
                         // Видна только если у Родителя в локальном кэше есть включённые расписания.
@@ -240,7 +232,73 @@ private struct ParentDashboardView: View {
                     await appState.refreshParentBlockSchedulesIfNeeded()
                 }
             }
+            .sheet(isPresented: $isAdjustTimePresented) {
+                AdjustTimeSheet { deltaMinutes in
+                    Task { await appState.sendParentAdjustTimeCommand(deltaMinutes: deltaMinutes) }
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.thinMaterial)
+            }
         }
+    }
+}
+
+/// Шторка «Изменить доступное время» (открывается на половину экрана через `.presentationDetents([.medium])`).
+/// Содержит вертикальный wheel-Picker со значениями −60…+60 мин с шагом 5 (отрицательные — забрать,
+/// положительные — добавить, 0 — без изменений в центре). Кнопка «Готово» внизу применяет дельту,
+/// свайп вниз / drag indicator закрывает без сохранения. Логика выбора server-команды — в
+/// `AppState.sendParentAdjustTimeCommand(deltaMinutes:)`.
+private struct AdjustTimeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    /// Колбэк передаёт выбранную дельту в минутах (со знаком). Если `0` — `AppState` сам сделает no-op.
+    let onApply: (Int) -> Void
+
+    @State private var selectedDelta: Int = 0
+
+    /// Допустимые значения пикера: −60, −55, …, −5, 0, +5, …, +55, +60.
+    private static let allowedDeltas: [Int] = stride(from: -60, through: 60, by: 5).map { $0 }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("parent.dashboard.adjust_time.title")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.top, 16)
+
+            Picker("parent.dashboard.adjust_time.title", selection: $selectedDelta) {
+                ForEach(Self.allowedDeltas, id: \.self) { delta in
+                    Text(label(for: delta))
+                        .foregroundStyle(.white)
+                        .tag(delta)
+                }
+            }
+            .pickerStyle(.wheel)
+            .labelsHidden()
+            .tint(AppTheme.neonPurple)
+            .frame(maxHeight: 180)
+
+            Button("parent.dashboard.adjust_time.done") {
+                onApply(selectedDelta)
+                dismiss()
+            }
+            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .preferredColorScheme(.dark)
+    }
+
+    /// Формирует подпись пункта пикера: «+5 мин», «0 мин», «−10 мин».
+    /// Используем явно знак «−» (U+2212) для отрицательных значений — выглядит аккуратнее
+    /// типографически, чем минус U+002D, и совпадает по ширине с «+».
+    private func label(for delta: Int) -> String {
+        if delta == 0 {
+            return L10n.f("parent.dashboard.adjust_time.minutes_format", "0")
+        }
+        let sign = delta > 0 ? "+" : "−"
+        return L10n.f("parent.dashboard.adjust_time.minutes_format", "\(sign)\(abs(delta))")
     }
 }
 

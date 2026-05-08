@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "حذف الجدول؟";
 "schedule.editor.delete.confirm.message" = "ستتم إزالة هذا الجدول. يمكنك دائمًا إنشاء جدول جديد.";
 "schedule.editor.delete.confirm.delete" = "حذف";
+
+"parent.dashboard.adjust_time" = "تعديل الوقت المتاح";
+"parent.dashboard.adjust_time.title" = "تعديل الوقت المتاح";
+"parent.dashboard.adjust_time.done" = "تم";
+"parent.dashboard.adjust_time.minutes_format" = "%@ د";
+
+"ledger.parent.subtract_time" = "ولي الأمر خصم وقتًا";

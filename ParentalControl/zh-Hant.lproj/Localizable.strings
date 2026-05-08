@@ -325,3 +325,10 @@
 "schedule.editor.delete.confirm.title" = "刪除排程?";
 "schedule.editor.delete.confirm.message" = "此排程將被移除。你隨時可以建立新的。";
 "schedule.editor.delete.confirm.delete" = "刪除";
+
+"parent.dashboard.adjust_time" = "調整可用時間";
+"parent.dashboard.adjust_time.title" = "調整可用時間";
+"parent.dashboard.adjust_time.done" = "完成";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 分鐘";
+
+"ledger.parent.subtract_time" = "家長扣除了時間";

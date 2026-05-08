@@ -382,6 +382,35 @@ final class AppState: ObservableObject {
         await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: 60)
     }
 
+    /// Универсальная команда «изменить доступное время ребёнка на ±N минут».
+    /// Используется новой шторкой `AdjustTimeSheet`. Логика выбора command_type:
+    /// - `delta == 0` → no-op;
+    /// - `delta > 0` → `addEarnedSeconds` с `durationSeconds = delta * 60`;
+    /// - `delta < 0`:
+    ///   - если `|delta| * 60 >= parentChildAvailableSeconds` (известный родителю live-баланс)
+    ///     → `resetEarnedBalance` (как «забрать всё»), чтобы гарантированно обнулить;
+    ///   - иначе → `subtractEarnedSeconds` с `durationSeconds = |delta| * 60`.
+    /// На стороне ребёнка `subtractEarnedSeconds` применяется как `addSeconds(-N)` с clamp 0.
+    func sendParentAdjustTimeCommand(deltaMinutes: Int) async {
+        guard deltaMinutes != 0 else { return }
+
+        if deltaMinutes > 0 {
+            let seconds = deltaMinutes * 60
+            await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: seconds)
+            return
+        }
+
+        let absSeconds = abs(deltaMinutes) * 60
+        // Если родитель знает live-баланс ребёнка и запрос >= баланса — обнуляем целиком.
+        // Если live-баланс неизвестен (`nil`) — играем безопасно через subtract: ребёнок сам
+        // защитится clamp-ом до нуля.
+        if let availableSeconds = parentChildAvailableSeconds, absSeconds >= availableSeconds {
+            await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
+        } else {
+            await sendParentCommand(commandType: .subtractEarnedSeconds, durationSeconds: absSeconds)
+        }
+    }
+
     func handlePermissionBannerAllow(kind: PermissionReminderKind) async {
         switch kind {
         case .health:
@@ -1137,6 +1166,15 @@ final class AppState: ObservableObject {
                     note: L10n.tr("ledger.parent.add_time")
                 )
             }
+        case .subtractEarnedSeconds:
+            // Списываем N секунд через `applyParentSubtractEarnedSeconds`, который повторяет
+            // паттерн `applyParentResetEarnedBalance`: увеличивает `totalSpentSeconds` на
+            // `min(N, available)` и НЕ трогает `totalEarnedSeconds`. Так аналитика остаётся
+            // корректной, а доступный баланс никогда не уходит в минус.
+            let secondsToSubtract = max(0, durationSeconds ?? 0)
+            if secondsToSubtract > 0 {
+                applyParentSubtractEarnedSeconds(secondsToSubtract)
+            }
         case .requestLocation:
             // Parent asked for a fresh GPS fix. Capture once via LocationService and
             // push the snapshot back to the backend. We ack the command as `applied`
@@ -1385,8 +1423,8 @@ final class AppState: ObservableObject {
             return isActiveNow
         case .endFocus:
             return !isActiveNow
-        case .resetEarnedBalance, .addEarnedSeconds, .requestLocation,
-             .schedulesUpdated, .scheduleStarted, .scheduleEnded:
+        case .resetEarnedBalance, .addEarnedSeconds, .subtractEarnedSeconds,
+             .requestLocation, .schedulesUpdated, .scheduleStarted, .scheduleEnded:
             return true
         }
     }
@@ -1449,6 +1487,25 @@ final class AppState: ObservableObject {
                 source: .parentAdjustment,
                 deltaSeconds: -available,
                 note: L10n.tr("ledger.parent.take_all_time")
+            )
+        )
+        Task { await syncChildStatsSnapshotIfNeeded() }
+    }
+
+    /// Списывает у ребёнка `secondsToSubtract` секунд, но не больше, чем `availableSeconds`.
+    /// Эквивалент `applyParentResetEarnedBalance`, только с заданным верхним лимитом.
+    /// Используется для команды `subtractEarnedSeconds` из шторки «Изменить доступное время».
+    private func applyParentSubtractEarnedSeconds(_ secondsToSubtract: Int) {
+        let available = balance.availableSeconds
+        let actualDelta = min(max(0, secondsToSubtract), available)
+        guard actualDelta > 0 else { return }
+        balance.totalSpentSeconds += actualDelta
+        persistState()
+        prependLedger(
+            ActivityLedgerEntry(
+                source: .parentAdjustment,
+                deltaSeconds: -actualDelta,
+                note: L10n.tr("ledger.parent.subtract_time")
             )
         )
         Task { await syncChildStatsSnapshotIfNeeded() }
