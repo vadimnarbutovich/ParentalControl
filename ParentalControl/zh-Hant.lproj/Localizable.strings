@@ -266,3 +266,62 @@
 "paywall.period.week" = "週";
 "paywall.period.month" = "月";
 "paywall.period.year" = "年";
+
+"tab.schedule" = "排程";
+
+"schedule.title" = "排程";
+"schedule.subtitle" = "設定封鎖讓人分心的 App 的時段。";
+"schedule.create_new" = "建立新排程";
+
+"schedule.empty.title" = "尚未有排程";
+"schedule.empty.subtitle" = "從下方建議中選擇,或自行建立排程。";
+
+"schedule.suggestions.title" = "建議";
+"schedule.suggestions.add_accessibility" = "新增此範本";
+
+"schedule.template.school.title" = "上課時間";
+"schedule.template.homework.title" = "作業時間";
+"schedule.template.dinner.title" = "晚餐";
+
+"schedule.default.sleep.title" = "睡覺時間";
+"schedule.draft.default_name" = "新排程";
+
+"schedule.weekday.short.mon" = "一";
+"schedule.weekday.short.tue" = "二";
+"schedule.weekday.short.wed" = "三";
+"schedule.weekday.short.thu" = "四";
+"schedule.weekday.short.fri" = "五";
+"schedule.weekday.short.sat" = "六";
+"schedule.weekday.short.sun" = "日";
+
+"schedule.weekdays.everyday" = "每天";
+"schedule.weekdays.workdays" = "週間工作日";
+"schedule.weekdays.weekends" = "週末";
+
+"schedule.editor.title.new" = "新排程";
+"schedule.editor.title.edit" = "編輯排程";
+"schedule.editor.cancel" = "取消";
+"schedule.editor.save" = "儲存";
+"schedule.editor.delete" = "刪除排程";
+
+"schedule.editor.name.label" = "名稱";
+"schedule.editor.name.placeholder" = "例如:睡覺時間";
+"schedule.editor.name.required" = "請輸入名稱";
+
+"schedule.editor.time.label" = "時間";
+"schedule.editor.time.start" = "開始";
+"schedule.editor.time.end" = "結束";
+"schedule.editor.time.crosses_midnight" = "排程跨越午夜(將於隔日結束)。";
+
+"schedule.editor.weekdays.label" = "星期";
+"schedule.editor.weekdays.required" = "至少選擇一天。";
+"schedule.editor.weekdays.preset.workdays" = "週一–週五";
+"schedule.editor.weekdays.preset.weekends" = "週六、週日";
+"schedule.editor.weekdays.preset.everyday" = "每天";
+
+"schedule.editor.enabled.label" = "啟用";
+"schedule.editor.enabled.hint" = "啟用後,將於所選日期的開始時間啟動封鎖。";
+
+"schedule.editor.delete.confirm.title" = "刪除排程?";
+"schedule.editor.delete.confirm.message" = "此排程將被移除。你隨時可以建立新的。";
+"schedule.editor.delete.confirm.delete" = "刪除";

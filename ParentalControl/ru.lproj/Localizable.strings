@@ -390,6 +390,7 @@
 
 "schedule.editor.name.label" = "Название";
 "schedule.editor.name.placeholder" = "Например, Время спать";
+"schedule.editor.name.required" = "Укажите название";
 
 "schedule.editor.time.label" = "Время";
 "schedule.editor.time.start" = "Начало";

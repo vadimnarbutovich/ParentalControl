@@ -266,3 +266,62 @@
 "paywall.period.week" = "週";
 "paywall.period.month" = "月";
 "paywall.period.year" = "年";
+
+"tab.schedule" = "スケジュール";
+
+"schedule.title" = "スケジュール";
+"schedule.subtitle" = "気が散るアプリをブロックする時間帯を設定します。";
+"schedule.create_new" = "新しいスケジュールを作成";
+
+"schedule.empty.title" = "スケジュールはまだありません";
+"schedule.empty.subtitle" = "下の候補から選ぶか、自分でスケジュールを作成してください。";
+
+"schedule.suggestions.title" = "おすすめ";
+"schedule.suggestions.add_accessibility" = "このテンプレートを追加";
+
+"schedule.template.school.title" = "学校の時間";
+"schedule.template.homework.title" = "宿題";
+"schedule.template.dinner.title" = "夕食";
+
+"schedule.default.sleep.title" = "就寝時間";
+"schedule.draft.default_name" = "新しいスケジュール";
+
+"schedule.weekday.short.mon" = "月";
+"schedule.weekday.short.tue" = "火";
+"schedule.weekday.short.wed" = "水";
+"schedule.weekday.short.thu" = "木";
+"schedule.weekday.short.fri" = "金";
+"schedule.weekday.short.sat" = "土";
+"schedule.weekday.short.sun" = "日";
+
+"schedule.weekdays.everyday" = "毎日";
+"schedule.weekdays.workdays" = "平日";
+"schedule.weekdays.weekends" = "週末";
+
+"schedule.editor.title.new" = "新しいスケジュール";
+"schedule.editor.title.edit" = "スケジュールを編集";
+"schedule.editor.cancel" = "キャンセル";
+"schedule.editor.save" = "保存";
+"schedule.editor.delete" = "スケジュールを削除";
+
+"schedule.editor.name.label" = "名前";
+"schedule.editor.name.placeholder" = "例:就寝時間";
+"schedule.editor.name.required" = "名前を入力してください";
+
+"schedule.editor.time.label" = "時刻";
+"schedule.editor.time.start" = "開始";
+"schedule.editor.time.end" = "終了";
+"schedule.editor.time.crosses_midnight" = "スケジュールが深夜をまたぎます(翌日に終了)。";
+
+"schedule.editor.weekdays.label" = "曜日";
+"schedule.editor.weekdays.required" = "少なくとも1日を選択してください。";
+"schedule.editor.weekdays.preset.workdays" = "月〜金";
+"schedule.editor.weekdays.preset.weekends" = "土・日";
+"schedule.editor.weekdays.preset.everyday" = "毎日";
+
+"schedule.editor.enabled.label" = "有効";
+"schedule.editor.enabled.hint" = "有効にすると、選択した曜日の開始時刻にブロックが始まります。";
+
+"schedule.editor.delete.confirm.title" = "スケジュールを削除しますか?";
+"schedule.editor.delete.confirm.message" = "このスケジュールは削除されます。いつでも新しく作成できます。";
+"schedule.editor.delete.confirm.delete" = "削除";

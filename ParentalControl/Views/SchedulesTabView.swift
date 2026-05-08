@@ -121,8 +121,10 @@ struct SchedulesTabView: View {
                     SuggestionRowView(
                         template: template,
                         onAdd: {
-                            let added = appState.addBlockSchedule(from: template)
-                            editingSchedule = added
+                            // Не добавляем расписание сразу — открываем редактор как draft.
+                            // Сохранение произойдёт только в `saveAndDismiss()` через `commitBlockSchedule`,
+                            // нажатие «Отмена» полностью отменяет создание.
+                            draftSchedule = template.makeSchedule()
                         }
                     )
                 }

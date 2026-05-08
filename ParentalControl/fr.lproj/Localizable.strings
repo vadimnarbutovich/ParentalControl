@@ -266,3 +266,62 @@
 "paywall.period.week" = "sem.";
 "paywall.period.month" = "mois";
 "paywall.period.year" = "an";
+
+"tab.schedule" = "Horaire";
+
+"schedule.title" = "Horaire";
+"schedule.subtitle" = "Définis des plages horaires pendant lesquelles les apps distrayantes sont bloquées.";
+"schedule.create_new" = "Créer un nouvel horaire";
+
+"schedule.empty.title" = "Aucun horaire pour l’instant";
+"schedule.empty.subtitle" = "Choisis une suggestion ci-dessous ou crée ton propre horaire.";
+
+"schedule.suggestions.title" = "Suggestions";
+"schedule.suggestions.add_accessibility" = "Ajouter ce modèle";
+
+"schedule.template.school.title" = "Heures d’école";
+"schedule.template.homework.title" = "Devoirs";
+"schedule.template.dinner.title" = "Dîner";
+
+"schedule.default.sleep.title" = "Heure du coucher";
+"schedule.draft.default_name" = "Nouvel horaire";
+
+"schedule.weekday.short.mon" = "Lun";
+"schedule.weekday.short.tue" = "Mar";
+"schedule.weekday.short.wed" = "Mer";
+"schedule.weekday.short.thu" = "Jeu";
+"schedule.weekday.short.fri" = "Ven";
+"schedule.weekday.short.sat" = "Sam";
+"schedule.weekday.short.sun" = "Dim";
+
+"schedule.weekdays.everyday" = "Tous les jours";
+"schedule.weekdays.workdays" = "Jours ouvrés";
+"schedule.weekdays.weekends" = "Week-end";
+
+"schedule.editor.title.new" = "Nouvel horaire";
+"schedule.editor.title.edit" = "Modifier l’horaire";
+"schedule.editor.cancel" = "Annuler";
+"schedule.editor.save" = "Enregistrer";
+"schedule.editor.delete" = "Supprimer l’horaire";
+
+"schedule.editor.name.label" = "Nom";
+"schedule.editor.name.placeholder" = "Par exemple, Heure du coucher";
+"schedule.editor.name.required" = "Veuillez saisir un nom";
+
+"schedule.editor.time.label" = "Heure";
+"schedule.editor.time.start" = "Début";
+"schedule.editor.time.end" = "Fin";
+"schedule.editor.time.crosses_midnight" = "L’horaire passe minuit (se termine le jour suivant).";
+
+"schedule.editor.weekdays.label" = "Jours";
+"schedule.editor.weekdays.required" = "Choisis au moins un jour.";
+"schedule.editor.weekdays.preset.workdays" = "Lun–Ven";
+"schedule.editor.weekdays.preset.weekends" = "Sam, Dim";
+"schedule.editor.weekdays.preset.everyday" = "Tous les jours";
+
+"schedule.editor.enabled.label" = "Activé";
+"schedule.editor.enabled.hint" = "Lorsqu’il est activé, le blocage démarre à l’heure de début les jours sélectionnés.";
+
+"schedule.editor.delete.confirm.title" = "Supprimer l’horaire ?";
+"schedule.editor.delete.confirm.message" = "Cet horaire sera supprimé. Tu peux toujours en créer un nouveau.";
+"schedule.editor.delete.confirm.delete" = "Supprimer";

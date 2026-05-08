@@ -266,3 +266,62 @@
 "paywall.period.week" = "周";
 "paywall.period.month" = "月";
 "paywall.period.year" = "年";
+
+"tab.schedule" = "时间表";
+
+"schedule.title" = "时间表";
+"schedule.subtitle" = "设置屏蔽干扰应用的时间段。";
+"schedule.create_new" = "创建新时间表";
+
+"schedule.empty.title" = "还没有时间表";
+"schedule.empty.subtitle" = "从下方建议中选择,或自己创建一个时间表。";
+
+"schedule.suggestions.title" = "推荐";
+"schedule.suggestions.add_accessibility" = "添加此模板";
+
+"schedule.template.school.title" = "上学时间";
+"schedule.template.homework.title" = "作业时间";
+"schedule.template.dinner.title" = "晚餐";
+
+"schedule.default.sleep.title" = "睡觉时间";
+"schedule.draft.default_name" = "新时间表";
+
+"schedule.weekday.short.mon" = "一";
+"schedule.weekday.short.tue" = "二";
+"schedule.weekday.short.wed" = "三";
+"schedule.weekday.short.thu" = "四";
+"schedule.weekday.short.fri" = "五";
+"schedule.weekday.short.sat" = "六";
+"schedule.weekday.short.sun" = "日";
+
+"schedule.weekdays.everyday" = "每天";
+"schedule.weekdays.workdays" = "工作日";
+"schedule.weekdays.weekends" = "周末";
+
+"schedule.editor.title.new" = "新时间表";
+"schedule.editor.title.edit" = "编辑时间表";
+"schedule.editor.cancel" = "取消";
+"schedule.editor.save" = "保存";
+"schedule.editor.delete" = "删除时间表";
+
+"schedule.editor.name.label" = "名称";
+"schedule.editor.name.placeholder" = "例如:睡觉时间";
+"schedule.editor.name.required" = "请输入名称";
+
+"schedule.editor.time.label" = "时间";
+"schedule.editor.time.start" = "开始";
+"schedule.editor.time.end" = "结束";
+"schedule.editor.time.crosses_midnight" = "时间表跨越午夜(将在第二天结束)。";
+
+"schedule.editor.weekdays.label" = "星期";
+"schedule.editor.weekdays.required" = "至少选择一天。";
+"schedule.editor.weekdays.preset.workdays" = "周一–周五";
+"schedule.editor.weekdays.preset.weekends" = "周六、周日";
+"schedule.editor.weekdays.preset.everyday" = "每天";
+
+"schedule.editor.enabled.label" = "启用";
+"schedule.editor.enabled.hint" = "启用后,将在所选日期的开始时间触发屏蔽。";
+
+"schedule.editor.delete.confirm.title" = "删除时间表?";
+"schedule.editor.delete.confirm.message" = "此时间表将被删除。你可以随时创建新的。";
+"schedule.editor.delete.confirm.delete" = "删除";

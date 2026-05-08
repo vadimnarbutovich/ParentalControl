@@ -390,6 +390,7 @@
 
 "schedule.editor.name.label" = "Name";
 "schedule.editor.name.placeholder" = "For example, Sleep Time";
+"schedule.editor.name.required" = "Please enter a name";
 
 "schedule.editor.time.label" = "Time";
 "schedule.editor.time.start" = "Start";

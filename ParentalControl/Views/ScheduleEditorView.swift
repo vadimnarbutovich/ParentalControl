@@ -21,6 +21,10 @@ struct ScheduleEditorView: View {
     @State private var accent: ScheduleAccent
     @State private var isEnabled: Bool
     @State private var showDeleteConfirm = false
+    /// Показывает красный хинт «Укажите название» под полем имени.
+    /// Взводится только когда пользователь нажал «Сохранить» при пустом имени,
+    /// сбрасывается при любом изменении ввода — чтобы не маячил постоянно.
+    @State private var showNameRequiredHint = false
 
     private let id: UUID
     private let createdAt: Date
@@ -65,6 +69,9 @@ struct ScheduleEditorView: View {
                     .padding(.bottom, 24)
                 }
                 .scrollIndicators(.hidden)
+                // При свайпе скролла — мгновенно прячем клавиатуру и снимаем фокус с TextField.
+                // Стандартный SwiftUI API (iOS 16+), не требует ручного отслеживания focus state.
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle(isNew ? "schedule.editor.title.new" : "schedule.editor.title.edit")
             .navigationBarTitleDisplayMode(.inline)
@@ -74,9 +81,12 @@ struct ScheduleEditorView: View {
                         .tint(.white)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // Кнопка остаётся «активной» для тапа, даже когда форма невалидна,
+                    // чтобы можно было показать красный хинт «Укажите название».
+                    // Когда форма невалидна — визуально выглядит приглушённой (opacity 0.5).
                     Button("schedule.editor.save") { saveAndDismiss() }
                         .tint(AppTheme.neonPurple)
-                        .disabled(!isFormValid)
+                        .opacity(isFormValid ? 1 : 0.5)
                 }
             }
             .alert("schedule.editor.delete.confirm.title", isPresented: $showDeleteConfirm) {
@@ -98,7 +108,12 @@ struct ScheduleEditorView: View {
     }
 
     private var nameCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // Хинт показывается только если пользователь нажал «Сохранить» с пустым именем.
+        // Цвет border-а тоже подсвечиваем красным, чтобы поле явно было выделено как ошибка.
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameError = showNameRequiredHint && trimmedName.isEmpty
+
+        return VStack(alignment: .leading, spacing: 10) {
             Text("schedule.editor.name.label")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.85))
@@ -114,9 +129,23 @@ struct ScheduleEditorView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(
+                            nameError ? Color.red.opacity(0.85) : Color.white.opacity(0.12),
+                            lineWidth: 1
+                        )
                 )
                 .submitLabel(.done)
+                .onChange(of: name) { _, _ in
+                    // Любое изменение строки скрывает ошибку — пользователь начал исправлять.
+                    if showNameRequiredHint { showNameRequiredHint = false }
+                }
+
+            if nameError {
+                Text("schedule.editor.name.required")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .transition(.opacity)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -278,10 +307,19 @@ struct ScheduleEditorView: View {
     }
 
     private func saveAndDismiss() {
-        guard isFormValid else { return }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Если форма невалидна — показываем хинты и не сохраняем.
+        // Сейчас это только пустое имя; для пустых дней недели уже есть отдельный
+        // оранжевый хинт в `weekdaysCard`, который показывается всегда при пустом наборе.
+        guard isFormValid else {
+            withAnimation(.easeOut(duration: 0.15)) {
+                showNameRequiredHint = trimmedName.isEmpty
+            }
+            return
+        }
         let updated = BlockSchedule(
             id: id,
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            name: trimmedName,
             icon: icon,
             accent: accent,
             startTime: ScheduleTimeOfDay.from(date: startDate),

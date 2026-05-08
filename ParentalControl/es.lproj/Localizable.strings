@@ -266,3 +266,62 @@
 "paywall.period.week" = "sem.";
 "paywall.period.month" = "mes";
 "paywall.period.year" = "año";
+
+"tab.schedule" = "Horario";
+
+"schedule.title" = "Horario";
+"schedule.subtitle" = "Configura franjas horarias en las que se bloquean las apps que distraen.";
+"schedule.create_new" = "Crear nuevo horario";
+
+"schedule.empty.title" = "Aún no hay horarios";
+"schedule.empty.subtitle" = "Elige una sugerencia abajo o crea tu propio horario.";
+
+"schedule.suggestions.title" = "Sugerencias";
+"schedule.suggestions.add_accessibility" = "Añadir esta plantilla";
+
+"schedule.template.school.title" = "Horario escolar";
+"schedule.template.homework.title" = "Tareas";
+"schedule.template.dinner.title" = "Cena";
+
+"schedule.default.sleep.title" = "Hora de dormir";
+"schedule.draft.default_name" = "Nuevo horario";
+
+"schedule.weekday.short.mon" = "Lun";
+"schedule.weekday.short.tue" = "Mar";
+"schedule.weekday.short.wed" = "Mié";
+"schedule.weekday.short.thu" = "Jue";
+"schedule.weekday.short.fri" = "Vie";
+"schedule.weekday.short.sat" = "Sáb";
+"schedule.weekday.short.sun" = "Dom";
+
+"schedule.weekdays.everyday" = "Todos los días";
+"schedule.weekdays.workdays" = "Días laborables";
+"schedule.weekdays.weekends" = "Fines de semana";
+
+"schedule.editor.title.new" = "Nuevo horario";
+"schedule.editor.title.edit" = "Editar horario";
+"schedule.editor.cancel" = "Cancelar";
+"schedule.editor.save" = "Guardar";
+"schedule.editor.delete" = "Eliminar horario";
+
+"schedule.editor.name.label" = "Nombre";
+"schedule.editor.name.placeholder" = "Por ejemplo, Hora de dormir";
+"schedule.editor.name.required" = "Introduce un nombre";
+
+"schedule.editor.time.label" = "Hora";
+"schedule.editor.time.start" = "Inicio";
+"schedule.editor.time.end" = "Fin";
+"schedule.editor.time.crosses_midnight" = "El horario cruza la medianoche (termina al día siguiente).";
+
+"schedule.editor.weekdays.label" = "Días";
+"schedule.editor.weekdays.required" = "Elige al menos un día.";
+"schedule.editor.weekdays.preset.workdays" = "Lun–Vie";
+"schedule.editor.weekdays.preset.weekends" = "Sáb, Dom";
+"schedule.editor.weekdays.preset.everyday" = "Todos los días";
+
+"schedule.editor.enabled.label" = "Activado";
+"schedule.editor.enabled.hint" = "Cuando está activado, el bloqueo se inicia a la hora de inicio en los días seleccionados.";
+
+"schedule.editor.delete.confirm.title" = "¿Eliminar horario?";
+"schedule.editor.delete.confirm.message" = "Este horario se eliminará. Siempre puedes crear uno nuevo.";
+"schedule.editor.delete.confirm.delete" = "Eliminar";

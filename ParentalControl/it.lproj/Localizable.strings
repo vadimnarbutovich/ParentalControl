@@ -266,3 +266,62 @@
 "paywall.period.week" = "sett.";
 "paywall.period.month" = "mese";
 "paywall.period.year" = "anno";
+
+"tab.schedule" = "Pianificazione";
+
+"schedule.title" = "Pianificazione";
+"schedule.subtitle" = "Imposta intervalli di tempo in cui le app che distraggono sono bloccate.";
+"schedule.create_new" = "Crea nuova pianificazione";
+
+"schedule.empty.title" = "Ancora nessuna pianificazione";
+"schedule.empty.subtitle" = "Scegli un suggerimento qui sotto o crea la tua pianificazione.";
+
+"schedule.suggestions.title" = "Suggerimenti";
+"schedule.suggestions.add_accessibility" = "Aggiungi questo modello";
+
+"schedule.template.school.title" = "Orario scolastico";
+"schedule.template.homework.title" = "Compiti";
+"schedule.template.dinner.title" = "Cena";
+
+"schedule.default.sleep.title" = "Ora di dormire";
+"schedule.draft.default_name" = "Nuova pianificazione";
+
+"schedule.weekday.short.mon" = "Lun";
+"schedule.weekday.short.tue" = "Mar";
+"schedule.weekday.short.wed" = "Mer";
+"schedule.weekday.short.thu" = "Gio";
+"schedule.weekday.short.fri" = "Ven";
+"schedule.weekday.short.sat" = "Sab";
+"schedule.weekday.short.sun" = "Dom";
+
+"schedule.weekdays.everyday" = "Ogni giorno";
+"schedule.weekdays.workdays" = "Giorni feriali";
+"schedule.weekdays.weekends" = "Fine settimana";
+
+"schedule.editor.title.new" = "Nuova pianificazione";
+"schedule.editor.title.edit" = "Modifica pianificazione";
+"schedule.editor.cancel" = "Annulla";
+"schedule.editor.save" = "Salva";
+"schedule.editor.delete" = "Elimina pianificazione";
+
+"schedule.editor.name.label" = "Nome";
+"schedule.editor.name.placeholder" = "Per esempio, Ora di dormire";
+"schedule.editor.name.required" = "Inserisci un nome";
+
+"schedule.editor.time.label" = "Orario";
+"schedule.editor.time.start" = "Inizio";
+"schedule.editor.time.end" = "Fine";
+"schedule.editor.time.crosses_midnight" = "La pianificazione attraversa la mezzanotte (termina il giorno successivo).";
+
+"schedule.editor.weekdays.label" = "Giorni";
+"schedule.editor.weekdays.required" = "Scegli almeno un giorno.";
+"schedule.editor.weekdays.preset.workdays" = "Lun–Ven";
+"schedule.editor.weekdays.preset.weekends" = "Sab, Dom";
+"schedule.editor.weekdays.preset.everyday" = "Ogni giorno";
+
+"schedule.editor.enabled.label" = "Attiva";
+"schedule.editor.enabled.hint" = "Quando attivata, la blocco si avvia all’ora di inizio nei giorni selezionati.";
+
+"schedule.editor.delete.confirm.title" = "Eliminare la pianificazione?";
+"schedule.editor.delete.confirm.message" = "Questa pianificazione verrà rimossa. Puoi sempre crearne una nuova.";
+"schedule.editor.delete.confirm.delete" = "Elimina";

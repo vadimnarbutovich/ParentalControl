@@ -266,3 +266,62 @@
 "paywall.period.week" = "أسبوع";
 "paywall.period.month" = "شهر";
 "paywall.period.year" = "سنة";
+
+"tab.schedule" = "الجدول";
+
+"schedule.title" = "الجدول";
+"schedule.subtitle" = "حدّد فترات زمنية يتم فيها حظر التطبيقات المشتّتة.";
+"schedule.create_new" = "إنشاء جدول جديد";
+
+"schedule.empty.title" = "لا توجد جداول بعد";
+"schedule.empty.subtitle" = "اختر اقتراحًا أدناه أو أنشئ جدولك الخاص.";
+
+"schedule.suggestions.title" = "اقتراحات";
+"schedule.suggestions.add_accessibility" = "إضافة هذا القالب";
+
+"schedule.template.school.title" = "أوقات المدرسة";
+"schedule.template.homework.title" = "الواجبات المنزلية";
+"schedule.template.dinner.title" = "العشاء";
+
+"schedule.default.sleep.title" = "وقت النوم";
+"schedule.draft.default_name" = "جدول جديد";
+
+"schedule.weekday.short.mon" = "اثن";
+"schedule.weekday.short.tue" = "ثلا";
+"schedule.weekday.short.wed" = "أرب";
+"schedule.weekday.short.thu" = "خمي";
+"schedule.weekday.short.fri" = "جمع";
+"schedule.weekday.short.sat" = "سبت";
+"schedule.weekday.short.sun" = "أحد";
+
+"schedule.weekdays.everyday" = "كل يوم";
+"schedule.weekdays.workdays" = "أيام العمل";
+"schedule.weekdays.weekends" = "عطلة نهاية الأسبوع";
+
+"schedule.editor.title.new" = "جدول جديد";
+"schedule.editor.title.edit" = "تعديل الجدول";
+"schedule.editor.cancel" = "إلغاء";
+"schedule.editor.save" = "حفظ";
+"schedule.editor.delete" = "حذف الجدول";
+
+"schedule.editor.name.label" = "الاسم";
+"schedule.editor.name.placeholder" = "مثل: وقت النوم";
+"schedule.editor.name.required" = "يرجى إدخال اسم";
+
+"schedule.editor.time.label" = "الوقت";
+"schedule.editor.time.start" = "البداية";
+"schedule.editor.time.end" = "النهاية";
+"schedule.editor.time.crosses_midnight" = "يتجاوز الجدول منتصف الليل (ينتهي في اليوم التالي).";
+
+"schedule.editor.weekdays.label" = "الأيام";
+"schedule.editor.weekdays.required" = "اختر يومًا واحدًا على الأقل.";
+"schedule.editor.weekdays.preset.workdays" = "اثن–جمع";
+"schedule.editor.weekdays.preset.weekends" = "سبت، أحد";
+"schedule.editor.weekdays.preset.everyday" = "كل يوم";
+
+"schedule.editor.enabled.label" = "مفعّل";
+"schedule.editor.enabled.hint" = "عند التفعيل، يبدأ الحظر في وقت البداية في الأيام المحددة.";
+
+"schedule.editor.delete.confirm.title" = "حذف الجدول؟";
+"schedule.editor.delete.confirm.message" = "ستتم إزالة هذا الجدول. يمكنك دائمًا إنشاء جدول جديد.";
+"schedule.editor.delete.confirm.delete" = "حذف";

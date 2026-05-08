@@ -1977,15 +1977,17 @@ final class AppState: ObservableObject {
 
     /// Создаёт пустое расписание-черновик (используется при нажатии «Создать новое расписание»).
     /// Не сохраняется в список до явного `commitBlockSchedule`.
+    /// Имя оставляем пустым — в редакторе показывается плейсхолдер «Например, Время спать»;
+    /// `isEnabled = true`, чтобы при сохранении расписание сразу было активно без ручного переключения.
     func makeDraftBlockSchedule() -> BlockSchedule {
         BlockSchedule(
-            name: L10n.tr("schedule.draft.default_name"),
+            name: "",
             icon: .generic,
             accent: .purple,
             startTime: ScheduleTimeOfDay(hour: 9, minute: 0),
             endTime: ScheduleTimeOfDay(hour: 10, minute: 0),
             weekdays: ScheduleWeekday.everyday,
-            isEnabled: false
+            isEnabled: true
         )
     }
 
