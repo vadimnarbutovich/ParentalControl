@@ -341,3 +341,70 @@
 "map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure the child's device is online and that location access is granted.";
 "map.unpaired.title" = "Device is not paired";
 "map.unpaired.subtitle" = "Pair the child device in Settings to see its location.";
+
+"tab.schedule" = "Schedule";
+"schedule.title" = "Schedule";
+"schedule.subtitle" = "Set time windows when distracting apps are blocked.";
+"schedule.create_new" = "Create new schedule";
+
+"schedule.empty.title" = "No schedules yet";
+"schedule.empty.subtitle" = "Pick a suggestion below or create your own schedule.";
+
+"schedule.suggestions.title" = "Suggestions";
+"schedule.suggestions.add_accessibility" = "Add this template";
+
+"schedule.template.school.title" = "School Hours";
+"schedule.template.homework.title" = "Homework";
+"schedule.template.dinner.title" = "Dinner";
+
+"schedule.default.sleep.title" = "Sleep Time";
+"schedule.draft.default_name" = "New schedule";
+
+"schedule.weekday.short.mon" = "Mon";
+"schedule.weekday.short.tue" = "Tue";
+"schedule.weekday.short.wed" = "Wed";
+"schedule.weekday.short.thu" = "Thu";
+"schedule.weekday.short.fri" = "Fri";
+"schedule.weekday.short.sat" = "Sat";
+"schedule.weekday.short.sun" = "Sun";
+
+"schedule.weekdays.everyday" = "Every day";
+"schedule.weekdays.workdays" = "Weekdays";
+"schedule.weekdays.weekends" = "Weekends";
+
+"dashboard.active_schedule.title" = "Schedule active now";
+"dashboard.active_schedule.range" = "%1$@ — %2$@";
+"dashboard.active_schedule.hint" = "Apps are blocked on the child's device by this schedule.";
+
+"dashboard.next_schedule.title" = "Next schedule";
+
+"dashboard.blocking.schedule_active" = "Blocked by schedule";
+"dashboard.blocking.schedule_until" = "Until %@";
+"dashboard.blocking.schedule_hint" = "Apps will unlock automatically when the schedule ends.";
+
+"schedule.editor.title.new" = "New schedule";
+"schedule.editor.title.edit" = "Edit schedule";
+"schedule.editor.cancel" = "Cancel";
+"schedule.editor.save" = "Save";
+"schedule.editor.delete" = "Delete schedule";
+
+"schedule.editor.name.label" = "Name";
+"schedule.editor.name.placeholder" = "For example, Sleep Time";
+
+"schedule.editor.time.label" = "Time";
+"schedule.editor.time.start" = "Start";
+"schedule.editor.time.end" = "End";
+"schedule.editor.time.crosses_midnight" = "Schedule crosses midnight (ends the next day).";
+
+"schedule.editor.weekdays.label" = "Days";
+"schedule.editor.weekdays.required" = "Pick at least one day.";
+"schedule.editor.weekdays.preset.workdays" = "Mon–Fri";
+"schedule.editor.weekdays.preset.weekends" = "Sat, Sun";
+"schedule.editor.weekdays.preset.everyday" = "Every day";
+
+"schedule.editor.enabled.label" = "Enabled";
+"schedule.editor.enabled.hint" = "When enabled, blocking turns on at the start time on selected days.";
+
+"schedule.editor.delete.confirm.title" = "Delete schedule?";
+"schedule.editor.delete.confirm.message" = "This schedule will be removed. You can always create a new one.";
+"schedule.editor.delete.confirm.delete" = "Delete";

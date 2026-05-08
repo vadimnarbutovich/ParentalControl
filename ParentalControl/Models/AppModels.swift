@@ -230,6 +230,13 @@ enum RemoteFocusCommandType: String, Codable {
     /// Parent → child: please capture a fresh GPS fix and push it back to the server.
     /// Triggered manually from the parent's Map tab via the "Refresh location" button.
     case requestLocation = "request_location"
+    /// Parent edited block schedules; child should pull `family_block_schedules` and reschedule monitors.
+    case schedulesUpdated = "schedules_updated"
+    /// Backend cron detected that a block schedule's window started: child should apply shield immediately
+    /// and refresh enforcement (without waiting for `intervalDidStart` from DeviceActivity).
+    case scheduleStarted = "schedule_started"
+    /// Backend cron detected that a block schedule's window ended: child should clear that schedule's shield.
+    case scheduleEnded = "schedule_ended"
 }
 
 /// Snapshot of the child device's last known GPS position. Stored on the backend in
@@ -258,6 +265,22 @@ struct RemoteFocusCommand: Codable, Equatable {
     let status: RemoteFocusCommandStatus
     let createdAt: Date
     let updatedAt: Date
+}
+
+/// Поля ответа `list_block_schedules` (camelCase с edge).
+struct RemoteBlockScheduleDTO: Codable {
+    let id: UUID
+    let name: String
+    let icon: String
+    let accent: String
+    let startHour: Int
+    let startMinute: Int
+    let endHour: Int
+    let endMinute: Int
+    let weekdays: [Int]
+    let isEnabled: Bool
+    let createdAtISO: String?
+    let updatedAtISO: String?
 }
 
 struct RemoteChildRuntimeState: Codable, Equatable {

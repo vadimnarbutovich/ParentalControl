@@ -79,6 +79,9 @@ final class AppState: ObservableObject {
     @Published private(set) var parentChildAvailableSeconds: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var remoteStatusMessage: String?
+    /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
+    /// подставляется из `list_block_schedules` и применяется через Device Activity + named shields.
+    @Published private(set) var blockSchedules: [BlockSchedule] = []
     /// Последняя известная координата ребёнка. Хранится также в App Group, чтобы
     /// карта моментально показывала «вчерашнюю» точку до того, как сервер ответит.
     @Published private(set) var childLocationSnapshot: ChildLocationSnapshot?
@@ -106,6 +109,7 @@ final class AppState: ObservableObject {
     }
 
     let screenTimeService: ScreenTimeService
+    private let blockScheduleEnforcement: BlockScheduleEnforcementService
 
     var activePermissionReminder: PermissionReminderKind? {
         guard permissionStatusesReady, hasCompletedOnboarding, !permissionBannerSuppressedAfterCTA else { return nil }
@@ -189,6 +193,7 @@ final class AppState: ObservableObject {
         self.remoteSyncService = remoteSyncService
         self.locationService = locationService
         self.screenTimeService = ScreenTimeService(appStore: storage)
+        self.blockScheduleEnforcement = BlockScheduleEnforcementService(appStore: storage)
         self.balance = storage.loadBalance()
         self.settings = storage.loadSettings()
         self.ledger = storage.loadLedger()
@@ -206,6 +211,7 @@ final class AppState: ObservableObject {
         self.hasCompletedOnboarding = onboardingDone
         self.deviceRole = storage.loadDeviceRole()
         self.pairingState = storage.loadPairingState()
+        self.blockSchedules = storage.loadBlockSchedules()
         self.isParentChildStateResolved = !(self.deviceRole == .parent && self.pairingState?.isLinked == true)
         self.parentResolvedFocusActive = nil
         self.isHealthAuthorized = false
@@ -223,6 +229,10 @@ final class AppState: ObservableObject {
 
         Task { await self.refreshPermissionStatuses() }
         Task { await self.bootstrapRemoteIfNeeded() }
+        seedDefaultBlockSchedulesIfNeeded()
+        if deviceRole == .child, pairingState?.isLinked == true {
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        }
     }
 
     deinit {
@@ -313,6 +323,7 @@ final class AppState: ObservableObject {
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
             hasCompletedOnboarding = true
+            seedDefaultBlockSchedulesIfNeeded()
         }
         Task {
             await bootstrapRemoteIfNeeded()
@@ -352,6 +363,7 @@ final class AppState: ObservableObject {
             storage.savePairingState(state)
             remoteStatusMessage = nil
             startRemotePollingIfNeeded()
+            await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -820,10 +832,37 @@ final class AppState: ObservableObject {
             let commands = try await remoteSyncService.fetchPendingCommands()
             guard !commands.isEmpty else { return }
             let sorted = commands.sorted { $0.createdAt < $1.createdAt }
-            if sorted.count > 1 {
-                for stale in sorted.dropLast() {
-                    // Avoid command burst after delayed delivery:
-                    // only the latest parent intent is applied.
+
+            let scheduleCmds = sorted.filter { $0.commandType == .schedulesUpdated }
+            if !scheduleCmds.isEmpty {
+                await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
+                for cmd in scheduleCmds {
+                    try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
+                }
+            }
+
+            // Команды schedule_started/schedule_ended приходят с бэкенд-cron при наступлении
+            // границы окна расписания. На клиенте делаем единый refresh enforcement (а не
+            // по каждой команде отдельно — чтобы избежать множественных последовательных
+            // start/stopMonitoring). Acknowledge всех таких команд.
+            let scheduleEventCmds = sorted.filter {
+                $0.commandType == .scheduleStarted || $0.commandType == .scheduleEnded
+            }
+            if !scheduleEventCmds.isEmpty {
+                blockScheduleEnforcement.refreshFromStoredSchedules()
+                for cmd in scheduleEventCmds {
+                    try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
+                }
+            }
+
+            let nonSchedule = sorted.filter {
+                $0.commandType != .schedulesUpdated
+                    && $0.commandType != .scheduleStarted
+                    && $0.commandType != .scheduleEnded
+            }
+            guard let latest = nonSchedule.last else { return }
+            if nonSchedule.count > 1 {
+                for stale in nonSchedule.dropLast() {
                     try? await remoteSyncService.ackCommand(
                         id: stale.id,
                         status: .failed,
@@ -831,7 +870,6 @@ final class AppState: ObservableObject {
                     )
                 }
             }
-            guard let latest = sorted.last else { return }
             await applyRemoteCommandIfNeeded(
                 id: latest.id,
                 type: latest.commandType,
@@ -873,6 +911,71 @@ final class AppState: ObservableObject {
             try await remoteSyncService.updateChildRuntimeState(runtime)
         } catch {
             remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Block schedules (remote)
+
+    private func refreshChildBlockSchedulesFromServerAndApplyEnforcement() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let dtos = try await remoteSyncService.fetchBlockSchedules()
+            let merged = dtos.map { BlockSchedule(remoteDTO: $0) }
+            blockSchedules = merged
+            storage.saveBlockSchedules(merged)
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        } catch {
+            os_log("refreshChildBlockSchedules: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+            // Оставляем/восстанавливаем мониторинг из кэша App Group, если сервер временно недоступен.
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        }
+    }
+
+    /// Публичный refresh для UI-слоя (Dashboard / Schedules). Тонкая обёртка над приватной
+    /// логикой синхронизации с бэкендом для роли parent. Безопасно вызывать из `.task`.
+    func refreshParentBlockSchedulesIfNeeded() async {
+        await syncParentBlockSchedulesFromServerIfNeeded()
+    }
+
+    private func syncParentBlockSchedulesFromServerIfNeeded() async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        do {
+            let dtos = try await remoteSyncService.fetchBlockSchedules()
+            let remoteModels = dtos.map { BlockSchedule(remoteDTO: $0) }
+            if remoteModels.isEmpty, !blockSchedules.isEmpty {
+                for schedule in blockSchedules {
+                    try? await remoteSyncService.upsertBlockSchedule(schedule)
+                }
+                return
+            }
+            blockSchedules = remoteModels
+            storage.saveBlockSchedules(remoteModels)
+        } catch {
+            os_log("syncParentBlockSchedules: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+        }
+    }
+
+    private func schedulePushBlockScheduleToServer(_ schedule: BlockSchedule) {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.remoteSyncService.upsertBlockSchedule(schedule)
+            } catch {
+                os_log("upsertBlockSchedule: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+            }
+        }
+    }
+
+    private func scheduleDeleteBlockScheduleOnServer(id: UUID) {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.remoteSyncService.deleteBlockSchedule(id: id)
+            } catch {
+                os_log("deleteBlockSchedule: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+            }
         }
     }
 
@@ -1041,6 +1144,14 @@ final class AppState: ObservableObject {
             // as the actual delivery confirmation. This avoids blocking the alert push
             // background time budget if the GPS fix is slow.
             await captureAndUploadChildLocationIfNeeded()
+        case .schedulesUpdated:
+            await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
+        case .scheduleStarted, .scheduleEnded:
+            // Бэкенд-cron детектировал переход start/end окна расписания. Просто перезапускаем
+            // enforcement — внутренняя логика `isScheduleActiveNow` сама применит/снимет
+            // именованный shield для нужного расписания. Список расписаний не изменился,
+            // поэтому fetch делать не нужно.
+            blockScheduleEnforcement.refreshFromStoredSchedules()
         }
         storage.saveLastHandledRemoteCommandID(id.uuidString)
         let newState = RemoteChildRuntimeState(
@@ -1274,7 +1385,8 @@ final class AppState: ObservableObject {
             return isActiveNow
         case .endFocus:
             return !isActiveNow
-        case .resetEarnedBalance, .addEarnedSeconds, .requestLocation:
+        case .resetEarnedBalance, .addEarnedSeconds, .requestLocation,
+             .schedulesUpdated, .scheduleStarted, .scheduleEnded:
             return true
         }
     }
@@ -1527,6 +1639,11 @@ final class AppState: ObservableObject {
         screenTimeService.stopDeviceActivityMonitoring()
         refreshSharedStateFromAppGroup()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
+        // Расписания: сразу регистрируем Device Activity из последнего JSON в App Group,
+        // не дожидаясь сетевого pull (иначе окно до завершения Task без мониторов).
+        if deviceRole == .child, pairingState?.isLinked == true {
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        }
         startStepPolling()
         startSharedStateRefreshLoop()
         // Сначала свежие статусы, потом сброс подавления баннера — иначе один кадр с устаревшим Health и снова «нет доступа».
@@ -1538,6 +1655,11 @@ final class AppState: ObservableObject {
             // Drain commands captured by NSE / earlier push handlers while suspended,
             // before pulling fresh state — ensures the latest parent intent wins.
             await applyAndDrainRemoteCommandsIfNeeded(initialPayload: nil)
+            if deviceRole == .parent {
+                await syncParentBlockSchedulesFromServerIfNeeded()
+            } else if deviceRole == .child {
+                await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
+            }
             await refreshParentChildState()
         }
     }
@@ -1560,6 +1682,7 @@ final class AppState: ObservableObject {
         await bootstrapRemoteIfNeeded()
         await syncChildWithDesiredStateIfNeeded()
         await processPendingRemoteCommandsIfNeeded()
+        await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
         await syncChildStatsSnapshotIfNeeded()
         return true
     }
@@ -1788,6 +1911,135 @@ final class AppState: ObservableObject {
         }
         let estimated = Int((Double(max(0, entry.deltaSeconds)) / 60.0) * Double(repsPerMinute))
         return max(0, estimated)
+    }
+
+    // MARK: - Block schedules (read-only helpers for UI)
+
+    /// Возвращает все включённые расписания, чьё окно активно прямо сейчас (с учётом
+    /// дней недели и переходов через полночь). Используется как Родителем (для карточки
+    /// «Сейчас активно расписание»), так и Ребёнком (для индикации причины блокировки).
+    /// Сортировка — по более раннему `endTime` (что первым закончится — выше в UI).
+    func activeBlockSchedules(at date: Date = Date()) -> [BlockSchedule] {
+        blockSchedules
+            .filter { $0.isActive(at: date) }
+            .sorted { $0.endTime.totalMinutes < $1.endTime.totalMinutes }
+    }
+
+    /// Ближайшее следующее расписание (которое включено, но сейчас не активно). Возвращает
+    /// пару (расписание, дата ближайшего start). Используется для UI «Следующее: ... в HH:MM».
+    /// Поиск идёт в окне ближайших 7 дней.
+    func nextScheduledBlock(after date: Date = Date(), calendar: Calendar = .current) -> (schedule: BlockSchedule, startDate: Date)? {
+        let candidates = blockSchedules.filter { $0.isEnabled }
+        guard !candidates.isEmpty else { return nil }
+
+        var best: (BlockSchedule, Date)?
+        for daysAhead in 0..<8 {
+            guard let dayDate = calendar.date(byAdding: .day, value: daysAhead, to: date) else { continue }
+            let calWeekday = calendar.component(.weekday, from: dayDate)
+            let dayWD = calWeekday == 1 ? 7 : calWeekday - 1
+            guard let dayEnum = ScheduleWeekday(rawValue: dayWD) else { continue }
+
+            for schedule in candidates where schedule.weekdays.contains(dayEnum) {
+                var components = calendar.dateComponents([.year, .month, .day], from: dayDate)
+                components.hour = schedule.startTime.hour
+                components.minute = schedule.startTime.minute
+                components.second = 0
+                guard let startDate = calendar.date(from: components) else { continue }
+                guard startDate > date else { continue }
+                if let current = best {
+                    if startDate < current.1 { best = (schedule, startDate) }
+                } else {
+                    best = (schedule, startDate)
+                }
+            }
+            if best != nil { break }
+        }
+        return best.map { ($0.0, $0.1) }
+    }
+
+    // MARK: - Block schedules (parent role)
+
+    /// Гарантирует, что у роли parent при первом запуске есть выключенное расписание
+    /// «Время спать». Идемпотентно: повторные вызовы не создают дубликатов.
+    func seedDefaultBlockSchedulesIfNeeded() {
+        guard deviceRole == .parent else { return }
+        guard !storage.loadDidSeedDefaultBlockSchedules() else { return }
+        if blockSchedules.isEmpty {
+            let sleep = BlockSchedule.defaultSleepSchedule()
+            blockSchedules = [sleep]
+            storage.saveBlockSchedules(blockSchedules)
+        }
+        storage.saveDidSeedDefaultBlockSchedules(true)
+        for schedule in blockSchedules {
+            schedulePushBlockScheduleToServer(schedule)
+        }
+    }
+
+    /// Создаёт пустое расписание-черновик (используется при нажатии «Создать новое расписание»).
+    /// Не сохраняется в список до явного `commitBlockSchedule`.
+    func makeDraftBlockSchedule() -> BlockSchedule {
+        BlockSchedule(
+            name: L10n.tr("schedule.draft.default_name"),
+            icon: .generic,
+            accent: .purple,
+            startTime: ScheduleTimeOfDay(hour: 9, minute: 0),
+            endTime: ScheduleTimeOfDay(hour: 10, minute: 0),
+            weekdays: ScheduleWeekday.everyday,
+            isEnabled: false
+        )
+    }
+
+    /// Создаёт расписание из шаблона и добавляет его в начало списка.
+    /// Возвращает добавленный объект — UI открывает редактор именно для него.
+    @discardableResult
+    func addBlockSchedule(from template: BlockScheduleTemplate) -> BlockSchedule {
+        let schedule = template.makeSchedule()
+        var list = blockSchedules
+        list.insert(schedule, at: 0)
+        blockSchedules = list
+        storage.saveBlockSchedules(blockSchedules)
+        schedulePushBlockScheduleToServer(schedule)
+        return schedule
+    }
+
+    /// Обновляет существующее расписание (по `id`) или добавляет новое, если его ещё нет.
+    /// Используется и для commit редактора, и для сохранения нового расписания из draft.
+    func commitBlockSchedule(_ schedule: BlockSchedule) {
+        var updated = schedule
+        updated.updatedAt = Date()
+        var list = blockSchedules
+        if let index = list.firstIndex(where: { $0.id == schedule.id }) {
+            list[index] = updated
+        } else {
+            list.insert(updated, at: 0)
+        }
+        blockSchedules = list
+        storage.saveBlockSchedules(blockSchedules)
+        schedulePushBlockScheduleToServer(updated)
+    }
+
+    /// Переключает флаг `isEnabled` для конкретного расписания.
+    func setBlockSchedule(_ scheduleID: UUID, enabled: Bool) {
+        guard let index = blockSchedules.firstIndex(where: { $0.id == scheduleID }) else { return }
+        var list = blockSchedules
+        var updated = list[index]
+        guard updated.isEnabled != enabled else { return }
+        updated.isEnabled = enabled
+        updated.updatedAt = Date()
+        list[index] = updated
+        blockSchedules = list
+        storage.saveBlockSchedules(blockSchedules)
+        schedulePushBlockScheduleToServer(updated)
+    }
+
+    /// Удаляет расписание из списка. Возвращает `true`, если удаление произошло.
+    @discardableResult
+    func deleteBlockSchedule(_ scheduleID: UUID) -> Bool {
+        guard blockSchedules.contains(where: { $0.id == scheduleID }) else { return false }
+        scheduleDeleteBlockScheduleOnServer(id: scheduleID)
+        blockSchedules.removeAll { $0.id == scheduleID }
+        storage.saveBlockSchedules(blockSchedules)
+        return true
     }
 }
 
@@ -2254,6 +2506,62 @@ private final class ParentalRemoteSyncService {
             horizontalAccuracy: dto.horizontalAccuracy,
             capturedAt: captured,
             updatedAt: updated
+        )
+    }
+
+    func fetchBlockSchedules() async throws -> [RemoteBlockScheduleDTO] {
+        struct Payload: Encodable { let installID: String }
+        struct Response: Decodable { let schedules: [RemoteBlockScheduleDTO] }
+        let response: Response = try await call(
+            action: "list_block_schedules",
+            payload: Payload(installID: installID)
+        )
+        return response.schedules
+    }
+
+    func upsertBlockSchedule(_ schedule: BlockSchedule) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let id: String
+            let name: String
+            let icon: String
+            let accent: String
+            let startHour: Int
+            let startMinute: Int
+            let endHour: Int
+            let endMinute: Int
+            let weekdays: [Int]
+            let isEnabled: Bool
+            /// IANA timezone родителя в момент сохранения. Используется бэкенд-cron
+            /// `cron_evaluate_block_schedules`, чтобы корректно вычислить локальное время
+            /// и не путать UTC с фактическим временем семьи.
+            let timezoneIdentifier: String
+        }
+        let payload = Payload(
+            installID: installID,
+            id: schedule.id.uuidString,
+            name: schedule.name,
+            icon: schedule.icon.rawValue,
+            accent: schedule.accent.rawValue,
+            startHour: schedule.startTime.hour,
+            startMinute: schedule.startTime.minute,
+            endHour: schedule.endTime.hour,
+            endMinute: schedule.endTime.minute,
+            weekdays: schedule.orderedWeekdays.map(\.rawValue),
+            isEnabled: schedule.isEnabled,
+            timezoneIdentifier: TimeZone.current.identifier
+        )
+        let _: EmptyResponse = try await call(action: "upsert_block_schedule", payload: payload)
+    }
+
+    func deleteBlockSchedule(id: UUID) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let id: String
+        }
+        let _: EmptyResponse = try await call(
+            action: "delete_block_schedule",
+            payload: Payload(installID: installID, id: id.uuidString)
         )
     }
 

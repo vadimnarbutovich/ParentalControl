@@ -53,6 +53,12 @@ enum StorageKey {
     static let pendingRemoteCommandQueue = "parentalcontrol.pendingRemoteCommandQueue"
     /// Last known child location snapshot, cached to render the parent's Map tab instantly.
     static let childLocationSnapshot = "parentalcontrol.childLocationSnapshot"
+    /// Список пользовательских расписаний блокировки (роль `parent`).
+    static let blockSchedules = "parentalcontrol.blockSchedules"
+    /// Флаг: дефолтное расписание «Время спать» уже добавлено для текущего устройства.
+    static let didSeedDefaultBlockSchedules = "parentalcontrol.didSeedDefaultBlockSchedules"
+    /// Имена `DeviceActivityName` для сегментов расписаний (`pcsched_*`), чтобы останавливать перед перерегистрацией.
+    static let blockScheduleActivityNames = "parentalcontrol.blockScheduleActivityNames"
 }
 
 /// Lightweight payload captured by either the main app or the Notification Service Extension
@@ -435,6 +441,43 @@ final class AppGroupStore {
         defaults.removeObject(forKey: StorageKey.pendingRemoteCommandQueue)
         defaults.synchronize()
         return decoded
+    }
+
+    // MARK: - Block schedules
+
+    func loadBlockSchedules() -> [BlockSchedule] {
+        load([BlockSchedule].self, key: StorageKey.blockSchedules) ?? []
+    }
+
+    func saveBlockSchedules(_ schedules: [BlockSchedule]) {
+        save(schedules, key: StorageKey.blockSchedules)
+    }
+
+    func loadDidSeedDefaultBlockSchedules() -> Bool {
+        store.integer(forKey: StorageKey.didSeedDefaultBlockSchedules) == 1
+    }
+
+    func saveDidSeedDefaultBlockSchedules(_ value: Bool) {
+        store.set(value ? 1 : 0, forKey: StorageKey.didSeedDefaultBlockSchedules)
+    }
+
+    func loadBlockScheduleActivityNames() -> [String] {
+        guard let defaults = UserDefaults(suiteName: appGroupId),
+              let data = defaults.data(forKey: StorageKey.blockScheduleActivityNames),
+              let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+
+    func saveBlockScheduleActivityNames(_ names: [String]) {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+        if let encoded = try? JSONEncoder().encode(names) {
+            defaults.set(encoded, forKey: StorageKey.blockScheduleActivityNames)
+        } else {
+            defaults.removeObject(forKey: StorageKey.blockScheduleActivityNames)
+        }
+        defaults.synchronize()
     }
 
     func loadChildLocationSnapshot() -> ChildLocationSnapshot? {

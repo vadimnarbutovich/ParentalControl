@@ -42,12 +42,19 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         markHeartbeat("intervalDidStart")
-        resetDailyBalanceAndEnforceShieldIfNeeded(activity: activity)
+        if activity == activityName {
+            resetDailyBalanceAndEnforceShieldIfNeeded(activity: activity)
+        } else if let parsed = parseScheduleActivity(activity) {
+            handleScheduleIntervalStart(scheduleID: parsed.id, kind: parsed.kind)
+        }
     }
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
         markHeartbeat("intervalDidEnd")
+        if let parsed = parseScheduleActivity(activity) {
+            handleScheduleIntervalEnd(scheduleID: parsed.id, kind: parsed.kind)
+        }
     }
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
@@ -327,6 +334,198 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         availableSeconds < 60 ? smallChunkSeconds : largeChunkSeconds
     }
 
+    // MARK: - Block schedules (named ManagedSettingsStore)
+
+    private let blockSchedulesJSONKey = "parentalcontrol.blockSchedules"
+
+    private enum ScheduleActivityKind {
+        case evening
+        case morning
+        case single
+    }
+
+    private func parseScheduleActivity(_ activity: DeviceActivityName) -> (id: UUID, kind: ScheduleActivityKind)? {
+        let raw = activity.rawValue
+        guard raw.hasPrefix("pcsched_") else { return nil }
+        let rest = String(raw.dropFirst(8))
+        if rest.hasSuffix("_e"), let id = UUID(uuidString: String(rest.dropLast(2))) {
+            return (id, .evening)
+        }
+        if rest.hasSuffix("_m"), let id = UUID(uuidString: String(rest.dropLast(2))) {
+            return (id, .morning)
+        }
+        if rest.hasSuffix("_s"), let id = UUID(uuidString: String(rest.dropLast(2))) {
+            return (id, .single)
+        }
+        return nil
+    }
+
+    private func loadMonitorSchedule(id: UUID) -> MonitorBlockSchedule? {
+        guard let defaults = UserDefaults(suiteName: appGroupId),
+              let data = defaults.data(forKey: blockSchedulesJSONKey) else {
+            return nil
+        }
+        if let schedules = try? JSONDecoder().decode([MonitorBlockSchedule].self, from: data),
+           let found = schedules.first(where: { $0.id == id }) {
+            return found
+        }
+        return Self.monitorScheduleFromFallbackJSON(id: id, data: data)
+    }
+
+    /// Если основной Codable не совпал с форматом `[BlockSchedule]` (редкие отличия `weekdays`), парсим вручную.
+    private static func monitorScheduleFromFallbackJSON(id: UUID, data: Data) -> MonitorBlockSchedule? {
+        guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return nil }
+        for obj in arr {
+            guard let idStr = obj["id"] as? String, let oid = UUID(uuidString: idStr), oid == id else { continue }
+            let isEnabled = (obj["isEnabled"] as? Bool) ?? true
+            guard let st = obj["startTime"] as? [String: Any],
+                  let et = obj["endTime"] as? [String: Any],
+                  let sh = intFromJSON(st["hour"]), let sm = intFromJSON(st["minute"]),
+                  let eh = intFromJSON(et["hour"]), let em = intFromJSON(et["minute"]) else { continue }
+            let weekdays = weekdaysFromAny(obj["weekdays"])
+            return MonitorBlockSchedule(
+                id: oid,
+                isEnabled: isEnabled,
+                startTime: .init(hour: sh, minute: sm),
+                endTime: .init(hour: eh, minute: em),
+                weekdays: weekdays
+            )
+        }
+        return nil
+    }
+
+    private static func intFromJSON(_ any: Any?) -> Int? {
+        if let i = any as? Int { return i }
+        if let n = any as? NSNumber { return n.intValue }
+        return nil
+    }
+
+    private static func weekdaysFromAny(_ any: Any?) -> [Int] {
+        guard let arr = any as? [Any] else { return [] }
+        var out: [Int] = []
+        for el in arr {
+            if let i = el as? Int {
+                out.append(i)
+            } else if let n = el as? NSNumber {
+                out.append(n.intValue)
+            } else if let d = el as? [String: Any], let rv = intFromJSON(d["rawValue"]) {
+                out.append(rv)
+            }
+        }
+        return out
+    }
+
+    private func handleScheduleIntervalStart(scheduleID: UUID, kind: ScheduleActivityKind) {
+        guard let defaults = UserDefaults(suiteName: appGroupId),
+              let data = defaults.data(forKey: selectionKey),
+              let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data),
+              let schedule = loadMonitorSchedule(id: scheduleID) else {
+            markHeartbeat("scheduleStart.noData")
+            return
+        }
+        let hasSelection = !selection.applicationTokens.isEmpty ||
+            !selection.categoryTokens.isEmpty ||
+            !selection.webDomainTokens.isEmpty
+        guard hasSelection else {
+            markHeartbeat("scheduleStart.noSelection")
+            return
+        }
+        let now = Date()
+        guard shouldApplyScheduleSegment(schedule: schedule, kind: kind, now: now) else {
+            markHeartbeat("scheduleStart.weekdaySkip")
+            return
+        }
+        applyNamedScheduleShield(selection: selection, scheduleID: scheduleID)
+        markHeartbeat("scheduleStart.shieldOn")
+    }
+
+    private func handleScheduleIntervalEnd(scheduleID: UUID, kind: ScheduleActivityKind) {
+        guard let schedule = loadMonitorSchedule(id: scheduleID) else {
+            clearNamedScheduleShield(scheduleID: scheduleID)
+            markHeartbeat("scheduleEnd.clearedNoSchedule")
+            return
+        }
+        switch kind {
+        case .evening:
+            if schedule.crossesMidnight {
+                markHeartbeat("scheduleEnd.eveningSkipClearOvernight")
+                return
+            }
+            fallthrough
+        case .morning, .single:
+            clearNamedScheduleShield(scheduleID: scheduleID)
+            markHeartbeat("scheduleEnd.shieldOff")
+        }
+    }
+
+    private func shouldApplyScheduleSegment(
+        schedule: MonitorBlockSchedule,
+        kind: ScheduleActivityKind,
+        now: Date
+    ) -> Bool {
+        guard schedule.isEnabled else { return false }
+        let daySet = Set(schedule.weekdays)
+        let today = scheduleWeekdayIndex(for: now)
+        switch kind {
+        case .single:
+            return daySet.contains(today)
+        case .evening:
+            return daySet.contains(today)
+        case .morning:
+            guard schedule.crossesMidnight else { return false }
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now) ?? now
+            let yDay = scheduleWeekdayIndex(for: yesterday)
+            if daySet.contains(today) { return true }
+            if daySet.contains(yDay) && !daySet.contains(today) { return true }
+            return false
+        }
+    }
+
+    private func scheduleWeekdayIndex(for date: Date) -> Int {
+        let cw = Calendar.current.component(.weekday, from: date)
+        return cw == 1 ? 7 : cw - 1
+    }
+
+    private func applyNamedScheduleShield(selection: FamilyActivitySelection, scheduleID: UUID) {
+        let storeName = ManagedSettingsStore.Name("pcsched_store_\(scheduleID.uuidString)")
+        let settingsStore = ManagedSettingsStore(named: storeName)
+        settingsStore.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
+        settingsStore.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
+        settingsStore.shield.webDomains = selection.webDomainTokens.isEmpty ? nil : selection.webDomainTokens
+    }
+
+    private func clearNamedScheduleShield(scheduleID: UUID) {
+        let storeName = ManagedSettingsStore.Name("pcsched_store_\(scheduleID.uuidString)")
+        ManagedSettingsStore(named: storeName).clearAllSettings()
+    }
+
+}
+
+private struct MonitorBlockSchedule: Codable {
+    let id: UUID
+    let isEnabled: Bool
+    let startTime: HourMinute
+    let endTime: HourMinute
+    let weekdays: [Int]
+
+    init(id: UUID, isEnabled: Bool, startTime: HourMinute, endTime: HourMinute, weekdays: [Int]) {
+        self.id = id
+        self.isEnabled = isEnabled
+        self.startTime = startTime
+        self.endTime = endTime
+        self.weekdays = weekdays
+    }
+
+    struct HourMinute: Codable {
+        let hour: Int
+        let minute: Int
+    }
+
+    var crossesMidnight: Bool {
+        let start = startTime.hour * 60 + startTime.minute
+        let end = endTime.hour * 60 + endTime.minute
+        return end <= start
+    }
 }
 
 private struct StoredBalance: Codable {
