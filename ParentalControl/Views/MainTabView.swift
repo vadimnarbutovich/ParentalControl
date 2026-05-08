@@ -99,9 +99,6 @@ private struct ParentDashboardView: View {
                 AppBackgroundView()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("parent.dashboard.title")
-                            .font(.largeTitle.bold())
-                            .foregroundStyle(.white)
                         VStack(alignment: .leading, spacing: 10) {
                             Text(appState.pairingState?.isLinked == true
                                  ? "parent.dashboard.linked"
@@ -181,20 +178,6 @@ private struct ParentDashboardView: View {
                         .padding()
                         .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
 
-                        Button(commandButtonTitleKey) {
-                            let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
-                            Task { await appState.sendParentFocusCommand(start: shouldStartFocus) }
-                        }
-                        .buttonStyle(
-                            NeonPrimaryButtonStyle(
-                                tint: shouldShowDisabledVisualState
-                                    ? .gray
-                                    : ((appState.parentResolvedFocusActive ?? false) ? AppTheme.neonBlue : AppTheme.neonGreen)
-                            )
-                        )
-                        .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                        .disabled(!isCommandButtonEnabled)
-
                         HStack(spacing: 12) {
                             Button("parent.dashboard.take_all_time") {
                                 Task { await appState.sendParentTakeAllTimeCommand() }
@@ -223,6 +206,31 @@ private struct ParentDashboardView: View {
                     }
                     .padding()
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(.white.opacity(0.12))
+                        .frame(height: 1)
+
+                    Button(commandButtonTitleKey) {
+                        let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
+                        Task { await appState.sendParentFocusCommand(start: shouldStartFocus) }
+                    }
+                    .buttonStyle(
+                        NeonPrimaryButtonStyle(
+                            tint: shouldShowDisabledVisualState
+                                ? .gray
+                                : ((appState.parentResolvedFocusActive ?? false) ? AppTheme.neonGreen : AppTheme.neonBlue)
+                        )
+                    )
+                    .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
+                    .disabled(!isCommandButtonEnabled)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
+                }
+                .background(.black.opacity(0.55))
             }
             .task {
                 // Подтягиваем актуальные расписания с бэкенда при появлении дашборда —

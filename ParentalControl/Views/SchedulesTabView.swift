@@ -43,13 +43,11 @@ struct SchedulesTabView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.top, 0)
                     .padding(.bottom, 28)
                 }
                 .scrollIndicators(.hidden)
             }
-            .navigationTitle("schedule.title")
-            .navigationBarTitleDisplayMode(.large)
             .sheet(item: $editingSchedule) { schedule in
                 ScheduleEditorView(
                     initialSchedule: schedule,
@@ -79,13 +77,14 @@ struct SchedulesTabView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .center, spacing: 6) {
             Text("schedule.subtitle")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.leading)
+                .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 6)
     }
 
     private var emptyState: some View {
@@ -105,6 +104,9 @@ struct SchedulesTabView: View {
         .padding(.vertical, 24)
         .padding(.horizontal, 16)
         .glassCard(cornerRadius: 20, glowColor: AppTheme.neonPurple)
+        .padding(36)
+        .drawingGroup()
+        .padding(-36)
     }
 
     private var suggestionsSection: some View {
@@ -199,7 +201,17 @@ struct ScheduleRowView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(cornerRadius: 20, glowColor: schedule.accent.color)
+            .background(
+                // Запекаем glow/тени glass-card в Metal-текстуру (как на Dashboard),
+                // чтобы скролл не пересчитывал shadow-слои покадрово.
+                // Обёртка `padding(36)/drawingGroup/padding(-36)` сохраняет визуальные
+                // эффекты в зоне padding-а и возвращает layout-frame на место.
+                Color.clear
+                    .glassCard(cornerRadius: 20, glowColor: schedule.accent.color)
+                    .padding(36)
+                    .drawingGroup()
+                    .padding(-36)
+            )
             .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -256,7 +268,16 @@ private struct SuggestionRowView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassCard(cornerRadius: 20, glowColor: template.accent.color)
+        .background(
+            // Аналогично `ScheduleRowView` — запекаем glass-card подложку с glow и тенями
+            // в Metal-текстуру, чтобы скролл не пересчитывал shadow-слои на каждом кадре.
+            // Кнопка `+` остаётся снаружи запечённого слоя и сохраняет интерактивность.
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: template.accent.color)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 }
 
