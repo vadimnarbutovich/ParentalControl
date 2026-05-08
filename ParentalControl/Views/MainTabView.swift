@@ -101,6 +101,19 @@ private struct ParentDashboardView: View {
                 AppBackgroundView()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
+                        // Верхняя «balance»-карточка: кольцо с доступным временем ребёнка
+                        // + Заработано/Потрачено за сегодня. Виден только при связанной паре.
+                        // Параметры (cap кольца 240, glassCard + drawingGroup-запекание) совпадают
+                        // с детским DashboardView и ScreenBlocker — карточка выглядит идентично.
+                        if appState.pairingState?.isLinked == true {
+                            ChildBalanceCard(
+                                availableSeconds: appState.parentChildAvailableSeconds ?? 0,
+                                earnedSecondsToday: appState.parentChildEarnedSecondsToday ?? 0,
+                                spentSecondsToday: appState.parentChildSpentSecondsToday ?? 0,
+                                isLoadingAvailable: appState.parentChildAvailableSeconds == nil
+                            )
+                        }
+
                         VStack(alignment: .leading, spacing: 10) {
                             Text(appState.pairingState?.isLinked == true
                                  ? "parent.dashboard.linked"
@@ -239,6 +252,107 @@ private struct ParentDashboardView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.thinMaterial)
+            }
+        }
+    }
+}
+
+/// «Balance»-карточка для родительского дашборда. Полностью повторяет вёрстку детской `balanceCard`
+/// из `DashboardView` (и аналогичной карточки в ScreenBlocker), только использует данные ребёнка,
+/// которые сидят на `AppState` родителя:
+/// - `availableSeconds`  — `parentChildAvailableSeconds` (live, через `parental-control-balance-sync`);
+/// - `earnedSecondsToday` / `spentSecondsToday` — `parentChildEarnedSecondsToday/spentSecondsToday`
+///   (заполняются из `fetch_parent_snapshot.dailyStats`, edge function v20).
+/// `isLoadingAvailable` — пока мы ещё не получили первый ответ балансом — рисуем плейсхолдер «Sync».
+/// Cap кольца — 240 минут (4 часа), как в детском DashboardView.
+/// Запекание `padding(36) → drawingGroup() → padding(-36)` оставлено таким же, чтобы тяжёлые тени
+/// glass-card не пересчитывались на каждом кадре скролла родительского дашборда.
+private struct ChildBalanceCard: View {
+    let availableSeconds: Int
+    let earnedSecondsToday: Int
+    let spentSecondsToday: Int
+    let isLoadingAvailable: Bool
+
+    private let ringBalanceCapMinutes = 240
+
+    var body: some View {
+        let safeAvailable = max(0, availableSeconds)
+        let availableMinutes = safeAvailable / 60
+        let ringValue = safeAvailable < 60 ? safeAvailable : availableMinutes
+        let ringUnitKey = safeAvailable < 60 ? "unit.seconds.abbrev" : "unit.minutes.abbrev"
+        let ringProgress = min(
+            max(Double(availableMinutes) / Double(ringBalanceCapMinutes), 0),
+            1
+        )
+
+        return VStack(spacing: 14) {
+            HStack {
+                Spacer(minLength: 0)
+                HStack(spacing: 24) {
+                    MinutesRingView(progress: CGFloat(ringProgress), lineWidth: 16) {
+                        VStack(spacing: 2) {
+                            if isLoadingAvailable {
+                                Text("dashboard.balance.paused")
+                                    .font(.system(size: 24, weight: .black, design: .rounded))
+                                    .foregroundStyle(.white)
+                            } else {
+                                Text("\(ringValue)")
+                                    .font(.system(size: 38, weight: .black, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .contentTransition(.numericText())
+                                Text(L10n.tr(ringUnitKey))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.white.opacity(0.85))
+                            }
+                        }
+                    }
+                    .frame(width: 124, height: 124)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("dashboard.section.today")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(AppTheme.neonGreen)
+                            .padding(.leading, 26)
+
+                        metricChip(
+                            icon: "arrow.up.right",
+                            title: L10n.tr("statistics.earned"),
+                            value: L10n.duration(seconds: max(0, earnedSecondsToday)),
+                            color: AppTheme.neonGreen
+                        )
+
+                        metricChip(
+                            icon: "arrow.down.right",
+                            title: L10n.tr("statistics.spent"),
+                            value: L10n.duration(seconds: max(0, spentSecondsToday)),
+                            color: AppTheme.neonOrange
+                        )
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding()
+        .glassCard(cornerRadius: 28, glowColor: AppTheme.neonBlue)
+        .padding(36)
+        .drawingGroup()
+        .padding(-36)
+    }
+
+    /// Локальная копия `metricChip` — точная копия helper-а из `DashboardView`, чтобы не плодить общий код
+    /// и не зависеть от приватных methods детского экрана.
+    private func metricChip(icon: String, title: String, value: String, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
             }
         }
     }

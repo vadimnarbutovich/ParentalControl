@@ -77,6 +77,10 @@ final class AppState: ObservableObject {
     @Published private(set) var parentCommandDelivery: ParentCommandDeliveryState?
     @Published private(set) var parentLinkHealth: ParentLinkHealthState?
     @Published private(set) var parentChildAvailableSeconds: Int?
+    /// Дневная статистика ребёнка для верхней «balance»-карточки родителя (`Заработано/Потрачено`).
+    /// Заполняется в `refreshParentChildState()` из `fetchParentSnapshot.dailyStats`. `nil` — пока не пришло.
+    @Published private(set) var parentChildEarnedSecondsToday: Int?
+    @Published private(set) var parentChildSpentSecondsToday: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var remoteStatusMessage: String?
     /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
@@ -319,6 +323,8 @@ final class AppState: ObservableObject {
         isParentChildStateResolved = role != .parent
         parentResolvedFocusActive = nil
         parentChildAvailableSeconds = nil
+        parentChildEarnedSecondsToday = nil
+        parentChildSpentSecondsToday = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
@@ -336,6 +342,8 @@ final class AppState: ObservableObject {
         isParentChildStateResolved = true
         parentResolvedFocusActive = nil
         parentChildAvailableSeconds = nil
+        parentChildEarnedSecondsToday = nil
+        parentChildSpentSecondsToday = nil
         lastNormalizedParentChildRuntime = nil
         storage.savePairingState(nil)
     }
@@ -1209,6 +1217,8 @@ final class AppState: ObservableObject {
     private func refreshParentChildState() async {
         guard deviceRole == .parent, pairingState?.isLinked == true else {
             parentChildAvailableSeconds = nil
+            parentChildEarnedSecondsToday = nil
+            parentChildSpentSecondsToday = nil
             return
         }
         var lastError: Error?
@@ -1219,6 +1229,14 @@ final class AppState: ObservableObject {
             do {
                 let snapshot = try await remoteSyncService.fetchParentSnapshot()
                 parentLinkHealth = try? await remoteSyncService.fetchLinkHealth()
+
+                // Сохраняем earned/spent ребёнка за сегодня для верхней balance-карточки на parent.
+                // Если бэкенд ещё не вернул `dailyStats` (старая версия / child не синкал), оставляем
+                // прошлые значения как есть — карточка просто покажет последние известные числа.
+                if let stats = snapshot.dailyStats {
+                    parentChildEarnedSecondsToday = max(0, stats.earnedSeconds)
+                    parentChildSpentSecondsToday = max(0, stats.spentSeconds)
+                }
 
                 let actualRuntime = normalizedRuntimeForParent(snapshot.runtime)
                 lastNormalizedParentChildRuntime = actualRuntime
@@ -2104,6 +2122,22 @@ final class AppState: ObservableObject {
 
 private struct ParentSnapshotDTO: Codable {
     let runtime: RemoteChildRuntimeState
+    /// Опциональный блок дневной статистики ребёнка (за сегодня, UTC-сутки).
+    /// Заполняется edge function `parental-control-sync` v20 при наличии записи в `daily_stats_snapshots`.
+    /// `nil` — child ещё не синкал сегодняшний день, рендерим нули в UI.
+    let dailyStats: ParentChildDailyStatsDTO?
+}
+
+/// DTO дневной статистики ребёнка для родительского снапшота.
+/// Точное зеркало `BackendDayStatsDTO` — используется только для парсинга snapshot-ответа.
+private struct ParentChildDailyStatsDTO: Codable {
+    let dayStartISO: String
+    let steps: Int
+    let earnedSeconds: Int
+    let spentSeconds: Int
+    let pushUps: Int
+    let squats: Int
+    let focusSessionTotalSeconds: Int
 }
 
 private struct RegisterDeviceResponseDTO: Codable {
