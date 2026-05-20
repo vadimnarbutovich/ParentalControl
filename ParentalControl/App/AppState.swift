@@ -180,6 +180,17 @@ final class AppState: ObservableObject {
     private var activeParentCommandID: UUID?
     /// Последний `normalized` runtime с `fetchParentSnapshot` — чтобы после `commandStatus=applied` дождаться того же согласования, что в `reconcile` (снимать «Синхронизацию» без кадра со старым CTA).
     private var lastNormalizedParentChildRuntime: RemoteChildRuntimeState?
+    /// Throttle для silent-push wake-up на child. iOS троттлит background push-ы (~2–3/час
+    /// на устройство), а наш polling-цикл тикает каждые 4 сек — нельзя дёргать wake на
+    /// каждом тике, иначе APNs начнёт молча отбрасывать push. Запрашиваем wake не чаще,
+    /// чем раз в 60 сек на parent-устройство; этого хватает для устранения staleness и
+    /// не упирается в APNs throttle.
+    private var lastChildWakeRequestAt: Date?
+    private static let childWakeMinimumInterval: TimeInterval = 60
+    /// Если `child_runtime_state.updated_at` старее этого порога — считаем балланс stale
+    /// и отправляем wake. 60 сек — компромисс: больше = пользователь видит устаревший
+    /// counter дольше; меньше = бессмысленный wake-spam.
+    private static let childRuntimeStaleThreshold: TimeInterval = 60
     private var lifecycleCancellables = Set<AnyCancellable>()
 
     init() {
@@ -816,6 +827,18 @@ final class AppState: ObservableObject {
             await applyRemoteCommandIfNeeded(id: commandID, type: commandType, durationSeconds: durationSeconds)
         }
 
+        // 2.5) Silent push wake-up `child_sync_request` (parent попросил освежить баланс
+        // ребёнка). Не содержит `command_id`, не идёт через очередь `focus_commands`,
+        // никакого ACK не требует. Просто принудительно делаем midnight-reset (если новый
+        // день), затем пушим свежий снапшот на сервер — это попутно обновит и dailyStats,
+        // и `child_runtime_state.available_seconds`, который и читает parent.
+        if deviceRole == .child,
+           let userInfo = initialPayload,
+           (userInfo["command_type"] as? String) == "child_sync_request" {
+            resetDailyBalanceIfNeeded()
+            await syncChildStatsSnapshotIfNeeded()
+        }
+
         // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
         if deviceRole == .child {
             await syncChildWithDesiredStateIfNeeded()
@@ -1214,6 +1237,29 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Throttled silent-push wake-up. Вызывается только из `refreshParentChildState`
+    /// когда runtime stale > 60 сек. Несмотря на throttle (`childWakeMinimumInterval`)
+    /// сетевой запрос short-circuit'ится локально — никогда не звоним на бэк чаще, чем
+    /// раз в минуту. Ошибки сети глотаются: для UI это «опциональный» механизм, ничего
+    /// не сломается если он временно недоступен (родитель просто увидит stale baseline).
+    private func requestChildWakeIfNeeded() async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        let now = Date()
+        if let last = lastChildWakeRequestAt,
+           now.timeIntervalSince(last) < Self.childWakeMinimumInterval {
+            return
+        }
+        lastChildWakeRequestAt = now
+        do {
+            _ = try await remoteSyncService.requestChildWakeSync()
+        } catch {
+            // Throttle сбрасывать не будем — иначе сразу retry'нем при следующем тике
+            // и забьём канал. Спокойно подождём `childWakeMinimumInterval` и попробуем
+            // снова. Это безопасно: stale-данные просто продержатся на минуту дольше.
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
     private func refreshParentChildState() async {
         guard deviceRole == .parent, pairingState?.isLinked == true else {
             parentChildAvailableSeconds = nil
@@ -1263,6 +1309,15 @@ final class AppState: ObservableObject {
                 }
                 if let childAvailable = try? await remoteSyncService.fetchChildBalanceState() {
                     parentChildAvailableSeconds = childAvailable
+                }
+                // Если runtime на сервере старее `childRuntimeStaleThreshold` — child давно
+                // не синкал (закрыт/спит/был полночный rollover), и cached `available_seconds`
+                // не отражает реальность. Отправляем silent push wake-up, ограниченный
+                // throttle'ом `childWakeMinimumInterval` — следующий polling-тик через
+                // несколько секунд подтянет свежий баланс уже от проснувшегося child.
+                let staleness = Date().timeIntervalSince(actualRuntime.lastUpdatedAt)
+                if staleness > Self.childRuntimeStaleThreshold {
+                    await requestChildWakeIfNeeded()
                 }
                 isParentChildStateResolved = true
                 return
@@ -2402,6 +2457,26 @@ private final class ParentalRemoteSyncService {
             endpoint: Endpoint.balanceBaseURL
         )
         return max(0, response.availableSeconds)
+    }
+
+    /// Parent → backend (v5 of `parental-control-balance-sync`): просит «разбудить» child
+    /// silent-push'ом (без alert), чтобы тот синхронизировал свой `available_seconds`,
+    /// дневную статистику и при необходимости выполнил `resetDailyBalanceIfNeeded()`.
+    /// Возвращает `true`, если backend подтвердил отправку push (`sent: true`), и
+    /// `false` если child пока без APNs token (push не отправлен). Любые ошибки сети
+    /// пробрасываются наружу — `AppState` сам решает retry/throttle.
+    func requestChildWakeSync() async throws -> Bool {
+        struct Payload: Encodable { let installID: String }
+        struct Response: Decodable {
+            let ok: Bool
+            let sent: Bool?
+        }
+        let response: Response = try await call(
+            action: "wake_child_sync",
+            payload: Payload(installID: installID),
+            endpoint: Endpoint.balanceBaseURL
+        )
+        return response.sent ?? false
     }
 
     func fetchPendingCommands() async throws -> [RemoteFocusCommand] {
