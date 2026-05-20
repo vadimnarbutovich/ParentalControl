@@ -375,10 +375,6 @@ async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Resp
   return okResponse(result);
 }
 
-/// Каждую минуту: пересчитывает is_currently_active для всех включённых расписаний и при
-/// смене состояния шлёт child-устройству APNs-команду schedule_started/schedule_ended.
-/// Состояние хранится в колонках family_block_schedules.{is_currently_active,last_state_change_at}
-/// — это даёт идемпотентность: пуш отправляется ровно один раз на пересечение границы окна.
 async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
   const token = req.headers.get("x-cron-token") ?? "";
   if (token !== CRON_SHARED_TOKEN) return errorResponse("Unauthorized", 401);
@@ -398,9 +394,6 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
     deleted_at: string | null;
   };
 
-  // Берём ВСЕ записи (вкл. отключённые и удалённые), чтобы корректно отправлять schedule_ended,
-  // когда родитель только что выключил/удалил активное расписание. Для is_enabled=false и
-  // deleted_at!=null целевое состояние всегда "не активно" — это даёт авто-снятие shield.
   const { data: rows, error } = await supabase
     .from("family_block_schedules")
     .select("id, family_id, name, start_hour, start_minute, end_hour, end_minute, weekdays, is_enabled, is_currently_active, timezone_identifier, deleted_at");
@@ -412,13 +405,10 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
   let unchanged = 0;
   let pushFailures = 0;
 
-  // Кэшируем child-девайсы по family_id, чтобы не делать N запросов.
   const childCache = new Map<string, { id: string; apns_token: string | null } | null>();
-  // Какой "представительский" parent device использовать как requested_by_device_id.
   const parentCache = new Map<string, string | null>();
 
   for (const r of (rows ?? []) as ScheduleRow[]) {
-    // Для удалённых/выключенных целевое состояние всегда "не активно".
     const targetActive = (r.deleted_at == null && r.is_enabled)
       ? isScheduleActiveAt(r, now)
       : false;
@@ -449,8 +439,6 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
     const child = childCache.get(r.family_id) ?? null;
     const parentID = parentCache.get(r.family_id) ?? null;
 
-    // Обновляем is_currently_active СРАЗУ (даже если ребёнок не запейрен / без токена) —
-    // иначе на каждом тике cron мы будем продолжать пытаться слать пуш.
     const { error: updateError } = await supabase
       .from("family_block_schedules")
       .update({
@@ -464,7 +452,6 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
     }
 
     if (!child || !parentID) {
-      // Семья не запарена / нет ребёнка — состояние мы зафиксировали, пуш слать некому.
       if (isActive) started += 1; else ended += 1;
       continue;
     }
@@ -503,10 +490,6 @@ function isScheduleActiveAt(
   },
   now: Date
 ): boolean {
-  // Расписание родитель задаёт в своей локальной таймзоне. Часы/минуты в БД — «голые»,
-  // а сама зона лежит в `timezone_identifier`. Чтобы корректно сравнивать с текущим
-  // моментом, переводим now → формат localized hour/minute/weekday в нужной TZ
-  // через Intl.DateTimeFormat.
   const tz = (row.timezone_identifier && row.timezone_identifier.trim().length > 0)
     ? row.timezone_identifier
     : "UTC";
@@ -516,7 +499,6 @@ function isScheduleActiveAt(
   const end = row.end_hour * 60 + row.end_minute;
   const crossesMidnight = end <= start;
 
-  // local.weekday: 1 = понедельник, 7 = воскресенье.
   const todayWD = local.weekday;
   const wdSet = new Set(row.weekdays.map((v) => Number(v)));
 
@@ -535,8 +517,6 @@ function isScheduleActiveAt(
   return false;
 }
 
-/// Возвращает hour/minute/weekday (1=Mon..7=Sun) для момента `date` в указанной таймзоне.
-/// Использует Intl.DateTimeFormat (поддерживается Deno нативно).
 function formatInTimeZone(date: Date, timeZone: string): { hour: number; minute: number; weekday: number } {
   try {
     const fmt = new Intl.DateTimeFormat("en-US", {
@@ -554,7 +534,6 @@ function formatInTimeZone(date: Date, timeZone: string): { hour: number; minute:
       if (p.type === "hour") hour = Number(p.value) % 24;
       else if (p.type === "minute") minute = Number(p.value);
       else if (p.type === "weekday") {
-        // en-US short: Mon Tue Wed Thu Fri Sat Sun
         switch (p.value) {
           case "Mon": weekday = 1; break;
           case "Tue": weekday = 2; break;
@@ -568,7 +547,6 @@ function formatInTimeZone(date: Date, timeZone: string): { hour: number; minute:
     }
     return { hour, minute, weekday };
   } catch (_e) {
-    // Fallback на UTC если TZ невалидная.
     const utcW = date.getUTCDay();
     return {
       hour: date.getUTCHours(),
@@ -596,12 +574,6 @@ async function dispatchScheduleCommand(args: {
   const hasToken = !!asString(args.childApnsToken);
   const nowIso = new Date().toISOString();
   const expiresAt = new Date(Date.now() + COMMAND_TTL_SECONDS * 1000).toISOString();
-  // intent_id = scheduleID гарантирует, что повторные срабатывания (например, дребезг)
-  // не создают дубликатов: уникальность по (requested_by_device_id, intent_id) даёт upsert-семантику.
-  // Но т.к. одно расписание может start/end несколько раз в сутки, intent_id должен быть уникален
-  // для каждого перехода — иначе старая команда переиспользуется. Поэтому добавляем суффикс типа.
-  // Кодируем "scheduleID + commandType" в детерминированный uuid через name-based v5? Проще —
-  // не используем intent_id для cron-команд (полагаемся на is_currently_active dedupe).
   const { data: command, error: commandError } = await supabase
     .from("focus_commands")
     .insert({
@@ -880,28 +852,61 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
   const parent = await getDevice(deviceId);
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can fetch snapshot", 403);
 
-  const { data, error } = await supabase
-    .from("child_runtime_state")
-    .select("is_focus_active, focus_ends_at, updated_at")
-    .eq("family_id", parent.family_id)
-    .maybeSingle();
-  if (error) return errorResponse(error.message, 400);
+  // v21: возвращаем latest-by-`day_start` запись для child-устройства.
+  // Раньше (v20) мы матчили по `startOfUTCDay(now())`, но child пишет `day_start` по
+  // *локальному* календарю (Calendar.startOfDay → ISO в UTC, Postgres приводит к date в UTC).
+  // У ребёнка в МСК (UTC+3) местная полночь = 21:00 UTC предыдущего дня → запись приходит
+  // с `day_start = вчера (UTC)`, а сервер искал «сегодня (UTC)» → не находил → parent видел 0/0.
+  // Подход «latest» работает во всех timezones: после midnight-reset на child он создаёт
+  // новую запись с earned=0/spent=0 — она становится latest и тоже корректно отражается у parent.
+  const [{ data: runtimeData, error: runtimeError }, { data: childData }] = await Promise.all([
+    supabase
+      .from("child_runtime_state")
+      .select("is_focus_active, focus_ends_at, updated_at")
+      .eq("family_id", parent.family_id)
+      .maybeSingle(),
+    supabase
+      .from("devices")
+      .select("id")
+      .eq("family_id", parent.family_id)
+      .eq("role", "child")
+      .maybeSingle(),
+  ]);
+  if (runtimeError) return errorResponse(runtimeError.message, 400);
+
+  let dailyStats: Record<string, unknown> | null = null;
+  if (childData?.id) {
+    const { data: statsRow } = await supabase
+      .from("daily_stats_snapshots")
+      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .eq("child_device_id", childData.id)
+      .order("day_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (statsRow) {
+      dailyStats = {
+        dayStartISO: statsRow.day_start,
+        steps: statsRow.steps ?? 0,
+        earnedSeconds: statsRow.earned_seconds ?? 0,
+        spentSeconds: statsRow.spent_seconds ?? 0,
+        pushUps: statsRow.push_ups ?? 0,
+        squats: statsRow.squats ?? 0,
+        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+      };
+    }
+  }
 
   return okResponse({
     runtime: {
-      isFocusActive: data?.is_focus_active ?? false,
-      focusEndsAt: data?.focus_ends_at ?? null,
-      lastUpdatedAt: data?.updated_at ?? new Date(0).toISOString(),
+      isFocusActive: runtimeData?.is_focus_active ?? false,
+      focusEndsAt: runtimeData?.focus_ends_at ?? null,
+      lastUpdatedAt: runtimeData?.updated_at ?? new Date(0).toISOString(),
     },
+    dailyStats,
   });
 }
 
-// === Location actions ===
-
 async function requestChildLocation(deviceId: string): Promise<Response> {
-  // Parent asks for a fresh GPS fix from the paired child via APNs alert push.
-  // We re-use the existing focus_commands table with a new command_type, so
-  // delivery, retry, expiration, NSE — everything is identical to focus commands.
   const parentDevice = await getDevice(deviceId);
   if (parentDevice.role !== "parent" || !parentDevice.family_id) {
     return errorResponse("Parent device is not paired", 403);
@@ -974,8 +979,6 @@ async function fetchChildLocation(deviceId: string): Promise<Response> {
   });
 }
 
-// === Block schedules (parent CRUD + sync to child) ===
-
 type BlockScheduleRow = {
   id: string;
   family_id: string;
@@ -1013,8 +1016,6 @@ function mapBlockScheduleForClient(row: BlockScheduleRow) {
   };
 }
 
-/// Both parent and child are allowed to read schedules — parent for own UI,
-/// child to apply them via DeviceActivitySchedule. We never expose another family's data.
 async function listBlockSchedules(deviceId: string): Promise<Response> {
   const device = await getDevice(deviceId);
   if (!device.family_id) return errorResponse("Device is not paired", 403);
@@ -1031,8 +1032,6 @@ async function listBlockSchedules(deviceId: string): Promise<Response> {
   return okResponse({ schedules: items });
 }
 
-/// Parent only. Validates payload, upserts, then notifies the child via the same reliable
-/// alert push that already works for focus commands (command_type = 'schedules_updated').
 async function upsertBlockSchedule(deviceId: string, payload: Json): Promise<Response> {
   const parent = await getDevice(deviceId);
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can edit schedules", 403);
@@ -1087,7 +1086,6 @@ async function upsertBlockSchedule(deviceId: string, payload: Json): Promise<Res
   return okResponse({ ok: true });
 }
 
-/// Soft-delete: keep row with `deleted_at`, so child can detect what was removed.
 async function deleteBlockSchedule(deviceId: string, payload: Json): Promise<Response> {
   const parent = await getDevice(deviceId);
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can delete schedules", 403);
@@ -1106,9 +1104,6 @@ async function deleteBlockSchedule(deviceId: string, payload: Json): Promise<Res
   return okResponse({ ok: true });
 }
 
-/// Sends a single APNs alert push to the child with command_type=schedules_updated.
-/// Failures are logged but never block the parent CRUD response (push is best-effort,
-/// child will also resync on appDidBecomeActive). Same reliable delivery as focus commands.
 async function notifyChildSchedulesUpdated(familyID: string, parentDeviceID: string): Promise<void> {
   try {
     const { data: child, error: childError } = await supabase
@@ -1136,8 +1131,6 @@ async function notifyChildSchedulesUpdated(familyID: string, parentDeviceID: str
     console.warn("[notifyChildSchedulesUpdated] dispatch failed:", e instanceof Error ? e.message : String(e));
   }
 }
-
-// === Helpers ===
 
 async function upsertDesiredFocusState(
   familyID: string,
@@ -1409,10 +1402,6 @@ async function sendApnsAlert(
   const auth = await apnsAuthHeaders();
   const token = tokenRaw.replace(/\s+/g, "");
   const localized = commandLocalizedAlert(commandType, durationSeconds, extras);
-  // schedules_updated и request_location — служебные silent-пуши (просто будят клиент,
-  // не показывают баннер). schedule_started/schedule_ended — пользовательские, как
-  // «Заблокировать сейчас»: видимый баннер с названием расписания и звуком, чтобы
-  // ребёнок понял почему появилось ограничение.
   const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated";
   const interruptionLevel = isSilentCommand ? "passive" : "time-sensitive";
   const aps: Record<string, unknown> = {
