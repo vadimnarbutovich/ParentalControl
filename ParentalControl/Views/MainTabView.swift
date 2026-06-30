@@ -535,8 +535,17 @@ private struct ParentDashboardView: View {
                                 .padding(.top, 4)
                             }
                         }
-                        .padding()
-                        .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
+        .padding()
+        // Запекаем фон glass-card в Metal-текстуру (как у ChildBalanceCard ниже), чтобы тяжёлые
+        // shadow/glow-слои не пересчитывались покадрово при скролле. Контент — только текст, но
+        // используем единый «фоновый» паттерн для консистентности.
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
 
                         Button("parent.dashboard.adjust_time") {
                             isAdjustTimePresented = true
@@ -556,6 +565,7 @@ private struct ParentDashboardView: View {
                     }
                     .padding()
                 }
+                .scrollIndicators(.hidden)
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 0) {

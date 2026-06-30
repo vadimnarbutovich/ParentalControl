@@ -163,7 +163,16 @@ struct DashboardView: View {
             }
         }
         .padding()
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+        // Запекаем фон glass-card в Metal-текстуру, чтобы тяжёлые shadow/glow-слои не пересчитывались
+        // покадрово при скролле. Контент (поле ввода кода + кнопка) остаётся снаружи drawingGroup и
+        // полностью интерактивен (фоновый паттерн, как в SettingsView/SchedulesTabView).
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 
     /// Запускает связку по введённому коду. Сбрасывает фокус (прячет клавиатуру) и блокирует
@@ -343,7 +352,15 @@ struct DashboardView: View {
                 }
             }
             .padding()
-            .glassCard(cornerRadius: 22)
+            // Запекаем фон glass-card (контент только текстовый). Снижает покадровую перекомпозицию
+            // shadow-слоёв при скролле детского дашборда.
+            .background(
+                Color.clear
+                    .glassCard(cornerRadius: 22)
+                    .padding(36)
+                    .drawingGroup()
+                    .padding(-36)
+            )
         }
     }
 
