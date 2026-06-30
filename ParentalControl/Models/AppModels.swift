@@ -242,6 +242,9 @@ enum RemoteFocusCommandType: String, Codable {
     case scheduleStarted = "schedule_started"
     /// Backend cron detected that a block schedule's window ended: child should clear that schedule's shield.
     case scheduleEnded = "schedule_ended"
+    /// Parent создал/изменил/удалил задание (или ребёнок отправил отчёт) → другому устройству нужно
+    /// перетянуть список `family_child_tasks`. Пассивный push (как `schedules_updated`).
+    case tasksUpdated = "tasks_updated"
 }
 
 /// Snapshot of the child device's last known GPS position. Stored on the backend in
@@ -286,6 +289,19 @@ struct RemoteBlockScheduleDTO: Codable {
     let isEnabled: Bool
     let createdAtISO: String?
     let updatedAtISO: String?
+}
+
+/// Поля ответа `list_child_tasks` (camelCase с edge).
+struct RemoteChildTaskDTO: Codable {
+    let id: UUID
+    let title: String
+    let details: String?
+    let rewardSeconds: Int
+    let status: String
+    let createdAtISO: String?
+    let updatedAtISO: String?
+    let submittedAtISO: String?
+    let approvedAtISO: String?
 }
 
 struct RemoteChildRuntimeState: Codable, Equatable {

@@ -459,3 +459,42 @@
 "settings.pairing.unlink.confirm.title" = "Unlink devices?";
 "settings.pairing.unlink.confirm.message" = "The link between the parent and child devices will be reset. You'll need to pair again to manage the child device.";
 "settings.pairing.unlink.confirm.button" = "Unlink";
+
+"tab.tasks" = "Tasks";
+
+"tasks.parent.subtitle" = "Create tasks — your child earns time for completing them";
+"tasks.parent.empty.subtitle" = "Create the first task for your child";
+"tasks.child.subtitle" = "Complete the task and send a photo report";
+"tasks.child.empty.subtitle" = "No tasks from your parent yet";
+"tasks.empty.title" = "No tasks yet";
+"tasks.create_new" = "Create task";
+"tasks.parent.approve" = "Approve";
+"tasks.reward.minutes" = "%d min";
+
+"tasks.status.pending" = "New";
+"tasks.status.submitted" = "In review";
+"tasks.status.approved" = "Done";
+
+"tasks.editor.title.new" = "New task";
+"tasks.editor.title.edit" = "Edit task";
+"tasks.editor.cancel" = "Cancel";
+"tasks.editor.save" = "Save";
+"tasks.editor.delete" = "Delete task";
+"tasks.editor.delete.confirm.title" = "Delete task?";
+"tasks.editor.delete.confirm.delete" = "Delete";
+"tasks.editor.delete.confirm.message" = "The task will be deleted. This action cannot be undone.";
+"tasks.editor.title.label" = "Title";
+"tasks.editor.title.placeholder" = "E.g. Wash the dishes";
+"tasks.editor.title.required" = "Enter a title";
+"tasks.editor.details.label" = "Description";
+"tasks.editor.details.placeholder" = "What needs to be done";
+"tasks.editor.reward.label" = "Reward for completion";
+"tasks.editor.reward.hint" = "How much time your child gets";
+
+"tasks.detail.title" = "Task";
+"tasks.detail.reward" = "Reward: %d min";
+"tasks.detail.send_hint" = "Take a photo of the completed task and send it to your parent";
+"tasks.detail.send_report" = "Send report";
+"tasks.detail.submitted_hint" = "Report sent. Waiting for your parent to approve.";
+"tasks.detail.approved_hint" = "Task approved, time credited.";
+"tasks.share.caption" = "Task report: %@";

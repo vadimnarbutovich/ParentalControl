@@ -377,3 +377,42 @@
 "settings.pairing.unlink.confirm.title" = "¿Desvincular dispositivos?";
 "settings.pairing.unlink.confirm.message" = "Se restablecerá el vínculo entre los dispositivos de los padres y del niño. Tendrás que volver a vincularlos para gestionar el dispositivo del niño.";
 "settings.pairing.unlink.confirm.button" = "Desvincular";
+
+"tab.tasks" = "Tareas";
+
+"tasks.parent.subtitle" = "Crea tareas: al completarlas, tu hijo gana tiempo";
+"tasks.parent.empty.subtitle" = "Crea la primera tarea para tu hijo";
+"tasks.child.subtitle" = "Completa la tarea y envía un informe con foto";
+"tasks.child.empty.subtitle" = "Aún no hay tareas de tus padres";
+"tasks.empty.title" = "Aún no hay tareas";
+"tasks.create_new" = "Crear tarea";
+"tasks.parent.approve" = "Aprobar";
+"tasks.reward.minutes" = "%d min";
+
+"tasks.status.pending" = "Nueva";
+"tasks.status.submitted" = "En revisión";
+"tasks.status.approved" = "Hecha";
+
+"tasks.editor.title.new" = "Nueva tarea";
+"tasks.editor.title.edit" = "Editar tarea";
+"tasks.editor.cancel" = "Cancelar";
+"tasks.editor.save" = "Guardar";
+"tasks.editor.delete" = "Eliminar tarea";
+"tasks.editor.delete.confirm.title" = "¿Eliminar tarea?";
+"tasks.editor.delete.confirm.delete" = "Eliminar";
+"tasks.editor.delete.confirm.message" = "La tarea se eliminará. Esta acción no se puede deshacer.";
+"tasks.editor.title.label" = "Título";
+"tasks.editor.title.placeholder" = "Ej.: Lavar los platos";
+"tasks.editor.title.required" = "Introduce un título";
+"tasks.editor.details.label" = "Descripción";
+"tasks.editor.details.placeholder" = "Qué hay que hacer";
+"tasks.editor.reward.label" = "Recompensa por completar";
+"tasks.editor.reward.hint" = "Cuánto tiempo recibirá tu hijo";
+
+"tasks.detail.title" = "Tarea";
+"tasks.detail.reward" = "Recompensa: %d min";
+"tasks.detail.send_hint" = "Haz una foto de la tarea completada y envíala a tus padres";
+"tasks.detail.send_report" = "Enviar informe";
+"tasks.detail.submitted_hint" = "Informe enviado. Esperando la aprobación de tus padres.";
+"tasks.detail.approved_hint" = "Tarea aprobada, tiempo acreditado.";
+"tasks.share.caption" = "Informe de la tarea: %@";

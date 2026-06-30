@@ -377,3 +377,42 @@
 "settings.pairing.unlink.confirm.title" = "Scollegare i dispositivi?";
 "settings.pairing.unlink.confirm.message" = "Il collegamento tra il dispositivo del genitore e quello del bambino verrà reimpostato. Dovrai eseguire di nuovo l'associazione per gestire il dispositivo del bambino.";
 "settings.pairing.unlink.confirm.button" = "Scollega";
+
+"tab.tasks" = "Attività";
+
+"tasks.parent.subtitle" = "Crea attività: completandole, tuo figlio guadagna tempo";
+"tasks.parent.empty.subtitle" = "Crea la prima attività per tuo figlio";
+"tasks.child.subtitle" = "Completa l'attività e invia un report con foto";
+"tasks.child.empty.subtitle" = "Ancora nessuna attività dai genitori";
+"tasks.empty.title" = "Ancora nessuna attività";
+"tasks.create_new" = "Crea attività";
+"tasks.parent.approve" = "Conferma";
+"tasks.reward.minutes" = "%d min";
+
+"tasks.status.pending" = "Nuova";
+"tasks.status.submitted" = "In revisione";
+"tasks.status.approved" = "Completata";
+
+"tasks.editor.title.new" = "Nuova attività";
+"tasks.editor.title.edit" = "Modifica attività";
+"tasks.editor.cancel" = "Annulla";
+"tasks.editor.save" = "Salva";
+"tasks.editor.delete" = "Elimina attività";
+"tasks.editor.delete.confirm.title" = "Eliminare l'attività?";
+"tasks.editor.delete.confirm.delete" = "Elimina";
+"tasks.editor.delete.confirm.message" = "L'attività verrà eliminata. Questa azione non può essere annullata.";
+"tasks.editor.title.label" = "Titolo";
+"tasks.editor.title.placeholder" = "Es.: Lavare i piatti";
+"tasks.editor.title.required" = "Inserisci un titolo";
+"tasks.editor.details.label" = "Descrizione";
+"tasks.editor.details.placeholder" = "Cosa va fatto";
+"tasks.editor.reward.label" = "Ricompensa per il completamento";
+"tasks.editor.reward.hint" = "Quanto tempo riceverà tuo figlio";
+
+"tasks.detail.title" = "Attività";
+"tasks.detail.reward" = "Ricompensa: %d min";
+"tasks.detail.send_hint" = "Scatta una foto dell'attività completata e inviala ai tuoi genitori";
+"tasks.detail.send_report" = "Invia report";
+"tasks.detail.submitted_hint" = "Report inviato. In attesa della conferma dei genitori.";
+"tasks.detail.approved_hint" = "Attività confermata, tempo accreditato.";
+"tasks.share.caption" = "Report dell'attività: %@";

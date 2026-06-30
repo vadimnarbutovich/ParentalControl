@@ -459,3 +459,42 @@
 "settings.pairing.unlink.confirm.title" = "Отвязать устройства?";
 "settings.pairing.unlink.confirm.message" = "Связь между устройствами родителя и ребёнка будет сброшена. Чтобы снова управлять устройством ребёнка, потребуется заново выполнить связку.";
 "settings.pairing.unlink.confirm.button" = "Отвязать";
+
+"tab.tasks" = "Задания";
+
+"tasks.parent.subtitle" = "Создавайте задания — за выполнение ребёнок получит время";
+"tasks.parent.empty.subtitle" = "Создайте первое задание для ребёнка";
+"tasks.child.subtitle" = "Выполните задание и отправьте фото-отчёт";
+"tasks.child.empty.subtitle" = "Пока нет заданий от родителя";
+"tasks.empty.title" = "Заданий пока нет";
+"tasks.create_new" = "Создать задание";
+"tasks.parent.approve" = "Подтвердить";
+"tasks.reward.minutes" = "%d мин";
+
+"tasks.status.pending" = "Новое";
+"tasks.status.submitted" = "На проверке";
+"tasks.status.approved" = "Выполнено";
+
+"tasks.editor.title.new" = "Новое задание";
+"tasks.editor.title.edit" = "Редактировать задание";
+"tasks.editor.cancel" = "Отмена";
+"tasks.editor.save" = "Сохранить";
+"tasks.editor.delete" = "Удалить задание";
+"tasks.editor.delete.confirm.title" = "Удалить задание?";
+"tasks.editor.delete.confirm.delete" = "Удалить";
+"tasks.editor.delete.confirm.message" = "Задание будет удалено. Это действие нельзя отменить.";
+"tasks.editor.title.label" = "Название";
+"tasks.editor.title.placeholder" = "Например, Помыть посуду";
+"tasks.editor.title.required" = "Укажите название";
+"tasks.editor.details.label" = "Описание";
+"tasks.editor.details.placeholder" = "Что нужно сделать";
+"tasks.editor.reward.label" = "Награда за выполнение";
+"tasks.editor.reward.hint" = "Сколько времени получит ребёнок";
+
+"tasks.detail.title" = "Задание";
+"tasks.detail.reward" = "Награда: %d мин";
+"tasks.detail.send_hint" = "Сделайте фото выполненного задания и отправьте родителю";
+"tasks.detail.send_report" = "Отправить отчёт";
+"tasks.detail.submitted_hint" = "Отчёт отправлен. Ждём подтверждения родителя.";
+"tasks.detail.approved_hint" = "Задание подтверждено, время начислено.";
+"tasks.share.caption" = "Отчёт по заданию: %@";

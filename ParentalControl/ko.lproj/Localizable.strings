@@ -377,3 +377,42 @@
 "settings.pairing.unlink.confirm.title" = "기기 연결을 해제할까요?";
 "settings.pairing.unlink.confirm.message" = "부모와 자녀 기기 간의 연결이 초기화됩니다. 자녀 기기를 관리하려면 다시 페어링해야 합니다.";
 "settings.pairing.unlink.confirm.button" = "연결 해제";
+
+"tab.tasks" = "과제";
+
+"tasks.parent.subtitle" = "과제를 만드세요. 완료하면 아이가 시간을 얻습니다";
+"tasks.parent.empty.subtitle" = "아이를 위한 첫 과제를 만드세요";
+"tasks.child.subtitle" = "과제를 완료하고 사진 리포트를 보내세요";
+"tasks.child.empty.subtitle" = "아직 부모가 보낸 과제가 없습니다";
+"tasks.empty.title" = "아직 과제가 없습니다";
+"tasks.create_new" = "과제 만들기";
+"tasks.parent.approve" = "승인";
+"tasks.reward.minutes" = "%d분";
+
+"tasks.status.pending" = "신규";
+"tasks.status.submitted" = "검토 중";
+"tasks.status.approved" = "완료";
+
+"tasks.editor.title.new" = "새 과제";
+"tasks.editor.title.edit" = "과제 편집";
+"tasks.editor.cancel" = "취소";
+"tasks.editor.save" = "저장";
+"tasks.editor.delete" = "과제 삭제";
+"tasks.editor.delete.confirm.title" = "과제를 삭제할까요?";
+"tasks.editor.delete.confirm.delete" = "삭제";
+"tasks.editor.delete.confirm.message" = "과제가 삭제됩니다. 이 작업은 취소할 수 없습니다.";
+"tasks.editor.title.label" = "제목";
+"tasks.editor.title.placeholder" = "예: 설거지하기";
+"tasks.editor.title.required" = "제목을 입력하세요";
+"tasks.editor.details.label" = "설명";
+"tasks.editor.details.placeholder" = "해야 할 일";
+"tasks.editor.reward.label" = "완료 보상";
+"tasks.editor.reward.hint" = "아이가 받는 시간";
+
+"tasks.detail.title" = "과제";
+"tasks.detail.reward" = "보상: %d분";
+"tasks.detail.send_hint" = "완료한 과제의 사진을 찍어 부모에게 보내세요";
+"tasks.detail.send_report" = "리포트 보내기";
+"tasks.detail.submitted_hint" = "리포트를 보냈습니다. 부모의 승인을 기다리는 중입니다.";
+"tasks.detail.approved_hint" = "과제가 승인되어 시간이 적립되었습니다.";
+"tasks.share.caption" = "과제 리포트: %@";

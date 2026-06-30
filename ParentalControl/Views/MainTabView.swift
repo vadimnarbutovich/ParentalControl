@@ -6,6 +6,7 @@ private enum MainTab: String, CaseIterable {
     case schedule
     case map
     case statistics
+    case tasks
     case blocklist
     case settings
     /// Служебный таб «Родитель» на устройстве ребёнка: при тапе показываем `ParentModeEntryView`
@@ -47,6 +48,12 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.statistics)
 
+                TasksTabView()
+                    .tabItem {
+                        Label("tab.tasks", systemImage: "checklist")
+                    }
+                    .tag(MainTab.tasks)
+
                 SettingsView()
                     .tabItem {
                         Label("tab.settings", systemImage: "gearshape.fill")
@@ -74,13 +81,19 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.settings)
             } else {
-                // Обычный режим ребёнка: только «Главная» и «Родитель». При тапе по «Родитель»
+                // Обычный режим ребёнка: «Главная», «Задания» и «Родитель». При тапе по «Родитель»
                 // открывается PIN-cover; сам этот View пустой — пользователь его никогда не видит.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
                     }
                     .tag(MainTab.home)
+
+                ChildTasksView()
+                    .tabItem {
+                        Label("tab.tasks", systemImage: "checklist")
+                    }
+                    .tag(MainTab.tasks)
 
                 Color.clear
                     .tabItem {

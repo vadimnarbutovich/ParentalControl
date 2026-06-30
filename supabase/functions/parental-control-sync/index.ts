@@ -103,6 +103,16 @@ Deno.serve(async (req: Request) => {
         return await upsertBlockSchedule(authed.deviceId, payload);
       case "delete_block_schedule":
         return await deleteBlockSchedule(authed.deviceId, payload);
+      case "list_child_tasks":
+        return await listChildTasks(authed.deviceId);
+      case "upsert_child_task":
+        return await upsertChildTask(authed.deviceId, payload);
+      case "delete_child_task":
+        return await deleteChildTask(authed.deviceId, payload);
+      case "submit_child_task":
+        return await submitChildTask(authed.deviceId, payload);
+      case "approve_child_task":
+        return await approveChildTask(authed.deviceId, payload);
       case "set_parent_pin":
         return await setParentPin(authed.deviceId, payload);
       case "clear_parent_pin":
@@ -255,6 +265,7 @@ async function deleteFamilyData(familyID: string): Promise<void> {
     "child_location_state",
     "family_focus_desired_state",
     "family_block_schedules",
+    "family_child_tasks",
   ];
   for (const table of tables) {
     const { error } = await supabase.from(table).delete().eq("family_id", familyID);
@@ -1387,6 +1398,275 @@ async function deleteBlockSchedule(deviceId: string, payload: Json): Promise<Res
   return okResponse({ ok: true });
 }
 
+// MARK: Child tasks (задания для ребёнка)
+// Разовые задания parent → child. Фото-отчёт у нас НЕ хранится — ребёнок шлёт его родителю
+// через системный share sheet. Бэкенд ведёт только статус (pending → submitted → approved) и
+// награду во времени. Начисление при approve переиспользует add_earned_seconds (тот же apply-путь
+// на ребёнке, что и «Добавить время»). Синхронизация — пассивный push tasks_updated (как расписания).
+
+type ChildTaskRow = {
+  id: string;
+  family_id: string;
+  title: string;
+  details: string | null;
+  reward_seconds: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  submitted_at: string | null;
+  approved_at: string | null;
+};
+
+function mapChildTaskForClient(row: ChildTaskRow) {
+  return {
+    id: row.id,
+    title: row.title,
+    details: row.details ?? "",
+    rewardSeconds: Math.max(0, Number(row.reward_seconds ?? 0)),
+    status: row.status,
+    createdAtISO: row.created_at,
+    updatedAtISO: row.updated_at,
+    submittedAtISO: row.submitted_at,
+    approvedAtISO: row.approved_at,
+  };
+}
+
+async function listChildTasks(deviceId: string): Promise<Response> {
+  const device = await getDevice(deviceId);
+  if (!device.family_id) return errorResponse("Device is not paired", 403);
+
+  const { data, error } = await supabase
+    .from("family_child_tasks")
+    .select("id, family_id, title, details, reward_seconds, status, created_at, updated_at, submitted_at, approved_at, deleted_at")
+    .eq("family_id", device.family_id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+  if (error) return errorResponse(error.message, 400);
+
+  const items = (data ?? []).map((row) => mapChildTaskForClient(row as ChildTaskRow));
+  return okResponse({ tasks: items });
+}
+
+async function upsertChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can edit tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  const title = asString(payload.title);
+  const details = asString(payload.details) ?? "";
+  const rewardSeconds = asNumber(payload.rewardSeconds);
+
+  if (!id) return errorResponse("id is required (uuid)", 400);
+  if (!title) return errorResponse("title is required", 400);
+  if (rewardSeconds === null || rewardSeconds < 0) return errorResponse("rewardSeconds invalid", 400);
+
+  // Не перетираем жизненный цикл (status/submitted_at/approved_at), если задание уже существует —
+  // upsert используется и для редактирования. Создание: existing == null → status pending.
+  const { data: existing } = await supabase
+    .from("family_child_tasks")
+    .select("status, submitted_at, approved_at")
+    .eq("id", id)
+    .eq("family_id", parent.family_id)
+    .maybeSingle();
+
+  const nowIso = new Date().toISOString();
+  const { error: upsertError } = await supabase
+    .from("family_child_tasks")
+    .upsert({
+      id,
+      family_id: parent.family_id,
+      title,
+      details,
+      reward_seconds: Math.round(rewardSeconds),
+      status: existing?.status ?? "pending",
+      submitted_at: existing?.submitted_at ?? null,
+      approved_at: existing?.approved_at ?? null,
+      updated_at: nowIso,
+      deleted_at: null,
+    }, { onConflict: "id" });
+  if (upsertError) return errorResponse(upsertError.message, 400);
+
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true });
+}
+
+async function deleteChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can delete tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const { error: deleteError } = await supabase
+    .from("family_child_tasks")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("family_id", parent.family_id);
+  if (deleteError) return errorResponse(deleteError.message, 400);
+
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true });
+}
+
+async function submitChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const child = await getDevice(deviceId);
+  if (child.role !== "child" || !child.family_id) return errorResponse("Only paired child can submit tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const nowIso = new Date().toISOString();
+  // Только pending → submitted (нельзя пере-сабмитить approved/submitted).
+  const { data: updated, error } = await supabase
+    .from("family_child_tasks")
+    .update({ status: "submitted", submitted_at: nowIso, updated_at: nowIso })
+    .eq("id", id)
+    .eq("family_id", child.family_id)
+    .eq("status", "pending")
+    .select("id, title")
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+
+  // Уведомляем родителя alert-пушем только если статус реально сменился.
+  if (updated) {
+    await notifyParentTaskSubmitted(child.family_id, String((updated as { title?: string }).title ?? ""));
+  }
+  return okResponse({ ok: true });
+}
+
+async function approveChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can approve tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const nowIso = new Date().toISOString();
+  // submitted → approved. Фильтр по status гарантирует идемпотентность: повторный approve
+  // вернёт 0 строк (статус уже approved) → начисления не будет.
+  const { data: updated, error } = await supabase
+    .from("family_child_tasks")
+    .update({ status: "approved", approved_at: nowIso, updated_at: nowIso })
+    .eq("id", id)
+    .eq("family_id", parent.family_id)
+    .eq("status", "submitted")
+    .select("id, reward_seconds")
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+  if (!updated) {
+    // Уже approved или не в submitted — без повторного начисления.
+    return okResponse({ ok: true, credited: false });
+  }
+
+  const reward = Math.max(0, Number((updated as { reward_seconds?: number }).reward_seconds ?? 0));
+  const { data: child } = await supabase
+    .from("devices")
+    .select("id, apns_token")
+    .eq("family_id", parent.family_id)
+    .eq("role", "child")
+    .maybeSingle();
+
+  if (child && reward > 0) {
+    // Начисление через тот же путь, что «Добавить время» (add_earned_seconds + APNs ребёнку).
+    await createAndDispatchFocusCommand({
+      familyID: parent.family_id,
+      parentDeviceID: parent.id,
+      childDeviceID: child.id,
+      childApnsToken: (child as { apns_token: string | null }).apns_token,
+      commandType: "add_earned_seconds",
+      durationSeconds: reward,
+      intentID: null,
+    });
+  }
+  // Синкаем список заданий ребёнку, чтобы задание ушло из активных (status approved).
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true, credited: reward > 0 });
+}
+
+async function notifyChildTasksUpdated(familyID: string, parentDeviceID: string): Promise<void> {
+  try {
+    const { data: child, error: childError } = await supabase
+      .from("devices")
+      .select("id, apns_token")
+      .eq("family_id", familyID)
+      .eq("role", "child")
+      .maybeSingle();
+    if (childError) {
+      console.warn("[notifyChildTasksUpdated] child lookup failed:", childError.message);
+      return;
+    }
+    if (!child) return;
+
+    await createAndDispatchFocusCommand({
+      familyID,
+      parentDeviceID,
+      childDeviceID: child.id,
+      childApnsToken: child.apns_token,
+      commandType: "tasks_updated",
+      durationSeconds: null,
+      intentID: null,
+    });
+  } catch (e) {
+    console.warn("[notifyChildTasksUpdated] dispatch failed:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+async function notifyParentTaskSubmitted(familyID: string, taskTitle: string): Promise<void> {
+  try {
+    const { data: parent, error: parentError } = await supabase
+      .from("devices")
+      .select("id, apns_token")
+      .eq("family_id", familyID)
+      .eq("role", "parent")
+      .maybeSingle();
+    if (parentError) {
+      console.warn("[notifyParentTaskSubmitted] parent lookup failed:", parentError.message);
+      return;
+    }
+    if (!parent || !parent.apns_token) return;
+    await sendApnsTaskSubmittedAlert(String(parent.apns_token), taskTitle);
+  } catch (e) {
+    console.warn("[notifyParentTaskSubmitted] dispatch failed:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+// Алерт родителю «ребёнок отправил отчёт». Не привязан к focus_commands (команды нацелены на
+// ребёнка), поэтому шлём прямой APNs alert. command_type=tasks_updated → приложение родителя
+// при обработке пуша обновит список заданий.
+async function sendApnsTaskSubmittedAlert(tokenRaw: string, taskTitle: string): Promise<void> {
+  const auth = await apnsAuthHeaders();
+  const token = tokenRaw.replace(/\s+/g, "");
+  const trimmed = taskTitle.trim();
+  const body = trimmed.length > 0
+    ? `Ребёнок отправил отчёт по заданию: ${trimmed}`
+    : "Ребёнок отправил отчёт по заданию";
+  const payload = {
+    aps: {
+      alert: { title: "ParentalControl", body },
+      sound: "default",
+      "interruption-level": "time-sensitive",
+      "content-available": 1,
+      "mutable-content": 1,
+    },
+    command_type: "tasks_updated",
+  };
+  const expirationEpoch = Math.floor(Date.now() / 1000) + 60 * 60;
+  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: auth.authorization,
+      "apns-topic": auth.topic,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "apns-expiration": String(expirationEpoch),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`APNs error ${res.status}: ${text}`);
+}
+
 // MARK: Parent PIN (v22)
 // Родитель задаёт 4-значный PIN в своих настройках. На устройство приходит только хэш и соль —
 // исходный PIN никогда не покидает устройство, где введён. Backend хранит `parent_pin_hash` /
@@ -1830,6 +2110,8 @@ function commandLocalizedAlert(
       return { title: "ParentalControl", body: "Родитель запросил местоположение" };
     case "schedules_updated":
       return { title: "ParentalControl", body: "Расписание обновлено" };
+    case "tasks_updated":
+      return { title: "ParentalControl", body: "Задания обновлены" };
     case "schedule_started": {
       const name = (extras.scheduleName && extras.scheduleName.trim().length > 0)
         ? extras.scheduleName
@@ -1859,7 +2141,7 @@ async function sendApnsAlert(
   const auth = await apnsAuthHeaders();
   const token = tokenRaw.replace(/\s+/g, "");
   const localized = commandLocalizedAlert(commandType, durationSeconds, extras);
-  const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated";
+  const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated" || commandType === "tasks_updated";
   const interruptionLevel = isSilentCommand ? "passive" : "time-sensitive";
   const aps: Record<string, unknown> = {
     alert: {

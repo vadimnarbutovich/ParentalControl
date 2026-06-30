@@ -377,3 +377,42 @@
 "settings.pairing.unlink.confirm.title" = "デバイスの連携を解除しますか？";
 "settings.pairing.unlink.confirm.message" = "保護者と子どものデバイスの連携がリセットされます。子どものデバイスを管理するには、もう一度ペアリングが必要です。";
 "settings.pairing.unlink.confirm.button" = "解除";
+
+"tab.tasks" = "タスク";
+
+"tasks.parent.subtitle" = "タスクを作成しましょう。完了するとお子さまが時間を獲得できます";
+"tasks.parent.empty.subtitle" = "お子さま向けの最初のタスクを作成しましょう";
+"tasks.child.subtitle" = "タスクを完了して写真レポートを送りましょう";
+"tasks.child.empty.subtitle" = "保護者からのタスクはまだありません";
+"tasks.empty.title" = "タスクはまだありません";
+"tasks.create_new" = "タスクを作成";
+"tasks.parent.approve" = "承認";
+"tasks.reward.minutes" = "%d分";
+
+"tasks.status.pending" = "新規";
+"tasks.status.submitted" = "確認中";
+"tasks.status.approved" = "完了";
+
+"tasks.editor.title.new" = "新しいタスク";
+"tasks.editor.title.edit" = "タスクを編集";
+"tasks.editor.cancel" = "キャンセル";
+"tasks.editor.save" = "保存";
+"tasks.editor.delete" = "タスクを削除";
+"tasks.editor.delete.confirm.title" = "タスクを削除しますか？";
+"tasks.editor.delete.confirm.delete" = "削除";
+"tasks.editor.delete.confirm.message" = "タスクが削除されます。この操作は取り消せません。";
+"tasks.editor.title.label" = "タイトル";
+"tasks.editor.title.placeholder" = "例：食器を洗う";
+"tasks.editor.title.required" = "タイトルを入力してください";
+"tasks.editor.details.label" = "説明";
+"tasks.editor.details.placeholder" = "やるべきこと";
+"tasks.editor.reward.label" = "完了の報酬";
+"tasks.editor.reward.hint" = "お子さまが受け取る時間";
+
+"tasks.detail.title" = "タスク";
+"tasks.detail.reward" = "報酬：%d分";
+"tasks.detail.send_hint" = "完了したタスクの写真を撮って保護者に送りましょう";
+"tasks.detail.send_report" = "レポートを送信";
+"tasks.detail.submitted_hint" = "レポートを送信しました。保護者の承認を待っています。";
+"tasks.detail.approved_hint" = "タスクが承認され、時間が付与されました。";
+"tasks.share.caption" = "タスクのレポート：%@";

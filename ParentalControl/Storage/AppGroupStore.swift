@@ -60,6 +60,8 @@ enum StorageKey {
     static let didSeedDefaultBlockSchedules = "parentalcontrol.didSeedDefaultBlockSchedules"
     /// Имена `DeviceActivityName` для сегментов расписаний (`pcsched_*`), чтобы останавливать перед перерегистрацией.
     static let blockScheduleActivityNames = "parentalcontrol.blockScheduleActivityNames"
+    /// Список заданий для ребёнка (family-сущность parent → child).
+    static let childTasks = "parentalcontrol.childTasks"
 }
 
 /// Lightweight payload captured by either the main app or the Notification Service Extension
@@ -462,6 +464,14 @@ final class AppGroupStore {
 
     func saveBlockSchedules(_ schedules: [BlockSchedule]) {
         save(schedules, key: StorageKey.blockSchedules)
+    }
+
+    func loadChildTasks() -> [ChildTask] {
+        load([ChildTask].self, key: StorageKey.childTasks) ?? []
+    }
+
+    func saveChildTasks(_ tasks: [ChildTask]) {
+        save(tasks, key: StorageKey.childTasks)
     }
 
     func loadDidSeedDefaultBlockSchedules() -> Bool {

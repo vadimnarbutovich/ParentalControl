@@ -377,3 +377,42 @@
 "settings.pairing.unlink.confirm.title" = "Dissocier les appareils ?";
 "settings.pairing.unlink.confirm.message" = "Le lien entre l'appareil du parent et celui de l'enfant sera réinitialisé. Vous devrez refaire l'association pour gérer l'appareil de l'enfant.";
 "settings.pairing.unlink.confirm.button" = "Dissocier";
+
+"tab.tasks" = "Tâches";
+
+"tasks.parent.subtitle" = "Créez des tâches — votre enfant gagne du temps en les accomplissant";
+"tasks.parent.empty.subtitle" = "Créez la première tâche pour votre enfant";
+"tasks.child.subtitle" = "Accomplissez la tâche et envoyez un compte rendu photo";
+"tasks.child.empty.subtitle" = "Aucune tâche de vos parents pour l'instant";
+"tasks.empty.title" = "Aucune tâche pour l'instant";
+"tasks.create_new" = "Créer une tâche";
+"tasks.parent.approve" = "Valider";
+"tasks.reward.minutes" = "%d min";
+
+"tasks.status.pending" = "Nouvelle";
+"tasks.status.submitted" = "En attente";
+"tasks.status.approved" = "Terminée";
+
+"tasks.editor.title.new" = "Nouvelle tâche";
+"tasks.editor.title.edit" = "Modifier la tâche";
+"tasks.editor.cancel" = "Annuler";
+"tasks.editor.save" = "Enregistrer";
+"tasks.editor.delete" = "Supprimer la tâche";
+"tasks.editor.delete.confirm.title" = "Supprimer la tâche ?";
+"tasks.editor.delete.confirm.delete" = "Supprimer";
+"tasks.editor.delete.confirm.message" = "La tâche sera supprimée. Cette action est irréversible.";
+"tasks.editor.title.label" = "Titre";
+"tasks.editor.title.placeholder" = "Ex. : Faire la vaisselle";
+"tasks.editor.title.required" = "Saisissez un titre";
+"tasks.editor.details.label" = "Description";
+"tasks.editor.details.placeholder" = "Ce qu'il faut faire";
+"tasks.editor.reward.label" = "Récompense pour l'accomplissement";
+"tasks.editor.reward.hint" = "Combien de temps votre enfant recevra";
+
+"tasks.detail.title" = "Tâche";
+"tasks.detail.reward" = "Récompense : %d min";
+"tasks.detail.send_hint" = "Prenez une photo de la tâche accomplie et envoyez-la à vos parents";
+"tasks.detail.send_report" = "Envoyer le compte rendu";
+"tasks.detail.submitted_hint" = "Compte rendu envoyé. En attente de validation par vos parents.";
+"tasks.detail.approved_hint" = "Tâche validée, temps crédité.";
+"tasks.share.caption" = "Compte rendu de la tâche : %@";
