@@ -113,6 +113,8 @@ Deno.serve(async (req: Request) => {
         return await setParentPro(authed.deviceId, payload);
       case "fetch_parent_pro":
         return await fetchParentPro(authed.deviceId);
+      case "unlink_devices":
+        return await unlinkDevices(authed.deviceId);
       default:
         return errorResponse("Unknown action", 400);
     }
@@ -204,6 +206,54 @@ async function joinPairingCode(deviceId: string, payload: Json): Promise<Respons
   if (bindError) return errorResponse(bindError.message, 400);
 
   return okResponse(await fetchPairingState(family.id));
+}
+
+/// Полная отвязка семьи с очисткой данных: оба устройства отсоединяются от семьи, после чего
+/// ВСЕ привязанные к семье данные и сама семья удаляются (никакого мусора в БД не остаётся).
+/// Строки `devices` НЕ удаляем — это идентичность устройства (install_id/device_secret/apns_token),
+/// переиспользуется при новой связке; лишь обнуляем их `family_id`. Вызвать может любое связанное
+/// устройство. Ребёнка будим silent push'ом (ДО отсоединения, иначе apns-токен по семье не найти);
+/// второе устройство окончательно очистит локальное состояние при следующем `registerDevice`
+/// (вернёт `pairingState: null`).
+async function unlinkDevices(deviceId: string): Promise<Response> {
+  const device = await getDevice(deviceId);
+  if (!device.family_id) return errorResponse("Device is not paired", 400);
+  const familyID = device.family_id;
+
+  // Будим ребёнка ДО отсоединения — после `family_id = NULL` мы не найдём его apns-токен по семье.
+  await notifyChildPinUpdated(familyID);
+
+  // Отсоединяем устройства от семьи (строки сохраняем).
+  const { error: detachError } = await supabase
+    .from("devices")
+    .update({ family_id: null })
+    .eq("family_id", familyID);
+  if (detachError) return errorResponse(detachError.message, 400);
+
+  // Удаляем все данные семьи. FK на `families.id` идут без ON DELETE CASCADE, поэтому зависимые
+  // строки удаляем вручную ДО самой семьи.
+  await deleteFamilyData(familyID);
+
+  return okResponse({ ok: true });
+}
+
+/// Удаляет все строки, привязанные к семье, и саму семью. Порядок важен: сперва зависимые
+/// таблицы (FK без CASCADE), потом `families`. Ошибки логируем, но не прерываем — это очистка.
+async function deleteFamilyData(familyID: string): Promise<void> {
+  const tables = [
+    "focus_commands",
+    "daily_stats_snapshots",
+    "child_runtime_state",
+    "child_location_state",
+    "family_focus_desired_state",
+    "family_block_schedules",
+  ];
+  for (const table of tables) {
+    const { error } = await supabase.from(table).delete().eq("family_id", familyID);
+    if (error) console.warn(`[unlink] delete ${table} failed:`, error.message);
+  }
+  const { error: familyError } = await supabase.from("families").delete().eq("id", familyID);
+  if (familyError) console.warn("[unlink] delete family failed:", familyError.message);
 }
 
 async function updateApnsToken(deviceId: string, payload: Json): Promise<Response> {

@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "Inserisci il codice di abbinamento dall'app del genitore per collegare i dispositivi.";
 "dashboard.pairing.connect" = "Collega dispositivo";
 "dashboard.pairing.connecting" = "Collegamento…";
+
+"settings.pairing.linked.status" = "Dispositivi collegati";
+"settings.pairing.unlink" = "Scollega dispositivi";
+"settings.pairing.unlink.confirm.title" = "Scollegare i dispositivi?";
+"settings.pairing.unlink.confirm.message" = "Il collegamento tra il dispositivo del genitore e quello del bambino verrà reimpostato. Dovrai eseguire di nuovo l'associazione per gestire il dispositivo del bambino.";
+"settings.pairing.unlink.confirm.button" = "Scollega";

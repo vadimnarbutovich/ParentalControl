@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "保護者アプリのペアリングコードを入力してデバイスを連携します。";
 "dashboard.pairing.connect" = "デバイスを連携";
 "dashboard.pairing.connecting" = "連携中…";
+
+"settings.pairing.linked.status" = "デバイスを連携済み";
+"settings.pairing.unlink" = "デバイスの連携を解除";
+"settings.pairing.unlink.confirm.title" = "デバイスの連携を解除しますか？";
+"settings.pairing.unlink.confirm.message" = "保護者と子どものデバイスの連携がリセットされます。子どものデバイスを管理するには、もう一度ペアリングが必要です。";
+"settings.pairing.unlink.confirm.button" = "解除";

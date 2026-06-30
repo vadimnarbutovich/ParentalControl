@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "부모 앱의 페어링 코드를 입력해 기기를 연결하세요.";
 "dashboard.pairing.connect" = "기기 연결";
 "dashboard.pairing.connecting" = "연결 중…";
+
+"settings.pairing.linked.status" = "기기 연결됨";
+"settings.pairing.unlink" = "기기 연결 해제";
+"settings.pairing.unlink.confirm.title" = "기기 연결을 해제할까요?";
+"settings.pairing.unlink.confirm.message" = "부모와 자녀 기기 간의 연결이 초기화됩니다. 자녀 기기를 관리하려면 다시 페어링해야 합니다.";
+"settings.pairing.unlink.confirm.button" = "연결 해제";

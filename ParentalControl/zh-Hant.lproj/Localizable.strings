@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "輸入家長應用程式中的配對碼以連接裝置。";
 "dashboard.pairing.connect" = "連接裝置";
 "dashboard.pairing.connecting" = "連接中…";
+
+"settings.pairing.linked.status" = "裝置已連結";
+"settings.pairing.unlink" = "解除裝置連結";
+"settings.pairing.unlink.confirm.title" = "解除裝置連結？";
+"settings.pairing.unlink.confirm.message" = "家長裝置與孩子裝置之間的連結將被重設。若要管理孩子的裝置，需要重新配對。";
+"settings.pairing.unlink.confirm.button" = "解除連結";

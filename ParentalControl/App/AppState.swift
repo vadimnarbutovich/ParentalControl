@@ -406,6 +406,26 @@ final class AppState: ObservableObject {
         storage.savePairingState(nil)
     }
 
+    /// Полная отвязка устройств (с любого из них): backend отсоединяет оба устройства от семьи,
+    /// затем локально приводим состояние к «не связано». Второе устройство подхватит сброс при
+    /// следующем `registerDevice` (вход в активное состояние) — `bootstrapRemoteIfNeeded` вернёт
+    /// `pairingState: null` и тоже вызовет `clearPairing()`.
+    @discardableResult
+    func unlinkDevices() async -> Bool {
+        guard pairingState?.isLinked == true else { return false }
+        do {
+            try await remoteSyncService.unlinkDevices()
+            remotePollingTask?.cancel()
+            remotePollingTask = nil
+            clearPairing()
+            remoteStatusMessage = nil
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func createPairingCodeForParent() async {
         guard deviceRole == .parent else { return }
         do {
@@ -1090,6 +1110,12 @@ final class AppState: ObservableObject {
                     isParentChildStateResolved = false
                     parentResolvedFocusActive = nil
                 }
+            } else if pairingState != nil {
+                // Сервер авторитетно сообщил, что устройство больше не связано (например, связку
+                // сбросили с другого устройства через `unlink_devices`) — приводим локальное
+                // состояние в соответствие, чтобы UI вернулся к экрану связки.
+                parentPairingCode = nil
+                clearPairing()
             }
             if let apns = storage.loadAPNSToken() {
                 try? await remoteSyncService.updateAPNSToken(apns)
@@ -2812,6 +2838,16 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable { let installID: String }
         return try await call(
             action: "fetch_parent_pro",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Любое связанное устройство → backend: полная отвязка семьи (оба устройства отсоединяются,
+    /// семья помечается неактивной). После — оба устройства очистят локальную связку.
+    func unlinkDevices() async throws {
+        struct Payload: Encodable { let installID: String }
+        let _: EmptyResponse = try await call(
+            action: "unlink_devices",
             payload: Payload(installID: installID)
         )
     }

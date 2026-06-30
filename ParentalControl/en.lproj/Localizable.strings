@@ -452,3 +452,9 @@
 "dashboard.pairing.subtitle" = "Enter the pairing code from the parent's app to connect the devices.";
 "dashboard.pairing.connect" = "Link device";
 "dashboard.pairing.connecting" = "Linking…";
+
+"settings.pairing.linked.status" = "Devices linked";
+"settings.pairing.unlink" = "Unlink devices";
+"settings.pairing.unlink.confirm.title" = "Unlink devices?";
+"settings.pairing.unlink.confirm.message" = "The link between the parent and child devices will be reset. You'll need to pair again to manage the child device.";
+"settings.pairing.unlink.confirm.button" = "Unlink";

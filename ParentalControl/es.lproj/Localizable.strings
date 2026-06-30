@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "Introduce el código de vinculación de la app del padre para conectar los dispositivos.";
 "dashboard.pairing.connect" = "Vincular dispositivo";
 "dashboard.pairing.connecting" = "Vinculando…";
+
+"settings.pairing.linked.status" = "Dispositivos vinculados";
+"settings.pairing.unlink" = "Desvincular dispositivos";
+"settings.pairing.unlink.confirm.title" = "¿Desvincular dispositivos?";
+"settings.pairing.unlink.confirm.message" = "Se restablecerá el vínculo entre los dispositivos de los padres y del niño. Tendrás que volver a vincularlos para gestionar el dispositivo del niño.";
+"settings.pairing.unlink.confirm.button" = "Desvincular";

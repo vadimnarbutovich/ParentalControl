@@ -452,3 +452,9 @@
 "dashboard.pairing.subtitle" = "Введите код связки из приложения родителя, чтобы соединить устройства.";
 "dashboard.pairing.connect" = "Связать";
 "dashboard.pairing.connecting" = "Связываем…";
+
+"settings.pairing.linked.status" = "Устройства связаны";
+"settings.pairing.unlink" = "Отвязать устройства";
+"settings.pairing.unlink.confirm.title" = "Отвязать устройства?";
+"settings.pairing.unlink.confirm.message" = "Связь между устройствами родителя и ребёнка будет сброшена. Чтобы снова управлять устройством ребёнка, потребуется заново выполнить связку.";
+"settings.pairing.unlink.confirm.button" = "Отвязать";

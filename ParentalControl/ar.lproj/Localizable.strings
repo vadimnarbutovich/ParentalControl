@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "أدخل رمز الإقران من تطبيق الوالدين لربط الأجهزة.";
 "dashboard.pairing.connect" = "ربط الجهاز";
 "dashboard.pairing.connecting" = "جارٍ الربط…";
+
+"settings.pairing.linked.status" = "الأجهزة مرتبطة";
+"settings.pairing.unlink" = "إلغاء ربط الأجهزة";
+"settings.pairing.unlink.confirm.title" = "إلغاء ربط الأجهزة؟";
+"settings.pairing.unlink.confirm.message" = "ستتم إعادة تعيين الربط بين جهازي الوالد والطفل. ستحتاج إلى الإقران مرة أخرى لإدارة جهاز الطفل.";
+"settings.pairing.unlink.confirm.button" = "إلغاء الربط";

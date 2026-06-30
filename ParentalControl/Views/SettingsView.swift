@@ -25,6 +25,8 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var showShareSheet = false
     @State private var showPinClearConfirm = false
+    @State private var showUnlinkConfirm = false
+    @State private var isUnlinking = false
     @FocusState private var focusedField: SettingsFocusField?
 
     var body: some View {
@@ -187,23 +189,27 @@ struct SettingsView: View {
             Text("settings.parent.link.title")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.9))
-            if let code = appState.parentPairingCode ?? appState.pairingState?.pairingCode {
-                Text(L10n.f("settings.parent.link.code", code))
-                    .font(.title3.bold())
-                    .foregroundStyle(AppTheme.neonGreen)
+            if appState.pairingState?.isLinked == true {
+                linkedPairingView
             } else {
-                Text("settings.parent.link.empty")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            Button("settings.parent.link.generate") {
-                Task { await appState.createPairingCodeForParent() }
-            }
-            .buttonStyle(SecondaryInlineButtonStyle())
-            if let message = appState.remoteStatusMessage {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.neonBlue)
+                if let code = appState.parentPairingCode ?? appState.pairingState?.pairingCode {
+                    Text(L10n.f("settings.parent.link.code", code))
+                        .font(.title3.bold())
+                        .foregroundStyle(AppTheme.neonGreen)
+                } else {
+                    Text("settings.parent.link.empty")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Button("settings.parent.link.generate") {
+                    Task { await appState.createPairingCodeForParent() }
+                }
+                .buttonStyle(SecondaryInlineButtonStyle())
+                if let message = appState.remoteStatusMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.neonBlue)
+                }
             }
         }
         .padding(.vertical, 8)
@@ -214,35 +220,75 @@ struct SettingsView: View {
             Text("settings.child.link.title")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.9))
-            TextField(
-                L10n.tr("settings.child.link.placeholder"),
-                text: $appState.pairingCodeInput
-            )
-            .focused($focusedField, equals: .childPairingCode)
-            .textInputAutocapitalization(.characters)
-            .autocorrectionDisabled(true)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-            )
-            Button("settings.child.link.connect") {
-                Task { await appState.connectChildWithPairingCode() }
-            }
-            .buttonStyle(SecondaryInlineButtonStyle())
-            if let code = appState.pairingState?.pairingCode {
-                Text(L10n.f("settings.child.link.connected_code", code))
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.neonGreen)
-            }
-            if let message = appState.remoteStatusMessage {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.neonBlue)
+            if appState.pairingState?.isLinked == true {
+                linkedPairingView
+            } else {
+                TextField(
+                    L10n.tr("settings.child.link.placeholder"),
+                    text: $appState.pairingCodeInput
+                )
+                .focused($focusedField, equals: .childPairingCode)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled(true)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.white.opacity(0.08))
+                )
+                Button("settings.child.link.connect") {
+                    Task { await appState.connectChildWithPairingCode() }
+                }
+                .buttonStyle(SecondaryInlineButtonStyle())
+                if let message = appState.remoteStatusMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.neonBlue)
+                }
             }
         }
         .padding(.vertical, 8)
+    }
+
+    /// Состояние «устройства связаны»: чистый статус + кнопка «Отвязать устройства» (сброс связки).
+    /// Намеренно НЕ показываем `remoteStatusMessage` — это общий канал статусов команд
+    /// (включая «отменено» от отменённых фоновых запросов), не относящийся к связке.
+    private var linkedPairingView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(AppTheme.neonGreen)
+                Text("settings.pairing.linked.status")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.neonGreen)
+            }
+            Button(role: .destructive) {
+                showUnlinkConfirm = true
+            } label: {
+                HStack(spacing: 8) {
+                    if isUnlinking { ProgressView().tint(.white) }
+                    Text("settings.pairing.unlink")
+                }
+            }
+            .buttonStyle(SecondaryInlineButtonStyle())
+            .disabled(isUnlinking)
+            .confirmationDialog(
+                "settings.pairing.unlink.confirm.title",
+                isPresented: $showUnlinkConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("settings.pairing.unlink.confirm.button", role: .destructive) {
+                    isUnlinking = true
+                    Task {
+                        await appState.unlinkDevices()
+                        isUnlinking = false
+                    }
+                }
+                Button("common.cancel", role: .cancel) {}
+            } message: {
+                Text("settings.pairing.unlink.confirm.message")
+            }
+        }
     }
 
     private func dismissKeyboard() {

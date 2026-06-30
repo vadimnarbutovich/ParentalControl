@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "Gib den Kopplungscode aus der Eltern-App ein, um die Geräte zu verbinden.";
 "dashboard.pairing.connect" = "Gerät verbinden";
 "dashboard.pairing.connecting" = "Verbinden…";
+
+"settings.pairing.linked.status" = "Geräte verbunden";
+"settings.pairing.unlink" = "Geräte trennen";
+"settings.pairing.unlink.confirm.title" = "Geräte trennen?";
+"settings.pairing.unlink.confirm.message" = "Die Verbindung zwischen Eltern- und Kindgerät wird zurückgesetzt. Zum Verwalten des Kindgeräts ist eine erneute Kopplung erforderlich.";
+"settings.pairing.unlink.confirm.button" = "Trennen";

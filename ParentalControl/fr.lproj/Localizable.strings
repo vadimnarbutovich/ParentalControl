@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "Saisis le code d'association depuis l'app du parent pour connecter les appareils.";
 "dashboard.pairing.connect" = "Associer l'appareil";
 "dashboard.pairing.connecting" = "Association…";
+
+"settings.pairing.linked.status" = "Appareils liés";
+"settings.pairing.unlink" = "Dissocier les appareils";
+"settings.pairing.unlink.confirm.title" = "Dissocier les appareils ?";
+"settings.pairing.unlink.confirm.message" = "Le lien entre l'appareil du parent et celui de l'enfant sera réinitialisé. Vous devrez refaire l'association pour gérer l'appareil de l'enfant.";
+"settings.pairing.unlink.confirm.button" = "Dissocier";

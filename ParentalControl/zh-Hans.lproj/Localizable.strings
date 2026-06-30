@@ -370,3 +370,9 @@
 "dashboard.pairing.subtitle" = "输入家长应用中的配对码以连接设备。";
 "dashboard.pairing.connect" = "连接设备";
 "dashboard.pairing.connecting" = "连接中…";
+
+"settings.pairing.linked.status" = "设备已关联";
+"settings.pairing.unlink" = "解除设备关联";
+"settings.pairing.unlink.confirm.title" = "解除设备关联？";
+"settings.pairing.unlink.confirm.message" = "家长设备与孩子设备之间的关联将被重置。要管理孩子的设备，需要重新配对。";
+"settings.pairing.unlink.confirm.button" = "解除关联";
