@@ -266,3 +266,114 @@
 "paywall.period.week" = "周";
 "paywall.period.month" = "月";
 "paywall.period.year" = "年";
+
+"tab.schedule" = "时间表";
+
+"schedule.title" = "时间表";
+"schedule.subtitle" = "设置屏蔽干扰应用的时间段。";
+"schedule.create_new" = "创建新时间表";
+
+"schedule.empty.title" = "还没有时间表";
+"schedule.empty.subtitle" = "从下方建议中选择,或自己创建一个时间表。";
+
+"schedule.suggestions.title" = "推荐";
+"schedule.suggestions.add_accessibility" = "添加此模板";
+
+"schedule.template.school.title" = "上学时间";
+"schedule.template.homework.title" = "作业时间";
+"schedule.template.dinner.title" = "晚餐";
+
+"schedule.default.sleep.title" = "睡觉时间";
+"schedule.draft.default_name" = "新时间表";
+
+"schedule.weekday.short.mon" = "一";
+"schedule.weekday.short.tue" = "二";
+"schedule.weekday.short.wed" = "三";
+"schedule.weekday.short.thu" = "四";
+"schedule.weekday.short.fri" = "五";
+"schedule.weekday.short.sat" = "六";
+"schedule.weekday.short.sun" = "日";
+
+"schedule.weekdays.everyday" = "每天";
+"schedule.weekdays.workdays" = "工作日";
+"schedule.weekdays.weekends" = "周末";
+
+"schedule.editor.title.new" = "新时间表";
+"schedule.editor.title.edit" = "编辑时间表";
+"schedule.editor.cancel" = "取消";
+"schedule.editor.save" = "保存";
+"schedule.editor.delete" = "删除时间表";
+
+"schedule.editor.name.label" = "名称";
+"schedule.editor.name.placeholder" = "例如:睡觉时间";
+"schedule.editor.name.required" = "请输入名称";
+
+"schedule.editor.time.label" = "时间";
+"schedule.editor.time.start" = "开始";
+"schedule.editor.time.end" = "结束";
+"schedule.editor.time.crosses_midnight" = "时间表跨越午夜(将在第二天结束)。";
+
+"schedule.editor.weekdays.label" = "星期";
+"schedule.editor.weekdays.required" = "至少选择一天。";
+"schedule.editor.weekdays.preset.workdays" = "周一–周五";
+"schedule.editor.weekdays.preset.weekends" = "周六、周日";
+"schedule.editor.weekdays.preset.everyday" = "每天";
+
+"schedule.editor.enabled.label" = "启用";
+"schedule.editor.enabled.hint" = "启用后,将在所选日期的开始时间触发屏蔽。";
+
+"schedule.editor.delete.confirm.title" = "删除时间表?";
+"schedule.editor.delete.confirm.message" = "此时间表将被删除。你可以随时创建新的。";
+"schedule.editor.delete.confirm.delete" = "删除";
+
+"parent.dashboard.adjust_time" = "调整可用时间";
+"parent.dashboard.adjust_time.title" = "调整可用时间";
+"parent.dashboard.adjust_time.done" = "完成";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 分钟";
+
+"ledger.parent.subtract_time" = "家长扣除了时间";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "家长";
+"common.cancel" = "取消";
+
+"parent_mode.exit_banner" = "退出家长模式";
+"parent_mode.entry.title" = "家长模式";
+"parent_mode.entry.subtitle" = "输入 4 位 PIN 码以在此设备上打开家长模式。";
+"parent_mode.entry.not_configured" = "PIN 码尚未设置。请家长在其应用设置中创建 PIN 码。";
+"parent_mode.entry.close" = "关闭";
+"parent_mode.entry.error.wrong" = "PIN 码不正确。";
+"parent_mode.entry.attempts_remaining" = "剩余尝试次数:%d";
+"parent_mode.entry.locked" = "输入已锁定,请在 %d 秒后重试。";
+
+"settings.pin.section" = "家长 PIN";
+"settings.pin.description" = "用于在孩子设备上打开家长模式的 4 位 PIN 码。孩子永远无法看到 PIN 码本身。";
+"settings.pin.requires_link" = "请先连接孩子设备，然后才能设置 PIN 码。";
+"settings.pin.status.set" = "已设置 PIN";
+"settings.pin.status.unset" = "未设置 PIN";
+"settings.pin.set" = "设置 PIN";
+"settings.pin.change" = "更改 PIN";
+"settings.pin.clear" = "删除 PIN";
+"settings.pin.clear.confirm.title" = "删除 PIN?";
+"settings.pin.clear.confirm.message" = "没有 PIN,孩子将无法打开家长模式。您可以随时设置新的 PIN。";
+"settings.pin.clear.confirm.action" = "删除";
+"settings.pin.sheet.title.set" = "设置 PIN";
+"settings.pin.sheet.title.change" = "更改 PIN";
+"settings.pin.sheet.subtitle" = "请输入两次新的 4 位 PIN 码。";
+"settings.pin.sheet.new" = "新 PIN";
+"settings.pin.sheet.confirm" = "再次输入 PIN";
+"settings.pin.sheet.save" = "保存";
+"settings.pin.sheet.error.format" = "PIN 必须为 4 位数字。";
+"settings.pin.sheet.error.mismatch" = "两次输入的 PIN 不一致。";
+"settings.pin.sheet.error.network" = "无法保存 PIN,请重试。";
+
+"dashboard.pairing.title" = "与家长配对";
+"dashboard.pairing.subtitle" = "输入家长应用中的配对码以连接设备。";
+"dashboard.pairing.connect" = "连接设备";
+"dashboard.pairing.connecting" = "连接中…";
+
+"settings.pairing.linked.status" = "设备已关联";
+"settings.pairing.unlink" = "解除设备关联";
+"settings.pairing.unlink.confirm.title" = "解除设备关联？";
+"settings.pairing.unlink.confirm.message" = "家长设备与孩子设备之间的关联将被重置。要管理孩子的设备，需要重新配对。";
+"settings.pairing.unlink.confirm.button" = "解除关联";

@@ -266,3 +266,114 @@
 "paywall.period.week" = "주";
 "paywall.period.month" = "월";
 "paywall.period.year" = "년";
+
+"tab.schedule" = "일정";
+
+"schedule.title" = "일정";
+"schedule.subtitle" = "주의를 분산시키는 앱을 차단할 시간대를 설정하세요.";
+"schedule.create_new" = "새 일정 만들기";
+
+"schedule.empty.title" = "아직 일정이 없습니다";
+"schedule.empty.subtitle" = "아래 추천 중에서 선택하거나 직접 일정을 만들어 보세요.";
+
+"schedule.suggestions.title" = "추천";
+"schedule.suggestions.add_accessibility" = "이 템플릿 추가";
+
+"schedule.template.school.title" = "학교 시간";
+"schedule.template.homework.title" = "숙제";
+"schedule.template.dinner.title" = "저녁 식사";
+
+"schedule.default.sleep.title" = "취침 시간";
+"schedule.draft.default_name" = "새 일정";
+
+"schedule.weekday.short.mon" = "월";
+"schedule.weekday.short.tue" = "화";
+"schedule.weekday.short.wed" = "수";
+"schedule.weekday.short.thu" = "목";
+"schedule.weekday.short.fri" = "금";
+"schedule.weekday.short.sat" = "토";
+"schedule.weekday.short.sun" = "일";
+
+"schedule.weekdays.everyday" = "매일";
+"schedule.weekdays.workdays" = "평일";
+"schedule.weekdays.weekends" = "주말";
+
+"schedule.editor.title.new" = "새 일정";
+"schedule.editor.title.edit" = "일정 편집";
+"schedule.editor.cancel" = "취소";
+"schedule.editor.save" = "저장";
+"schedule.editor.delete" = "일정 삭제";
+
+"schedule.editor.name.label" = "이름";
+"schedule.editor.name.placeholder" = "예: 취침 시간";
+"schedule.editor.name.required" = "이름을 입력해 주세요";
+
+"schedule.editor.time.label" = "시간";
+"schedule.editor.time.start" = "시작";
+"schedule.editor.time.end" = "종료";
+"schedule.editor.time.crosses_midnight" = "일정이 자정을 지나갑니다(다음 날에 종료).";
+
+"schedule.editor.weekdays.label" = "요일";
+"schedule.editor.weekdays.required" = "요일을 하나 이상 선택하세요.";
+"schedule.editor.weekdays.preset.workdays" = "월–금";
+"schedule.editor.weekdays.preset.weekends" = "토, 일";
+"schedule.editor.weekdays.preset.everyday" = "매일";
+
+"schedule.editor.enabled.label" = "사용";
+"schedule.editor.enabled.hint" = "사용하면 선택한 요일의 시작 시간에 차단이 시작됩니다.";
+
+"schedule.editor.delete.confirm.title" = "일정을 삭제할까요?";
+"schedule.editor.delete.confirm.message" = "이 일정이 삭제됩니다. 언제든 새로 만들 수 있습니다.";
+"schedule.editor.delete.confirm.delete" = "삭제";
+
+"parent.dashboard.adjust_time" = "사용 가능한 시간 조정";
+"parent.dashboard.adjust_time.title" = "사용 가능한 시간 조정";
+"parent.dashboard.adjust_time.done" = "완료";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 분";
+
+"ledger.parent.subtract_time" = "부모가 시간을 차감했습니다";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "보호자";
+"common.cancel" = "취소";
+
+"parent_mode.exit_banner" = "보호자 모드 종료";
+"parent_mode.entry.title" = "보호자 모드";
+"parent_mode.entry.subtitle" = "이 기기에서 보호자 모드를 열려면 4자리 PIN을 입력하세요.";
+"parent_mode.entry.not_configured" = "PIN이 아직 설정되지 않았습니다. 보호자에게 앱 설정에서 PIN을 만들어 달라고 요청하세요.";
+"parent_mode.entry.close" = "닫기";
+"parent_mode.entry.error.wrong" = "PIN이 올바르지 않습니다.";
+"parent_mode.entry.attempts_remaining" = "남은 시도 횟수: %d";
+"parent_mode.entry.locked" = "입력이 잠겼습니다. %d초 후에 다시 시도하세요.";
+
+"settings.pin.section" = "보호자 PIN";
+"settings.pin.description" = "자녀 기기에서 보호자 모드를 여는 데 사용하는 4자리 PIN입니다. 자녀는 PIN을 절대 볼 수 없습니다.";
+"settings.pin.requires_link" = "PIN을 설정하려면 먼저 자녀 기기를 연결하세요.";
+"settings.pin.status.set" = "PIN 설정됨";
+"settings.pin.status.unset" = "PIN 미설정";
+"settings.pin.set" = "PIN 설정";
+"settings.pin.change" = "PIN 변경";
+"settings.pin.clear" = "PIN 삭제";
+"settings.pin.clear.confirm.title" = "PIN을 삭제할까요?";
+"settings.pin.clear.confirm.message" = "PIN이 없으면 자녀가 보호자 모드를 열 수 없습니다. 언제든지 새 PIN을 설정할 수 있습니다.";
+"settings.pin.clear.confirm.action" = "삭제";
+"settings.pin.sheet.title.set" = "PIN 설정";
+"settings.pin.sheet.title.change" = "PIN 변경";
+"settings.pin.sheet.subtitle" = "새 4자리 PIN을 두 번 입력하세요.";
+"settings.pin.sheet.new" = "새 PIN";
+"settings.pin.sheet.confirm" = "PIN 재입력";
+"settings.pin.sheet.save" = "저장";
+"settings.pin.sheet.error.format" = "PIN은 4자리 숫자여야 합니다.";
+"settings.pin.sheet.error.mismatch" = "PIN이 일치하지 않습니다.";
+"settings.pin.sheet.error.network" = "PIN을 저장할 수 없습니다. 다시 시도하세요.";
+
+"dashboard.pairing.title" = "부모와 연결";
+"dashboard.pairing.subtitle" = "부모 앱의 페어링 코드를 입력해 기기를 연결하세요.";
+"dashboard.pairing.connect" = "기기 연결";
+"dashboard.pairing.connecting" = "연결 중…";
+
+"settings.pairing.linked.status" = "기기 연결됨";
+"settings.pairing.unlink" = "기기 연결 해제";
+"settings.pairing.unlink.confirm.title" = "기기 연결을 해제할까요?";
+"settings.pairing.unlink.confirm.message" = "부모와 자녀 기기 간의 연결이 초기화됩니다. 자녀 기기를 관리하려면 다시 페어링해야 합니다.";
+"settings.pairing.unlink.confirm.button" = "연결 해제";

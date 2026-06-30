@@ -178,6 +178,7 @@
 "ledger.focus.session" = "Focus session %d min";
 "ledger.parent.take_all_time" = "Parent took all earned time";
 "ledger.parent.add_time" = "Parent added time";
+"ledger.parent.subtract_time" = "Parent took time";
 
 "shield.title" = "Earn minutes to continue";
 "shield.subtitle" = "Do steps or exercises to unlock this app.";
@@ -291,6 +292,10 @@
 "parent.dashboard.stop_focus" = "Unblock now";
 "parent.dashboard.take_all_time" = "Take all time";
 "parent.dashboard.add_one_minute" = "Add one minute";
+"parent.dashboard.adjust_time" = "Adjust available time";
+"parent.dashboard.adjust_time.title" = "Adjust available time";
+"parent.dashboard.adjust_time.done" = "Done";
+"parent.dashboard.adjust_time.minutes_format" = "%@ min";
 "parent.dashboard.command_id" = "Command: %@";
 "parent.dashboard.command_status" = "Status: %@";
 "parent.dashboard.command_latency" = "Apply latency: %d sec";
@@ -390,6 +395,7 @@
 
 "schedule.editor.name.label" = "Name";
 "schedule.editor.name.placeholder" = "For example, Sleep Time";
+"schedule.editor.name.required" = "Please enter a name";
 
 "schedule.editor.time.label" = "Time";
 "schedule.editor.time.start" = "Start";
@@ -408,3 +414,48 @@
 "schedule.editor.delete.confirm.title" = "Delete schedule?";
 "schedule.editor.delete.confirm.message" = "This schedule will be removed. You can always create a new one.";
 "schedule.editor.delete.confirm.delete" = "Delete";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Parent";
+"common.cancel" = "Cancel";
+
+"parent_mode.exit_banner" = "Exit parent mode";
+"parent_mode.entry.title" = "Parent Mode";
+"parent_mode.entry.subtitle" = "Enter the 4-digit PIN to access the parent mode on this device.";
+"parent_mode.entry.not_configured" = "The PIN hasn't been set yet. Ask the parent to create a PIN in their app settings.";
+"parent_mode.entry.close" = "Close";
+"parent_mode.entry.error.wrong" = "Incorrect PIN.";
+"parent_mode.entry.attempts_remaining" = "Attempts remaining: %d";
+"parent_mode.entry.locked" = "Input locked. Try again in %d sec.";
+
+"settings.pin.section" = "Parent PIN";
+"settings.pin.description" = "4-digit PIN to open parent mode on the child device. The child never sees the PIN itself.";
+"settings.pin.requires_link" = "Link a child device first to set a PIN.";
+"settings.pin.status.set" = "PIN is set";
+"settings.pin.status.unset" = "PIN is not set";
+"settings.pin.set" = "Set PIN";
+"settings.pin.change" = "Change PIN";
+"settings.pin.clear" = "Delete PIN";
+"settings.pin.clear.confirm.title" = "Delete PIN?";
+"settings.pin.clear.confirm.message" = "Without a PIN, the child cannot open parent mode. You can always set a new PIN later.";
+"settings.pin.clear.confirm.action" = "Delete";
+"settings.pin.sheet.title.set" = "Set PIN";
+"settings.pin.sheet.title.change" = "Change PIN";
+"settings.pin.sheet.subtitle" = "Enter the new 4-digit PIN twice.";
+"settings.pin.sheet.new" = "New PIN";
+"settings.pin.sheet.confirm" = "Repeat PIN";
+"settings.pin.sheet.save" = "Save";
+"settings.pin.sheet.error.format" = "PIN must contain 4 digits.";
+"settings.pin.sheet.error.mismatch" = "PINs do not match.";
+"settings.pin.sheet.error.network" = "Couldn't save the PIN. Please try again.";
+
+"dashboard.pairing.title" = "Link to a parent";
+"dashboard.pairing.subtitle" = "Enter the pairing code from the parent's app to connect the devices.";
+"dashboard.pairing.connect" = "Link device";
+"dashboard.pairing.connecting" = "Linking…";
+
+"settings.pairing.linked.status" = "Devices linked";
+"settings.pairing.unlink" = "Unlink devices";
+"settings.pairing.unlink.confirm.title" = "Unlink devices?";
+"settings.pairing.unlink.confirm.message" = "The link between the parent and child devices will be reset. You'll need to pair again to manage the child device.";
+"settings.pairing.unlink.confirm.button" = "Unlink";

@@ -26,6 +26,7 @@ struct ParentalControlApp: App {
                 .onAppear {
                     AppAnalytics.activateMetricaIfNeeded()
                     appDelegate.attach(appState: appState)
+                    appState.attachSubscriptionService(subscriptionService)
                     UNUserNotificationCenter.current().delegate = appDelegate
                     UIApplication.shared.registerForRemoteNotifications()
                 }

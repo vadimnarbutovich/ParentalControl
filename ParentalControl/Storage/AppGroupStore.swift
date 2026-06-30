@@ -40,6 +40,7 @@ enum StorageKey {
     static let mainAppIsActive = "parentalcontrol.mainAppIsActive"
     static let mainAppStateTimestamp = "parentalcontrol.mainAppStateTimestamp"
     static let midnightResetDisabled = "parentalcontrol.midnightResetDisabled"
+    static let parentIsPro = "parentalcontrol.parentIsPro"
     static let spentBaselineDayStart = "parentalcontrol.spentBaselineDayStart"
     static let spentBaselineTotalSpentSeconds = "parentalcontrol.spentBaselineTotalSpentSeconds"
     static let focusSessionSnapshot = "parentalcontrol.focusSessionSnapshot"
@@ -310,6 +311,16 @@ final class AppGroupStore {
 
     func loadMidnightResetEnabled() -> Bool {
         store.integer(forKey: StorageKey.midnightResetDisabled) == 0
+    }
+
+    /// Кэш Pro-статуса родителя на устройстве ребёнка (приходит с backend). Хранится, чтобы
+    /// гейтинг работал офлайн до следующей синхронизации. 1 = Pro, 0/нет ключа = не Pro.
+    func saveParentIsPro(_ value: Bool) {
+        store.set(value ? 1 : 0, forKey: StorageKey.parentIsPro)
+    }
+
+    func loadParentIsPro() -> Bool {
+        store.integer(forKey: StorageKey.parentIsPro) == 1
     }
 
     func loadSpentBaselineDayStart() -> Date? {

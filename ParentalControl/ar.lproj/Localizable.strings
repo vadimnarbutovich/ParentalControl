@@ -266,3 +266,114 @@
 "paywall.period.week" = "أسبوع";
 "paywall.period.month" = "شهر";
 "paywall.period.year" = "سنة";
+
+"tab.schedule" = "الجدول";
+
+"schedule.title" = "الجدول";
+"schedule.subtitle" = "حدّد فترات زمنية يتم فيها حظر التطبيقات المشتّتة.";
+"schedule.create_new" = "إنشاء جدول جديد";
+
+"schedule.empty.title" = "لا توجد جداول بعد";
+"schedule.empty.subtitle" = "اختر اقتراحًا أدناه أو أنشئ جدولك الخاص.";
+
+"schedule.suggestions.title" = "اقتراحات";
+"schedule.suggestions.add_accessibility" = "إضافة هذا القالب";
+
+"schedule.template.school.title" = "أوقات المدرسة";
+"schedule.template.homework.title" = "الواجبات المنزلية";
+"schedule.template.dinner.title" = "العشاء";
+
+"schedule.default.sleep.title" = "وقت النوم";
+"schedule.draft.default_name" = "جدول جديد";
+
+"schedule.weekday.short.mon" = "اثن";
+"schedule.weekday.short.tue" = "ثلا";
+"schedule.weekday.short.wed" = "أرب";
+"schedule.weekday.short.thu" = "خمي";
+"schedule.weekday.short.fri" = "جمع";
+"schedule.weekday.short.sat" = "سبت";
+"schedule.weekday.short.sun" = "أحد";
+
+"schedule.weekdays.everyday" = "كل يوم";
+"schedule.weekdays.workdays" = "أيام العمل";
+"schedule.weekdays.weekends" = "عطلة نهاية الأسبوع";
+
+"schedule.editor.title.new" = "جدول جديد";
+"schedule.editor.title.edit" = "تعديل الجدول";
+"schedule.editor.cancel" = "إلغاء";
+"schedule.editor.save" = "حفظ";
+"schedule.editor.delete" = "حذف الجدول";
+
+"schedule.editor.name.label" = "الاسم";
+"schedule.editor.name.placeholder" = "مثل: وقت النوم";
+"schedule.editor.name.required" = "يرجى إدخال اسم";
+
+"schedule.editor.time.label" = "الوقت";
+"schedule.editor.time.start" = "البداية";
+"schedule.editor.time.end" = "النهاية";
+"schedule.editor.time.crosses_midnight" = "يتجاوز الجدول منتصف الليل (ينتهي في اليوم التالي).";
+
+"schedule.editor.weekdays.label" = "الأيام";
+"schedule.editor.weekdays.required" = "اختر يومًا واحدًا على الأقل.";
+"schedule.editor.weekdays.preset.workdays" = "اثن–جمع";
+"schedule.editor.weekdays.preset.weekends" = "سبت، أحد";
+"schedule.editor.weekdays.preset.everyday" = "كل يوم";
+
+"schedule.editor.enabled.label" = "مفعّل";
+"schedule.editor.enabled.hint" = "عند التفعيل، يبدأ الحظر في وقت البداية في الأيام المحددة.";
+
+"schedule.editor.delete.confirm.title" = "حذف الجدول؟";
+"schedule.editor.delete.confirm.message" = "ستتم إزالة هذا الجدول. يمكنك دائمًا إنشاء جدول جديد.";
+"schedule.editor.delete.confirm.delete" = "حذف";
+
+"parent.dashboard.adjust_time" = "تعديل الوقت المتاح";
+"parent.dashboard.adjust_time.title" = "تعديل الوقت المتاح";
+"parent.dashboard.adjust_time.done" = "تم";
+"parent.dashboard.adjust_time.minutes_format" = "%@ د";
+
+"ledger.parent.subtract_time" = "ولي الأمر خصم وقتًا";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "ولي الأمر";
+"common.cancel" = "إلغاء";
+
+"parent_mode.exit_banner" = "الخروج من وضع ولي الأمر";
+"parent_mode.entry.title" = "وضع ولي الأمر";
+"parent_mode.entry.subtitle" = "أدخل رمز PIN المكوّن من 4 أرقام لفتح وضع ولي الأمر على هذا الجهاز.";
+"parent_mode.entry.not_configured" = "لم يتم تعيين رمز PIN بعد. اطلب من ولي الأمر إنشاء رمز PIN من إعدادات تطبيقه.";
+"parent_mode.entry.close" = "إغلاق";
+"parent_mode.entry.error.wrong" = "رمز PIN غير صحيح.";
+"parent_mode.entry.attempts_remaining" = "المحاولات المتبقية: %d";
+"parent_mode.entry.locked" = "تم قفل الإدخال. حاول مرة أخرى بعد %d ثانية.";
+
+"settings.pin.section" = "رمز PIN لولي الأمر";
+"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل. لن يرى الطفل الرمز أبداً.";
+"settings.pin.requires_link" = "اربط جهاز الطفل أولاً لتعيين رمز PIN.";
+"settings.pin.status.set" = "تم تعيين رمز PIN";
+"settings.pin.status.unset" = "لم يتم تعيين رمز PIN";
+"settings.pin.set" = "تعيين رمز PIN";
+"settings.pin.change" = "تغيير رمز PIN";
+"settings.pin.clear" = "حذف رمز PIN";
+"settings.pin.clear.confirm.title" = "حذف رمز PIN؟";
+"settings.pin.clear.confirm.message" = "بدون رمز PIN لن يتمكّن الطفل من فتح وضع ولي الأمر. يمكنك دائماً تعيين رمز جديد لاحقاً.";
+"settings.pin.clear.confirm.action" = "حذف";
+"settings.pin.sheet.title.set" = "تعيين رمز PIN";
+"settings.pin.sheet.title.change" = "تغيير رمز PIN";
+"settings.pin.sheet.subtitle" = "أدخل رمز PIN الجديد المكوّن من 4 أرقام مرتين.";
+"settings.pin.sheet.new" = "رمز PIN الجديد";
+"settings.pin.sheet.confirm" = "تكرار رمز PIN";
+"settings.pin.sheet.save" = "حفظ";
+"settings.pin.sheet.error.format" = "يجب أن يتكوّن رمز PIN من 4 أرقام.";
+"settings.pin.sheet.error.mismatch" = "رمز PIN غير متطابق.";
+"settings.pin.sheet.error.network" = "تعذّر حفظ رمز PIN. حاول مرة أخرى.";
+
+"dashboard.pairing.title" = "الربط بأحد الوالدين";
+"dashboard.pairing.subtitle" = "أدخل رمز الإقران من تطبيق الوالدين لربط الأجهزة.";
+"dashboard.pairing.connect" = "ربط الجهاز";
+"dashboard.pairing.connecting" = "جارٍ الربط…";
+
+"settings.pairing.linked.status" = "الأجهزة مرتبطة";
+"settings.pairing.unlink" = "إلغاء ربط الأجهزة";
+"settings.pairing.unlink.confirm.title" = "إلغاء ربط الأجهزة؟";
+"settings.pairing.unlink.confirm.message" = "ستتم إعادة تعيين الربط بين جهازي الوالد والطفل. ستحتاج إلى الإقران مرة أخرى لإدارة جهاز الطفل.";
+"settings.pairing.unlink.confirm.button" = "إلغاء الربط";

@@ -266,3 +266,114 @@
 "paywall.period.week" = "週";
 "paywall.period.month" = "月";
 "paywall.period.year" = "年";
+
+"tab.schedule" = "スケジュール";
+
+"schedule.title" = "スケジュール";
+"schedule.subtitle" = "気が散るアプリをブロックする時間帯を設定します。";
+"schedule.create_new" = "新しいスケジュールを作成";
+
+"schedule.empty.title" = "スケジュールはまだありません";
+"schedule.empty.subtitle" = "下の候補から選ぶか、自分でスケジュールを作成してください。";
+
+"schedule.suggestions.title" = "おすすめ";
+"schedule.suggestions.add_accessibility" = "このテンプレートを追加";
+
+"schedule.template.school.title" = "学校の時間";
+"schedule.template.homework.title" = "宿題";
+"schedule.template.dinner.title" = "夕食";
+
+"schedule.default.sleep.title" = "就寝時間";
+"schedule.draft.default_name" = "新しいスケジュール";
+
+"schedule.weekday.short.mon" = "月";
+"schedule.weekday.short.tue" = "火";
+"schedule.weekday.short.wed" = "水";
+"schedule.weekday.short.thu" = "木";
+"schedule.weekday.short.fri" = "金";
+"schedule.weekday.short.sat" = "土";
+"schedule.weekday.short.sun" = "日";
+
+"schedule.weekdays.everyday" = "毎日";
+"schedule.weekdays.workdays" = "平日";
+"schedule.weekdays.weekends" = "週末";
+
+"schedule.editor.title.new" = "新しいスケジュール";
+"schedule.editor.title.edit" = "スケジュールを編集";
+"schedule.editor.cancel" = "キャンセル";
+"schedule.editor.save" = "保存";
+"schedule.editor.delete" = "スケジュールを削除";
+
+"schedule.editor.name.label" = "名前";
+"schedule.editor.name.placeholder" = "例:就寝時間";
+"schedule.editor.name.required" = "名前を入力してください";
+
+"schedule.editor.time.label" = "時刻";
+"schedule.editor.time.start" = "開始";
+"schedule.editor.time.end" = "終了";
+"schedule.editor.time.crosses_midnight" = "スケジュールが深夜をまたぎます(翌日に終了)。";
+
+"schedule.editor.weekdays.label" = "曜日";
+"schedule.editor.weekdays.required" = "少なくとも1日を選択してください。";
+"schedule.editor.weekdays.preset.workdays" = "月〜金";
+"schedule.editor.weekdays.preset.weekends" = "土・日";
+"schedule.editor.weekdays.preset.everyday" = "毎日";
+
+"schedule.editor.enabled.label" = "有効";
+"schedule.editor.enabled.hint" = "有効にすると、選択した曜日の開始時刻にブロックが始まります。";
+
+"schedule.editor.delete.confirm.title" = "スケジュールを削除しますか?";
+"schedule.editor.delete.confirm.message" = "このスケジュールは削除されます。いつでも新しく作成できます。";
+"schedule.editor.delete.confirm.delete" = "削除";
+
+"parent.dashboard.adjust_time" = "利用可能な時間を変更";
+"parent.dashboard.adjust_time.title" = "利用可能な時間を変更";
+"parent.dashboard.adjust_time.done" = "完了";
+"parent.dashboard.adjust_time.minutes_format" = "%@ 分";
+
+"ledger.parent.subtract_time" = "保護者が時間を減らしました";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "保護者";
+"common.cancel" = "キャンセル";
+
+"parent_mode.exit_banner" = "保護者モードを終了";
+"parent_mode.entry.title" = "保護者モード";
+"parent_mode.entry.subtitle" = "この端末で保護者モードを開くには、4桁のPINを入力してください。";
+"parent_mode.entry.not_configured" = "PINがまだ設定されていません。保護者の方にアプリの設定からPINを作成するよう伝えてください。";
+"parent_mode.entry.close" = "閉じる";
+"parent_mode.entry.error.wrong" = "PINが正しくありません。";
+"parent_mode.entry.attempts_remaining" = "残り試行回数: %d";
+"parent_mode.entry.locked" = "入力がロックされました。%d秒後に再試行してください。";
+
+"settings.pin.section" = "保護者PIN";
+"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。お子様にPINが表示されることはありません。";
+"settings.pin.requires_link" = "PINを設定するには、まずお子様の端末を連携してください。";
+"settings.pin.status.set" = "PINを設定済み";
+"settings.pin.status.unset" = "PINは未設定";
+"settings.pin.set" = "PINを設定";
+"settings.pin.change" = "PINを変更";
+"settings.pin.clear" = "PINを削除";
+"settings.pin.clear.confirm.title" = "PINを削除しますか?";
+"settings.pin.clear.confirm.message" = "PINを削除すると、お子様は保護者モードを開けなくなります。後でいつでも新しいPINを設定できます。";
+"settings.pin.clear.confirm.action" = "削除";
+"settings.pin.sheet.title.set" = "PINを設定";
+"settings.pin.sheet.title.change" = "PINを変更";
+"settings.pin.sheet.subtitle" = "新しい4桁のPINを2回入力してください。";
+"settings.pin.sheet.new" = "新しいPIN";
+"settings.pin.sheet.confirm" = "PINを再入力";
+"settings.pin.sheet.save" = "保存";
+"settings.pin.sheet.error.format" = "PINは4桁の数字で入力してください。";
+"settings.pin.sheet.error.mismatch" = "PINが一致しません。";
+"settings.pin.sheet.error.network" = "PINを保存できませんでした。もう一度お試しください。";
+
+"dashboard.pairing.title" = "保護者と連携";
+"dashboard.pairing.subtitle" = "保護者アプリのペアリングコードを入力してデバイスを連携します。";
+"dashboard.pairing.connect" = "デバイスを連携";
+"dashboard.pairing.connecting" = "連携中…";
+
+"settings.pairing.linked.status" = "デバイスを連携済み";
+"settings.pairing.unlink" = "デバイスの連携を解除";
+"settings.pairing.unlink.confirm.title" = "デバイスの連携を解除しますか？";
+"settings.pairing.unlink.confirm.message" = "保護者と子どものデバイスの連携がリセットされます。子どものデバイスを管理するには、もう一度ペアリングが必要です。";
+"settings.pairing.unlink.confirm.button" = "解除";

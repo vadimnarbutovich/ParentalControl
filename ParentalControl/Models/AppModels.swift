@@ -227,6 +227,11 @@ enum RemoteFocusCommandType: String, Codable {
     case endFocus = "end_focus"
     case resetEarnedBalance = "reset_earned_balance"
     case addEarnedSeconds = "add_earned_seconds"
+    /// Parent → child: списать N секунд из доступного баланса (clamp до 0 при недоборе).
+    /// Используется в шторке «Изменить доступное время» при выборе отрицательной дельты,
+    /// если запрос меньше текущего баланса. Если запрос >= текущего баланса —
+    /// родитель отправит `resetEarnedBalance`, чтобы гарантированно обнулить.
+    case subtractEarnedSeconds = "subtract_earned_seconds"
     /// Parent → child: please capture a fresh GPS fix and push it back to the server.
     /// Triggered manually from the parent's Map tab via the "Refresh location" button.
     case requestLocation = "request_location"

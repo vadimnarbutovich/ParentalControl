@@ -178,6 +178,7 @@
 "ledger.focus.session" = "Фокус-сессия %d мин";
 "ledger.parent.take_all_time" = "Родитель забрал все заработанное время";
 "ledger.parent.add_time" = "Родитель добавил время";
+"ledger.parent.subtract_time" = "Родитель забрал время";
 
 "shield.title" = "Нужно заработать минуты";
 "shield.subtitle" = "Сделайте шаги или упражнения, чтобы открыть приложение.";
@@ -291,6 +292,10 @@
 "parent.dashboard.stop_focus" = "Разблокировать сейчас";
 "parent.dashboard.take_all_time" = "Забрать все время";
 "parent.dashboard.add_one_minute" = "Добавить одну минуту";
+"parent.dashboard.adjust_time" = "Изменить доступное время";
+"parent.dashboard.adjust_time.title" = "Изменить доступное время";
+"parent.dashboard.adjust_time.done" = "Готово";
+"parent.dashboard.adjust_time.minutes_format" = "%@ мин";
 "parent.dashboard.command_id" = "Команда: %@";
 "parent.dashboard.command_status" = "Статус: %@";
 "parent.dashboard.command_latency" = "Задержка применения: %d сек";
@@ -390,6 +395,7 @@
 
 "schedule.editor.name.label" = "Название";
 "schedule.editor.name.placeholder" = "Например, Время спать";
+"schedule.editor.name.required" = "Укажите название";
 
 "schedule.editor.time.label" = "Время";
 "schedule.editor.time.start" = "Начало";
@@ -408,3 +414,48 @@
 "schedule.editor.delete.confirm.title" = "Удалить расписание?";
 "schedule.editor.delete.confirm.message" = "Расписание будет удалено. Вы всегда сможете создать новое.";
 "schedule.editor.delete.confirm.delete" = "Удалить";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Родитель";
+"common.cancel" = "Отмена";
+
+"parent_mode.exit_banner" = "Выход из режима родителя";
+"parent_mode.entry.title" = "Родительский режим";
+"parent_mode.entry.subtitle" = "Введите 4-значный PIN, чтобы открыть родительский режим на этом устройстве.";
+"parent_mode.entry.not_configured" = "PIN ещё не задан. Попросите родителя установить PIN в настройках своего приложения.";
+"parent_mode.entry.close" = "Закрыть";
+"parent_mode.entry.error.wrong" = "Неверный PIN.";
+"parent_mode.entry.attempts_remaining" = "Осталось попыток: %d";
+"parent_mode.entry.locked" = "Ввод заблокирован. Повторите через %d сек.";
+
+"settings.pin.section" = "Родительский PIN";
+"settings.pin.description" = "4-значный PIN для входа в родительский режим на устройстве ребёнка. Ребёнок никогда не увидит сам PIN.";
+"settings.pin.requires_link" = "Сначала свяжите устройство с ребёнком, чтобы задать PIN.";
+"settings.pin.status.set" = "PIN установлен";
+"settings.pin.status.unset" = "PIN не установлен";
+"settings.pin.set" = "Установить PIN";
+"settings.pin.change" = "Изменить PIN";
+"settings.pin.clear" = "Удалить PIN";
+"settings.pin.clear.confirm.title" = "Удалить PIN?";
+"settings.pin.clear.confirm.message" = "Без PIN ребёнок не сможет открыть родительский режим. Вы всегда сможете задать новый PIN позже.";
+"settings.pin.clear.confirm.action" = "Удалить";
+"settings.pin.sheet.title.set" = "Установить PIN";
+"settings.pin.sheet.title.change" = "Изменить PIN";
+"settings.pin.sheet.subtitle" = "Введите новый 4-значный PIN дважды.";
+"settings.pin.sheet.new" = "Новый PIN";
+"settings.pin.sheet.confirm" = "Повторите PIN";
+"settings.pin.sheet.save" = "Сохранить";
+"settings.pin.sheet.error.format" = "PIN должен состоять из 4 цифр.";
+"settings.pin.sheet.error.mismatch" = "PIN не совпадает.";
+"settings.pin.sheet.error.network" = "Не удалось сохранить. Попробуйте ещё раз.";
+
+"dashboard.pairing.title" = "Связь с родителем";
+"dashboard.pairing.subtitle" = "Введите код связки из приложения родителя, чтобы соединить устройства.";
+"dashboard.pairing.connect" = "Связать";
+"dashboard.pairing.connecting" = "Связываем…";
+
+"settings.pairing.linked.status" = "Устройства связаны";
+"settings.pairing.unlink" = "Отвязать устройства";
+"settings.pairing.unlink.confirm.title" = "Отвязать устройства?";
+"settings.pairing.unlink.confirm.message" = "Связь между устройствами родителя и ребёнка будет сброшена. Чтобы снова управлять устройством ребёнка, потребуется заново выполнить связку.";
+"settings.pairing.unlink.confirm.button" = "Отвязать";

@@ -214,9 +214,9 @@ struct BlockScheduleTemplate: Identifiable, Equatable {
     let endTime: ScheduleTimeOfDay
     let weekdays: Set<ScheduleWeekday>
 
-    /// Создаёт новый `BlockSchedule` на основе шаблона. По умолчанию — выключенное расписание,
-    /// которое пользователь сможет включить вручную после редактирования.
-    func makeSchedule(isEnabled: Bool = false) -> BlockSchedule {
+    /// Создаёт новый `BlockSchedule` на основе шаблона. По умолчанию — включённое расписание,
+    /// чтобы при добавлении из «Предложений» родителю не нужно было дополнительно включать тогл.
+    func makeSchedule(isEnabled: Bool = true) -> BlockSchedule {
         BlockSchedule(
             name: L10n.tr(nameKey),
             icon: icon,

@@ -77,6 +77,10 @@ final class AppState: ObservableObject {
     @Published private(set) var parentCommandDelivery: ParentCommandDeliveryState?
     @Published private(set) var parentLinkHealth: ParentLinkHealthState?
     @Published private(set) var parentChildAvailableSeconds: Int?
+    /// Дневная статистика ребёнка для верхней «balance»-карточки родителя (`Заработано/Потрачено`).
+    /// Заполняется в `refreshParentChildState()` из `fetchParentSnapshot.dailyStats`. `nil` — пока не пришло.
+    @Published private(set) var parentChildEarnedSecondsToday: Int?
+    @Published private(set) var parentChildSpentSecondsToday: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var remoteStatusMessage: String?
     /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
@@ -95,6 +99,17 @@ final class AppState: ObservableObject {
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Пока `false`, баннер разрешений не показываем — избегаем кадра с устаревшим `isHealthAuthorized` до async-обновления.
     @Published private(set) var permissionStatusesReady = false
+    /// `true`, когда ребёнок успешно ввёл родительский PIN и сейчас доступны «скрытые» табы
+    /// `Блокировка` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
+    /// разрыве пейринга и тапе по красной плашке «Выход».
+    @Published private(set) var isParentModeActive = false
+    /// `true`, если в Keychain есть кэшированный родительский PIN (хэш+соль). У ребёнка обновляется
+    /// при каждом успешном `refreshChildParentPinIfNeeded`. У родителя — после `setParentPinFromUI`.
+    /// UI ориентируется на этот флаг, чтобы знать, можно ли вообще пытаться вводить PIN.
+    @Published private(set) var parentPinIsSet = false
+    /// Конец активного lockout-таймера, если он сейчас идёт (после 5 неверных попыток PIN).
+    /// `nil` — lockout не активен. UI на экране ввода показывает обратный отсчёт по этому полю.
+    @Published private(set) var parentPinLockoutEnd: Date?
 
     var isRemoteChildFocusEffectivelyActive: Bool {
         if let resolved = parentResolvedFocusActive {
@@ -167,15 +182,63 @@ final class AppState: ObservableObject {
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
     private let locationService: LocationProviding
+    /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
+    /// Используется обеими ролями: parent — для `setParentPinFromUI/clearParentPinFromUI`,
+    /// child — для `applyParentPinFromBackend/verifyPin`. Сам PIN никогда не покидает устройства,
+    /// где введён; в сеть шлётся только `SHA-256(pin || salt)` + соль.
+    private let parentPinService = ParentPinService()
+    /// Слабая ссылка на сервис подписки. Pro привязан к устройству родителя: родитель шлёт свой
+    /// статус на backend, ребёнок применяет присланный. Связывается из `attachSubscriptionService`.
+    private weak var subscriptionService: SubscriptionService?
+    /// Последний отправленный на backend Pro-статус родителя — дедупликация, чтобы родительский
+    /// polling-тик не дёргал `set_parent_pro` на каждой итерации (шлём только при реальном изменении).
+    private var lastPushedParentIsPro: Bool?
     private var focusTask: Task<Void, Never>?
     private var focusSessionStartedAt: Date?
     private var focusSessionPlannedSeconds: Int = 0
     private var sharedStateTask: Task<Void, Never>?
     private var remotePollingTask: Task<Void, Never>?
+    /// Короткоживущий цикл на стороне родителя: пока код связки сгенерирован, но ребёнок ещё не
+    /// присоединился (`isLinked == false`), опрашиваем backend, чтобы поймать момент связки и
+    /// обновить UI без перезапуска приложения. Останавливается, как только связались.
+    private var parentPairingWaitTask: Task<Void, Never>?
     private var parentCommandWatchTask: Task<Void, Never>?
     private var activeParentCommandID: UUID?
+    /// Троттлинг фоновых child-polling вызовов для экономии Edge Function Invocations (free plan).
+    /// Критичные по задержке вызовы (desired focus state + pending commands) бегут каждый тик;
+    /// пуш статистики/баланса наверх и фоллбэк-обновление PIN/Pro — реже, т.к. у них есть
+    /// мгновенные push-триггеры и они обновляются при выходе из фона.
+    private var lastChildStatsHeartbeatAt: Date?
+    private var lastChildPinProRefreshAt: Date?
+    /// Пуш статистики/runtime/баланса наверх — раз в 30 сек (вместо каждого тика). Родитель видит
+    /// свежие данные через wake silent-push при открытии своего приложения; плюс пуш на изменение
+    /// баланса идёт из `addSeconds`. Лаг ≤30 сек для «живого» кольца у родителя приемлем.
+    private static let childStatsHeartbeatInterval: TimeInterval = 30
+    /// Фоллбэк-обновление родительского PIN/Pro — раз в 60 сек. Изменения и так приходят мгновенно
+    /// silent push'ом `child_sync_request` и при выходе из фона; периодический pull — лишь страховка.
+    private static let childPinProRefreshInterval: TimeInterval = 60
+    /// Базовый интервал polling-цикла. Раньше 4 сек; поднят до 8 сек для экономии edge-invocations.
+    /// Безопасно, т.к. быстрый путь доставки команд — push (child) и `parentCommandWatchTask`
+    /// (parent), а этот цикл — фоллбэк/обновление «живого» состояния. 8 сек = вдвое меньше вызовов
+    /// desired/pending (child) и refreshParentChildState (parent) без заметной потери реактивности.
+    private static let remotePollingIntervalNanos: UInt64 = 8_000_000_000
+    /// Интервал «ожидающего» опроса связки у родителя (пока ребёнок не присоединился). Цикл живёт
+    /// только пока пользователь на экране ожидания связки, поэтому опрос чаще базового (3 сек) —
+    /// чтобы UI родителя моментально отреагировал на присоединение ребёнка.
+    private static let parentPairingWaitIntervalNanos: UInt64 = 3_000_000_000
     /// Последний `normalized` runtime с `fetchParentSnapshot` — чтобы после `commandStatus=applied` дождаться того же согласования, что в `reconcile` (снимать «Синхронизацию» без кадра со старым CTA).
     private var lastNormalizedParentChildRuntime: RemoteChildRuntimeState?
+    /// Throttle для silent-push wake-up на child. iOS троттлит background push-ы (~2–3/час
+    /// на устройство), а наш polling-цикл тикает каждые 4 сек — нельзя дёргать wake на
+    /// каждом тике, иначе APNs начнёт молча отбрасывать push. Запрашиваем wake не чаще,
+    /// чем раз в 60 сек на parent-устройство; этого хватает для устранения staleness и
+    /// не упирается в APNs throttle.
+    private var lastChildWakeRequestAt: Date?
+    private static let childWakeMinimumInterval: TimeInterval = 60
+    /// Если `child_runtime_state.updated_at` старее этого порога — считаем балланс stale
+    /// и отправляем wake. 60 сек — компромисс: больше = пользователь видит устаревший
+    /// counter дольше; меньше = бессмысленный wake-spam.
+    private static let childRuntimeStaleThreshold: TimeInterval = 60
     private var lifecycleCancellables = Set<AnyCancellable>()
 
     init() {
@@ -212,6 +275,10 @@ final class AppState: ObservableObject {
         self.deviceRole = storage.loadDeviceRole()
         self.pairingState = storage.loadPairingState()
         self.blockSchedules = storage.loadBlockSchedules()
+        // Поднимаем актуальный статус PIN из Keychain (если в прошлой сессии родитель уже задавал
+        // PIN или ребёнок уже получил его с backend — он сразу видим в UI без сетевого роунд-трипа).
+        self.parentPinIsSet = parentPinService.isPinConfigured()
+        self.parentPinLockoutEnd = parentPinService.currentLockoutEnd()
         self.isParentChildStateResolved = !(self.deviceRole == .parent && self.pairingState?.isLinked == true)
         self.parentResolvedFocusActive = nil
         self.isHealthAuthorized = false
@@ -239,6 +306,7 @@ final class AppState: ObservableObject {
         focusTask?.cancel()
         sharedStateTask?.cancel()
         remotePollingTask?.cancel()
+        parentPairingWaitTask?.cancel()
         parentCommandWatchTask?.cancel()
         lifecycleCancellables.removeAll()
     }
@@ -319,6 +387,19 @@ final class AppState: ObservableObject {
         isParentChildStateResolved = role != .parent
         parentResolvedFocusActive = nil
         parentChildAvailableSeconds = nil
+        parentChildEarnedSecondsToday = nil
+        parentChildSpentSecondsToday = nil
+        // Любая смена роли — это полный reset privacy-state'а: чистим PIN-кэш и закрываем
+        // родительский режим, чтобы старый хэш родителя не остался на устройстве с новой ролью
+        // (например, если parent перепрошился в child).
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        isParentModeActive = false
+        // Сбрасываем кэш Pro-статуса: смена роли = новая семья, старый статус неактуален.
+        storage.saveParentIsPro(false)
+        subscriptionService?.applyParentProStatus(false)
+        lastPushedParentIsPro = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
@@ -331,13 +412,51 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = nil
         pairingState = nil
         parentPairingCode = nil
         isParentChildStateResolved = true
         parentResolvedFocusActive = nil
         parentChildAvailableSeconds = nil
+        parentChildEarnedSecondsToday = nil
+        parentChildSpentSecondsToday = nil
         lastNormalizedParentChildRuntime = nil
+        // Разрыв пейринга = чужой родитель/семья — PIN из прошлого сценария не должен оставаться
+        // на устройстве. Закрываем родительский режим и чистим Keychain.
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        isParentModeActive = false
+        // Разрыв пейринга = чужая семья: сбрасываем кэш Pro-статуса родителя.
+        storage.saveParentIsPro(false)
+        subscriptionService?.applyParentProStatus(false)
+        lastPushedParentIsPro = nil
         storage.savePairingState(nil)
+        // Чистим возможную сырую backend-ошибку (напр. «Device is not paired»), которая могла
+        // прилететь от фонового синка в момент отвязки (локально ещё «связаны», на сервере уже нет).
+        // Иначе она зависнет на карточке связки как непонятное служебное сообщение.
+        remoteStatusMessage = nil
+    }
+
+    /// Полная отвязка устройств (с любого из них): backend отсоединяет оба устройства от семьи,
+    /// затем локально приводим состояние к «не связано». Второе устройство подхватит сброс при
+    /// следующем `registerDevice` (вход в активное состояние) — `bootstrapRemoteIfNeeded` вернёт
+    /// `pairingState: null` и тоже вызовет `clearPairing()`.
+    @discardableResult
+    func unlinkDevices() async -> Bool {
+        guard pairingState?.isLinked == true else { return false }
+        do {
+            try await remoteSyncService.unlinkDevices()
+            remotePollingTask?.cancel()
+            remotePollingTask = nil
+            clearPairing()
+            remoteStatusMessage = nil
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
     }
 
     func createPairingCodeForParent() async {
@@ -348,6 +467,8 @@ final class AppState: ObservableObject {
             parentPairingCode = state.pairingCode
             remoteStatusMessage = nil
             storage.savePairingState(state)
+            // Начинаем ждать присоединения ребёнка, чтобы UI обновился без перезапуска.
+            startParentPairingWaitPollingIfNeeded()
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -380,6 +501,213 @@ final class AppState: ObservableObject {
 
     func sendParentAddOneMinuteCommand() async {
         await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: 60)
+    }
+
+    /// Универсальная команда «изменить доступное время ребёнка на ±N минут».
+    /// Используется новой шторкой `AdjustTimeSheet`. Логика выбора command_type:
+    /// - `delta == 0` → no-op;
+    /// - `delta > 0` → `addEarnedSeconds` с `durationSeconds = delta * 60`;
+    /// - `delta < 0`:
+    ///   - если `|delta| * 60 >= parentChildAvailableSeconds` (известный родителю live-баланс)
+    ///     → `resetEarnedBalance` (как «забрать всё»), чтобы гарантированно обнулить;
+    ///   - иначе → `subtractEarnedSeconds` с `durationSeconds = |delta| * 60`.
+    /// На стороне ребёнка `subtractEarnedSeconds` применяется как `addSeconds(-N)` с clamp 0.
+    func sendParentAdjustTimeCommand(deltaMinutes: Int) async {
+        guard deltaMinutes != 0 else { return }
+
+        if deltaMinutes > 0 {
+            let seconds = deltaMinutes * 60
+            await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: seconds)
+            return
+        }
+
+        let absSeconds = abs(deltaMinutes) * 60
+        // Если родитель знает live-баланс ребёнка и запрос >= баланса — обнуляем целиком.
+        // Если live-баланс неизвестен (`nil`) — играем безопасно через subtract: ребёнок сам
+        // защитится clamp-ом до нуля.
+        if let availableSeconds = parentChildAvailableSeconds, absSeconds >= availableSeconds {
+            await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
+        } else {
+            await sendParentCommand(commandType: .subtractEarnedSeconds, durationSeconds: absSeconds)
+        }
+    }
+
+    // MARK: - Parent mode (PIN access on child device)
+
+    /// Вызывается ребёнком при тапе по таб-кнопке «Родитель» и вводе 4-значного PIN.
+    /// Возвращает результат верификации (см. `ParentPinEntryResult`); при `.success` уже выставлен
+    /// `isParentModeActive = true`. UI на этот же `@Published` повесит появление вкладок
+    /// `Блокировка`/`Настройки` и красной плашки «Выход».
+    func enterParentMode(pin: String) -> ParentPinEntryResult {
+        let result = parentPinService.verifyPin(pin)
+        switch result {
+        case .success:
+            isParentModeActive = true
+            parentPinLockoutEnd = nil
+        case .lockedOut(let until):
+            parentPinLockoutEnd = until
+        case .wrongPin:
+            parentPinLockoutEnd = parentPinService.currentLockoutEnd()
+        case .notConfigured:
+            parentPinLockoutEnd = nil
+        }
+        return result
+    }
+
+    /// Закрывает родительский режим (тап по красной плашке «Выход»). Идемпотентно.
+    func exitParentMode() {
+        guard isParentModeActive else { return }
+        isParentModeActive = false
+    }
+
+    /// Родитель задаёт/меняет PIN из своих настроек. Локально считается хэш с новой солью,
+    /// сохраняется в Keychain, и `set_parent_pin` отправляется на backend (edge function v22+).
+    /// При успехе backend разошлёт child'у silent push для синка кэша.
+    /// Возвращает `true` при успешной отправке на backend, `false` при сетевой ошибке
+    /// (локальный кэш всё равно обновляется — родитель сможет проверить PIN на child вручную позже).
+    @discardableResult
+    func setParentPinFromUI(_ pin: String) async -> Bool {
+        guard deviceRole == .parent else { return false }
+        guard pin.count == 4, pin.allSatisfy({ $0.isNumber }) else { return false }
+        let salt = parentPinService.generateSalt()
+        let hash = parentPinService.hashPin(pin, salt: salt)
+        let updatedAt = Date()
+        let metadata = ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)
+        parentPinService.saveMetadata(metadata)
+        parentPinIsSet = true
+        do {
+            try await remoteSyncService.setParentPin(
+                hashBase64: metadata.hashBase64,
+                saltBase64: metadata.saltBase64,
+                updatedAt: updatedAt
+            )
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Родитель удаляет PIN из своих настроек. Локальный кэш чистится сразу, backend синхронно
+    /// уведомляется через `clear_parent_pin`. После этого child больше не сможет войти в режим.
+    @discardableResult
+    func clearParentPinFromUI() async -> Bool {
+        guard deviceRole == .parent else { return false }
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        do {
+            try await remoteSyncService.clearParentPin()
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Применяет PIN, полученный с backend в snapshot/fetch — у ребёнка. Если значения не
+    /// поменялись (`hashBase64+saltBase64+updatedAt`) — no-op, чтобы не дёргать `objectWillChange`
+    /// на каждом polling-тике. Если backend вернул `nil` — PIN снят родителем, чистим кэш и
+    /// автоматически выходим из режима, если он был активен.
+    func applyParentPinFromBackend(hashBase64: String?, saltBase64: String?, updatedAt: Date?) {
+        guard let hashBase64, let saltBase64, let updatedAt,
+              let metadata = ParentPinMetadata.fromBackend(
+                hashBase64: hashBase64,
+                saltBase64: saltBase64,
+                updatedAt: updatedAt
+              )
+        else {
+            // Backend сообщил, что PIN снят — на ребёнке тоже снимаем.
+            if parentPinIsSet {
+                parentPinService.clearMetadata()
+                parentPinIsSet = false
+                parentPinLockoutEnd = nil
+                if isParentModeActive { isParentModeActive = false }
+            }
+            return
+        }
+        // Сравниваем с уже сохранённым — обновляем только при реальном изменении.
+        if let existing = parentPinService.loadMetadata(),
+           existing.hash == metadata.hash,
+           existing.salt == metadata.salt,
+           existing.updatedAt == metadata.updatedAt {
+            if !parentPinIsSet { parentPinIsSet = true }
+            return
+        }
+        parentPinService.saveMetadata(metadata)
+        parentPinIsSet = true
+        parentPinLockoutEnd = nil
+        // Принудительный exit, если родитель сменил PIN, пока ребёнок был внутри режима —
+        // безопасный дефолт: попросим ввести новый.
+        if isParentModeActive { isParentModeActive = false }
+    }
+
+    /// Ребёнок дёргает backend за актуальным PIN. Вызывается из polling-цикла и из обработчика
+    /// silent push `child_sync_request` (когда родитель только что сменил PIN — backend пушит
+    /// wake, ребёнок мгновенно синкает свой кэш).
+    func refreshChildParentPinIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let response = try await remoteSyncService.fetchParentPin()
+            // Если backend вернул `null` (PIN не задан или удалён родителем) — передаём `nil`'ы:
+            // `applyParentPinFromBackend` сам очистит кэш и закроет parent-mode, если он был активен.
+            applyParentPinFromBackend(
+                hashBase64: response?.hashBase64,
+                saltBase64: response?.saltBase64,
+                updatedAt: response.flatMap { $0.updatedAt }
+            )
+        } catch {
+            // Тихо — это фоновая операция, оффлайн-ребёнок продолжает работать на кэшированном PIN.
+        }
+    }
+
+    // MARK: - Pro subscription (привязка к устройству родителя)
+
+    /// Связывает `AppState` с `SubscriptionService` (вызывается один раз при старте приложения).
+    /// Подписывается на изменение entitlement родителя (→ отправка на backend) и инициализирует
+    /// сторону ребёнка кэшированным статусом + фоновым обновлением с backend.
+    func attachSubscriptionService(_ service: SubscriptionService) {
+        subscriptionService = service
+        service.onEntitlementChange = { [weak self] isActive in
+            guard let self else { return }
+            Task { await self.pushParentProStatusIfNeeded(isActive) }
+        }
+        if deviceRole == .child {
+            // Сразу применяем кэш (офлайн-устойчивость) и тянем актуальный статус с backend.
+            service.applyParentProStatus(storage.loadParentIsPro())
+            Task { await refreshChildParentProIfNeeded() }
+        } else if deviceRole == .parent {
+            // Публикуем текущий известный статус родителя (на случай, если он изменился офлайн).
+            Task { await pushParentProStatusIfNeeded(service.hasActiveEntitlement) }
+        }
+    }
+
+    /// Parent → backend: отправляет Pro-статус родителя (`set_parent_pro`). No-op для не-родителя,
+    /// до связки и если значение не изменилось с прошлой отправки. Ошибки тихие — повторится на
+    /// следующем тике/изменении подписки.
+    func pushParentProStatusIfNeeded(_ isPro: Bool) async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        guard lastPushedParentIsPro != isPro else { return }
+        do {
+            try await remoteSyncService.setParentPro(isPro: isPro)
+            lastPushedParentIsPro = isPro
+        } catch {
+            // Тихо: backend получит статус при следующей попытке (старт/изменение подписки).
+        }
+    }
+
+    /// Child → backend: тянет Pro-статус родителя и применяет его к `SubscriptionService`
+    /// (источник правды гейтинга на ребёнке). Кэширует значение для офлайна.
+    func refreshChildParentProIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let dto = try await remoteSyncService.fetchParentPro()
+            let value = dto?.isPro ?? false
+            storage.saveParentIsPro(value)
+            subscriptionService?.applyParentProStatus(value)
+        } catch {
+            // Тихо — оффлайн-ребёнок продолжает работать на кэшированном статусе.
+        }
     }
 
     func handlePermissionBannerAllow(kind: PermissionReminderKind) async {
@@ -779,6 +1107,25 @@ final class AppState: ObservableObject {
             await applyRemoteCommandIfNeeded(id: commandID, type: commandType, durationSeconds: durationSeconds)
         }
 
+        // 2.5) Silent push wake-up `child_sync_request` (parent попросил освежить баланс
+        // ребёнка). Не содержит `command_id`, не идёт через очередь `focus_commands`,
+        // никакого ACK не требует. Просто принудительно делаем midnight-reset (если новый
+        // день), затем пушим свежий снапшот на сервер — это попутно обновит и dailyStats,
+        // и `child_runtime_state.available_seconds`, который и читает parent.
+        if deviceRole == .child,
+           let userInfo = initialPayload,
+           (userInfo["command_type"] as? String) == "child_sync_request" {
+            resetDailyBalanceIfNeeded()
+            await syncChildStatsSnapshotIfNeeded()
+            // Тот же silent push используется и для синка родительского PIN: если родитель
+            // только что сменил/удалил PIN, backend разбудит child и попросит подтянуть
+            // актуальные `parent_pin_hash/salt/updated_at` (если они изменились — кэш обновится
+            // и `parent_mode` принудительно закроется, см. `applyParentPinFromBackend`).
+            await refreshChildParentPinIfNeeded()
+            // Тот же канал синкает Pro-статус родителя (подписка привязана к устройству родителя).
+            await refreshChildParentProIfNeeded()
+        }
+
         // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
         if deviceRole == .child {
             await syncChildWithDesiredStateIfNeeded()
@@ -798,6 +1145,12 @@ final class AppState: ObservableObject {
                     isParentChildStateResolved = false
                     parentResolvedFocusActive = nil
                 }
+            } else if pairingState != nil {
+                // Сервер авторитетно сообщил, что устройство больше не связано (например, связку
+                // сбросили с другого устройства через `unlink_devices`) — приводим локальное
+                // состояние в соответствие, чтобы UI вернулся к экрану связки.
+                parentPairingCode = nil
+                clearPairing()
             }
             if let apns = storage.loadAPNSToken() {
                 try? await remoteSyncService.updateAPNSToken(apns)
@@ -806,22 +1159,90 @@ final class AppState: ObservableObject {
             remoteStatusMessage = error.localizedDescription
         }
         startRemotePollingIfNeeded()
+        // Если родитель стартовал с уже сгенерированным, но ещё не связанным кодом — продолжаем
+        // ждать присоединения ребёнка (метод сам себя гейтит на pending-состоянии).
+        startParentPairingWaitPollingIfNeeded()
+    }
+
+    /// Возвращает `true`, если с момента `last` прошло не меньше `interval` (или `last == nil`).
+    /// Используется для троттлинга некритичных фоновых вызовов в polling-цикле.
+    private static func shouldRunThrottled(last: Date?, interval: TimeInterval, now: Date) -> Bool {
+        guard let last else { return true }
+        return now.timeIntervalSince(last) >= interval
+    }
+
+    /// Запускает «ожидающий» опрос связки у родителя: пока код сгенерирован, но ребёнок ещё не
+    /// присоединился, периодически тянем авторитетное состояние с backend (`register_device`
+    /// возвращает текущий `pairingState`). Как только `isLinked == true` — обновляем локальное
+    /// состояние, сохраняем и переключаемся на штатный polling. Без этого родитель узнавал о
+    /// связке только после перезапуска приложения.
+    private func startParentPairingWaitPollingIfNeeded() {
+        guard deviceRole == .parent else { return }
+        guard let state = pairingState, state.isLinked == false else { return }
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: Self.parentPairingWaitIntervalNanos)
+                if Task.isCancelled { return }
+                // Состояние могло измениться (отвязка/связка из другого места) — перепроверяем.
+                guard self.deviceRole == .parent, self.pairingState?.isLinked == false else { return }
+                do {
+                    let bootstrap = try await self.remoteSyncService.registerDevice(role: .parent)
+                    guard !Task.isCancelled else { return }
+                    guard let serverPair = bootstrap.pairingState else { continue }
+                    self.pairingState = serverPair
+                    self.storage.savePairingState(serverPair)
+                    self.parentPairingCode = serverPair.pairingCode
+                    if serverPair.isLinked {
+                        self.remoteStatusMessage = nil
+                        self.isParentChildStateResolved = false
+                        self.parentResolvedFocusActive = nil
+                        self.startRemotePollingIfNeeded()
+                        return
+                    }
+                } catch {
+                    // Сетевые сбои в фоне ожидания игнорируем — повторим на следующем тике.
+                }
+            }
+        }
     }
 
     private func startRemotePollingIfNeeded() {
         guard pairingState?.isLinked == true else { return }
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = nil
         remotePollingTask?.cancel()
+        // Сброс троттл-таймеров: первый тик новой polling-сессии делает полный синк.
+        lastChildStatsHeartbeatAt = nil
+        lastChildPinProRefreshAt = nil
         remotePollingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
                 if self.deviceRole == .child {
-                    await self.syncChildWithDesiredStateIfNeeded()
-                    await self.processPendingRemoteCommandsIfNeeded()
-                    await self.syncChildStatsSnapshotIfNeeded()
+                    let now = Date()
+                    // PIN/Pro родителя подмешиваем в тот же `child_poll` лишь раз в ~60 сек (не каждый тик).
+                    let includeSettings = Self.shouldRunThrottled(
+                        last: self.lastChildPinProRefreshAt,
+                        interval: Self.childPinProRefreshInterval,
+                        now: now
+                    )
+                    if includeSettings { self.lastChildPinProRefreshAt = now }
+                    // Один combined-вызов вместо desired + pending (+ PIN/Pro). Критично по задержке —
+                    // каждый тик (фоллбэк к push для блок/разблок и команд).
+                    await self.pollChildAndApply(includeParentSettings: includeSettings)
+                    // Пуш статистики/runtime/баланса наверх — одним bundle-вызовом, раз в 30 сек.
+                    if Self.shouldRunThrottled(last: self.lastChildStatsHeartbeatAt, interval: Self.childStatsHeartbeatInterval, now: now) {
+                        self.lastChildStatsHeartbeatAt = now
+                        await self.syncChildStatsSnapshotIfNeeded()
+                    }
                 } else if self.deviceRole == .parent {
                     await self.refreshParentChildState()
+                    // Дешёвая no-op после первой отправки (дедуп по `lastPushedParentIsPro`):
+                    // покрывает случай «купил Pro до связки» и «связался после покупки».
+                    await self.pushParentProStatusIfNeeded(self.subscriptionService?.hasActiveEntitlement ?? false)
                 }
-                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                try? await Task.sleep(nanoseconds: Self.remotePollingIntervalNanos)
             }
         }
     }
@@ -830,6 +1251,17 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         do {
             let commands = try await remoteSyncService.fetchPendingCommands()
+            await applyPendingCommands(commands)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Применяет уже полученный список pending-команд (вынесено из `processPendingRemoteCommandsIfNeeded`,
+    /// чтобы переиспользовать из combined `pollChildAndApply` без повторного fetch).
+    private func applyPendingCommands(_ commands: [RemoteFocusCommand]) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
             guard !commands.isEmpty else { return }
             let sorted = commands.sorted { $0.createdAt < $1.createdAt }
 
@@ -884,6 +1316,51 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         do {
             let desired = try await remoteSyncService.fetchDesiredFocusState()
+            await applyDesiredFocusState(desired)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Child → backend (combined): один вызов `child_poll` вместо `fetch_desired_focus_state`
+    /// + `fetch_pending_commands` (+ PIN/Pro когда `includeParentSettings`). Применяет результат
+    /// тем же кодом, что и одиночные пути (для совместимости с push-доставкой).
+    private func pollChildAndApply(includeParentSettings: Bool) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
+            await applyDesiredFocusState(poll.desired)
+            let commands = poll.pendingCommands.map {
+                RemoteFocusCommand(
+                    id: $0.id,
+                    familyID: $0.familyID,
+                    commandType: $0.commandType,
+                    durationSeconds: $0.durationSeconds,
+                    status: $0.status,
+                    createdAt: $0.createdAt,
+                    updatedAt: $0.updatedAt
+                )
+            }
+            await applyPendingCommands(commands)
+            if includeParentSettings {
+                applyParentPinFromBackend(
+                    hashBase64: poll.parentPin?.hashBase64,
+                    saltBase64: poll.parentPin?.saltBase64,
+                    updatedAt: poll.parentPin.flatMap { $0.updatedAt }
+                )
+                let proValue = poll.parentPro?.isPro ?? false
+                storage.saveParentIsPro(proValue)
+                subscriptionService?.applyParentProStatus(proValue)
+            }
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Применяет уже полученное desired-состояние фокуса (вынесено из `syncChildWithDesiredStateIfNeeded`).
+    private func applyDesiredFocusState(_ desired: DesiredFocusStateDTO) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
             let localIsActive: Bool = {
                 guard isFocusSessionActive else { return false }
                 if let end = focusSessionEndsAt { return end > Date() }
@@ -1137,6 +1614,15 @@ final class AppState: ObservableObject {
                     note: L10n.tr("ledger.parent.add_time")
                 )
             }
+        case .subtractEarnedSeconds:
+            // Списываем N секунд через `applyParentSubtractEarnedSeconds`, который повторяет
+            // паттерн `applyParentResetEarnedBalance`: увеличивает `totalSpentSeconds` на
+            // `min(N, available)` и НЕ трогает `totalEarnedSeconds`. Так аналитика остаётся
+            // корректной, а доступный баланс никогда не уходит в минус.
+            let secondsToSubtract = max(0, durationSeconds ?? 0)
+            if secondsToSubtract > 0 {
+                applyParentSubtractEarnedSeconds(secondsToSubtract)
+            }
         case .requestLocation:
             // Parent asked for a fresh GPS fix. Capture once via LocationService and
             // push the snapshot back to the backend. We ack the command as `applied`
@@ -1168,21 +1654,59 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Throttled silent-push wake-up. Вызывается только из `refreshParentChildState`
+    /// когда runtime stale > 60 сек. Несмотря на throttle (`childWakeMinimumInterval`)
+    /// сетевой запрос short-circuit'ится локально — никогда не звоним на бэк чаще, чем
+    /// раз в минуту. Ошибки сети глотаются: для UI это «опциональный» механизм, ничего
+    /// не сломается если он временно недоступен (родитель просто увидит stale baseline).
+    private func requestChildWakeIfNeeded() async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        let now = Date()
+        if let last = lastChildWakeRequestAt,
+           now.timeIntervalSince(last) < Self.childWakeMinimumInterval {
+            return
+        }
+        lastChildWakeRequestAt = now
+        do {
+            _ = try await remoteSyncService.requestChildWakeSync()
+        } catch {
+            // Throttle сбрасывать не будем — иначе сразу retry'нем при следующем тике
+            // и забьём канал. Спокойно подождём `childWakeMinimumInterval` и попробуем
+            // снова. Это безопасно: stale-данные просто продержатся на минуту дольше.
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
     private func refreshParentChildState() async {
         guard deviceRole == .parent, pairingState?.isLinked == true else {
             parentChildAvailableSeconds = nil
+            parentChildEarnedSecondsToday = nil
+            parentChildSpentSecondsToday = nil
             return
         }
         var lastError: Error?
         for attempt in 0..<2 {
-            if let desired = try? await remoteSyncService.fetchDesiredFocusState() {
-                parentDesiredFocusActive = desired.shouldFocusActive
-            }
             do {
-                let snapshot = try await remoteSyncService.fetchParentSnapshot()
-                parentLinkHealth = try? await remoteSyncService.fetchLinkHealth()
+                // Один combined-вызов вместо desired + snapshot + linkHealth + childBalance.
+                let poll = try await remoteSyncService.parentPoll()
+                parentDesiredFocusActive = poll.desired.shouldFocusActive
+                parentLinkHealth = ParentLinkHealthState(
+                    pendingCommands: poll.linkHealth.pendingCommands,
+                    oldestPendingAgeSeconds: poll.linkHealth.oldestPendingAgeSeconds,
+                    childLastSeenAgeSeconds: poll.linkHealth.childLastSeenAgeSeconds,
+                    childLikelyOnline: poll.linkHealth.childLikelyOnline,
+                    recentFailedCommands30m: poll.linkHealth.recentFailedCommands30m
+                )
 
-                let actualRuntime = normalizedRuntimeForParent(snapshot.runtime)
+                // Сохраняем earned/spent ребёнка за сегодня для верхней balance-карточки на parent.
+                // Если бэкенд ещё не вернул `dailyStats` (старая версия / child не синкал), оставляем
+                // прошлые значения как есть — карточка просто покажет последние известные числа.
+                if let stats = poll.dailyStats {
+                    parentChildEarnedSecondsToday = max(0, stats.earnedSeconds)
+                    parentChildSpentSecondsToday = max(0, stats.spentSeconds)
+                }
+
+                let actualRuntime = normalizedRuntimeForParent(poll.runtime)
                 lastNormalizedParentChildRuntime = actualRuntime
                 // Сравниваем команду с фактическим runtime (не с «проекцией» desired) — иначе UI переключался бы до apply.
                 reconcileParentCommandWithRuntime(actualRuntime)
@@ -1205,8 +1729,17 @@ final class AppState: ObservableObject {
                         parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
                     }
                 }
-                if let childAvailable = try? await remoteSyncService.fetchChildBalanceState() {
+                if let childAvailable = poll.availableSeconds {
                     parentChildAvailableSeconds = childAvailable
+                }
+                // Если runtime на сервере старее `childRuntimeStaleThreshold` — child давно
+                // не синкал (закрыт/спит/был полночный rollover), и cached `available_seconds`
+                // не отражает реальность. Отправляем silent push wake-up, ограниченный
+                // throttle'ом `childWakeMinimumInterval` — следующий polling-тик через
+                // несколько секунд подтянет свежий баланс уже от проснувшегося child.
+                let staleness = Date().timeIntervalSince(actualRuntime.lastUpdatedAt)
+                if staleness > Self.childRuntimeStaleThreshold {
+                    await requestChildWakeIfNeeded()
                 }
                 isParentChildStateResolved = true
                 return
@@ -1385,8 +1918,8 @@ final class AppState: ObservableObject {
             return isActiveNow
         case .endFocus:
             return !isActiveNow
-        case .resetEarnedBalance, .addEarnedSeconds, .requestLocation,
-             .schedulesUpdated, .scheduleStarted, .scheduleEnded:
+        case .resetEarnedBalance, .addEarnedSeconds, .subtractEarnedSeconds,
+             .requestLocation, .schedulesUpdated, .scheduleStarted, .scheduleEnded:
             return true
         }
     }
@@ -1449,6 +1982,25 @@ final class AppState: ObservableObject {
                 source: .parentAdjustment,
                 deltaSeconds: -available,
                 note: L10n.tr("ledger.parent.take_all_time")
+            )
+        )
+        Task { await syncChildStatsSnapshotIfNeeded() }
+    }
+
+    /// Списывает у ребёнка `secondsToSubtract` секунд, но не больше, чем `availableSeconds`.
+    /// Эквивалент `applyParentResetEarnedBalance`, только с заданным верхним лимитом.
+    /// Используется для команды `subtractEarnedSeconds` из шторки «Изменить доступное время».
+    private func applyParentSubtractEarnedSeconds(_ secondsToSubtract: Int) {
+        let available = balance.availableSeconds
+        let actualDelta = min(max(0, secondsToSubtract), available)
+        guard actualDelta > 0 else { return }
+        balance.totalSpentSeconds += actualDelta
+        persistState()
+        prependLedger(
+            ActivityLedgerEntry(
+                source: .parentAdjustment,
+                deltaSeconds: -actualDelta,
+                note: L10n.tr("ledger.parent.subtract_time")
             )
         )
         Task { await syncChildStatsSnapshotIfNeeded() }
@@ -1587,14 +2139,14 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         let today = dailyStats(for: Date(), steps: todaySteps)
         do {
-            try await remoteSyncService.upsertChildDayStats(today)
-            let runtime = RemoteChildRuntimeState(
+            // Один combined-вызов вместо трёх (upsert_child_day_stats + update_child_runtime
+            // + update_child_balance). Runtime и balance пишутся в одну строку child_runtime_state.
+            try await remoteSyncService.upsertChildRuntimeBundle(
+                stats: today,
                 isFocusActive: isFocusSessionActive,
                 focusEndsAt: focusSessionEndsAt,
-                lastUpdatedAt: Date()
+                availableSeconds: balance.availableSeconds
             )
-            try await remoteSyncService.updateChildRuntimeState(runtime)
-            try? await remoteSyncService.updateChildBalanceState(availableSeconds: balance.availableSeconds)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1673,6 +2225,14 @@ final class AppState: ObservableObject {
         if deviceRole == .parent {
             remotePollingTask?.cancel()
             remotePollingTask = nil
+            parentPairingWaitTask?.cancel()
+            parentPairingWaitTask = nil
+        }
+        // Безопасность: любой уход приложения в background мгновенно закрывает родительский режим
+        // на ребёнке — даже если родитель просто свернул приложение «на минуту», следующий вход
+        // снова потребует PIN.
+        if isParentModeActive {
+            isParentModeActive = false
         }
     }
 
@@ -1977,15 +2537,17 @@ final class AppState: ObservableObject {
 
     /// Создаёт пустое расписание-черновик (используется при нажатии «Создать новое расписание»).
     /// Не сохраняется в список до явного `commitBlockSchedule`.
+    /// Имя оставляем пустым — в редакторе показывается плейсхолдер «Например, Время спать»;
+    /// `isEnabled = true`, чтобы при сохранении расписание сразу было активно без ручного переключения.
     func makeDraftBlockSchedule() -> BlockSchedule {
         BlockSchedule(
-            name: L10n.tr("schedule.draft.default_name"),
+            name: "",
             icon: .generic,
             accent: .purple,
             startTime: ScheduleTimeOfDay(hour: 9, minute: 0),
             endTime: ScheduleTimeOfDay(hour: 10, minute: 0),
             weekdays: ScheduleWeekday.everyday,
-            isEnabled: false
+            isEnabled: true
         )
     }
 
@@ -2045,6 +2607,22 @@ final class AppState: ObservableObject {
 
 private struct ParentSnapshotDTO: Codable {
     let runtime: RemoteChildRuntimeState
+    /// Опциональный блок дневной статистики ребёнка (за сегодня, UTC-сутки).
+    /// Заполняется edge function `parental-control-sync` v20 при наличии записи в `daily_stats_snapshots`.
+    /// `nil` — child ещё не синкал сегодняшний день, рендерим нули в UI.
+    let dailyStats: ParentChildDailyStatsDTO?
+}
+
+/// DTO дневной статистики ребёнка для родительского снапшота.
+/// Точное зеркало `BackendDayStatsDTO` — используется только для парсинга snapshot-ответа.
+private struct ParentChildDailyStatsDTO: Codable {
+    let dayStartISO: String
+    let steps: Int
+    let earnedSeconds: Int
+    let spentSeconds: Int
+    let pushUps: Int
+    let squats: Int
+    let focusSessionTotalSeconds: Int
 }
 
 private struct RegisterDeviceResponseDTO: Codable {
@@ -2092,6 +2670,24 @@ private struct DesiredFocusStateDTO: Codable {
     let updatedAt: Date
 }
 
+/// Ответ combined-экшена `child_poll`: всё, что ребёнок тянет за один тик.
+/// `parentPin`/`parentPro` присутствуют только когда клиент запросил `includeParentSettings`.
+private struct ChildPollDTO: Decodable {
+    let desired: DesiredFocusStateDTO
+    let pendingCommands: [PendingCommandDTO]
+    let parentPin: ParentPinSyncDTO?
+    let parentPro: ParentProSyncDTO?
+}
+
+/// Ответ combined-экшена `parent_poll`: объединяет desired + snapshot + linkHealth + childBalance.
+private struct ParentPollDTO: Decodable {
+    let desired: DesiredFocusStateDTO
+    let runtime: RemoteChildRuntimeState
+    let dailyStats: ParentChildDailyStatsDTO?
+    let linkHealth: LinkHealthDTO
+    let availableSeconds: Int?
+}
+
 private struct BackendDayStatsDTO: Codable {
     let dayStartISO: String
     let steps: Int
@@ -2107,6 +2703,33 @@ private struct ChildLocationDTO: Codable {
     let longitude: Double
     let horizontalAccuracy: Double?
     let capturedAtISO: String
+    let updatedAtISO: String
+}
+
+/// Снимок родительского PIN от backend для синка кэша на child (через `fetch_parent_pin`).
+/// Хэш и соль приходят в base64 — `AppState.applyParentPinFromBackend` сам восстановит `Data` и
+/// сравнит с уже сохранённым в Keychain через `ParentPinService`. `updatedAtISO` — момент,
+/// когда родитель в последний раз менял PIN; используется как ключ дедупликации.
+private struct ParentPinSyncDTO: Decodable {
+    let hashBase64: String
+    let saltBase64: String
+    let updatedAtISO: String
+
+    /// Парсинг `updatedAtISO` в `Date`. ISO8601 с дробной частью допускается на бэке — обрабатываем
+    /// оба формата (с миллисекундами и без), чтобы не зависеть от точного представления Postgres.
+    var updatedAt: Date? {
+        let primary = ISO8601DateFormatter()
+        if let d = primary.date(from: updatedAtISO) { return d }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: updatedAtISO)
+    }
+}
+
+/// Снимок Pro-статуса родителя от backend (через `fetch_parent_pro`). Pro привязан к устройству
+/// родителя; ребёнок применяет это значение для гейтинга фич (см. `SubscriptionService`).
+private struct ParentProSyncDTO: Decodable {
+    let isPro: Bool
     let updatedAtISO: String
 }
 
@@ -2311,6 +2934,103 @@ private final class ParentalRemoteSyncService {
         return max(0, response.availableSeconds)
     }
 
+    /// Parent → backend (v5 of `parental-control-balance-sync`): просит «разбудить» child
+    /// silent-push'ом (без alert), чтобы тот синхронизировал свой `available_seconds`,
+    /// дневную статистику и при необходимости выполнил `resetDailyBalanceIfNeeded()`.
+    /// Возвращает `true`, если backend подтвердил отправку push (`sent: true`), и
+    /// `false` если child пока без APNs token (push не отправлен). Любые ошибки сети
+    /// пробрасываются наружу — `AppState` сам решает retry/throttle.
+    func requestChildWakeSync() async throws -> Bool {
+        struct Payload: Encodable { let installID: String }
+        struct Response: Decodable {
+            let ok: Bool
+            let sent: Bool?
+        }
+        let response: Response = try await call(
+            action: "wake_child_sync",
+            payload: Payload(installID: installID),
+            endpoint: Endpoint.balanceBaseURL
+        )
+        return response.sent ?? false
+    }
+
+    // MARK: - Parent PIN (v22 of `parental-control-sync`)
+
+    /// Parent → backend: устанавливает/обновляет родительский PIN. PIN никогда не передаётся —
+    /// только заранее посчитанный `SHA-256(pin || salt)` (base64) и сама соль (base64).
+    /// Backend сохраняет это в `families.parent_pin_hash/salt/updated_at` и отправляет child'у
+    /// silent push wake-up, чтобы тот синхронизировал кэш.
+    func setParentPin(hashBase64: String, saltBase64: String, updatedAt: Date) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let pinHash: String
+            let pinSalt: String
+            let pinUpdatedAt: String
+        }
+        let _: EmptyResponse = try await call(
+            action: "set_parent_pin",
+            payload: Payload(
+                installID: installID,
+                pinHash: hashBase64,
+                pinSalt: saltBase64,
+                pinUpdatedAt: ISO8601DateFormatter().string(from: updatedAt)
+            )
+        )
+    }
+
+    /// Parent → backend: удаляет родительский PIN (`families.parent_pin_* = NULL`). После этого
+    /// child получит `parentPin: null` при следующем `fetch_parent_pin` и сам очистит кэш.
+    func clearParentPin() async throws {
+        struct Payload: Encodable { let installID: String }
+        let _: EmptyResponse = try await call(
+            action: "clear_parent_pin",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Child → backend: возвращает актуальный родительский PIN (хэш+соль+updatedAt) или `nil`,
+    /// если родитель ещё не задал/удалил. Сам PIN никогда не возвращается — только хэш+соль,
+    /// проверка PIN происходит локально на устройстве ребёнка через `ParentPinService`.
+    func fetchParentPin() async throws -> ParentPinSyncDTO? {
+        struct Payload: Encodable { let installID: String }
+        return try await call(
+            action: "fetch_parent_pin",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Parent → backend: сохраняет Pro-статус родителя в `families.parent_is_pro` и будит ребёнка
+    /// silent push'ом, чтобы тот сразу подтянул новый статус.
+    func setParentPro(isPro: Bool) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let isPro: Bool
+        }
+        let _: EmptyResponse = try await call(
+            action: "set_parent_pro",
+            payload: Payload(installID: installID, isPro: isPro)
+        )
+    }
+
+    /// Child/Parent → backend: текущий Pro-статус родителя семьи (для гейтинга фич на ребёнке).
+    func fetchParentPro() async throws -> ParentProSyncDTO? {
+        struct Payload: Encodable { let installID: String }
+        return try await call(
+            action: "fetch_parent_pro",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Любое связанное устройство → backend: полная отвязка семьи (оба устройства отсоединяются,
+    /// семья помечается неактивной). После — оба устройства очистят локальную связку.
+    func unlinkDevices() async throws {
+        struct Payload: Encodable { let installID: String }
+        let _: EmptyResponse = try await call(
+            action: "unlink_devices",
+            payload: Payload(installID: installID)
+        )
+    }
+
     func fetchPendingCommands() async throws -> [RemoteFocusCommand] {
         struct Payload: Encodable { let installID: String }
         let dtos: [PendingCommandDTO] = try await call(
@@ -2456,6 +3176,70 @@ private final class ParentalRemoteSyncService {
     func fetchDesiredFocusState() async throws -> DesiredFocusStateDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "fetch_desired_focus_state", payload: Payload(installID: installID))
+    }
+
+    // MARK: - Combined polling endpoints (экономия Edge Function Invocations)
+
+    /// Child → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_pending_commands`
+    /// (+ `fetch_parent_pin` + `fetch_parent_pro`, если `includeParentSettings == true`).
+    func childPoll(includeParentSettings: Bool) async throws -> ChildPollDTO {
+        struct Payload: Encodable {
+            let installID: String
+            let includeParentSettings: Bool
+        }
+        return try await call(
+            action: "child_poll",
+            payload: Payload(installID: installID, includeParentSettings: includeParentSettings)
+        )
+    }
+
+    /// Parent → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_parent_snapshot`
+    /// + `fetch_link_health` + `fetch_child_balance`.
+    func parentPoll() async throws -> ParentPollDTO {
+        struct Payload: Encodable { let installID: String }
+        return try await call(action: "parent_poll", payload: Payload(installID: installID))
+    }
+
+    /// Child → backend: один вызов вместо `upsert_child_day_stats` + `update_child_runtime`
+    /// + `update_child_balance`. Runtime и balance пишутся в одну строку `child_runtime_state`.
+    func upsertChildRuntimeBundle(
+        stats: DailyStats,
+        isFocusActive: Bool,
+        focusEndsAt: Date?,
+        availableSeconds: Int
+    ) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let dayStartISO: String
+            let steps: Int
+            let earnedSeconds: Int
+            let spentSeconds: Int
+            let pushUps: Int
+            let squats: Int
+            let focusSessionTotalSeconds: Int
+            let isFocusActive: Bool
+            let focusEndsAt: String?
+            let availableSeconds: Int
+        }
+        let dayStart = Calendar.current.startOfDay(for: stats.date)
+        let dayISO = ISO8601DateFormatter().string(from: dayStart)
+        let endISO = focusEndsAt.map { ISO8601DateFormatter().string(from: $0) }
+        let _: EmptyResponse = try await call(
+            action: "upsert_child_runtime_bundle",
+            payload: Payload(
+                installID: installID,
+                dayStartISO: dayISO,
+                steps: stats.steps,
+                earnedSeconds: stats.earnedSeconds,
+                spentSeconds: stats.spentSeconds,
+                pushUps: stats.pushUps,
+                squats: stats.squats,
+                focusSessionTotalSeconds: stats.focusSessionTotalSeconds,
+                isFocusActive: isFocusActive,
+                focusEndsAt: endISO,
+                availableSeconds: max(0, availableSeconds)
+            )
+        )
     }
 
     /// Parent → backend: попросить ребёнка прислать свежую координату.

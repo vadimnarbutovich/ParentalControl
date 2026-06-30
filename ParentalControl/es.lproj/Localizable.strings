@@ -266,3 +266,114 @@
 "paywall.period.week" = "sem.";
 "paywall.period.month" = "mes";
 "paywall.period.year" = "año";
+
+"tab.schedule" = "Horario";
+
+"schedule.title" = "Horario";
+"schedule.subtitle" = "Configura franjas horarias en las que se bloquean las apps que distraen.";
+"schedule.create_new" = "Crear nuevo horario";
+
+"schedule.empty.title" = "Aún no hay horarios";
+"schedule.empty.subtitle" = "Elige una sugerencia abajo o crea tu propio horario.";
+
+"schedule.suggestions.title" = "Sugerencias";
+"schedule.suggestions.add_accessibility" = "Añadir esta plantilla";
+
+"schedule.template.school.title" = "Horario escolar";
+"schedule.template.homework.title" = "Tareas";
+"schedule.template.dinner.title" = "Cena";
+
+"schedule.default.sleep.title" = "Hora de dormir";
+"schedule.draft.default_name" = "Nuevo horario";
+
+"schedule.weekday.short.mon" = "Lun";
+"schedule.weekday.short.tue" = "Mar";
+"schedule.weekday.short.wed" = "Mié";
+"schedule.weekday.short.thu" = "Jue";
+"schedule.weekday.short.fri" = "Vie";
+"schedule.weekday.short.sat" = "Sáb";
+"schedule.weekday.short.sun" = "Dom";
+
+"schedule.weekdays.everyday" = "Todos los días";
+"schedule.weekdays.workdays" = "Días laborables";
+"schedule.weekdays.weekends" = "Fines de semana";
+
+"schedule.editor.title.new" = "Nuevo horario";
+"schedule.editor.title.edit" = "Editar horario";
+"schedule.editor.cancel" = "Cancelar";
+"schedule.editor.save" = "Guardar";
+"schedule.editor.delete" = "Eliminar horario";
+
+"schedule.editor.name.label" = "Nombre";
+"schedule.editor.name.placeholder" = "Por ejemplo, Hora de dormir";
+"schedule.editor.name.required" = "Introduce un nombre";
+
+"schedule.editor.time.label" = "Hora";
+"schedule.editor.time.start" = "Inicio";
+"schedule.editor.time.end" = "Fin";
+"schedule.editor.time.crosses_midnight" = "El horario cruza la medianoche (termina al día siguiente).";
+
+"schedule.editor.weekdays.label" = "Días";
+"schedule.editor.weekdays.required" = "Elige al menos un día.";
+"schedule.editor.weekdays.preset.workdays" = "Lun–Vie";
+"schedule.editor.weekdays.preset.weekends" = "Sáb, Dom";
+"schedule.editor.weekdays.preset.everyday" = "Todos los días";
+
+"schedule.editor.enabled.label" = "Activado";
+"schedule.editor.enabled.hint" = "Cuando está activado, el bloqueo se inicia a la hora de inicio en los días seleccionados.";
+
+"schedule.editor.delete.confirm.title" = "¿Eliminar horario?";
+"schedule.editor.delete.confirm.message" = "Este horario se eliminará. Siempre puedes crear uno nuevo.";
+"schedule.editor.delete.confirm.delete" = "Eliminar";
+
+"parent.dashboard.adjust_time" = "Ajustar tiempo disponible";
+"parent.dashboard.adjust_time.title" = "Ajustar tiempo disponible";
+"parent.dashboard.adjust_time.done" = "Listo";
+"parent.dashboard.adjust_time.minutes_format" = "%@ min";
+
+"ledger.parent.subtract_time" = "Padre/madre quitó tiempo";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Padre";
+"common.cancel" = "Cancelar";
+
+"parent_mode.exit_banner" = "Salir del modo padre";
+"parent_mode.entry.title" = "Modo padre";
+"parent_mode.entry.subtitle" = "Introduce el PIN de 4 dígitos para abrir el modo padre en este dispositivo.";
+"parent_mode.entry.not_configured" = "Aún no se ha establecido un PIN. Pide al padre que cree un PIN en los ajustes de su app.";
+"parent_mode.entry.close" = "Cerrar";
+"parent_mode.entry.error.wrong" = "PIN incorrecto.";
+"parent_mode.entry.attempts_remaining" = "Intentos restantes: %d";
+"parent_mode.entry.locked" = "Entrada bloqueada. Inténtalo de nuevo en %d s.";
+
+"settings.pin.section" = "PIN de padre";
+"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño. El niño nunca verá el PIN.";
+"settings.pin.requires_link" = "Primero vincula un dispositivo del niño para establecer un PIN.";
+"settings.pin.status.set" = "PIN establecido";
+"settings.pin.status.unset" = "PIN no establecido";
+"settings.pin.set" = "Establecer PIN";
+"settings.pin.change" = "Cambiar PIN";
+"settings.pin.clear" = "Eliminar PIN";
+"settings.pin.clear.confirm.title" = "¿Eliminar PIN?";
+"settings.pin.clear.confirm.message" = "Sin PIN, el niño no podrá abrir el modo padre. Siempre podrás establecer un nuevo PIN más tarde.";
+"settings.pin.clear.confirm.action" = "Eliminar";
+"settings.pin.sheet.title.set" = "Establecer PIN";
+"settings.pin.sheet.title.change" = "Cambiar PIN";
+"settings.pin.sheet.subtitle" = "Introduce el nuevo PIN de 4 dígitos dos veces.";
+"settings.pin.sheet.new" = "Nuevo PIN";
+"settings.pin.sheet.confirm" = "Repetir PIN";
+"settings.pin.sheet.save" = "Guardar";
+"settings.pin.sheet.error.format" = "El PIN debe tener 4 dígitos.";
+"settings.pin.sheet.error.mismatch" = "Los PIN no coinciden.";
+"settings.pin.sheet.error.network" = "No se pudo guardar el PIN. Inténtalo de nuevo.";
+
+"dashboard.pairing.title" = "Vincular con un padre";
+"dashboard.pairing.subtitle" = "Introduce el código de vinculación de la app del padre para conectar los dispositivos.";
+"dashboard.pairing.connect" = "Vincular dispositivo";
+"dashboard.pairing.connecting" = "Vinculando…";
+
+"settings.pairing.linked.status" = "Dispositivos vinculados";
+"settings.pairing.unlink" = "Desvincular dispositivos";
+"settings.pairing.unlink.confirm.title" = "¿Desvincular dispositivos?";
+"settings.pairing.unlink.confirm.message" = "Se restablecerá el vínculo entre los dispositivos de los padres y del niño. Tendrás que volver a vincularlos para gestionar el dispositivo del niño.";
+"settings.pairing.unlink.confirm.button" = "Desvincular";

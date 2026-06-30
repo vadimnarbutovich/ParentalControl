@@ -266,3 +266,114 @@
 "paywall.period.week" = "Wo.";
 "paywall.period.month" = "Mo.";
 "paywall.period.year" = "J.";
+
+"tab.schedule" = "Zeitplan";
+
+"schedule.title" = "Zeitplan";
+"schedule.subtitle" = "Lege Zeitfenster fest, in denen ablenkende Apps blockiert sind.";
+"schedule.create_new" = "Neuen Zeitplan erstellen";
+
+"schedule.empty.title" = "Noch keine Zeitpläne";
+"schedule.empty.subtitle" = "Wähle unten einen Vorschlag oder erstelle deinen eigenen Zeitplan.";
+
+"schedule.suggestions.title" = "Vorschläge";
+"schedule.suggestions.add_accessibility" = "Diese Vorlage hinzufügen";
+
+"schedule.template.school.title" = "Schulzeit";
+"schedule.template.homework.title" = "Hausaufgaben";
+"schedule.template.dinner.title" = "Abendessen";
+
+"schedule.default.sleep.title" = "Schlafenszeit";
+"schedule.draft.default_name" = "Neuer Zeitplan";
+
+"schedule.weekday.short.mon" = "Mo";
+"schedule.weekday.short.tue" = "Di";
+"schedule.weekday.short.wed" = "Mi";
+"schedule.weekday.short.thu" = "Do";
+"schedule.weekday.short.fri" = "Fr";
+"schedule.weekday.short.sat" = "Sa";
+"schedule.weekday.short.sun" = "So";
+
+"schedule.weekdays.everyday" = "Jeden Tag";
+"schedule.weekdays.workdays" = "Werktags";
+"schedule.weekdays.weekends" = "Wochenenden";
+
+"schedule.editor.title.new" = "Neuer Zeitplan";
+"schedule.editor.title.edit" = "Zeitplan bearbeiten";
+"schedule.editor.cancel" = "Abbrechen";
+"schedule.editor.save" = "Speichern";
+"schedule.editor.delete" = "Zeitplan löschen";
+
+"schedule.editor.name.label" = "Name";
+"schedule.editor.name.placeholder" = "Zum Beispiel, Schlafenszeit";
+"schedule.editor.name.required" = "Bitte gib einen Namen ein";
+
+"schedule.editor.time.label" = "Zeit";
+"schedule.editor.time.start" = "Start";
+"schedule.editor.time.end" = "Ende";
+"schedule.editor.time.crosses_midnight" = "Der Zeitplan geht über Mitternacht (endet am nächsten Tag).";
+
+"schedule.editor.weekdays.label" = "Tage";
+"schedule.editor.weekdays.required" = "Wähle mindestens einen Tag.";
+"schedule.editor.weekdays.preset.workdays" = "Mo–Fr";
+"schedule.editor.weekdays.preset.weekends" = "Sa, So";
+"schedule.editor.weekdays.preset.everyday" = "Jeden Tag";
+
+"schedule.editor.enabled.label" = "Aktiviert";
+"schedule.editor.enabled.hint" = "Wenn aktiviert, startet die Blockierung zur Startzeit an den ausgewählten Tagen.";
+
+"schedule.editor.delete.confirm.title" = "Zeitplan löschen?";
+"schedule.editor.delete.confirm.message" = "Dieser Zeitplan wird entfernt. Du kannst jederzeit einen neuen erstellen.";
+"schedule.editor.delete.confirm.delete" = "Löschen";
+
+"parent.dashboard.adjust_time" = "Verfügbare Zeit anpassen";
+"parent.dashboard.adjust_time.title" = "Verfügbare Zeit anpassen";
+"parent.dashboard.adjust_time.done" = "Fertig";
+"parent.dashboard.adjust_time.minutes_format" = "%@ Min";
+
+"ledger.parent.subtract_time" = "Elternteil hat Zeit abgezogen";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Elternteil";
+"common.cancel" = "Abbrechen";
+
+"parent_mode.exit_banner" = "Elternmodus beenden";
+"parent_mode.entry.title" = "Elternmodus";
+"parent_mode.entry.subtitle" = "Gib die 4-stellige PIN ein, um den Elternmodus auf diesem Gerät zu öffnen.";
+"parent_mode.entry.not_configured" = "Es wurde noch keine PIN festgelegt. Bitte den Elternteil, in der App-Einstellung eine PIN zu erstellen.";
+"parent_mode.entry.close" = "Schließen";
+"parent_mode.entry.error.wrong" = "Falsche PIN.";
+"parent_mode.entry.attempts_remaining" = "Verbleibende Versuche: %d";
+"parent_mode.entry.locked" = "Eingabe gesperrt. Versuche es in %d Sek. erneut.";
+
+"settings.pin.section" = "Eltern-PIN";
+"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen. Das Kind sieht die PIN niemals.";
+"settings.pin.requires_link" = "Verbinde zuerst ein Kindergerät, um eine PIN festzulegen.";
+"settings.pin.status.set" = "PIN ist festgelegt";
+"settings.pin.status.unset" = "Keine PIN festgelegt";
+"settings.pin.set" = "PIN festlegen";
+"settings.pin.change" = "PIN ändern";
+"settings.pin.clear" = "PIN löschen";
+"settings.pin.clear.confirm.title" = "PIN löschen?";
+"settings.pin.clear.confirm.message" = "Ohne PIN kann das Kind den Elternmodus nicht öffnen. Du kannst jederzeit eine neue PIN festlegen.";
+"settings.pin.clear.confirm.action" = "Löschen";
+"settings.pin.sheet.title.set" = "PIN festlegen";
+"settings.pin.sheet.title.change" = "PIN ändern";
+"settings.pin.sheet.subtitle" = "Gib die neue 4-stellige PIN zweimal ein.";
+"settings.pin.sheet.new" = "Neue PIN";
+"settings.pin.sheet.confirm" = "PIN wiederholen";
+"settings.pin.sheet.save" = "Speichern";
+"settings.pin.sheet.error.format" = "Die PIN muss aus 4 Ziffern bestehen.";
+"settings.pin.sheet.error.mismatch" = "Die PINs stimmen nicht überein.";
+"settings.pin.sheet.error.network" = "PIN konnte nicht gespeichert werden. Bitte erneut versuchen.";
+
+"dashboard.pairing.title" = "Mit Elternteil verbinden";
+"dashboard.pairing.subtitle" = "Gib den Kopplungscode aus der Eltern-App ein, um die Geräte zu verbinden.";
+"dashboard.pairing.connect" = "Gerät verbinden";
+"dashboard.pairing.connecting" = "Verbinden…";
+
+"settings.pairing.linked.status" = "Geräte verbunden";
+"settings.pairing.unlink" = "Geräte trennen";
+"settings.pairing.unlink.confirm.title" = "Geräte trennen?";
+"settings.pairing.unlink.confirm.message" = "Die Verbindung zwischen Eltern- und Kindgerät wird zurückgesetzt. Zum Verwalten des Kindgeräts ist eine erneute Kopplung erforderlich.";
+"settings.pairing.unlink.confirm.button" = "Trennen";
