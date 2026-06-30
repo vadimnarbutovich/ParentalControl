@@ -3,9 +3,30 @@ import Foundation
 import RevenueCat
 import Security
 
+/// Конфиг гейтинга подписки. Pro привязан к УСТРОЙСТВУ РОДИТЕЛЯ: родитель покупает подписку,
+/// а его статус (через backend `families.parent_is_pro`) определяет ограничения и на родителе,
+/// и на ребёнке. Ребёнок свой RevenueCat для гейтинга НЕ использует — берёт статус родителя.
+enum SubscriptionConfig {
+    /// Временный dev-флаг: пока фичи под подпиской не определены, держим Pro разблокированным,
+    /// чтобы гейтинг не мешал разработке. Когда определимся со списком платных фич и захотим
+    /// включить реальные ограничения — поставить `false`. Вся инфраструктура (родитель шлёт
+    /// статус → backend → ребёнок применяет) работает независимо от этого флага.
+    static let developmentForceProUnlocked = true
+}
+
 @MainActor
 final class SubscriptionService: ObservableObject {
+    /// Эффективный Pro-статус, по которому гейтятся фичи в UI. На родителе — собственный entitlement
+    /// (или dev-override), на ребёнке — присланный статус родителя (`applyParentProStatus`).
     @Published private(set) var isPro: Bool = true
+    /// Реальный entitlement ИМЕННО этого устройства из RevenueCat (на родителе — основа гейтинга,
+    /// на ребёнке обычно `false` и не используется). Источник для отправки статуса на backend.
+    @Published private(set) var hasActiveEntitlement: Bool = false
+    /// Присланный с backend Pro-статус родителя (только на ребёнке). `nil` — ещё не синхронизирован.
+    private var parentProOverride: Bool?
+    /// Вызывается при изменении реального entitlement этого устройства. Родитель подписывается,
+    /// чтобы отправить новый статус на backend (`set_parent_pro`). `[weak]`-замыкание в `AppState`.
+    var onEntitlementChange: ((Bool) -> Void)?
     /// `true` после первого получения `CustomerInfo` из RevenueCat (кэш, сеть или стрим), либо если SDK не настроен — чтобы не мигал Pro-бейдж до проверки подписки.
     @Published private(set) var isSubscriptionStatusKnown: Bool = false
     @Published private(set) var currentOffering: Offering?
@@ -255,8 +276,34 @@ final class SubscriptionService: ObservableObject {
     }
 
     private func updatePro(from info: CustomerInfo) {
-//        isPro = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
         isSubscriptionStatusKnown = true
+        let active = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+        let changed = active != hasActiveEntitlement
+        hasActiveEntitlement = active
+        recomputeIsPro()
+        // Уведомляем подписчика (родитель → backend) только при реальном изменении статуса.
+        if changed { onEntitlementChange?(active) }
+    }
+
+    /// Child-сторона: применяет Pro-статус родителя, присланный backend'ом. Источник правды
+    /// гейтинга на ребёнке — именно это значение, а не собственный RevenueCat ребёнка.
+    func applyParentProStatus(_ isProFromParent: Bool) {
+        guard parentProOverride != isProFromParent else { return }
+        parentProOverride = isProFromParent
+        recomputeIsPro()
+    }
+
+    /// Пересчёт эффективного `isPro`: dev-флаг > статус родителя (на ребёнке) > свой entitlement.
+    private func recomputeIsPro() {
+        let effective: Bool
+        if SubscriptionConfig.developmentForceProUnlocked {
+            effective = true
+        } else if let override = parentProOverride {
+            effective = override
+        } else {
+            effective = hasActiveEntitlement
+        }
+        if isPro != effective { isPro = effective }
     }
 
     /// Логиним стабильный app user id, чтобы профиль не терялся при переустановке приложения.

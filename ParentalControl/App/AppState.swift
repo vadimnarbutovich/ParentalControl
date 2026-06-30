@@ -187,6 +187,12 @@ final class AppState: ObservableObject {
     /// child — для `applyParentPinFromBackend/verifyPin`. Сам PIN никогда не покидает устройства,
     /// где введён; в сеть шлётся только `SHA-256(pin || salt)` + соль.
     private let parentPinService = ParentPinService()
+    /// Слабая ссылка на сервис подписки. Pro привязан к устройству родителя: родитель шлёт свой
+    /// статус на backend, ребёнок применяет присланный. Связывается из `attachSubscriptionService`.
+    private weak var subscriptionService: SubscriptionService?
+    /// Последний отправленный на backend Pro-статус родителя — дедупликация, чтобы родительский
+    /// polling-тик не дёргал `set_parent_pro` на каждой итерации (шлём только при реальном изменении).
+    private var lastPushedParentIsPro: Bool?
     private var focusTask: Task<Void, Never>?
     private var focusSessionStartedAt: Date?
     private var focusSessionPlannedSeconds: Int = 0
@@ -363,6 +369,10 @@ final class AppState: ObservableObject {
         parentPinIsSet = false
         parentPinLockoutEnd = nil
         isParentModeActive = false
+        // Сбрасываем кэш Pro-статуса: смена роли = новая семья, старый статус неактуален.
+        storage.saveParentIsPro(false)
+        subscriptionService?.applyParentProStatus(false)
+        lastPushedParentIsPro = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
@@ -389,6 +399,10 @@ final class AppState: ObservableObject {
         parentPinIsSet = false
         parentPinLockoutEnd = nil
         isParentModeActive = false
+        // Разрыв пейринга = чужая семья: сбрасываем кэш Pro-статуса родителя.
+        storage.saveParentIsPro(false)
+        subscriptionService?.applyParentProStatus(false)
+        lastPushedParentIsPro = nil
         storage.savePairingState(nil)
     }
 
@@ -589,6 +603,55 @@ final class AppState: ObservableObject {
             )
         } catch {
             // Тихо — это фоновая операция, оффлайн-ребёнок продолжает работать на кэшированном PIN.
+        }
+    }
+
+    // MARK: - Pro subscription (привязка к устройству родителя)
+
+    /// Связывает `AppState` с `SubscriptionService` (вызывается один раз при старте приложения).
+    /// Подписывается на изменение entitlement родителя (→ отправка на backend) и инициализирует
+    /// сторону ребёнка кэшированным статусом + фоновым обновлением с backend.
+    func attachSubscriptionService(_ service: SubscriptionService) {
+        subscriptionService = service
+        service.onEntitlementChange = { [weak self] isActive in
+            guard let self else { return }
+            Task { await self.pushParentProStatusIfNeeded(isActive) }
+        }
+        if deviceRole == .child {
+            // Сразу применяем кэш (офлайн-устойчивость) и тянем актуальный статус с backend.
+            service.applyParentProStatus(storage.loadParentIsPro())
+            Task { await refreshChildParentProIfNeeded() }
+        } else if deviceRole == .parent {
+            // Публикуем текущий известный статус родителя (на случай, если он изменился офлайн).
+            Task { await pushParentProStatusIfNeeded(service.hasActiveEntitlement) }
+        }
+    }
+
+    /// Parent → backend: отправляет Pro-статус родителя (`set_parent_pro`). No-op для не-родителя,
+    /// до связки и если значение не изменилось с прошлой отправки. Ошибки тихие — повторится на
+    /// следующем тике/изменении подписки.
+    func pushParentProStatusIfNeeded(_ isPro: Bool) async {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        guard lastPushedParentIsPro != isPro else { return }
+        do {
+            try await remoteSyncService.setParentPro(isPro: isPro)
+            lastPushedParentIsPro = isPro
+        } catch {
+            // Тихо: backend получит статус при следующей попытке (старт/изменение подписки).
+        }
+    }
+
+    /// Child → backend: тянет Pro-статус родителя и применяет его к `SubscriptionService`
+    /// (источник правды гейтинга на ребёнке). Кэширует значение для офлайна.
+    func refreshChildParentProIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let dto = try await remoteSyncService.fetchParentPro()
+            let value = dto?.isPro ?? false
+            storage.saveParentIsPro(value)
+            subscriptionService?.applyParentProStatus(value)
+        } catch {
+            // Тихо — оффлайн-ребёнок продолжает работать на кэшированном статусе.
         }
     }
 
@@ -1004,6 +1067,8 @@ final class AppState: ObservableObject {
             // актуальные `parent_pin_hash/salt/updated_at` (если они изменились — кэш обновится
             // и `parent_mode` принудительно закроется, см. `applyParentPinFromBackend`).
             await refreshChildParentPinIfNeeded()
+            // Тот же канал синкает Pro-статус родителя (подписка привязана к устройству родителя).
+            await refreshChildParentProIfNeeded()
         }
 
         // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
@@ -1046,8 +1111,12 @@ final class AppState: ObservableObject {
                     await self.processPendingRemoteCommandsIfNeeded()
                     await self.syncChildStatsSnapshotIfNeeded()
                     await self.refreshChildParentPinIfNeeded()
+                    await self.refreshChildParentProIfNeeded()
                 } else if self.deviceRole == .parent {
                     await self.refreshParentChildState()
+                    // Дешёвая no-op после первой отправки (дедуп по `lastPushedParentIsPro`):
+                    // покрывает случай «купил Pro до связки» и «связался после покупки».
+                    await self.pushParentProStatusIfNeeded(self.subscriptionService?.hasActiveEntitlement ?? false)
                 }
                 try? await Task.sleep(nanoseconds: 4_000_000_000)
             }
@@ -2452,6 +2521,13 @@ private struct ParentPinSyncDTO: Decodable {
     }
 }
 
+/// Снимок Pro-статуса родителя от backend (через `fetch_parent_pro`). Pro привязан к устройству
+/// родителя; ребёнок применяет это значение для гейтинга фич (см. `SubscriptionService`).
+private struct ParentProSyncDTO: Decodable {
+    let isPro: Bool
+    let updatedAtISO: String
+}
+
 private final class ParentalRemoteSyncService {
     private enum Endpoint {
         static let focusBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
@@ -2714,6 +2790,28 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable { let installID: String }
         return try await call(
             action: "fetch_parent_pin",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Parent → backend: сохраняет Pro-статус родителя в `families.parent_is_pro` и будит ребёнка
+    /// silent push'ом, чтобы тот сразу подтянул новый статус.
+    func setParentPro(isPro: Bool) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let isPro: Bool
+        }
+        let _: EmptyResponse = try await call(
+            action: "set_parent_pro",
+            payload: Payload(installID: installID, isPro: isPro)
+        )
+    }
+
+    /// Child/Parent → backend: текущий Pro-статус родителя семьи (для гейтинга фич на ребёнке).
+    func fetchParentPro() async throws -> ParentProSyncDTO? {
+        struct Payload: Encodable { let installID: String }
+        return try await call(
+            action: "fetch_parent_pro",
             payload: Payload(installID: installID)
         )
     }

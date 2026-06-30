@@ -109,6 +109,10 @@ Deno.serve(async (req: Request) => {
         return await clearParentPin(authed.deviceId);
       case "fetch_parent_pin":
         return await fetchParentPin(authed.deviceId);
+      case "set_parent_pro":
+        return await setParentPro(authed.deviceId, payload);
+      case "fetch_parent_pro":
+        return await fetchParentPro(authed.deviceId);
       default:
         return errorResponse("Unknown action", 400);
     }
@@ -1184,6 +1188,51 @@ async function fetchParentPin(deviceId: string): Promise<Response> {
     hashBase64: data.parent_pin_hash,
     saltBase64: data.parent_pin_salt,
     updatedAtISO: data.parent_pin_updated_at ?? new Date(0).toISOString(),
+  });
+}
+
+// MARK: Parent Pro subscription (подписка привязана к устройству родителя)
+// Pro покупает родитель на своём устройстве (RevenueCat). Его статус — единственный источник
+// правды для ограничения фич на ОБОИХ устройствах. Backend хранит `families.parent_is_pro`
+// (+ `parent_is_pro_updated_at`) и отдаёт ребёнку через `fetch_parent_pro`. При изменении статуса
+// родитель шлёт `set_parent_pro`, backend будит ребёнка silent push'ом (тот же контур, что у PIN),
+// чтобы тот мгновенно подтянул новый статус.
+
+async function setParentPro(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) {
+    return errorResponse("Only paired parent can set Pro status", 403);
+  }
+  const isPro = payload.isPro === true;
+  const { error } = await supabase
+    .from("families")
+    .update({
+      parent_is_pro: isPro,
+      parent_is_pro_updated_at: new Date().toISOString(),
+    })
+    .eq("id", parent.family_id);
+  if (error) return errorResponse(error.message, 400);
+
+  // Будим ребёнка, чтобы он сразу синхронизировал статус (и PIN — общий канал child_sync_request).
+  await notifyChildPinUpdated(parent.family_id);
+  return okResponse({ ok: true });
+}
+
+async function fetchParentPro(deviceId: string): Promise<Response> {
+  // Запрашивать может и parent (для своего UI), и child (для гейтинга). Привязка по family_id.
+  const requester = await getDevice(deviceId);
+  if (!requester.family_id) return errorResponse("Device is not paired", 403);
+
+  const { data, error } = await supabase
+    .from("families")
+    .select("parent_is_pro, parent_is_pro_updated_at")
+    .eq("id", requester.family_id)
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+
+  return okResponse({
+    isPro: data?.parent_is_pro === true,
+    updatedAtISO: data?.parent_is_pro_updated_at ?? new Date(0).toISOString(),
   });
 }
 

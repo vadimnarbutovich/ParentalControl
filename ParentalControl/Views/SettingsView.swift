@@ -137,33 +137,40 @@ struct SettingsView: View {
                 childPairingSection
             }
 
-            settingsRow(titleKey: "settings.item.conversion") {
-                AppAnalytics.report("settings_conversion_open")
-                activeSheet = .conversion
+            // «Конвертация» (курсы заработка) и «Сброс в полночь» управляют механикой заработка
+            // и сброса баланса РЕБЁНКА — обе настройки локальные и применяются только на детском
+            // устройстве. На устройстве родителя они инертны, поэтому скрываем их там.
+            if appState.deviceRole == .child {
+                settingsRow(titleKey: "settings.item.conversion") {
+                    AppAnalytics.report("settings_conversion_open")
+                    activeSheet = .conversion
+                }
             }
             settingsRow(titleKey: "settings.item.language") {
                 AppAnalytics.report("settings_language_tap")
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
             }
-            settingsToggleRow(
-                titleKey: "settings.item.midnight_reset",
-                isOn: Binding(
-                    get: { appState.isMidnightResetEnabled },
-                    set: { newValue in
-                        if !newValue && !subscriptionService.isPro {
-                            AppAnalytics.report("settings_midnight_reset_toggle", parameters: ["action": "blocked"])
-                            showPaywall = true
-                            return
+            if appState.deviceRole == .child {
+                settingsToggleRow(
+                    titleKey: "settings.item.midnight_reset",
+                    isOn: Binding(
+                        get: { appState.isMidnightResetEnabled },
+                        set: { newValue in
+                            if !newValue && !subscriptionService.isPro {
+                                AppAnalytics.report("settings_midnight_reset_toggle", parameters: ["action": "blocked"])
+                                showPaywall = true
+                                return
+                            }
+                            AppAnalytics.report(
+                                "settings_midnight_reset_toggle",
+                                parameters: ["enabled": newValue]
+                            )
+                            appState.updateMidnightResetEnabled(newValue)
                         }
-                        AppAnalytics.report(
-                            "settings_midnight_reset_toggle",
-                            parameters: ["enabled": newValue]
-                        )
-                        appState.updateMidnightResetEnabled(newValue)
-                    }
+                    )
                 )
-            )
+            }
 #if DEBUG && !HIDE_DEBUG_UI
             settingsRow(titleKey: "settings.item.permissions") {
                 AppAnalytics.report("settings_permissions_open")
