@@ -1261,55 +1261,51 @@ final class AppState: ObservableObject {
     /// чтобы переиспользовать из combined `pollChildAndApply` без повторного fetch).
     private func applyPendingCommands(_ commands: [RemoteFocusCommand]) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
-        do {
-            guard !commands.isEmpty else { return }
-            let sorted = commands.sorted { $0.createdAt < $1.createdAt }
+        guard !commands.isEmpty else { return }
+        let sorted = commands.sorted { $0.createdAt < $1.createdAt }
 
-            let scheduleCmds = sorted.filter { $0.commandType == .schedulesUpdated }
-            if !scheduleCmds.isEmpty {
-                await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
-                for cmd in scheduleCmds {
-                    try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
-                }
+        let scheduleCmds = sorted.filter { $0.commandType == .schedulesUpdated }
+        if !scheduleCmds.isEmpty {
+            await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
+            for cmd in scheduleCmds {
+                try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
             }
-
-            // Команды schedule_started/schedule_ended приходят с бэкенд-cron при наступлении
-            // границы окна расписания. На клиенте делаем единый refresh enforcement (а не
-            // по каждой команде отдельно — чтобы избежать множественных последовательных
-            // start/stopMonitoring). Acknowledge всех таких команд.
-            let scheduleEventCmds = sorted.filter {
-                $0.commandType == .scheduleStarted || $0.commandType == .scheduleEnded
-            }
-            if !scheduleEventCmds.isEmpty {
-                blockScheduleEnforcement.refreshFromStoredSchedules()
-                for cmd in scheduleEventCmds {
-                    try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
-                }
-            }
-
-            let nonSchedule = sorted.filter {
-                $0.commandType != .schedulesUpdated
-                    && $0.commandType != .scheduleStarted
-                    && $0.commandType != .scheduleEnded
-            }
-            guard let latest = nonSchedule.last else { return }
-            if nonSchedule.count > 1 {
-                for stale in nonSchedule.dropLast() {
-                    try? await remoteSyncService.ackCommand(
-                        id: stale.id,
-                        status: .failed,
-                        errorMessage: "superseded_by_newer_command"
-                    )
-                }
-            }
-            await applyRemoteCommandIfNeeded(
-                id: latest.id,
-                type: latest.commandType,
-                durationSeconds: latest.durationSeconds
-            )
-        } catch {
-            remoteStatusMessage = error.localizedDescription
         }
+
+        // Команды schedule_started/schedule_ended приходят с бэкенд-cron при наступлении
+        // границы окна расписания. На клиенте делаем единый refresh enforcement (а не
+        // по каждой команде отдельно — чтобы избежать множественных последовательных
+        // start/stopMonitoring). Acknowledge всех таких команд.
+        let scheduleEventCmds = sorted.filter {
+            $0.commandType == .scheduleStarted || $0.commandType == .scheduleEnded
+        }
+        if !scheduleEventCmds.isEmpty {
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+            for cmd in scheduleEventCmds {
+                try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
+            }
+        }
+
+        let nonSchedule = sorted.filter {
+            $0.commandType != .schedulesUpdated
+                && $0.commandType != .scheduleStarted
+                && $0.commandType != .scheduleEnded
+        }
+        guard let latest = nonSchedule.last else { return }
+        if nonSchedule.count > 1 {
+            for stale in nonSchedule.dropLast() {
+                try? await remoteSyncService.ackCommand(
+                    id: stale.id,
+                    status: .failed,
+                    errorMessage: "superseded_by_newer_command"
+                )
+            }
+        }
+        await applyRemoteCommandIfNeeded(
+            id: latest.id,
+            type: latest.commandType,
+            durationSeconds: latest.durationSeconds
+        )
     }
 
     private func syncChildWithDesiredStateIfNeeded() async {
