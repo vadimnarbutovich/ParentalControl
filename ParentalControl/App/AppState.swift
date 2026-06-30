@@ -198,6 +198,10 @@ final class AppState: ObservableObject {
     private var focusSessionPlannedSeconds: Int = 0
     private var sharedStateTask: Task<Void, Never>?
     private var remotePollingTask: Task<Void, Never>?
+    /// Короткоживущий цикл на стороне родителя: пока код связки сгенерирован, но ребёнок ещё не
+    /// присоединился (`isLinked == false`), опрашиваем backend, чтобы поймать момент связки и
+    /// обновить UI без перезапуска приложения. Останавливается, как только связались.
+    private var parentPairingWaitTask: Task<Void, Never>?
     private var parentCommandWatchTask: Task<Void, Never>?
     private var activeParentCommandID: UUID?
     /// Троттлинг фоновых child-polling вызовов для экономии Edge Function Invocations (free plan).
@@ -218,6 +222,10 @@ final class AppState: ObservableObject {
     /// (parent), а этот цикл — фоллбэк/обновление «живого» состояния. 8 сек = вдвое меньше вызовов
     /// desired/pending (child) и refreshParentChildState (parent) без заметной потери реактивности.
     private static let remotePollingIntervalNanos: UInt64 = 8_000_000_000
+    /// Интервал «ожидающего» опроса связки у родителя (пока ребёнок не присоединился). Цикл живёт
+    /// только пока пользователь на экране ожидания связки, поэтому опрос чаще базового (3 сек) —
+    /// чтобы UI родителя моментально отреагировал на присоединение ребёнка.
+    private static let parentPairingWaitIntervalNanos: UInt64 = 3_000_000_000
     /// Последний `normalized` runtime с `fetchParentSnapshot` — чтобы после `commandStatus=applied` дождаться того же согласования, что в `reconcile` (снимать «Синхронизацию» без кадра со старым CTA).
     private var lastNormalizedParentChildRuntime: RemoteChildRuntimeState?
     /// Throttle для silent-push wake-up на child. iOS троттлит background push-ы (~2–3/час
@@ -298,6 +306,7 @@ final class AppState: ObservableObject {
         focusTask?.cancel()
         sharedStateTask?.cancel()
         remotePollingTask?.cancel()
+        parentPairingWaitTask?.cancel()
         parentCommandWatchTask?.cancel()
         lifecycleCancellables.removeAll()
     }
@@ -403,6 +412,8 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = nil
         pairingState = nil
         parentPairingCode = nil
         isParentChildStateResolved = true
@@ -456,6 +467,8 @@ final class AppState: ObservableObject {
             parentPairingCode = state.pairingCode
             remoteStatusMessage = nil
             storage.savePairingState(state)
+            // Начинаем ждать присоединения ребёнка, чтобы UI обновился без перезапуска.
+            startParentPairingWaitPollingIfNeeded()
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1146,6 +1159,9 @@ final class AppState: ObservableObject {
             remoteStatusMessage = error.localizedDescription
         }
         startRemotePollingIfNeeded()
+        // Если родитель стартовал с уже сгенерированным, но ещё не связанным кодом — продолжаем
+        // ждать присоединения ребёнка (метод сам себя гейтит на pending-состоянии).
+        startParentPairingWaitPollingIfNeeded()
     }
 
     /// Возвращает `true`, если с момента `last` прошло не меньше `interval` (или `last == nil`).
@@ -1155,8 +1171,47 @@ final class AppState: ObservableObject {
         return now.timeIntervalSince(last) >= interval
     }
 
+    /// Запускает «ожидающий» опрос связки у родителя: пока код сгенерирован, но ребёнок ещё не
+    /// присоединился, периодически тянем авторитетное состояние с backend (`register_device`
+    /// возвращает текущий `pairingState`). Как только `isLinked == true` — обновляем локальное
+    /// состояние, сохраняем и переключаемся на штатный polling. Без этого родитель узнавал о
+    /// связке только после перезапуска приложения.
+    private func startParentPairingWaitPollingIfNeeded() {
+        guard deviceRole == .parent else { return }
+        guard let state = pairingState, state.isLinked == false else { return }
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: Self.parentPairingWaitIntervalNanos)
+                if Task.isCancelled { return }
+                // Состояние могло измениться (отвязка/связка из другого места) — перепроверяем.
+                guard self.deviceRole == .parent, self.pairingState?.isLinked == false else { return }
+                do {
+                    let bootstrap = try await self.remoteSyncService.registerDevice(role: .parent)
+                    guard !Task.isCancelled else { return }
+                    guard let serverPair = bootstrap.pairingState else { continue }
+                    self.pairingState = serverPair
+                    self.storage.savePairingState(serverPair)
+                    self.parentPairingCode = serverPair.pairingCode
+                    if serverPair.isLinked {
+                        self.remoteStatusMessage = nil
+                        self.isParentChildStateResolved = false
+                        self.parentResolvedFocusActive = nil
+                        self.startRemotePollingIfNeeded()
+                        return
+                    }
+                } catch {
+                    // Сетевые сбои в фоне ожидания игнорируем — повторим на следующем тике.
+                }
+            }
+        }
+    }
+
     private func startRemotePollingIfNeeded() {
         guard pairingState?.isLinked == true else { return }
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = nil
         remotePollingTask?.cancel()
         // Сброс троттл-таймеров: первый тик новой polling-сессии делает полный синк.
         lastChildStatsHeartbeatAt = nil
@@ -2170,6 +2225,8 @@ final class AppState: ObservableObject {
         if deviceRole == .parent {
             remotePollingTask?.cancel()
             remotePollingTask = nil
+            parentPairingWaitTask?.cancel()
+            parentPairingWaitTask = nil
         }
         // Безопасность: любой уход приложения в background мгновенно закрывает родительский режим
         // на ребёнке — даже если родитель просто свернул приложение «на минуту», следующий вход
