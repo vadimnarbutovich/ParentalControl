@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ min";
 
 "ledger.parent.subtract_time" = "Padre/madre quitó tiempo";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Padre";
+"common.cancel" = "Cancelar";
+
+"parent_mode.exit_banner" = "Salir del modo padre";
+"parent_mode.entry.title" = "Modo padre";
+"parent_mode.entry.subtitle" = "Introduce el PIN de 4 dígitos para abrir el modo padre en este dispositivo.";
+"parent_mode.entry.not_configured" = "Aún no se ha establecido un PIN. Pide al padre que cree un PIN en los ajustes de su app.";
+"parent_mode.entry.close" = "Cerrar";
+"parent_mode.entry.error.wrong" = "PIN incorrecto.";
+"parent_mode.entry.attempts_remaining" = "Intentos restantes: %d";
+"parent_mode.entry.locked" = "Entrada bloqueada. Inténtalo de nuevo en %d s.";
+
+"settings.pin.section" = "PIN de padre";
+"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño. El niño nunca verá el PIN.";
+"settings.pin.status.set" = "PIN establecido";
+"settings.pin.status.unset" = "PIN no establecido";
+"settings.pin.set" = "Establecer PIN";
+"settings.pin.change" = "Cambiar PIN";
+"settings.pin.clear" = "Eliminar PIN";
+"settings.pin.clear.confirm.title" = "¿Eliminar PIN?";
+"settings.pin.clear.confirm.message" = "Sin PIN, el niño no podrá abrir el modo padre. Siempre podrás establecer un nuevo PIN más tarde.";
+"settings.pin.clear.confirm.action" = "Eliminar";
+"settings.pin.sheet.title.set" = "Establecer PIN";
+"settings.pin.sheet.title.change" = "Cambiar PIN";
+"settings.pin.sheet.subtitle" = "Introduce el nuevo PIN de 4 dígitos dos veces.";
+"settings.pin.sheet.new" = "Nuevo PIN";
+"settings.pin.sheet.confirm" = "Repetir PIN";
+"settings.pin.sheet.save" = "Guardar";
+"settings.pin.sheet.error.format" = "El PIN debe tener 4 dígitos.";
+"settings.pin.sheet.error.mismatch" = "Los PIN no coinciden.";
+"settings.pin.sheet.error.network" = "No se pudo guardar el PIN. Inténtalo de nuevo.";
+
+"dashboard.pairing.title" = "Vincular con un padre";
+"dashboard.pairing.subtitle" = "Introduce el código de vinculación de la app del padre para conectar los dispositivos.";
+"dashboard.pairing.connect" = "Vincular dispositivo";
+"dashboard.pairing.connecting" = "Vinculando…";

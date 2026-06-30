@@ -99,6 +99,17 @@ final class AppState: ObservableObject {
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Пока `false`, баннер разрешений не показываем — избегаем кадра с устаревшим `isHealthAuthorized` до async-обновления.
     @Published private(set) var permissionStatusesReady = false
+    /// `true`, когда ребёнок успешно ввёл родительский PIN и сейчас доступны «скрытые» табы
+    /// `Блокировка` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
+    /// разрыве пейринга и тапе по красной плашке «Выход».
+    @Published private(set) var isParentModeActive = false
+    /// `true`, если в Keychain есть кэшированный родительский PIN (хэш+соль). У ребёнка обновляется
+    /// при каждом успешном `refreshChildParentPinIfNeeded`. У родителя — после `setParentPinFromUI`.
+    /// UI ориентируется на этот флаг, чтобы знать, можно ли вообще пытаться вводить PIN.
+    @Published private(set) var parentPinIsSet = false
+    /// Конец активного lockout-таймера, если он сейчас идёт (после 5 неверных попыток PIN).
+    /// `nil` — lockout не активен. UI на экране ввода показывает обратный отсчёт по этому полю.
+    @Published private(set) var parentPinLockoutEnd: Date?
 
     var isRemoteChildFocusEffectivelyActive: Bool {
         if let resolved = parentResolvedFocusActive {
@@ -171,6 +182,11 @@ final class AppState: ObservableObject {
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
     private let locationService: LocationProviding
+    /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
+    /// Используется обеими ролями: parent — для `setParentPinFromUI/clearParentPinFromUI`,
+    /// child — для `applyParentPinFromBackend/verifyPin`. Сам PIN никогда не покидает устройства,
+    /// где введён; в сеть шлётся только `SHA-256(pin || salt)` + соль.
+    private let parentPinService = ParentPinService()
     private var focusTask: Task<Void, Never>?
     private var focusSessionStartedAt: Date?
     private var focusSessionPlannedSeconds: Int = 0
@@ -227,6 +243,10 @@ final class AppState: ObservableObject {
         self.deviceRole = storage.loadDeviceRole()
         self.pairingState = storage.loadPairingState()
         self.blockSchedules = storage.loadBlockSchedules()
+        // Поднимаем актуальный статус PIN из Keychain (если в прошлой сессии родитель уже задавал
+        // PIN или ребёнок уже получил его с backend — он сразу видим в UI без сетевого роунд-трипа).
+        self.parentPinIsSet = parentPinService.isPinConfigured()
+        self.parentPinLockoutEnd = parentPinService.currentLockoutEnd()
         self.isParentChildStateResolved = !(self.deviceRole == .parent && self.pairingState?.isLinked == true)
         self.parentResolvedFocusActive = nil
         self.isHealthAuthorized = false
@@ -336,6 +356,13 @@ final class AppState: ObservableObject {
         parentChildAvailableSeconds = nil
         parentChildEarnedSecondsToday = nil
         parentChildSpentSecondsToday = nil
+        // Любая смена роли — это полный reset privacy-state'а: чистим PIN-кэш и закрываем
+        // родительский режим, чтобы старый хэш родителя не остался на устройстве с новой ролью
+        // (например, если parent перепрошился в child).
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        isParentModeActive = false
         if role != .parent { lastNormalizedParentChildRuntime = nil }
         if role == .parent {
             storage.saveHasCompletedOnboarding(true)
@@ -356,6 +383,12 @@ final class AppState: ObservableObject {
         parentChildEarnedSecondsToday = nil
         parentChildSpentSecondsToday = nil
         lastNormalizedParentChildRuntime = nil
+        // Разрыв пейринга = чужой родитель/семья — PIN из прошлого сценария не должен оставаться
+        // на устройстве. Закрываем родительский режим и чистим Keychain.
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        isParentModeActive = false
         storage.savePairingState(nil)
     }
 
@@ -427,6 +460,135 @@ final class AppState: ObservableObject {
             await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
         } else {
             await sendParentCommand(commandType: .subtractEarnedSeconds, durationSeconds: absSeconds)
+        }
+    }
+
+    // MARK: - Parent mode (PIN access on child device)
+
+    /// Вызывается ребёнком при тапе по таб-кнопке «Родитель» и вводе 4-значного PIN.
+    /// Возвращает результат верификации (см. `ParentPinEntryResult`); при `.success` уже выставлен
+    /// `isParentModeActive = true`. UI на этот же `@Published` повесит появление вкладок
+    /// `Блокировка`/`Настройки` и красной плашки «Выход».
+    func enterParentMode(pin: String) -> ParentPinEntryResult {
+        let result = parentPinService.verifyPin(pin)
+        switch result {
+        case .success:
+            isParentModeActive = true
+            parentPinLockoutEnd = nil
+        case .lockedOut(let until):
+            parentPinLockoutEnd = until
+        case .wrongPin:
+            parentPinLockoutEnd = parentPinService.currentLockoutEnd()
+        case .notConfigured:
+            parentPinLockoutEnd = nil
+        }
+        return result
+    }
+
+    /// Закрывает родительский режим (тап по красной плашке «Выход»). Идемпотентно.
+    func exitParentMode() {
+        guard isParentModeActive else { return }
+        isParentModeActive = false
+    }
+
+    /// Родитель задаёт/меняет PIN из своих настроек. Локально считается хэш с новой солью,
+    /// сохраняется в Keychain, и `set_parent_pin` отправляется на backend (edge function v22+).
+    /// При успехе backend разошлёт child'у silent push для синка кэша.
+    /// Возвращает `true` при успешной отправке на backend, `false` при сетевой ошибке
+    /// (локальный кэш всё равно обновляется — родитель сможет проверить PIN на child вручную позже).
+    @discardableResult
+    func setParentPinFromUI(_ pin: String) async -> Bool {
+        guard deviceRole == .parent else { return false }
+        guard pin.count == 4, pin.allSatisfy({ $0.isNumber }) else { return false }
+        let salt = parentPinService.generateSalt()
+        let hash = parentPinService.hashPin(pin, salt: salt)
+        let updatedAt = Date()
+        let metadata = ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)
+        parentPinService.saveMetadata(metadata)
+        parentPinIsSet = true
+        do {
+            try await remoteSyncService.setParentPin(
+                hashBase64: metadata.hashBase64,
+                saltBase64: metadata.saltBase64,
+                updatedAt: updatedAt
+            )
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Родитель удаляет PIN из своих настроек. Локальный кэш чистится сразу, backend синхронно
+    /// уведомляется через `clear_parent_pin`. После этого child больше не сможет войти в режим.
+    @discardableResult
+    func clearParentPinFromUI() async -> Bool {
+        guard deviceRole == .parent else { return false }
+        parentPinService.clearMetadata()
+        parentPinIsSet = false
+        parentPinLockoutEnd = nil
+        do {
+            try await remoteSyncService.clearParentPin()
+            return true
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Применяет PIN, полученный с backend в snapshot/fetch — у ребёнка. Если значения не
+    /// поменялись (`hashBase64+saltBase64+updatedAt`) — no-op, чтобы не дёргать `objectWillChange`
+    /// на каждом polling-тике. Если backend вернул `nil` — PIN снят родителем, чистим кэш и
+    /// автоматически выходим из режима, если он был активен.
+    func applyParentPinFromBackend(hashBase64: String?, saltBase64: String?, updatedAt: Date?) {
+        guard let hashBase64, let saltBase64, let updatedAt,
+              let metadata = ParentPinMetadata.fromBackend(
+                hashBase64: hashBase64,
+                saltBase64: saltBase64,
+                updatedAt: updatedAt
+              )
+        else {
+            // Backend сообщил, что PIN снят — на ребёнке тоже снимаем.
+            if parentPinIsSet {
+                parentPinService.clearMetadata()
+                parentPinIsSet = false
+                parentPinLockoutEnd = nil
+                if isParentModeActive { isParentModeActive = false }
+            }
+            return
+        }
+        // Сравниваем с уже сохранённым — обновляем только при реальном изменении.
+        if let existing = parentPinService.loadMetadata(),
+           existing.hash == metadata.hash,
+           existing.salt == metadata.salt,
+           existing.updatedAt == metadata.updatedAt {
+            if !parentPinIsSet { parentPinIsSet = true }
+            return
+        }
+        parentPinService.saveMetadata(metadata)
+        parentPinIsSet = true
+        parentPinLockoutEnd = nil
+        // Принудительный exit, если родитель сменил PIN, пока ребёнок был внутри режима —
+        // безопасный дефолт: попросим ввести новый.
+        if isParentModeActive { isParentModeActive = false }
+    }
+
+    /// Ребёнок дёргает backend за актуальным PIN. Вызывается из polling-цикла и из обработчика
+    /// silent push `child_sync_request` (когда родитель только что сменил PIN — backend пушит
+    /// wake, ребёнок мгновенно синкает свой кэш).
+    func refreshChildParentPinIfNeeded() async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let response = try await remoteSyncService.fetchParentPin()
+            // Если backend вернул `null` (PIN не задан или удалён родителем) — передаём `nil`'ы:
+            // `applyParentPinFromBackend` сам очистит кэш и закроет parent-mode, если он был активен.
+            applyParentPinFromBackend(
+                hashBase64: response?.hashBase64,
+                saltBase64: response?.saltBase64,
+                updatedAt: response.flatMap { $0.updatedAt }
+            )
+        } catch {
+            // Тихо — это фоновая операция, оффлайн-ребёнок продолжает работать на кэшированном PIN.
         }
     }
 
@@ -837,6 +999,11 @@ final class AppState: ObservableObject {
            (userInfo["command_type"] as? String) == "child_sync_request" {
             resetDailyBalanceIfNeeded()
             await syncChildStatsSnapshotIfNeeded()
+            // Тот же silent push используется и для синка родительского PIN: если родитель
+            // только что сменил/удалил PIN, backend разбудит child и попросит подтянуть
+            // актуальные `parent_pin_hash/salt/updated_at` (если они изменились — кэш обновится
+            // и `parent_mode` принудительно закроется, см. `applyParentPinFromBackend`).
+            await refreshChildParentPinIfNeeded()
         }
 
         // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
@@ -878,6 +1045,7 @@ final class AppState: ObservableObject {
                     await self.syncChildWithDesiredStateIfNeeded()
                     await self.processPendingRemoteCommandsIfNeeded()
                     await self.syncChildStatsSnapshotIfNeeded()
+                    await self.refreshChildParentPinIfNeeded()
                 } else if self.deviceRole == .parent {
                     await self.refreshParentChildState()
                 }
@@ -1804,6 +1972,12 @@ final class AppState: ObservableObject {
             remotePollingTask?.cancel()
             remotePollingTask = nil
         }
+        // Безопасность: любой уход приложения в background мгновенно закрывает родительский режим
+        // на ребёнке — даже если родитель просто свернул приложение «на минуту», следующий вход
+        // снова потребует PIN.
+        if isParentModeActive {
+            isParentModeActive = false
+        }
     }
 
     /// Used by BGAppRefresh task to recover missed pushes when app stays closed for long periods.
@@ -2258,6 +2432,26 @@ private struct ChildLocationDTO: Codable {
     let updatedAtISO: String
 }
 
+/// Снимок родительского PIN от backend для синка кэша на child (через `fetch_parent_pin`).
+/// Хэш и соль приходят в base64 — `AppState.applyParentPinFromBackend` сам восстановит `Data` и
+/// сравнит с уже сохранённым в Keychain через `ParentPinService`. `updatedAtISO` — момент,
+/// когда родитель в последний раз менял PIN; используется как ключ дедупликации.
+private struct ParentPinSyncDTO: Decodable {
+    let hashBase64: String
+    let saltBase64: String
+    let updatedAtISO: String
+
+    /// Парсинг `updatedAtISO` в `Date`. ISO8601 с дробной частью допускается на бэке — обрабатываем
+    /// оба формата (с миллисекундами и без), чтобы не зависеть от точного представления Postgres.
+    var updatedAt: Date? {
+        let primary = ISO8601DateFormatter()
+        if let d = primary.date(from: updatedAtISO) { return d }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: updatedAtISO)
+    }
+}
+
 private final class ParentalRemoteSyncService {
     private enum Endpoint {
         static let focusBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
@@ -2477,6 +2671,51 @@ private final class ParentalRemoteSyncService {
             endpoint: Endpoint.balanceBaseURL
         )
         return response.sent ?? false
+    }
+
+    // MARK: - Parent PIN (v22 of `parental-control-sync`)
+
+    /// Parent → backend: устанавливает/обновляет родительский PIN. PIN никогда не передаётся —
+    /// только заранее посчитанный `SHA-256(pin || salt)` (base64) и сама соль (base64).
+    /// Backend сохраняет это в `families.parent_pin_hash/salt/updated_at` и отправляет child'у
+    /// silent push wake-up, чтобы тот синхронизировал кэш.
+    func setParentPin(hashBase64: String, saltBase64: String, updatedAt: Date) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let pinHash: String
+            let pinSalt: String
+            let pinUpdatedAt: String
+        }
+        let _: EmptyResponse = try await call(
+            action: "set_parent_pin",
+            payload: Payload(
+                installID: installID,
+                pinHash: hashBase64,
+                pinSalt: saltBase64,
+                pinUpdatedAt: ISO8601DateFormatter().string(from: updatedAt)
+            )
+        )
+    }
+
+    /// Parent → backend: удаляет родительский PIN (`families.parent_pin_* = NULL`). После этого
+    /// child получит `parentPin: null` при следующем `fetch_parent_pin` и сам очистит кэш.
+    func clearParentPin() async throws {
+        struct Payload: Encodable { let installID: String }
+        let _: EmptyResponse = try await call(
+            action: "clear_parent_pin",
+            payload: Payload(installID: installID)
+        )
+    }
+
+    /// Child → backend: возвращает актуальный родительский PIN (хэш+соль+updatedAt) или `nil`,
+    /// если родитель ещё не задал/удалил. Сам PIN никогда не возвращается — только хэш+соль,
+    /// проверка PIN происходит локально на устройстве ребёнка через `ParentPinService`.
+    func fetchParentPin() async throws -> ParentPinSyncDTO? {
+        struct Payload: Encodable { let installID: String }
+        return try await call(
+            action: "fetch_parent_pin",
+            payload: Payload(installID: installID)
+        )
     }
 
     func fetchPendingCommands() async throws -> [RemoteFocusCommand] {

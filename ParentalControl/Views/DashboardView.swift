@@ -8,7 +8,16 @@ struct DashboardView: View {
     @State private var previousAvailableSeconds: Int = 0
     @State private var isStepsInfoPresented = false
     @State private var showPaywall = false
+    @State private var isPairingInProgress = false
+    @FocusState private var pairingCodeFocused: Bool
     private let ringBalanceCapMinutes = 240
+
+    /// Ребёнок ещё не связан с родителем — нужно показать карточку связки прямо на «Главной».
+    /// Без этого свежее устройство не может пройти связку: настройки спрятаны за родительским PIN,
+    /// а PIN приезжает только после связки (chicken-and-egg).
+    private var childNeedsPairing: Bool {
+        appState.deviceRole == .child && appState.pairingState?.isLinked != true
+    }
 
     var body: some View {
         let daily = appState.dailyStats()
@@ -17,16 +26,21 @@ struct DashboardView: View {
                 AppBackgroundView()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        balanceCard(daily: daily)
-                        earnMinutesSection(daily: daily)
-                        parentBlockingStatusCard
+                        if childNeedsPairing {
+                            childPairingPromptCard
+                        } else {
+                            balanceCard(daily: daily)
+                            earnMinutesSection(daily: daily)
+                            parentBlockingStatusCard
 #if DEBUG && !HIDE_DEBUG_UI
-                        testingCard
+                            testingCard
 #endif
+                        }
                     }
                     .padding()
                 }
                 .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
             }
             .overlay {
                 if subscriptionService.isSubscriptionStatusKnown && !subscriptionService.isPro {
@@ -88,6 +102,81 @@ struct DashboardView: View {
                 ExerciseSessionView(type: type)
                     .environmentObject(appState)
             }
+        }
+    }
+
+    /// Карточка связки с родителем на «Главной» ребёнка. Видна, пока устройство не связано.
+    /// Дублирует поток из `SettingsView.childPairingSection`, но доступна без родительского PIN —
+    /// иначе свежий ребёнок не сможет пройти связку (настройки спрятаны за PIN).
+    private var childPairingPromptCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: "link.badge.plus")
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundStyle(AppTheme.neonBlue)
+                Text("dashboard.pairing.title")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                Text("dashboard.pairing.subtitle")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            TextField(
+                L10n.tr("settings.child.link.placeholder"),
+                text: $appState.pairingCodeInput
+            )
+            .focused($pairingCodeFocused)
+            .textInputAutocapitalization(.characters)
+            .autocorrectionDisabled(true)
+            .submitLabel(.go)
+            .onSubmit { connectChild() }
+            .disabled(isPairingInProgress)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+            )
+
+            Button {
+                connectChild()
+            } label: {
+                HStack(spacing: 8) {
+                    if isPairingInProgress {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text(isPairingInProgress ? "dashboard.pairing.connecting" : "dashboard.pairing.connect")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+            .disabled(isPairingInProgress || appState.pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            if let message = appState.remoteStatusMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.neonOrange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding()
+        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+    }
+
+    /// Запускает связку по введённому коду. Сбрасывает фокус (прячет клавиатуру) и блокирует
+    /// повторные нажатия на время запроса.
+    private func connectChild() {
+        let trimmed = appState.pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isPairingInProgress else { return }
+        pairingCodeFocused = false
+        isPairingInProgress = true
+        AppAnalytics.report("dashboard_pairing_connect_tap")
+        Task {
+            await appState.connectChildWithPairingCode()
+            isPairingInProgress = false
         }
     }
 

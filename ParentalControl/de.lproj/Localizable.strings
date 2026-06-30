@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ Min";
 
 "ledger.parent.subtract_time" = "Elternteil hat Zeit abgezogen";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Elternteil";
+"common.cancel" = "Abbrechen";
+
+"parent_mode.exit_banner" = "Elternmodus beenden";
+"parent_mode.entry.title" = "Elternmodus";
+"parent_mode.entry.subtitle" = "Gib die 4-stellige PIN ein, um den Elternmodus auf diesem Gerät zu öffnen.";
+"parent_mode.entry.not_configured" = "Es wurde noch keine PIN festgelegt. Bitte den Elternteil, in der App-Einstellung eine PIN zu erstellen.";
+"parent_mode.entry.close" = "Schließen";
+"parent_mode.entry.error.wrong" = "Falsche PIN.";
+"parent_mode.entry.attempts_remaining" = "Verbleibende Versuche: %d";
+"parent_mode.entry.locked" = "Eingabe gesperrt. Versuche es in %d Sek. erneut.";
+
+"settings.pin.section" = "Eltern-PIN";
+"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen. Das Kind sieht die PIN niemals.";
+"settings.pin.status.set" = "PIN ist festgelegt";
+"settings.pin.status.unset" = "Keine PIN festgelegt";
+"settings.pin.set" = "PIN festlegen";
+"settings.pin.change" = "PIN ändern";
+"settings.pin.clear" = "PIN löschen";
+"settings.pin.clear.confirm.title" = "PIN löschen?";
+"settings.pin.clear.confirm.message" = "Ohne PIN kann das Kind den Elternmodus nicht öffnen. Du kannst jederzeit eine neue PIN festlegen.";
+"settings.pin.clear.confirm.action" = "Löschen";
+"settings.pin.sheet.title.set" = "PIN festlegen";
+"settings.pin.sheet.title.change" = "PIN ändern";
+"settings.pin.sheet.subtitle" = "Gib die neue 4-stellige PIN zweimal ein.";
+"settings.pin.sheet.new" = "Neue PIN";
+"settings.pin.sheet.confirm" = "PIN wiederholen";
+"settings.pin.sheet.save" = "Speichern";
+"settings.pin.sheet.error.format" = "Die PIN muss aus 4 Ziffern bestehen.";
+"settings.pin.sheet.error.mismatch" = "Die PINs stimmen nicht überein.";
+"settings.pin.sheet.error.network" = "PIN konnte nicht gespeichert werden. Bitte erneut versuchen.";
+
+"dashboard.pairing.title" = "Mit Elternteil verbinden";
+"dashboard.pairing.subtitle" = "Gib den Kopplungscode aus der Eltern-App ein, um die Geräte zu verbinden.";
+"dashboard.pairing.connect" = "Gerät verbinden";
+"dashboard.pairing.connecting" = "Verbinden…";

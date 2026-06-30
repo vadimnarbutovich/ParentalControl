@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ 분";
 
 "ledger.parent.subtract_time" = "부모가 시간을 차감했습니다";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "보호자";
+"common.cancel" = "취소";
+
+"parent_mode.exit_banner" = "보호자 모드 종료";
+"parent_mode.entry.title" = "보호자 모드";
+"parent_mode.entry.subtitle" = "이 기기에서 보호자 모드를 열려면 4자리 PIN을 입력하세요.";
+"parent_mode.entry.not_configured" = "PIN이 아직 설정되지 않았습니다. 보호자에게 앱 설정에서 PIN을 만들어 달라고 요청하세요.";
+"parent_mode.entry.close" = "닫기";
+"parent_mode.entry.error.wrong" = "PIN이 올바르지 않습니다.";
+"parent_mode.entry.attempts_remaining" = "남은 시도 횟수: %d";
+"parent_mode.entry.locked" = "입력이 잠겼습니다. %d초 후에 다시 시도하세요.";
+
+"settings.pin.section" = "보호자 PIN";
+"settings.pin.description" = "자녀 기기에서 보호자 모드를 여는 데 사용하는 4자리 PIN입니다. 자녀는 PIN을 절대 볼 수 없습니다.";
+"settings.pin.status.set" = "PIN 설정됨";
+"settings.pin.status.unset" = "PIN 미설정";
+"settings.pin.set" = "PIN 설정";
+"settings.pin.change" = "PIN 변경";
+"settings.pin.clear" = "PIN 삭제";
+"settings.pin.clear.confirm.title" = "PIN을 삭제할까요?";
+"settings.pin.clear.confirm.message" = "PIN이 없으면 자녀가 보호자 모드를 열 수 없습니다. 언제든지 새 PIN을 설정할 수 있습니다.";
+"settings.pin.clear.confirm.action" = "삭제";
+"settings.pin.sheet.title.set" = "PIN 설정";
+"settings.pin.sheet.title.change" = "PIN 변경";
+"settings.pin.sheet.subtitle" = "새 4자리 PIN을 두 번 입력하세요.";
+"settings.pin.sheet.new" = "새 PIN";
+"settings.pin.sheet.confirm" = "PIN 재입력";
+"settings.pin.sheet.save" = "저장";
+"settings.pin.sheet.error.format" = "PIN은 4자리 숫자여야 합니다.";
+"settings.pin.sheet.error.mismatch" = "PIN이 일치하지 않습니다.";
+"settings.pin.sheet.error.network" = "PIN을 저장할 수 없습니다. 다시 시도하세요.";
+
+"dashboard.pairing.title" = "부모와 연결";
+"dashboard.pairing.subtitle" = "부모 앱의 페어링 코드를 입력해 기기를 연결하세요.";
+"dashboard.pairing.connect" = "기기 연결";
+"dashboard.pairing.connecting" = "연결 중…";

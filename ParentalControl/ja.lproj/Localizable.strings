@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ 分";
 
 "ledger.parent.subtract_time" = "保護者が時間を減らしました";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "保護者";
+"common.cancel" = "キャンセル";
+
+"parent_mode.exit_banner" = "保護者モードを終了";
+"parent_mode.entry.title" = "保護者モード";
+"parent_mode.entry.subtitle" = "この端末で保護者モードを開くには、4桁のPINを入力してください。";
+"parent_mode.entry.not_configured" = "PINがまだ設定されていません。保護者の方にアプリの設定からPINを作成するよう伝えてください。";
+"parent_mode.entry.close" = "閉じる";
+"parent_mode.entry.error.wrong" = "PINが正しくありません。";
+"parent_mode.entry.attempts_remaining" = "残り試行回数: %d";
+"parent_mode.entry.locked" = "入力がロックされました。%d秒後に再試行してください。";
+
+"settings.pin.section" = "保護者PIN";
+"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。お子様にPINが表示されることはありません。";
+"settings.pin.status.set" = "PINを設定済み";
+"settings.pin.status.unset" = "PINは未設定";
+"settings.pin.set" = "PINを設定";
+"settings.pin.change" = "PINを変更";
+"settings.pin.clear" = "PINを削除";
+"settings.pin.clear.confirm.title" = "PINを削除しますか?";
+"settings.pin.clear.confirm.message" = "PINを削除すると、お子様は保護者モードを開けなくなります。後でいつでも新しいPINを設定できます。";
+"settings.pin.clear.confirm.action" = "削除";
+"settings.pin.sheet.title.set" = "PINを設定";
+"settings.pin.sheet.title.change" = "PINを変更";
+"settings.pin.sheet.subtitle" = "新しい4桁のPINを2回入力してください。";
+"settings.pin.sheet.new" = "新しいPIN";
+"settings.pin.sheet.confirm" = "PINを再入力";
+"settings.pin.sheet.save" = "保存";
+"settings.pin.sheet.error.format" = "PINは4桁の数字で入力してください。";
+"settings.pin.sheet.error.mismatch" = "PINが一致しません。";
+"settings.pin.sheet.error.network" = "PINを保存できませんでした。もう一度お試しください。";
+
+"dashboard.pairing.title" = "保護者と連携";
+"dashboard.pairing.subtitle" = "保護者アプリのペアリングコードを入力してデバイスを連携します。";
+"dashboard.pairing.connect" = "デバイスを連携";
+"dashboard.pairing.connecting" = "連携中…";

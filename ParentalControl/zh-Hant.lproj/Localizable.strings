@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ 分鐘";
 
 "ledger.parent.subtract_time" = "家長扣除了時間";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "家長";
+"common.cancel" = "取消";
+
+"parent_mode.exit_banner" = "離開家長模式";
+"parent_mode.entry.title" = "家長模式";
+"parent_mode.entry.subtitle" = "輸入 4 位 PIN 碼以在此裝置上開啟家長模式。";
+"parent_mode.entry.not_configured" = "PIN 碼尚未設定。請家長在其應用程式設定中建立 PIN 碼。";
+"parent_mode.entry.close" = "關閉";
+"parent_mode.entry.error.wrong" = "PIN 碼不正確。";
+"parent_mode.entry.attempts_remaining" = "剩餘嘗試次數:%d";
+"parent_mode.entry.locked" = "輸入已鎖定,請於 %d 秒後再試。";
+
+"settings.pin.section" = "家長 PIN";
+"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。孩子永遠不會看到 PIN 碼本身。";
+"settings.pin.status.set" = "已設定 PIN";
+"settings.pin.status.unset" = "尚未設定 PIN";
+"settings.pin.set" = "設定 PIN";
+"settings.pin.change" = "變更 PIN";
+"settings.pin.clear" = "刪除 PIN";
+"settings.pin.clear.confirm.title" = "刪除 PIN?";
+"settings.pin.clear.confirm.message" = "沒有 PIN,孩子將無法開啟家長模式。您隨時可以重新設定新的 PIN。";
+"settings.pin.clear.confirm.action" = "刪除";
+"settings.pin.sheet.title.set" = "設定 PIN";
+"settings.pin.sheet.title.change" = "變更 PIN";
+"settings.pin.sheet.subtitle" = "請輸入兩次新的 4 位 PIN 碼。";
+"settings.pin.sheet.new" = "新 PIN";
+"settings.pin.sheet.confirm" = "再次輸入 PIN";
+"settings.pin.sheet.save" = "儲存";
+"settings.pin.sheet.error.format" = "PIN 必須為 4 位數字。";
+"settings.pin.sheet.error.mismatch" = "兩次輸入的 PIN 不一致。";
+"settings.pin.sheet.error.network" = "無法儲存 PIN,請再試一次。";
+
+"dashboard.pairing.title" = "與家長配對";
+"dashboard.pairing.subtitle" = "輸入家長應用程式中的配對碼以連接裝置。";
+"dashboard.pairing.connect" = "連接裝置";
+"dashboard.pairing.connecting" = "連接中…";

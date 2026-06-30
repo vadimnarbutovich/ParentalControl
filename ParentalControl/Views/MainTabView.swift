@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 private enum MainTab: String, CaseIterable {
@@ -7,11 +8,17 @@ private enum MainTab: String, CaseIterable {
     case statistics
     case blocklist
     case settings
+    /// Служебный таб «Родитель» на устройстве ребёнка: при тапе показываем `ParentModeEntryView`
+    /// (fullScreenCover с PIN) и сразу же откатываем `selectedTab` назад — в обычном режиме таб
+    /// сам не имеет контента, это просто кнопка-триггер.
+    case parentEntry
 }
 
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedTab: MainTab = .home
+    /// Презентация экрана ввода PIN на ребёнке (тап по табу «Родитель»).
+    @State private var isPinEntryPresented = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -39,7 +46,16 @@ struct MainTabView: View {
                         Label("tab.statistics", systemImage: "chart.bar.fill")
                     }
                     .tag(MainTab.statistics)
-            } else {
+
+                SettingsView()
+                    .tabItem {
+                        Label("tab.settings", systemImage: "gearshape.fill")
+                    }
+                    .tag(MainTab.settings)
+            } else if appState.isParentModeActive {
+                // Parent-режим на ребёнке: показываем те же экраны, что и в прошлой версии
+                // «обычного» ребёнка (Главная / Блокировка / Настройки) — то есть полный набор
+                // управления, доступный родителю физически на устройстве ребёнка.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
@@ -51,17 +67,293 @@ struct MainTabView: View {
                         Label("tab.block", systemImage: "checklist")
                     }
                     .tag(MainTab.blocklist)
-            }
 
-            SettingsView()
-                .tabItem {
-                    Label("tab.settings", systemImage: "gearshape.fill")
-                }
-                .tag(MainTab.settings)
+                SettingsView()
+                    .tabItem {
+                        Label("tab.settings", systemImage: "gearshape.fill")
+                    }
+                    .tag(MainTab.settings)
+            } else {
+                // Обычный режим ребёнка: только «Главная» и «Родитель». При тапе по «Родитель»
+                // открывается PIN-cover; сам этот View пустой — пользователь его никогда не видит.
+                DashboardView()
+                    .tabItem {
+                        Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
+                    }
+                    .tag(MainTab.home)
+
+                Color.clear
+                    .tabItem {
+                        Label(
+                            "tab.parent",
+                            systemImage: appState.parentPinIsSet
+                                ? "person.crop.circle.fill"
+                                : "person.crop.circle.badge.questionmark"
+                        )
+                    }
+                    .tag(MainTab.parentEntry)
+            }
         }
         .preferredColorScheme(.dark)
-        .onChange(of: selectedTab) { _, newValue in
+        .onChange(of: selectedTab) { oldValue, newValue in
             AppAnalytics.report("main_tab_select", parameters: ["tab": newValue.rawValue])
+            // Таб «Родитель» — это не настоящий экран, а триггер модалки. После выбора сразу
+            // откатываемся на предыдущий таб и показываем cover с вводом PIN.
+            if newValue == .parentEntry, appState.deviceRole == .child, !appState.isParentModeActive {
+                isPinEntryPresented = true
+                DispatchQueue.main.async {
+                    selectedTab = (oldValue == .parentEntry) ? .home : oldValue
+                }
+            }
+        }
+        .onChange(of: appState.isParentModeActive) { _, newValue in
+            // При переключении режима возвращаемся на главный таб — иначе предыдущий tag может
+            // не существовать в новом наборе вкладок (например, был `.parentEntry`).
+            selectedTab = .home
+            if !newValue {
+                // На выходе из режима тоже закроем cover, если он почему-то остался открыт.
+                isPinEntryPresented = false
+            }
+        }
+        .fullScreenCover(isPresented: $isPinEntryPresented) {
+            ParentModeEntryView(isPresented: $isPinEntryPresented)
+                .environmentObject(appState)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            // Красная плашка «Выход из родительского режима» — видна только на ребёнке, когда
+            // режим открыт. Тап по плашке немедленно закрывает режим (см. `exitParentMode()`).
+            // safeAreaInset аккуратно подвинет содержимое всех экранов TabView вниз — без хаков.
+            if appState.deviceRole == .child, appState.isParentModeActive {
+                ParentModeExitBanner {
+                    AppAnalytics.report("parent_mode_exit_tap")
+                    appState.exitParentMode()
+                }
+            }
+        }
+    }
+}
+
+/// Красная плашка-кнопка «Выход» сверху экрана для ребёнка в parent-режиме. Цвет — чтобы
+/// родитель/ребёнок сразу видели, что текущая сессия с расширенными правами и её нужно закрыть
+/// перед тем, как отдать устройство обратно ребёнку.
+private struct ParentModeExitBanner: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                Image(systemName: "xmark.shield.fill")
+                    .font(.subheadline.weight(.bold))
+                Text("parent_mode.exit_banner")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .opacity(0.85)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [Color.red.opacity(0.95), Color.red.opacity(0.78)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Полноэкранный лист ввода 4-значного PIN на ребёнке. Если PIN ещё не задан родителем — показывает
+/// заглушку с пояснением. Lockout-таймер визуализирован обратным отсчётом. Сам ввод PIN никогда
+/// не уходит в сеть — он хэшируется локально и сверяется с кэшированным в Keychain хэшем.
+private struct ParentModeEntryView: View {
+    @EnvironmentObject private var appState: AppState
+    @Binding var isPresented: Bool
+
+    @State private var pin: String = ""
+    @State private var errorKey: String?
+    @State private var remainingAttempts: Int?
+    @State private var lockoutTickTrigger = Date()
+    @FocusState private var pinFieldFocused: Bool
+
+    /// Таймер ровно для отрисовки обратного отсчёта lockout. Срабатывает раз в секунду —
+    /// никаких дорогих операций внутри, только перерисовка label.
+    private let lockoutTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        ZStack {
+            AppBackgroundView()
+            VStack(spacing: 20) {
+                HStack {
+                    Spacer()
+                    Button {
+                        isPresented = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(12)
+                            .background(Circle().fill(Color.white.opacity(0.12)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+
+                Spacer(minLength: 0)
+
+                if !appState.parentPinIsSet {
+                    pinNotConfiguredView
+                } else {
+                    pinPromptView
+                }
+
+                Spacer()
+            }
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            errorKey = nil
+            remainingAttempts = nil
+            pinFieldFocused = appState.parentPinIsSet
+        }
+        .onReceive(lockoutTimer) { now in
+            lockoutTickTrigger = now
+        }
+    }
+
+    // MARK: - Subviews
+
+    private var pinNotConfiguredView: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "lock.slash")
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(AppTheme.neonOrange)
+            Text("parent_mode.entry.title")
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+            Text("parent_mode.entry.not_configured")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 32)
+            Button("parent_mode.entry.close") {
+                isPresented = false
+            }
+            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+        }
+    }
+
+    private var pinPromptView: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 44, weight: .bold))
+                .foregroundStyle(AppTheme.neonBlue)
+            Text("parent_mode.entry.title")
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+            Text("parent_mode.entry.subtitle")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 32)
+
+            pinDotsView
+                .padding(.vertical, 8)
+
+            // Скрытое поле для ввода: фокусируем его при появлении, чтобы клавиатура подплыла
+            // сразу. Сам пользователь видит только «точки» сверху.
+            SecureField("", text: $pin)
+                .keyboardType(.numberPad)
+                .focused($pinFieldFocused)
+                .frame(width: 1, height: 1)
+                .opacity(0.01)
+                .onChange(of: pin) { _, newValue in
+                    handlePinChange(newValue)
+                }
+
+            if let lockoutEnd = currentLockoutEnd() {
+                let remaining = max(0, Int(lockoutEnd.timeIntervalSinceNow.rounded(.up)))
+                Text(L10n.f("parent_mode.entry.locked", remaining))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.neonOrange)
+                    .padding(.top, 4)
+            } else if let errorKey {
+                Text(LocalizedStringKey(errorKey))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(AppTheme.neonOrange)
+                    .padding(.top, 4)
+            } else if let remainingAttempts {
+                Text(L10n.f("parent_mode.entry.attempts_remaining", remainingAttempts))
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    /// Визуальные 4 «точки» PIN — заполняются по мере набора.
+    private var pinDotsView: some View {
+        HStack(spacing: 18) {
+            ForEach(0..<4, id: \.self) { idx in
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 2)
+                    .background(
+                        Circle().fill(idx < pin.count ? Color.white : Color.clear)
+                    )
+                    .frame(width: 18, height: 18)
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func currentLockoutEnd() -> Date? {
+        // Зависит от `lockoutTickTrigger`, чтобы перерисовываться каждую секунду.
+        _ = lockoutTickTrigger
+        guard let end = appState.parentPinLockoutEnd else { return nil }
+        return end > Date() ? end : nil
+    }
+
+    private func handlePinChange(_ newValue: String) {
+        // Ограничиваем 4 цифры; нечисловое сразу режем.
+        let filtered = newValue.filter(\.isNumber).prefix(4)
+        if String(filtered) != newValue {
+            pin = String(filtered)
+            return
+        }
+        errorKey = nil
+        // По достижении 4 цифр пробуем проверить PIN. Если lockout активен — фиксируем ошибку
+        // без перебора попыток (AppState всё равно вернёт `.lockedOut`).
+        if pin.count == 4 {
+            verifyPinAndReact()
+        }
+    }
+
+    private func verifyPinAndReact() {
+        let result = appState.enterParentMode(pin: pin)
+        switch result {
+        case .success:
+            // cover закроется автоматически через `onChange(isParentModeActive)` в MainTabView,
+            // но мы тоже снимаем флаг — чтобы анимация была мгновенной.
+            isPresented = false
+        case .wrongPin(let remaining):
+            remainingAttempts = remaining
+            errorKey = "parent_mode.entry.error.wrong"
+            pin = ""
+        case .lockedOut:
+            errorKey = nil
+            pin = ""
+        case .notConfigured:
+            // Кэш мог обновиться, пока пользователь набирал PIN — переадресуем на «не задан».
+            errorKey = nil
+            pin = ""
         }
     }
 }

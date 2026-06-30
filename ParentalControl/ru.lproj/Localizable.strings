@@ -414,3 +414,41 @@
 "schedule.editor.delete.confirm.title" = "Удалить расписание?";
 "schedule.editor.delete.confirm.message" = "Расписание будет удалено. Вы всегда сможете создать новое.";
 "schedule.editor.delete.confirm.delete" = "Удалить";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "Родитель";
+"common.cancel" = "Отмена";
+
+"parent_mode.exit_banner" = "Выход из режима родителя";
+"parent_mode.entry.title" = "Родительский режим";
+"parent_mode.entry.subtitle" = "Введите 4-значный PIN, чтобы открыть родительский режим на этом устройстве.";
+"parent_mode.entry.not_configured" = "PIN ещё не задан. Попросите родителя установить PIN в настройках своего приложения.";
+"parent_mode.entry.close" = "Закрыть";
+"parent_mode.entry.error.wrong" = "Неверный PIN.";
+"parent_mode.entry.attempts_remaining" = "Осталось попыток: %d";
+"parent_mode.entry.locked" = "Ввод заблокирован. Повторите через %d сек.";
+
+"settings.pin.section" = "Родительский PIN";
+"settings.pin.description" = "4-значный PIN для входа в родительский режим на устройстве ребёнка. Ребёнок никогда не увидит сам PIN.";
+"settings.pin.status.set" = "PIN установлен";
+"settings.pin.status.unset" = "PIN не установлен";
+"settings.pin.set" = "Установить PIN";
+"settings.pin.change" = "Изменить PIN";
+"settings.pin.clear" = "Удалить PIN";
+"settings.pin.clear.confirm.title" = "Удалить PIN?";
+"settings.pin.clear.confirm.message" = "Без PIN ребёнок не сможет открыть родительский режим. Вы всегда сможете задать новый PIN позже.";
+"settings.pin.clear.confirm.action" = "Удалить";
+"settings.pin.sheet.title.set" = "Установить PIN";
+"settings.pin.sheet.title.change" = "Изменить PIN";
+"settings.pin.sheet.subtitle" = "Введите новый 4-значный PIN дважды.";
+"settings.pin.sheet.new" = "Новый PIN";
+"settings.pin.sheet.confirm" = "Повторите PIN";
+"settings.pin.sheet.save" = "Сохранить";
+"settings.pin.sheet.error.format" = "PIN должен состоять из 4 цифр.";
+"settings.pin.sheet.error.mismatch" = "PIN не совпадает.";
+"settings.pin.sheet.error.network" = "Не удалось сохранить. Попробуйте ещё раз.";
+
+"dashboard.pairing.title" = "Связь с родителем";
+"dashboard.pairing.subtitle" = "Введите код связки из приложения родителя, чтобы соединить устройства.";
+"dashboard.pairing.connect" = "Связать";
+"dashboard.pairing.connecting" = "Связываем…";

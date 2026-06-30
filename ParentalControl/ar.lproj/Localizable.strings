@@ -332,3 +332,41 @@
 "parent.dashboard.adjust_time.minutes_format" = "%@ د";
 
 "ledger.parent.subtract_time" = "ولي الأمر خصم وقتًا";
+
+// MARK: - Parent mode / PIN (Stage 22)
+"tab.parent" = "ولي الأمر";
+"common.cancel" = "إلغاء";
+
+"parent_mode.exit_banner" = "الخروج من وضع ولي الأمر";
+"parent_mode.entry.title" = "وضع ولي الأمر";
+"parent_mode.entry.subtitle" = "أدخل رمز PIN المكوّن من 4 أرقام لفتح وضع ولي الأمر على هذا الجهاز.";
+"parent_mode.entry.not_configured" = "لم يتم تعيين رمز PIN بعد. اطلب من ولي الأمر إنشاء رمز PIN من إعدادات تطبيقه.";
+"parent_mode.entry.close" = "إغلاق";
+"parent_mode.entry.error.wrong" = "رمز PIN غير صحيح.";
+"parent_mode.entry.attempts_remaining" = "المحاولات المتبقية: %d";
+"parent_mode.entry.locked" = "تم قفل الإدخال. حاول مرة أخرى بعد %d ثانية.";
+
+"settings.pin.section" = "رمز PIN لولي الأمر";
+"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل. لن يرى الطفل الرمز أبداً.";
+"settings.pin.status.set" = "تم تعيين رمز PIN";
+"settings.pin.status.unset" = "لم يتم تعيين رمز PIN";
+"settings.pin.set" = "تعيين رمز PIN";
+"settings.pin.change" = "تغيير رمز PIN";
+"settings.pin.clear" = "حذف رمز PIN";
+"settings.pin.clear.confirm.title" = "حذف رمز PIN؟";
+"settings.pin.clear.confirm.message" = "بدون رمز PIN لن يتمكّن الطفل من فتح وضع ولي الأمر. يمكنك دائماً تعيين رمز جديد لاحقاً.";
+"settings.pin.clear.confirm.action" = "حذف";
+"settings.pin.sheet.title.set" = "تعيين رمز PIN";
+"settings.pin.sheet.title.change" = "تغيير رمز PIN";
+"settings.pin.sheet.subtitle" = "أدخل رمز PIN الجديد المكوّن من 4 أرقام مرتين.";
+"settings.pin.sheet.new" = "رمز PIN الجديد";
+"settings.pin.sheet.confirm" = "تكرار رمز PIN";
+"settings.pin.sheet.save" = "حفظ";
+"settings.pin.sheet.error.format" = "يجب أن يتكوّن رمز PIN من 4 أرقام.";
+"settings.pin.sheet.error.mismatch" = "رمز PIN غير متطابق.";
+"settings.pin.sheet.error.network" = "تعذّر حفظ رمز PIN. حاول مرة أخرى.";
+
+"dashboard.pairing.title" = "الربط بأحد الوالدين";
+"dashboard.pairing.subtitle" = "أدخل رمز الإقران من تطبيق الوالدين لربط الأجهزة.";
+"dashboard.pairing.connect" = "ربط الجهاز";
+"dashboard.pairing.connecting" = "جارٍ الربط…";

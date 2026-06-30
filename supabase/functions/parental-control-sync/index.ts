@@ -103,6 +103,12 @@ Deno.serve(async (req: Request) => {
         return await upsertBlockSchedule(authed.deviceId, payload);
       case "delete_block_schedule":
         return await deleteBlockSchedule(authed.deviceId, payload);
+      case "set_parent_pin":
+        return await setParentPin(authed.deviceId, payload);
+      case "clear_parent_pin":
+        return await clearParentPin(authed.deviceId);
+      case "fetch_parent_pin":
+        return await fetchParentPin(authed.deviceId);
       default:
         return errorResponse("Unknown action", 400);
     }
@@ -1102,6 +1108,135 @@ async function deleteBlockSchedule(deviceId: string, payload: Json): Promise<Res
 
   await notifyChildSchedulesUpdated(parent.family_id, parent.id);
   return okResponse({ ok: true });
+}
+
+// MARK: Parent PIN (v22)
+// Родитель задаёт 4-значный PIN в своих настройках. На устройство приходит только хэш и соль —
+// исходный PIN никогда не покидает устройство, где введён. Backend хранит `parent_pin_hash` /
+// `parent_pin_salt` / `parent_pin_updated_at` в `families` и отдаёт child'у через `fetch_parent_pin`.
+// При изменении/удалении PIN backend выстреливает silent push wake-up (`wake_child_sync` контур,
+// действие `parental-control-balance-sync.wake_child_sync`), чтобы child мгновенно подтянул кэш
+// и принудительно вышел из открытого parent-режима.
+
+async function setParentPin(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) {
+    return errorResponse("Only paired parent can set PIN", 403);
+  }
+  const pinHash = asString(payload.pinHash);
+  const pinSalt = asString(payload.pinSalt);
+  const pinUpdatedAtRaw = asString(payload.pinUpdatedAt);
+  if (!pinHash || !pinSalt) return errorResponse("pinHash and pinSalt are required", 400);
+  // Лимиты base64: SHA-256 → 32 байта → ~44 char; salt 16 байт → ~24 char. Проверяем верхнюю
+  // границу, чтобы не пропускать произвольно большие строки.
+  if (pinHash.length > 64 || pinSalt.length > 64) {
+    return errorResponse("pinHash/pinSalt too long", 400);
+  }
+  const updatedAt = pinUpdatedAtRaw ? new Date(pinUpdatedAtRaw).toISOString() : new Date().toISOString();
+  const { error } = await supabase
+    .from("families")
+    .update({
+      parent_pin_hash: pinHash,
+      parent_pin_salt: pinSalt,
+      parent_pin_updated_at: updatedAt,
+    })
+    .eq("id", parent.family_id);
+  if (error) return errorResponse(error.message, 400);
+
+  await notifyChildPinUpdated(parent.family_id);
+  return okResponse({ ok: true });
+}
+
+async function clearParentPin(deviceId: string): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) {
+    return errorResponse("Only paired parent can clear PIN", 403);
+  }
+  const { error } = await supabase
+    .from("families")
+    .update({
+      parent_pin_hash: null,
+      parent_pin_salt: null,
+      parent_pin_updated_at: new Date().toISOString(),
+    })
+    .eq("id", parent.family_id);
+  if (error) return errorResponse(error.message, 400);
+
+  await notifyChildPinUpdated(parent.family_id);
+  return okResponse({ ok: true });
+}
+
+async function fetchParentPin(deviceId: string): Promise<Response> {
+  // Допускаем оба role: parent тоже может запросить (для UI «PIN установлен»), хотя обычно
+  // вызывается ребёнком. RLS-уровень — общая проверка `family_id`.
+  const requester = await getDevice(deviceId);
+  if (!requester.family_id) return errorResponse("Device is not paired", 403);
+
+  const { data, error } = await supabase
+    .from("families")
+    .select("parent_pin_hash, parent_pin_salt, parent_pin_updated_at")
+    .eq("id", requester.family_id)
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+  if (!data || !data.parent_pin_hash || !data.parent_pin_salt) return okResponse(null);
+
+  return okResponse({
+    hashBase64: data.parent_pin_hash,
+    saltBase64: data.parent_pin_salt,
+    updatedAtISO: data.parent_pin_updated_at ?? new Date(0).toISOString(),
+  });
+}
+
+/// Шлёт ребёнку семьи silent push `child_sync_request` (тот же контур, что и `wake_child_sync`
+/// в `parental-control-balance-sync` v5+) — без записи в `focus_commands`. Child получает push,
+/// дёргает `refreshChildParentPinIfNeeded` и обновляет кэшированный PIN; если parent-режим был
+/// открыт — клиент принудительно его закроет (в `applyParentPinFromBackend`).
+async function notifyChildPinUpdated(familyID: string): Promise<void> {
+  try {
+    const { data: child, error: childError } = await supabase
+      .from("devices")
+      .select("apns_token")
+      .eq("family_id", familyID)
+      .eq("role", "child")
+      .maybeSingle();
+    if (childError) {
+      console.warn("[notifyChildPinUpdated] child lookup failed:", childError.message);
+      return;
+    }
+    if (!child || !child.apns_token) return;
+    await sendApnsBackground(String(child.apns_token));
+  } catch (e) {
+    console.warn("[notifyChildPinUpdated] push failed:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+/// Минималистичный silent push (`apns-push-type: background`, payload `command_type: child_sync_request`)
+/// — копия логики из `parental-control-balance-sync.sendApnsBackground`. Дублируется здесь, чтобы
+/// edge `parental-control-sync` не зависел от соседней функции для PIN-сценария.
+async function sendApnsBackground(tokenRaw: string): Promise<void> {
+  const auth = await apnsAuthHeaders();
+  const token = tokenRaw.replace(/\s+/g, "");
+  const expirationEpoch = Math.floor(Date.now() / 1000) + 5 * 60;
+  const payload = {
+    aps: { "content-available": 1 },
+    command_type: "child_sync_request",
+  };
+  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: auth.authorization,
+      "apns-topic": auth.topic,
+      "apns-push-type": "background",
+      "apns-priority": "5",
+      "apns-expiration": String(expirationEpoch),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`APNs background error ${res.status}: ${text}`);
+  }
 }
 
 async function notifyChildSchedulesUpdated(familyID: string, parentDeviceID: string): Promise<void> {
