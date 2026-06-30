@@ -178,11 +178,17 @@ private struct ParentModeEntryView: View {
     @State private var errorKey: String?
     @State private var remainingAttempts: Int?
     @State private var lockoutTickTrigger = Date()
-    @FocusState private var pinFieldFocused: Bool
 
     /// Таймер ровно для отрисовки обратного отсчёта lockout. Срабатывает раз в секунду —
     /// никаких дорогих операций внутри, только перерисовка label.
     private let lockoutTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    /// Клавиша кейпада: цифра, удаление или пустая ячейка (нижний-левый угол сетки 3×4).
+    private enum PinKey {
+        case digit(Int)
+        case delete
+        case empty
+    }
 
     var body: some View {
         ZStack {
@@ -219,7 +225,6 @@ private struct ParentModeEntryView: View {
         .onAppear {
             errorKey = nil
             remainingAttempts = nil
-            pinFieldFocused = appState.parentPinIsSet
         }
         .onReceive(lockoutTimer) { now in
             lockoutTickTrigger = now
@@ -267,17 +272,6 @@ private struct ParentModeEntryView: View {
             pinDotsView
                 .padding(.vertical, 8)
 
-            // Скрытое поле для ввода: фокусируем его при появлении, чтобы клавиатура подплыла
-            // сразу. Сам пользователь видит только «точки» сверху.
-            SecureField("", text: $pin)
-                .keyboardType(.numberPad)
-                .focused($pinFieldFocused)
-                .frame(width: 1, height: 1)
-                .opacity(0.01)
-                .onChange(of: pin) { _, newValue in
-                    handlePinChange(newValue)
-                }
-
             if let lockoutEnd = currentLockoutEnd() {
                 let remaining = max(0, Int(lockoutEnd.timeIntervalSinceNow.rounded(.up)))
                 Text(L10n.f("parent_mode.entry.locked", remaining))
@@ -295,6 +289,9 @@ private struct ParentModeEntryView: View {
                     .foregroundStyle(.white.opacity(0.7))
                     .padding(.top, 4)
             }
+
+            pinKeypadView
+                .padding(.top, 12)
         }
     }
 
@@ -312,6 +309,61 @@ private struct ParentModeEntryView: View {
         }
     }
 
+    /// Собственный цифровой кейпад: полностью убирает зависимость от системной клавиатуры и
+    /// `@FocusState` (которые у `fullScreenCover` нестабильны — клавиатура иногда не поднималась).
+    /// Также безопаснее: нет сторонних клавиатур/автоподстановки над вводом родительского PIN.
+    private var pinKeypadView: some View {
+        let rows: [[PinKey]] = [
+            [.digit(1), .digit(2), .digit(3)],
+            [.digit(4), .digit(5), .digit(6)],
+            [.digit(7), .digit(8), .digit(9)],
+            [.empty, .digit(0), .delete],
+        ]
+        let locked = currentLockoutEnd() != nil
+        return VStack(spacing: 16) {
+            ForEach(0..<rows.count, id: \.self) { row in
+                HStack(spacing: 24) {
+                    ForEach(0..<rows[row].count, id: \.self) { col in
+                        keypadButton(rows[row][col])
+                    }
+                }
+            }
+        }
+        .disabled(locked)
+        .opacity(locked ? 0.4 : 1.0)
+    }
+
+    @ViewBuilder
+    private func keypadButton(_ key: PinKey) -> some View {
+        switch key {
+        case .empty:
+            Color.clear.frame(width: 72, height: 72)
+        case .digit(let value):
+            Button {
+                appendDigit(value)
+            } label: {
+                Text("\(value)")
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: 72, height: 72)
+                    .background(Circle().fill(Color.white.opacity(0.10)))
+            }
+            .buttonStyle(.plain)
+        case .delete:
+            Button {
+                deleteDigit()
+            } label: {
+                Image(systemName: "delete.left")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 72, height: 72)
+            }
+            .buttonStyle(.plain)
+            .disabled(pin.isEmpty)
+            .opacity(pin.isEmpty ? 0.4 : 1.0)
+        }
+    }
+
     // MARK: - Helpers
 
     private func currentLockoutEnd() -> Date? {
@@ -321,19 +373,20 @@ private struct ParentModeEntryView: View {
         return end > Date() ? end : nil
     }
 
-    private func handlePinChange(_ newValue: String) {
-        // Ограничиваем 4 цифры; нечисловое сразу режем.
-        let filtered = newValue.filter(\.isNumber).prefix(4)
-        if String(filtered) != newValue {
-            pin = String(filtered)
-            return
-        }
+    /// Добавляет цифру с кейпада. По достижении 4 цифр сразу проверяем PIN. Во время lockout
+    /// ввод заблокирован на уровне `pinKeypadView.disabled`, поэтому дополнительной проверки тут нет.
+    private func appendDigit(_ value: Int) {
+        guard pin.count < 4 else { return }
         errorKey = nil
-        // По достижении 4 цифр пробуем проверить PIN. Если lockout активен — фиксируем ошибку
-        // без перебора попыток (AppState всё равно вернёт `.lockedOut`).
+        pin.append(String(value))
         if pin.count == 4 {
             verifyPinAndReact()
         }
+    }
+
+    private func deleteDigit() {
+        guard !pin.isEmpty else { return }
+        pin.removeLast()
     }
 
     private func verifyPinAndReact() {
