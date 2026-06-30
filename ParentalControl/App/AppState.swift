@@ -200,6 +200,24 @@ final class AppState: ObservableObject {
     private var remotePollingTask: Task<Void, Never>?
     private var parentCommandWatchTask: Task<Void, Never>?
     private var activeParentCommandID: UUID?
+    /// Троттлинг фоновых child-polling вызовов для экономии Edge Function Invocations (free plan).
+    /// Критичные по задержке вызовы (desired focus state + pending commands) бегут каждый тик;
+    /// пуш статистики/баланса наверх и фоллбэк-обновление PIN/Pro — реже, т.к. у них есть
+    /// мгновенные push-триггеры и они обновляются при выходе из фона.
+    private var lastChildStatsHeartbeatAt: Date?
+    private var lastChildPinProRefreshAt: Date?
+    /// Пуш статистики/runtime/баланса наверх — раз в 30 сек (вместо каждого тика). Родитель видит
+    /// свежие данные через wake silent-push при открытии своего приложения; плюс пуш на изменение
+    /// баланса идёт из `addSeconds`. Лаг ≤30 сек для «живого» кольца у родителя приемлем.
+    private static let childStatsHeartbeatInterval: TimeInterval = 30
+    /// Фоллбэк-обновление родительского PIN/Pro — раз в 60 сек. Изменения и так приходят мгновенно
+    /// silent push'ом `child_sync_request` и при выходе из фона; периодический pull — лишь страховка.
+    private static let childPinProRefreshInterval: TimeInterval = 60
+    /// Базовый интервал polling-цикла. Раньше 4 сек; поднят до 8 сек для экономии edge-invocations.
+    /// Безопасно, т.к. быстрый путь доставки команд — push (child) и `parentCommandWatchTask`
+    /// (parent), а этот цикл — фоллбэк/обновление «живого» состояния. 8 сек = вдвое меньше вызовов
+    /// desired/pending (child) и refreshParentChildState (parent) без заметной потери реактивности.
+    private static let remotePollingIntervalNanos: UInt64 = 8_000_000_000
     /// Последний `normalized` runtime с `fetchParentSnapshot` — чтобы после `commandStatus=applied` дождаться того же согласования, что в `reconcile` (снимать «Синхронизацию» без кадра со старым CTA).
     private var lastNormalizedParentChildRuntime: RemoteChildRuntimeState?
     /// Throttle для silent-push wake-up на child. iOS троттлит background push-ы (~2–3/час
@@ -1126,25 +1144,46 @@ final class AppState: ObservableObject {
         startRemotePollingIfNeeded()
     }
 
+    /// Возвращает `true`, если с момента `last` прошло не меньше `interval` (или `last == nil`).
+    /// Используется для троттлинга некритичных фоновых вызовов в polling-цикле.
+    private static func shouldRunThrottled(last: Date?, interval: TimeInterval, now: Date) -> Bool {
+        guard let last else { return true }
+        return now.timeIntervalSince(last) >= interval
+    }
+
     private func startRemotePollingIfNeeded() {
         guard pairingState?.isLinked == true else { return }
         remotePollingTask?.cancel()
+        // Сброс троттл-таймеров: первый тик новой polling-сессии делает полный синк.
+        lastChildStatsHeartbeatAt = nil
+        lastChildPinProRefreshAt = nil
         remotePollingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
                 if self.deviceRole == .child {
-                    await self.syncChildWithDesiredStateIfNeeded()
-                    await self.processPendingRemoteCommandsIfNeeded()
-                    await self.syncChildStatsSnapshotIfNeeded()
-                    await self.refreshChildParentPinIfNeeded()
-                    await self.refreshChildParentProIfNeeded()
+                    let now = Date()
+                    // PIN/Pro родителя подмешиваем в тот же `child_poll` лишь раз в ~60 сек (не каждый тик).
+                    let includeSettings = Self.shouldRunThrottled(
+                        last: self.lastChildPinProRefreshAt,
+                        interval: Self.childPinProRefreshInterval,
+                        now: now
+                    )
+                    if includeSettings { self.lastChildPinProRefreshAt = now }
+                    // Один combined-вызов вместо desired + pending (+ PIN/Pro). Критично по задержке —
+                    // каждый тик (фоллбэк к push для блок/разблок и команд).
+                    await self.pollChildAndApply(includeParentSettings: includeSettings)
+                    // Пуш статистики/runtime/баланса наверх — одним bundle-вызовом, раз в 30 сек.
+                    if Self.shouldRunThrottled(last: self.lastChildStatsHeartbeatAt, interval: Self.childStatsHeartbeatInterval, now: now) {
+                        self.lastChildStatsHeartbeatAt = now
+                        await self.syncChildStatsSnapshotIfNeeded()
+                    }
                 } else if self.deviceRole == .parent {
                     await self.refreshParentChildState()
                     // Дешёвая no-op после первой отправки (дедуп по `lastPushedParentIsPro`):
                     // покрывает случай «купил Pro до связки» и «связался после покупки».
                     await self.pushParentProStatusIfNeeded(self.subscriptionService?.hasActiveEntitlement ?? false)
                 }
-                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                try? await Task.sleep(nanoseconds: Self.remotePollingIntervalNanos)
             }
         }
     }
@@ -1153,6 +1192,17 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         do {
             let commands = try await remoteSyncService.fetchPendingCommands()
+            await applyPendingCommands(commands)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Применяет уже полученный список pending-команд (вынесено из `processPendingRemoteCommandsIfNeeded`,
+    /// чтобы переиспользовать из combined `pollChildAndApply` без повторного fetch).
+    private func applyPendingCommands(_ commands: [RemoteFocusCommand]) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
             guard !commands.isEmpty else { return }
             let sorted = commands.sorted { $0.createdAt < $1.createdAt }
 
@@ -1207,6 +1257,51 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         do {
             let desired = try await remoteSyncService.fetchDesiredFocusState()
+            await applyDesiredFocusState(desired)
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Child → backend (combined): один вызов `child_poll` вместо `fetch_desired_focus_state`
+    /// + `fetch_pending_commands` (+ PIN/Pro когда `includeParentSettings`). Применяет результат
+    /// тем же кодом, что и одиночные пути (для совместимости с push-доставкой).
+    private func pollChildAndApply(includeParentSettings: Bool) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
+            let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
+            await applyDesiredFocusState(poll.desired)
+            let commands = poll.pendingCommands.map {
+                RemoteFocusCommand(
+                    id: $0.id,
+                    familyID: $0.familyID,
+                    commandType: $0.commandType,
+                    durationSeconds: $0.durationSeconds,
+                    status: $0.status,
+                    createdAt: $0.createdAt,
+                    updatedAt: $0.updatedAt
+                )
+            }
+            await applyPendingCommands(commands)
+            if includeParentSettings {
+                applyParentPinFromBackend(
+                    hashBase64: poll.parentPin?.hashBase64,
+                    saltBase64: poll.parentPin?.saltBase64,
+                    updatedAt: poll.parentPin.flatMap { $0.updatedAt }
+                )
+                let proValue = poll.parentPro?.isPro ?? false
+                storage.saveParentIsPro(proValue)
+                subscriptionService?.applyParentProStatus(proValue)
+            }
+        } catch {
+            remoteStatusMessage = error.localizedDescription
+        }
+    }
+
+    /// Применяет уже полученное desired-состояние фокуса (вынесено из `syncChildWithDesiredStateIfNeeded`).
+    private func applyDesiredFocusState(_ desired: DesiredFocusStateDTO) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        do {
             let localIsActive: Bool = {
                 guard isFocusSessionActive else { return false }
                 if let end = focusSessionEndsAt { return end > Date() }
@@ -1532,22 +1627,27 @@ final class AppState: ObservableObject {
         }
         var lastError: Error?
         for attempt in 0..<2 {
-            if let desired = try? await remoteSyncService.fetchDesiredFocusState() {
-                parentDesiredFocusActive = desired.shouldFocusActive
-            }
             do {
-                let snapshot = try await remoteSyncService.fetchParentSnapshot()
-                parentLinkHealth = try? await remoteSyncService.fetchLinkHealth()
+                // Один combined-вызов вместо desired + snapshot + linkHealth + childBalance.
+                let poll = try await remoteSyncService.parentPoll()
+                parentDesiredFocusActive = poll.desired.shouldFocusActive
+                parentLinkHealth = ParentLinkHealthState(
+                    pendingCommands: poll.linkHealth.pendingCommands,
+                    oldestPendingAgeSeconds: poll.linkHealth.oldestPendingAgeSeconds,
+                    childLastSeenAgeSeconds: poll.linkHealth.childLastSeenAgeSeconds,
+                    childLikelyOnline: poll.linkHealth.childLikelyOnline,
+                    recentFailedCommands30m: poll.linkHealth.recentFailedCommands30m
+                )
 
                 // Сохраняем earned/spent ребёнка за сегодня для верхней balance-карточки на parent.
                 // Если бэкенд ещё не вернул `dailyStats` (старая версия / child не синкал), оставляем
                 // прошлые значения как есть — карточка просто покажет последние известные числа.
-                if let stats = snapshot.dailyStats {
+                if let stats = poll.dailyStats {
                     parentChildEarnedSecondsToday = max(0, stats.earnedSeconds)
                     parentChildSpentSecondsToday = max(0, stats.spentSeconds)
                 }
 
-                let actualRuntime = normalizedRuntimeForParent(snapshot.runtime)
+                let actualRuntime = normalizedRuntimeForParent(poll.runtime)
                 lastNormalizedParentChildRuntime = actualRuntime
                 // Сравниваем команду с фактическим runtime (не с «проекцией» desired) — иначе UI переключался бы до apply.
                 reconcileParentCommandWithRuntime(actualRuntime)
@@ -1570,7 +1670,7 @@ final class AppState: ObservableObject {
                         parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
                     }
                 }
-                if let childAvailable = try? await remoteSyncService.fetchChildBalanceState() {
+                if let childAvailable = poll.availableSeconds {
                     parentChildAvailableSeconds = childAvailable
                 }
                 // Если runtime на сервере старее `childRuntimeStaleThreshold` — child давно
@@ -1980,14 +2080,14 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         let today = dailyStats(for: Date(), steps: todaySteps)
         do {
-            try await remoteSyncService.upsertChildDayStats(today)
-            let runtime = RemoteChildRuntimeState(
+            // Один combined-вызов вместо трёх (upsert_child_day_stats + update_child_runtime
+            // + update_child_balance). Runtime и balance пишутся в одну строку child_runtime_state.
+            try await remoteSyncService.upsertChildRuntimeBundle(
+                stats: today,
                 isFocusActive: isFocusSessionActive,
                 focusEndsAt: focusSessionEndsAt,
-                lastUpdatedAt: Date()
+                availableSeconds: balance.availableSeconds
             )
-            try await remoteSyncService.updateChildRuntimeState(runtime)
-            try? await remoteSyncService.updateChildBalanceState(availableSeconds: balance.availableSeconds)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -2509,6 +2609,24 @@ private struct DesiredFocusStateDTO: Codable {
     let updatedAt: Date
 }
 
+/// Ответ combined-экшена `child_poll`: всё, что ребёнок тянет за один тик.
+/// `parentPin`/`parentPro` присутствуют только когда клиент запросил `includeParentSettings`.
+private struct ChildPollDTO: Decodable {
+    let desired: DesiredFocusStateDTO
+    let pendingCommands: [PendingCommandDTO]
+    let parentPin: ParentPinSyncDTO?
+    let parentPro: ParentProSyncDTO?
+}
+
+/// Ответ combined-экшена `parent_poll`: объединяет desired + snapshot + linkHealth + childBalance.
+private struct ParentPollDTO: Decodable {
+    let desired: DesiredFocusStateDTO
+    let runtime: RemoteChildRuntimeState
+    let dailyStats: ParentChildDailyStatsDTO?
+    let linkHealth: LinkHealthDTO
+    let availableSeconds: Int?
+}
+
 private struct BackendDayStatsDTO: Codable {
     let dayStartISO: String
     let steps: Int
@@ -2997,6 +3115,70 @@ private final class ParentalRemoteSyncService {
     func fetchDesiredFocusState() async throws -> DesiredFocusStateDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "fetch_desired_focus_state", payload: Payload(installID: installID))
+    }
+
+    // MARK: - Combined polling endpoints (экономия Edge Function Invocations)
+
+    /// Child → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_pending_commands`
+    /// (+ `fetch_parent_pin` + `fetch_parent_pro`, если `includeParentSettings == true`).
+    func childPoll(includeParentSettings: Bool) async throws -> ChildPollDTO {
+        struct Payload: Encodable {
+            let installID: String
+            let includeParentSettings: Bool
+        }
+        return try await call(
+            action: "child_poll",
+            payload: Payload(installID: installID, includeParentSettings: includeParentSettings)
+        )
+    }
+
+    /// Parent → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_parent_snapshot`
+    /// + `fetch_link_health` + `fetch_child_balance`.
+    func parentPoll() async throws -> ParentPollDTO {
+        struct Payload: Encodable { let installID: String }
+        return try await call(action: "parent_poll", payload: Payload(installID: installID))
+    }
+
+    /// Child → backend: один вызов вместо `upsert_child_day_stats` + `update_child_runtime`
+    /// + `update_child_balance`. Runtime и balance пишутся в одну строку `child_runtime_state`.
+    func upsertChildRuntimeBundle(
+        stats: DailyStats,
+        isFocusActive: Bool,
+        focusEndsAt: Date?,
+        availableSeconds: Int
+    ) async throws {
+        struct Payload: Encodable {
+            let installID: String
+            let dayStartISO: String
+            let steps: Int
+            let earnedSeconds: Int
+            let spentSeconds: Int
+            let pushUps: Int
+            let squats: Int
+            let focusSessionTotalSeconds: Int
+            let isFocusActive: Bool
+            let focusEndsAt: String?
+            let availableSeconds: Int
+        }
+        let dayStart = Calendar.current.startOfDay(for: stats.date)
+        let dayISO = ISO8601DateFormatter().string(from: dayStart)
+        let endISO = focusEndsAt.map { ISO8601DateFormatter().string(from: $0) }
+        let _: EmptyResponse = try await call(
+            action: "upsert_child_runtime_bundle",
+            payload: Payload(
+                installID: installID,
+                dayStartISO: dayISO,
+                steps: stats.steps,
+                earnedSeconds: stats.earnedSeconds,
+                spentSeconds: stats.spentSeconds,
+                pushUps: stats.pushUps,
+                squats: stats.squats,
+                focusSessionTotalSeconds: stats.focusSessionTotalSeconds,
+                isFocusActive: isFocusActive,
+                focusEndsAt: endISO,
+                availableSeconds: max(0, availableSeconds)
+            )
+        )
     }
 
     /// Parent → backend: попросить ребёнка прислать свежую координату.

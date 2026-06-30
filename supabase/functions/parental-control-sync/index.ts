@@ -115,6 +115,14 @@ Deno.serve(async (req: Request) => {
         return await fetchParentPro(authed.deviceId);
       case "unlink_devices":
         return await unlinkDevices(authed.deviceId);
+      // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
+      // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
+      case "child_poll":
+        return await childPoll(authed.deviceId, payload);
+      case "parent_poll":
+        return await parentPoll(authed.deviceId);
+      case "upsert_child_runtime_bundle":
+        return await upsertChildRuntimeBundle(authed.deviceId, payload);
       default:
         return errorResponse("Unknown action", 400);
     }
@@ -254,6 +262,221 @@ async function deleteFamilyData(familyID: string): Promise<void> {
   }
   const { error: familyError } = await supabase.from("families").delete().eq("id", familyID);
   if (familyError) console.warn("[unlink] delete family failed:", familyError.message);
+}
+
+// MARK: Combined polling endpoints (экономия Edge Function Invocations)
+// Клиент раньше дёргал по 2–4 отдельных edge-вызова на каждый polling-тик. Эти combined
+// actions объединяют их в один HTTP-вызов. Каждый блок — точная копия логики соответствующего
+// одиночного handler'а (fetch_desired_focus_state / fetch_pending_commands / fetch_parent_pin /
+// fetch_parent_pro / fetch_parent_snapshot / fetch_link_health / fetch_child_balance), просто
+// собранная в один ответ. Существующие одиночные actions оставлены без изменений (push-пути и
+// совместимость со старыми сборками).
+
+/// Child → backend: всё, что ребёнок тянет каждый тик, одним вызовом.
+/// `includeParentSettings` (true раз в ~60с на клиенте) добавляет PIN/Pro родителя.
+async function childPoll(deviceId: string, payload: Json): Promise<Response> {
+  const device = await getDevice(deviceId);
+  if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can poll", 403);
+  const includeParentSettings = payload.includeParentSettings === true;
+
+  // desired focus state (зеркало fetchDesiredFocusState)
+  const { data: desiredRow, error: desiredErr } = await supabase
+    .from("family_focus_desired_state")
+    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .eq("family_id", device.family_id)
+    .maybeSingle();
+  if (desiredErr) return errorResponse(desiredErr.message, 400);
+
+  // pending commands (зеркало fetchPendingCommands)
+  await expireStalePendingCommands(device.family_id);
+  const nowIso = new Date().toISOString();
+  const { data: pending, error: pendingErr } = await supabase
+    .from("focus_commands")
+    .select("id, family_id, command_type, duration_seconds, status, created_at, updated_at")
+    .eq("target_device_id", deviceId)
+    .in("status", ["queued", "sent", "delivered"])
+    .gt("expires_at", nowIso)
+    .order("created_at", { ascending: true })
+    .limit(20);
+  if (pendingErr) return errorResponse(pendingErr.message, 400);
+
+  let parentPin: { hashBase64: string; saltBase64: string; updatedAtISO: string } | null = null;
+  let parentPro: { isPro: boolean; updatedAtISO: string } | null = null;
+  if (includeParentSettings) {
+    const { data: fam, error: famErr } = await supabase
+      .from("families")
+      .select("parent_pin_hash, parent_pin_salt, parent_pin_updated_at, parent_is_pro, parent_is_pro_updated_at")
+      .eq("id", device.family_id)
+      .maybeSingle();
+    if (famErr) return errorResponse(famErr.message, 400);
+    if (fam && fam.parent_pin_hash && fam.parent_pin_salt) {
+      parentPin = {
+        hashBase64: fam.parent_pin_hash,
+        saltBase64: fam.parent_pin_salt,
+        updatedAtISO: fam.parent_pin_updated_at ?? new Date(0).toISOString(),
+      };
+    }
+    parentPro = {
+      isPro: fam?.parent_is_pro === true,
+      updatedAtISO: fam?.parent_is_pro_updated_at ?? new Date(0).toISOString(),
+    };
+  }
+
+  return okResponse({
+    desired: {
+      shouldFocusActive: desiredRow?.should_focus_active ?? false,
+      durationSeconds: desiredRow?.desired_duration_seconds ?? null,
+      updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+    },
+    pendingCommands: (pending ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)),
+    parentPin,
+    parentPro,
+  });
+}
+
+/// Parent → backend: всё, что родитель тянет каждый тик, одним вызовом.
+/// Зеркало fetch_desired_focus_state + fetch_parent_snapshot + fetch_link_health + fetch_child_balance.
+async function parentPoll(deviceId: string): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can poll", 403);
+  const familyID = parent.family_id;
+
+  await expireStalePendingCommands(familyID);
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+
+  const { data: childData } = await supabase
+    .from("devices")
+    .select("id")
+    .eq("family_id", familyID)
+    .eq("role", "child")
+    .maybeSingle();
+
+  const { data: desiredRow, error: desiredErr } = await supabase
+    .from("family_focus_desired_state")
+    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .eq("family_id", familyID)
+    .maybeSingle();
+  if (desiredErr) return errorResponse(desiredErr.message, 400);
+
+  // runtime + balance из одной строки child_runtime_state.
+  const { data: runtimeRow, error: runtimeErr } = await supabase
+    .from("child_runtime_state")
+    .select("is_focus_active, focus_ends_at, updated_at, available_seconds")
+    .eq("family_id", familyID)
+    .maybeSingle();
+  if (runtimeErr) return errorResponse(runtimeErr.message, 400);
+
+  // dailyStats (latest-by-day_start — как в fetchParentSnapshot v21).
+  let dailyStats: Record<string, unknown> | null = null;
+  if (childData?.id) {
+    const { data: statsRow } = await supabase
+      .from("daily_stats_snapshots")
+      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .eq("child_device_id", childData.id)
+      .order("day_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (statsRow) {
+      dailyStats = {
+        dayStartISO: statsRow.day_start,
+        steps: statsRow.steps ?? 0,
+        earnedSeconds: statsRow.earned_seconds ?? 0,
+        spentSeconds: statsRow.spent_seconds ?? 0,
+        pushUps: statsRow.push_ups ?? 0,
+        squats: statsRow.squats ?? 0,
+        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+      };
+    }
+  }
+
+  // link health (зеркало fetchLinkHealth)
+  const { data: pendingRows, error: pendingErr } = await supabase
+    .from("focus_commands")
+    .select("id, created_at")
+    .eq("family_id", familyID)
+    .in("status", ["queued", "sent", "delivered"])
+    .gt("expires_at", nowIso)
+    .order("created_at", { ascending: true })
+    .limit(50);
+  if (pendingErr) return errorResponse(pendingErr.message, 400);
+
+  const { count: recentFailures, error: failErr } = await supabase
+    .from("focus_commands")
+    .select("id", { count: "exact", head: true })
+    .eq("family_id", familyID)
+    .eq("status", "failed")
+    .gte("updated_at", new Date(now - 30 * 60 * 1000).toISOString());
+  if (failErr) return errorResponse(failErr.message, 400);
+
+  const oldestPendingAt = pendingRows?.[0]?.created_at ? Date.parse(pendingRows[0].created_at) : null;
+  const childLastSeenAt = runtimeRow?.updated_at ? Date.parse(runtimeRow.updated_at) : null;
+
+  return okResponse({
+    desired: {
+      shouldFocusActive: desiredRow?.should_focus_active ?? false,
+      durationSeconds: desiredRow?.desired_duration_seconds ?? null,
+      updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+    },
+    runtime: {
+      isFocusActive: runtimeRow?.is_focus_active ?? false,
+      focusEndsAt: runtimeRow?.focus_ends_at ?? null,
+      lastUpdatedAt: runtimeRow?.updated_at ?? new Date(0).toISOString(),
+    },
+    dailyStats,
+    linkHealth: {
+      pendingCommands: pendingRows?.length ?? 0,
+      oldestPendingAgeSeconds: oldestPendingAt ? Math.max(0, Math.floor((now - oldestPendingAt) / 1000)) : null,
+      childLastSeenAgeSeconds: childLastSeenAt ? Math.max(0, Math.floor((now - childLastSeenAt) / 1000)) : null,
+      childLikelyOnline: childLastSeenAt ? (now - childLastSeenAt) <= 45_000 : false,
+      recentFailedCommands30m: recentFailures ?? 0,
+    },
+    availableSeconds: Math.max(0, Number(runtimeRow?.available_seconds ?? 0)),
+  });
+}
+
+/// Child → backend: пуш дневной статистики + runtime + баланса одним вызовом.
+/// Объединяет upsert_child_day_stats + update_child_runtime + update_child_balance.
+/// Runtime и balance пишутся в одну строку child_runtime_state (onConflict family_id).
+async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promise<Response> {
+  const device = await getDevice(deviceId);
+  if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can sync", 403);
+
+  const dayStartISO = asString(payload.dayStartISO);
+  if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
+
+  const statsRow = {
+    family_id: device.family_id,
+    child_device_id: device.id,
+    day_start: dayStartISO,
+    steps: asNumber(payload.steps) ?? 0,
+    earned_seconds: asNumber(payload.earnedSeconds) ?? 0,
+    spent_seconds: asNumber(payload.spentSeconds) ?? 0,
+    push_ups: asNumber(payload.pushUps) ?? 0,
+    squats: asNumber(payload.squats) ?? 0,
+    focus_session_total_seconds: asNumber(payload.focusSessionTotalSeconds) ?? 0,
+  };
+  const { error: statsErr } = await supabase
+    .from("daily_stats_snapshots")
+    .upsert(statsRow, { onConflict: "child_device_id,day_start" });
+  if (statsErr) return errorResponse(statsErr.message, 400);
+
+  const isFocusActive = asBool(payload.isFocusActive);
+  const focusEndsAt = asString(payload.focusEndsAt);
+  const availableSeconds = Math.max(0, asNumber(payload.availableSeconds) ?? 0);
+  const { error: runtimeErr } = await supabase
+    .from("child_runtime_state")
+    .upsert({
+      family_id: device.family_id,
+      child_device_id: device.id,
+      is_focus_active: isFocusActive,
+      focus_ends_at: focusEndsAt || null,
+      available_seconds: availableSeconds,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "family_id" });
+  if (runtimeErr) return errorResponse(runtimeErr.message, 400);
+
+  return okResponse({ ok: true });
 }
 
 async function updateApnsToken(deviceId: string, payload: Json): Promise<Response> {
