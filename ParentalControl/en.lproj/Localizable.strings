@@ -430,6 +430,7 @@
 
 "settings.pin.section" = "Parent PIN";
 "settings.pin.description" = "4-digit PIN to open parent mode on the child device. The child never sees the PIN itself.";
+"settings.pin.requires_link" = "Link a child device first to set a PIN.";
 "settings.pin.status.set" = "PIN is set";
 "settings.pin.status.unset" = "PIN is not set";
 "settings.pin.set" = "Set PIN";

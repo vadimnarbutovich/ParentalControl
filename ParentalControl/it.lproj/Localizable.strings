@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "PIN genitore";
 "settings.pin.description" = "PIN a 4 cifre per aprire la modalità genitore sul dispositivo del bambino. Il bambino non vedrà mai il PIN.";
+"settings.pin.requires_link" = "Collega prima un dispositivo del bambino per impostare un PIN.";
 "settings.pin.status.set" = "PIN impostato";
 "settings.pin.status.unset" = "PIN non impostato";
 "settings.pin.set" = "Imposta PIN";

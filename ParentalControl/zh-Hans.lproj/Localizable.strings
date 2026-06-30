@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "家长 PIN";
 "settings.pin.description" = "用于在孩子设备上打开家长模式的 4 位 PIN 码。孩子永远无法看到 PIN 码本身。";
+"settings.pin.requires_link" = "请先连接孩子设备，然后才能设置 PIN 码。";
 "settings.pin.status.set" = "已设置 PIN";
 "settings.pin.status.unset" = "未设置 PIN";
 "settings.pin.set" = "设置 PIN";

@@ -430,6 +430,7 @@
 
 "settings.pin.section" = "Родительский PIN";
 "settings.pin.description" = "4-значный PIN для входа в родительский режим на устройстве ребёнка. Ребёнок никогда не увидит сам PIN.";
+"settings.pin.requires_link" = "Сначала свяжите устройство с ребёнком, чтобы задать PIN.";
 "settings.pin.status.set" = "PIN установлен";
 "settings.pin.status.unset" = "PIN не установлен";
 "settings.pin.set" = "Установить PIN";

@@ -422,6 +422,10 @@ final class AppState: ObservableObject {
         subscriptionService?.applyParentProStatus(false)
         lastPushedParentIsPro = nil
         storage.savePairingState(nil)
+        // Чистим возможную сырую backend-ошибку (напр. «Device is not paired»), которая могла
+        // прилететь от фонового синка в момент отвязки (локально ещё «связаны», на сервере уже нет).
+        // Иначе она зависнет на карточке связки как непонятное служебное сообщение.
+        remoteStatusMessage = nil
     }
 
     /// Полная отвязка устройств (с любого из них): backend отсоединяет оба устройства от семьи,

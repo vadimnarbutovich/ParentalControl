@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "보호자 PIN";
 "settings.pin.description" = "자녀 기기에서 보호자 모드를 여는 데 사용하는 4자리 PIN입니다. 자녀는 PIN을 절대 볼 수 없습니다.";
+"settings.pin.requires_link" = "PIN을 설정하려면 먼저 자녀 기기를 연결하세요.";
 "settings.pin.status.set" = "PIN 설정됨";
 "settings.pin.status.unset" = "PIN 미설정";
 "settings.pin.set" = "PIN 설정";

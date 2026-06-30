@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "Eltern-PIN";
 "settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen. Das Kind sieht die PIN niemals.";
+"settings.pin.requires_link" = "Verbinde zuerst ein Kindergerät, um eine PIN festzulegen.";
 "settings.pin.status.set" = "PIN ist festgelegt";
 "settings.pin.status.unset" = "Keine PIN festgelegt";
 "settings.pin.set" = "PIN festlegen";

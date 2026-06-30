@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "PIN de padre";
 "settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño. El niño nunca verá el PIN.";
+"settings.pin.requires_link" = "Primero vincula un dispositivo del niño para establecer un PIN.";
 "settings.pin.status.set" = "PIN establecido";
 "settings.pin.status.unset" = "PIN no establecido";
 "settings.pin.set" = "Establecer PIN";

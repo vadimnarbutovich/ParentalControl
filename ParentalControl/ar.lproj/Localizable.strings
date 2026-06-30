@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "رمز PIN لولي الأمر";
 "settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل. لن يرى الطفل الرمز أبداً.";
+"settings.pin.requires_link" = "اربط جهاز الطفل أولاً لتعيين رمز PIN.";
 "settings.pin.status.set" = "تم تعيين رمز PIN";
 "settings.pin.status.unset" = "لم يتم تعيين رمز PIN";
 "settings.pin.set" = "تعيين رمز PIN";

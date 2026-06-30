@@ -318,7 +318,18 @@ struct SettingsView: View {
             }
             .padding(.vertical, 6)
 
-            if appState.parentPinIsSet {
+            if appState.pairingState?.isLinked != true {
+                // PIN можно задать только после связки устройств: запрос уходит на backend и
+                // привязан к семье. До связки — дизейблим и показываем подсказку, иначе была бы
+                // непонятная ошибка при сохранении.
+                Text("settings.pin.requires_link")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+                settingsRow(titleKey: "settings.pin.set", action: {})
+                    .disabled(true)
+                    .opacity(0.45)
+            } else if appState.parentPinIsSet {
                 settingsRow(titleKey: "settings.pin.change") {
                     AppAnalytics.report("settings_pin_change_tap")
                     activeSheet = .pinSetup
@@ -757,12 +768,8 @@ private struct ParentPinSetupSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.30))
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-
+            // Системный индикатор перетягивания включён через `.presentationDragIndicator(.visible)`,
+            // поэтому собственную «полоску» здесь не рисуем (иначе дублируется).
             VStack(spacing: 18) {
                 Text(appState.parentPinIsSet ? "settings.pin.sheet.title.change" : "settings.pin.sheet.title.set")
                     .font(.title3.bold())
@@ -810,6 +817,7 @@ private struct ParentPinSetupSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 22)
+            .padding(.top, 24)
             .padding(.bottom, 18)
         }
         .appScreenBackground()

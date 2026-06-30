@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "保護者PIN";
 "settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。お子様にPINが表示されることはありません。";
+"settings.pin.requires_link" = "PINを設定するには、まずお子様の端末を連携してください。";
 "settings.pin.status.set" = "PINを設定済み";
 "settings.pin.status.unset" = "PINは未設定";
 "settings.pin.set" = "PINを設定";

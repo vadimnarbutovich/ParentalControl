@@ -348,6 +348,7 @@
 
 "settings.pin.section" = "PIN parent";
 "settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant. L'enfant ne voit jamais le PIN.";
+"settings.pin.requires_link" = "Liez d'abord un appareil enfant pour définir un code PIN.";
 "settings.pin.status.set" = "PIN défini";
 "settings.pin.status.unset" = "PIN non défini";
 "settings.pin.set" = "Définir le PIN";
