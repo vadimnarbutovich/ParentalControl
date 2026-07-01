@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "Ricompensa: %d min";
 "tasks.detail.send_hint" = "Scatta una foto dell'attività completata e inviala ai tuoi genitori";
 "tasks.detail.send_report" = "Invia report";
+"tasks.detail.report_source.title" = "Allega una foto";
+"tasks.detail.report_source.camera" = "Scatta una foto";
+"tasks.detail.report_source.library" = "Scegli dalla galleria";
 "tasks.detail.submitted_hint" = "Report inviato. In attesa della conferma dei genitori.";
 "tasks.detail.approved_hint" = "Attività confermata, tempo accreditato.";
 "tasks.share.caption" = "Report dell'attività: %@";

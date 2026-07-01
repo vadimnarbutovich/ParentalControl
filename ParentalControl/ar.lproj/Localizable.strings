@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "المكافأة: %d د";
 "tasks.detail.send_hint" = "التقط صورة للمهمة المكتملة وأرسلها إلى والديك";
 "tasks.detail.send_report" = "إرسال التقرير";
+"tasks.detail.report_source.title" = "إرفاق صورة";
+"tasks.detail.report_source.camera" = "التقاط صورة";
+"tasks.detail.report_source.library" = "اختيار من المعرض";
 "tasks.detail.submitted_hint" = "تم إرسال التقرير. في انتظار تأكيد والديك.";
 "tasks.detail.approved_hint" = "تم تأكيد المهمة وإضافة الوقت.";
 "tasks.share.caption" = "تقرير المهمة: %@";

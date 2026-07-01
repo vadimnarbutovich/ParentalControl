@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "報酬：%d分";
 "tasks.detail.send_hint" = "完了したタスクの写真を撮って保護者に送りましょう";
 "tasks.detail.send_report" = "レポートを送信";
+"tasks.detail.report_source.title" = "写真を添付";
+"tasks.detail.report_source.camera" = "写真を撮る";
+"tasks.detail.report_source.library" = "ライブラリから選択";
 "tasks.detail.submitted_hint" = "レポートを送信しました。保護者の承認を待っています。";
 "tasks.detail.approved_hint" = "タスクが承認され、時間が付与されました。";
 "tasks.share.caption" = "タスクのレポート：%@";

@@ -136,6 +136,10 @@ private struct ChildTaskDetailView: View {
     @State private var isShareSheetPresented = false
     @State private var isLoadingPhoto = false
     @State private var isSubmitting = false
+    /// Диалог выбора источника фото: «Сделать фото» (камера) или «Выбрать из галереи».
+    @State private var showSourceDialog = false
+    @State private var showCamera = false
+    @State private var showLibrary = false
 
     private var task: ChildTask? {
         appState.childTasks.first { $0.id == taskID }
@@ -168,6 +172,21 @@ private struct ChildTaskDetailView: View {
         .navigationTitle("tasks.detail.title")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
+        .confirmationDialog("tasks.detail.report_source.title", isPresented: $showSourceDialog, titleVisibility: .visible) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("tasks.detail.report_source.camera") { showCamera = true }
+            }
+            Button("tasks.detail.report_source.library") { showLibrary = true }
+            Button("tasks.editor.cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showLibrary, selection: $photoItem, matching: .images, photoLibrary: .shared())
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in
+                showCamera = false
+                if let image { handlePickedImage(image) }
+            }
+            .ignoresSafeArea()
+        }
         .onChange(of: photoItem) { _, newItem in
             guard let newItem else { return }
             loadPhoto(newItem)
@@ -219,7 +238,9 @@ private struct ChildTaskDetailView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
 
-            PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
+            Button {
+                showSourceDialog = true
+            } label: {
                 HStack(spacing: 8) {
                     if isLoadingPhoto || isSubmitting {
                         ProgressView().tint(.white)
@@ -263,10 +284,15 @@ private struct ChildTaskDetailView: View {
             defer { isLoadingPhoto = false; photoItem = nil }
             if let data = try? await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
-                shareImage = image
-                isShareSheetPresented = true
+                handlePickedImage(image)
             }
         }
+    }
+
+    /// Общий обработчик выбранного/снятого фото: показываем системный share sheet.
+    private func handlePickedImage(_ image: UIImage) {
+        shareImage = image
+        isShareSheetPresented = true
     }
 
     private func submit() {
@@ -274,6 +300,46 @@ private struct ChildTaskDetailView: View {
         Task {
             await appState.submitChildTask(taskID)
             isSubmitting = false
+        }
+    }
+}
+
+// MARK: - Camera picker
+
+/// Обёртка над `UIImagePickerController` (sourceType .camera) — SwiftUI не имеет нативного
+/// пикера камеры. Требует `NSCameraUsageDescription` (в проекте уже задан). Возвращает снятое
+/// фото в `onImage` (или `nil`, если пользователь отменил).
+struct CameraPicker: UIViewControllerRepresentable {
+    let onImage: (UIImage?) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onImage: onImage) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        private let onImage: (UIImage?) -> Void
+
+        init(onImage: @escaping (UIImage?) -> Void) {
+            self.onImage = onImage
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            let image = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            onImage(image)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onImage(nil)
         }
     }
 }

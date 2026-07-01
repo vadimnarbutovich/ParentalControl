@@ -495,6 +495,9 @@
 "tasks.detail.reward" = "Награда: %d мин";
 "tasks.detail.send_hint" = "Сделайте фото выполненного задания и отправьте родителю";
 "tasks.detail.send_report" = "Отправить отчёт";
+"tasks.detail.report_source.title" = "Прикрепить фото";
+"tasks.detail.report_source.camera" = "Сделать фото";
+"tasks.detail.report_source.library" = "Выбрать из галереи";
 "tasks.detail.submitted_hint" = "Отчёт отправлен. Ждём подтверждения родителя.";
 "tasks.detail.approved_hint" = "Задание подтверждено, время начислено.";
 "tasks.share.caption" = "Отчёт по заданию: %@";

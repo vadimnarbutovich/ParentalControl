@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "奖励：%d 分钟";
 "tasks.detail.send_hint" = "拍下已完成任务的照片并发送给家长";
 "tasks.detail.send_report" = "发送报告";
+"tasks.detail.report_source.title" = "附上照片";
+"tasks.detail.report_source.camera" = "拍照";
+"tasks.detail.report_source.library" = "从相册选择";
 "tasks.detail.submitted_hint" = "报告已发送。等待家长确认。";
 "tasks.detail.approved_hint" = "任务已确认，时间已到账。";
 "tasks.share.caption" = "任务报告：%@";

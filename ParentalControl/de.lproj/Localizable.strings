@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "Belohnung: %d Min";
 "tasks.detail.send_hint" = "Mach ein Foto der erledigten Aufgabe und sende es an deine Eltern";
 "tasks.detail.send_report" = "Bericht senden";
+"tasks.detail.report_source.title" = "Foto anhängen";
+"tasks.detail.report_source.camera" = "Foto aufnehmen";
+"tasks.detail.report_source.library" = "Aus Galerie wählen";
 "tasks.detail.submitted_hint" = "Bericht gesendet. Warte auf die Bestätigung der Eltern.";
 "tasks.detail.approved_hint" = "Aufgabe bestätigt, Zeit gutgeschrieben.";
 "tasks.share.caption" = "Aufgabenbericht: %@";

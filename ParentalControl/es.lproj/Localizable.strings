@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "Recompensa: %d min";
 "tasks.detail.send_hint" = "Haz una foto de la tarea completada y envíala a tus padres";
 "tasks.detail.send_report" = "Enviar informe";
+"tasks.detail.report_source.title" = "Adjuntar una foto";
+"tasks.detail.report_source.camera" = "Hacer una foto";
+"tasks.detail.report_source.library" = "Elegir de la galería";
 "tasks.detail.submitted_hint" = "Informe enviado. Esperando la aprobación de tus padres.";
 "tasks.detail.approved_hint" = "Tarea aprobada, tiempo acreditado.";
 "tasks.share.caption" = "Informe de la tarea: %@";

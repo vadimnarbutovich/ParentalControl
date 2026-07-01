@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "Récompense : %d min";
 "tasks.detail.send_hint" = "Prenez une photo de la tâche accomplie et envoyez-la à vos parents";
 "tasks.detail.send_report" = "Envoyer le compte rendu";
+"tasks.detail.report_source.title" = "Joindre une photo";
+"tasks.detail.report_source.camera" = "Prendre une photo";
+"tasks.detail.report_source.library" = "Choisir dans la galerie";
 "tasks.detail.submitted_hint" = "Compte rendu envoyé. En attente de validation par vos parents.";
 "tasks.detail.approved_hint" = "Tâche validée, temps crédité.";
 "tasks.share.caption" = "Compte rendu de la tâche : %@";

@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "獎勵：%d 分鐘";
 "tasks.detail.send_hint" = "拍下已完成任務的照片並傳送給家長";
 "tasks.detail.send_report" = "傳送報告";
+"tasks.detail.report_source.title" = "附上照片";
+"tasks.detail.report_source.camera" = "拍照";
+"tasks.detail.report_source.library" = "從相簿選擇";
 "tasks.detail.submitted_hint" = "報告已傳送。等待家長確認。";
 "tasks.detail.approved_hint" = "任務已確認，時間已入帳。";
 "tasks.share.caption" = "任務報告：%@";

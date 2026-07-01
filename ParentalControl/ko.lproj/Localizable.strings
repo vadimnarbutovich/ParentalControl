@@ -413,6 +413,9 @@
 "tasks.detail.reward" = "보상: %d분";
 "tasks.detail.send_hint" = "완료한 과제의 사진을 찍어 부모에게 보내세요";
 "tasks.detail.send_report" = "리포트 보내기";
+"tasks.detail.report_source.title" = "사진 첨부";
+"tasks.detail.report_source.camera" = "사진 촬영";
+"tasks.detail.report_source.library" = "갤러리에서 선택";
 "tasks.detail.submitted_hint" = "리포트를 보냈습니다. 부모의 승인을 기다리는 중입니다.";
 "tasks.detail.approved_hint" = "과제가 승인되어 시간이 적립되었습니다.";
 "tasks.share.caption" = "과제 리포트: %@";
