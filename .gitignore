@@ -48,3 +48,7 @@ supabase/.temp/
 supabase/.branches/
 supabase/.env
 supabase/.env.local
+
+## Private database snapshots and deployment secrets
+.migration-backups/
+supabase/.env.*

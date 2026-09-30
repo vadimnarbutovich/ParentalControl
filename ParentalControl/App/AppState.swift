@@ -2876,9 +2876,9 @@ private struct ParentProSyncDTO: Decodable {
 
 private final class ParentalRemoteSyncService {
     private enum Endpoint {
-        static let focusBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-sync")!
-        static let balanceBaseURL = URL(string: "https://tzpalbdmfsaeinciiyac.supabase.co/functions/v1/parental-control-balance-sync")!
-        static let anonKey = "sb_publishable_Rz5hfd6b5I90Eipwk3fFrQ_5ALQnDdB"
+        static let focusBaseURL = URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-sync")!
+        static let balanceBaseURL = URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-balance-sync")!
+        static let anonKey = "sb_publishable_urT7eQPRIxyXso8VKA2tHQ_-U0I0CsO"
     }
 
     private enum SyncError: LocalizedError {
@@ -2954,10 +2954,14 @@ private final class ParentalRemoteSyncService {
             let installID: String
             let role: String
         }
+        // Persist credentials BEFORE registration. A lost response must not
+        // make an existing installation recoverable using only its public ID.
+        if storage.loadDeviceSecret()?.isEmpty != false {
+            storage.saveDeviceSecret(UUID().uuidString + UUID().uuidString)
+        }
         let response: RegisterDeviceResponseDTO = try await call(
             action: "register_device",
-            payload: Payload(installID: installID, role: role.rawValue),
-            includeSecret: false
+            payload: Payload(installID: installID, role: role.rawValue)
         )
         storage.saveDeviceSecret(response.deviceSecret)
         return response

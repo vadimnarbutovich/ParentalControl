@@ -2,6 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
 
+class DeviceAuthenticationError extends Error {}
+
 type Json = Record<string, unknown>;
 type ActionRequest = { action: string; payload: Json };
 
@@ -32,7 +34,13 @@ const DEFAULT_RETRY_BATCH = 6;
 const DEFAULT_RETRY_MIN_AGE_SECONDS = 6;
 const DEFAULT_CRON_RETRY_BATCH = 50;
 const DEFAULT_CRON_RETRY_MIN_AGE_SECONDS = 10;
-const CRON_SHARED_TOKEN = "pc_retry_2026_04_20_w8pJQ7mN2xL5rV9d";
+// Cron credentials live in Supabase Vault, never in source control.
+async function isAuthorizedCron(req: Request): Promise<boolean> {
+  const token = req.headers.get("x-cron-token") ?? "";
+  if (token.length < 32 || token.length > 256) return false;
+  const { data, error } = await supabase.rpc("pc_validate_cron_token", { p_token: token });
+  return !error && data === true;
+}
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -56,7 +64,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "cron_retry_stuck_commands") return await cronRetryStuckCommands(req, payload);
     if (action === "cron_evaluate_block_schedules") return await cronEvaluateBlockSchedules(req);
-    if (action === "register_device") return await registerDevice(payload);
+    if (action === "register_device") return await registerDevice(req, payload);
 
     const authed = await requireDevice(req);
 
@@ -137,14 +145,19 @@ Deno.serve(async (req: Request) => {
         return errorResponse("Unknown action", 400);
     }
   } catch (error) {
+    if (error instanceof DeviceAuthenticationError) return errorResponse("Unauthorized", 401);
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return errorResponse(message, 500);
   }
 });
 
-async function registerDevice(payload: Json): Promise<Response> {
+async function registerDevice(req: Request, payload: Json): Promise<Response> {
   const installID = asString(payload.installID);
   const role = asString(payload.role);
+  const providedSecret = req.headers.get("x-device-secret") ?? "";
+  if (req.headers.get("x-device-install-id") !== installID || !/^[A-Fa-f0-9-]{64,128}$/.test(providedSecret)) {
+    return errorResponse("Valid device credentials are required", 401);
+  }
   if (!installID || (role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
 
   const { data: existing, error: existingError } = await supabase
@@ -155,11 +168,13 @@ async function registerDevice(payload: Json): Promise<Response> {
   if (existingError) return errorResponse(existingError.message, 400);
 
   if (existing) {
+    if (existing.device_secret !== providedSecret) return errorResponse("Invalid device credentials", 401);
     const pairingState = existing.family_id ? await fetchPairingState(existing.family_id) : null;
     return okResponse({ deviceSecret: existing.device_secret, pairingState });
   }
 
-  const deviceSecret = crypto.randomUUID() + crypto.randomUUID();
+  // The client saves this secret before its first request, so retries are safe.
+  const deviceSecret = providedSecret;
   const { error: insertError } = await supabase
     .from("devices")
     .insert({ install_id: installID, role, device_secret: deviceSecret });
@@ -654,8 +669,7 @@ async function retryStuckCommands(deviceId: string, payload: Json): Promise<Resp
 }
 
 async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Response> {
-  const token = req.headers.get("x-cron-token") ?? "";
-  if (token !== CRON_SHARED_TOKEN) return errorResponse("Unauthorized", 401);
+  if (!(await isAuthorizedCron(req))) return errorResponse("Unauthorized", 401);
 
   const maxBatch = clampInt(asNumber(payload.maxBatch), DEFAULT_CRON_RETRY_BATCH, 1, 200);
   const minAgeSeconds = clampInt(asNumber(payload.minAgeSeconds), DEFAULT_CRON_RETRY_MIN_AGE_SECONDS, 5, 600);
@@ -670,8 +684,7 @@ async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Resp
 }
 
 async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
-  const token = req.headers.get("x-cron-token") ?? "";
-  if (token !== CRON_SHARED_TOKEN) return errorResponse("Unauthorized", 401);
+  if (!(await isAuthorizedCron(req))) return errorResponse("Unauthorized", 401);
 
   type ScheduleRow = {
     id: string;
@@ -1949,15 +1962,15 @@ async function createAndDispatchFocusCommand(args: {
 async function requireDevice(req: Request): Promise<{ deviceId: string }> {
   const installID = req.headers.get("x-device-install-id") ?? "";
   const secret = req.headers.get("x-device-secret") ?? "";
-  if (!installID || !secret) throw new Error("Missing device credentials");
+  if (!installID || !secret) throw new DeviceAuthenticationError("Missing device credentials");
 
   const { data, error } = await supabase
     .from("devices")
     .select("id, device_secret")
     .eq("install_id", installID)
     .maybeSingle();
-  if (error || !data) throw new Error("Device is not registered");
-  if (data.device_secret !== secret) throw new Error("Invalid device credentials");
+  if (error || !data) throw new DeviceAuthenticationError("Device is not registered");
+  if (data.device_secret !== secret) throw new DeviceAuthenticationError("Invalid device credentials");
   return { deviceId: data.id };
 }
 
@@ -2063,18 +2076,65 @@ function mapCommandForClient(command: FocusCommandRow) {
 function generateCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
-  for (let i = 0; i < 6; i += 1) result += alphabet[Math.floor(Math.random() * alphabet.length)];
+  // Rejection sampling avoids bias and uses cryptographic randomness.
+  const limit = 256 - (256 % alphabet.length);
+  while (result.length < 6) {
+    for (const value of crypto.getRandomValues(new Uint8Array(12))) {
+      if (value < limit) result += alphabet[value % alphabet.length];
+      if (result.length === 6) break;
+    }
+  }
   return result;
 }
 
-async function apnsAuthHeaders(): Promise<{ host: string; topic: string; authorization: string }> {
+type ApnsConfig = {
+  keyID: string;
+  teamID: string;
+  privateKey: string;
+  topic: string;
+  useSandbox: boolean;
+};
+
+let cachedApnsConfig: { value: ApnsConfig; expiresAt: number } | undefined;
+
+async function apnsConfig(): Promise<ApnsConfig> {
+  if (cachedApnsConfig && cachedApnsConfig.expiresAt > Date.now()) return cachedApnsConfig.value;
+
   const keyID = Deno.env.get("APNS_KEY_ID");
   const teamID = Deno.env.get("APNS_TEAM_ID");
-  const p8Raw = Deno.env.get("APNS_PRIVATE_KEY");
-  const topic = Deno.env.get("APNS_TOPIC") ?? "mycompny.ParentalControl";
-  const useSandbox = (Deno.env.get("APNS_USE_SANDBOX") ?? "true").toLowerCase() === "true";
+  const privateKey = Deno.env.get("APNS_PRIVATE_KEY");
+  let config: unknown;
+  if (keyID || teamID || privateKey) {
+    const sandbox = (Deno.env.get("APNS_USE_SANDBOX") ?? "true").toLowerCase();
+    if (sandbox !== "true" && sandbox !== "false") throw new Error("Invalid APNs environment");
+    config = {
+      keyID, teamID, privateKey,
+      topic: Deno.env.get("APNS_TOPIC") ?? "mycompny.ParentalControl",
+      useSandbox: sandbox === "true",
+    };
+  } else {
+    // This RPC is executable only by service_role, never by an app/public key.
+    const { data, error } = await supabase.rpc("pc_get_apns_config");
+    if (error) throw new Error("APNs credentials are unavailable");
+    config = data;
+  }
+  const value = config as Partial<ApnsConfig> | null;
+  if (!value ||
+      typeof value.keyID !== "string" || !/^[A-Z0-9]{10}$/.test(value.keyID) ||
+      typeof value.teamID !== "string" || !/^[A-Z0-9]{10}$/.test(value.teamID) ||
+      typeof value.privateKey !== "string" || !value.privateKey.includes("BEGIN PRIVATE KEY") ||
+      typeof value.topic !== "string" || value.topic.trim().length === 0 ||
+      typeof value.useSandbox !== "boolean") {
+    throw new Error("APNs credentials are not configured");
+  }
+  const validated = value as ApnsConfig;
+  cachedApnsConfig = { value: validated, expiresAt: Date.now() + 60_000 };
+  return validated;
+}
+
+async function apnsAuthHeaders(): Promise<{ host: string; topic: string; authorization: string }> {
+  const { keyID, teamID, privateKey: p8Raw, topic, useSandbox } = await apnsConfig();
   const host = useSandbox ? "api.sandbox.push.apple.com" : "api.push.apple.com";
-  if (!keyID || !teamID || !p8Raw) throw new Error("APNs credentials are not configured");
 
   const p8 = p8Raw.replace(/\\n/g, "\n");
   const privateKey = await jose.importPKCS8(p8, "ES256");
