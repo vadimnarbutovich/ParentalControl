@@ -453,105 +453,21 @@ private struct ParentDashboardView: View {
             : LocalizedStringKey("parent.dashboard.start_focus")
     }
 
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                AppBackgroundView()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Верхняя «balance»-карточка: кольцо с доступным временем ребёнка
-                        // + Заработано/Потрачено за сегодня. Виден только при связанной паре.
-                        // Параметры (cap кольца 240, glassCard + drawingGroup-запекание) совпадают
-                        // с детским DashboardView и ScreenBlocker — карточка выглядит идентично.
-                        if appState.pairingState?.isLinked == true {
-                            ChildBalanceCard(
-                                availableSeconds: appState.parentChildAvailableSeconds ?? 0,
-                                earnedSecondsToday: appState.parentChildEarnedSecondsToday ?? 0,
-                                spentSecondsToday: appState.parentChildSpentSecondsToday ?? 0,
-                                isLoadingAvailable: appState.parentChildAvailableSeconds == nil
-                            )
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(appState.pairingState?.isLinked == true
-                                 ? "parent.dashboard.linked"
-                                 : "parent.dashboard.not_linked")
-                                .foregroundStyle(.secondary)
-                            if let endsAt = appState.remoteChildState.focusEndsAt, (appState.parentResolvedFocusActive ?? false) {
-                                Text(L10n.f("parent.dashboard.focus_until", endsAt.formatted(date: .omitted, time: .shortened)))
-                                    .foregroundStyle(.white)
-                            } else if (appState.parentResolvedFocusActive ?? false) {
-                                Text("parent.dashboard.focus_active_no_deadline")
-                                    .foregroundStyle(.white)
-                            } else {
-                                Text("parent.dashboard.focus_inactive")
-                                    .foregroundStyle(.secondary)
-                            }
-                            if appState.parentResolvedFocusActive == nil, appState.pairingState?.isLinked == true {
-                                Text("parent.dashboard.state_syncing")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                            if appState.pairingState?.isLinked == true {
-                                if let availableSeconds = appState.parentChildAvailableSeconds {
-                                    Text(L10n.f("parent.dashboard.child_available", L10n.duration(seconds: availableSeconds)))
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                } else {
-                                    Text("parent.dashboard.child_available_syncing")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            if let health = appState.parentLinkHealth {
-                                if !health.childLikelyOnline {
-                                    Text("parent.dashboard.child_offline_hint")
-                                        .font(.footnote)
-                                        .foregroundStyle(AppTheme.neonOrange)
-                                } else if health.pendingCommands > 0 {
-                                    Text(L10n.f("parent.dashboard.pending_commands", health.pendingCommands))
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            if let message = appState.remoteStatusMessage {
-                                Text(message)
-                                    .font(.footnote)
-                                    .foregroundStyle(AppTheme.neonBlue)
-                            }
-                            if appState.remoteCommandInFlight {
-                                HStack(spacing: 10) {
-                                    ProgressView()
-                                        .tint(AppTheme.neonBlue)
-                                }
-                            }
-                            if let delivery = appState.parentCommandDelivery {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(L10n.f("parent.dashboard.command_id", delivery.commandID.uuidString))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                    Text(L10n.f("parent.dashboard.command_status", delivery.status.rawValue))
-                                        .font(.footnote.weight(.semibold))
-                                        .foregroundStyle(delivery.status == .applied ? AppTheme.neonGreen : .white.opacity(0.85))
-                                    if let latency = delivery.latencySeconds {
-                                        Text(L10n.f("parent.dashboard.command_latency", latency))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    if let error = delivery.errorMessage, !error.isEmpty {
-                                        Text(error)
-                                            .font(.caption)
-                                            .foregroundStyle(AppTheme.neonOrange)
-                                    }
-                                }
-                                .padding(.top, 4)
-                            }
-                        }
+    /// Продовая карточка-подсказка «свяжите устройства», когда пары ещё нет. Для пользователя это
+    /// ключевая информация (без связки экран бесполезен), поэтому она остаётся вне DEBUG.
+    private var notLinkedPromptCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "link.badge.plus")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(AppTheme.neonBlue)
+            Text("parent.dashboard.not_linked")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
         .padding()
-        // Запекаем фон glass-card в Metal-текстуру (как у ChildBalanceCard ниже), чтобы тяжёлые
-        // shadow/glow-слои не пересчитывались покадрово при скролле. Контент — только текст, но
-        // используем единый «фоновый» паттерн для консистентности.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             Color.clear
                 .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
@@ -559,22 +475,130 @@ private struct ParentDashboardView: View {
                 .drawingGroup()
                 .padding(-36)
         )
+    }
 
-                        Button("parent.dashboard.adjust_time") {
-                            isAdjustTimePresented = true
-                        }
-                        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
-                        .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                        .disabled(!isCommandButtonEnabled)
-                        .frame(maxWidth: .infinity)
+#if DEBUG && !HIDE_DEBUG_UI
+    /// Отладочный блок: полное состояние синка/фокуса/доставки команд ребёнку. На проде не собирается.
+    /// Фиксированная ширина (`maxWidth: .infinity`) — иначе карточка меняла размер при появлении
+    /// статус-сообщений разной длины.
+    private var diagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(appState.pairingState?.isLinked == true
+                 ? "parent.dashboard.linked"
+                 : "parent.dashboard.not_linked")
+                .foregroundStyle(.secondary)
+            if let endsAt = appState.remoteChildState.focusEndsAt, (appState.parentResolvedFocusActive ?? false) {
+                Text(L10n.f("parent.dashboard.focus_until", endsAt.formatted(date: .omitted, time: .shortened)))
+                    .foregroundStyle(.white)
+            } else if (appState.parentResolvedFocusActive ?? false) {
+                Text("parent.dashboard.focus_active_no_deadline")
+                    .foregroundStyle(.white)
+            } else {
+                Text("parent.dashboard.focus_inactive")
+                    .foregroundStyle(.secondary)
+            }
+            if appState.parentResolvedFocusActive == nil, appState.pairingState?.isLinked == true {
+                Text("parent.dashboard.state_syncing")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            if appState.pairingState?.isLinked == true {
+                if let availableSeconds = appState.parentChildAvailableSeconds {
+                    Text(L10n.f("parent.dashboard.child_available", L10n.duration(seconds: availableSeconds)))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                } else {
+                    Text("parent.dashboard.child_available_syncing")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if let health = appState.parentLinkHealth, health.pendingCommands > 0 {
+                Text(L10n.f("parent.dashboard.pending_commands", health.pendingCommands))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            if let message = appState.remoteStatusMessage {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.neonBlue)
+            }
+            if appState.remoteCommandInFlight {
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .tint(AppTheme.neonBlue)
+                }
+            }
+            if let delivery = appState.parentCommandDelivery {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.f("parent.dashboard.command_id", delivery.commandID.uuidString))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Text(L10n.f("parent.dashboard.command_status", delivery.status.rawValue))
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(delivery.status == .applied ? AppTheme.neonGreen : .white.opacity(0.85))
+                    if let latency = delivery.latencySeconds {
+                        Text(L10n.f("parent.dashboard.command_latency", latency))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error = delivery.errorMessage, !error.isEmpty {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.neonOrange)
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+    }
+#endif
 
-                        // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
-                        // Видна только если у Родителя в локальном кэше есть включённые расписания.
-                        // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
-                        // поэтому не нужно дёргать AppState на каждом тике.
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppBackgroundView()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
                         if appState.pairingState?.isLinked == true {
+                            // Верхняя «balance»-карточка: кольцо с доступным временем ребёнка
+                            // + Заработано/Потрачено за сегодня. Виден только при связанной паре.
+                            // Параметры (cap кольца 240, glassCard + drawingGroup-запекание) совпадают
+                            // с детским DashboardView и ScreenBlocker — карточка выглядит идентично.
+                            ChildBalanceCard(
+                                availableSeconds: appState.parentChildAvailableSeconds ?? 0,
+                                earnedSecondsToday: appState.parentChildEarnedSecondsToday ?? 0,
+                                spentSecondsToday: appState.parentChildSpentSecondsToday ?? 0,
+                                isLoadingAvailable: appState.parentChildAvailableSeconds == nil
+                            )
+
+                            // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
+                            // Видна только если у Родителя в локальном кэше есть включённые расписания.
+                            // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
+                            // поэтому не нужно дёргать AppState на каждом тике.
                             ActiveBlockScheduleCard(appState: appState)
+                        } else {
+                            // Пары ещё нет — это важная для пользователя информация, поэтому она
+                            // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.
+                            notLinkedPromptCard
                         }
+
+#if DEBUG && !HIDE_DEBUG_UI
+                        // Диагностика доставки команд/синхронизации. Только для отладки: вынесена вниз,
+                        // под все продовые блоки, и имеет фиксированную ширину (maxWidth: .infinity),
+                        // чтобы не «прыгать» при появлении статус-сообщений.
+                        diagnosticsCard
+#endif
                     }
                     .padding()
                 }
@@ -585,6 +609,16 @@ private struct ParentDashboardView: View {
                     Rectangle()
                         .fill(.white.opacity(0.12))
                         .frame(height: 1)
+
+                    Button("parent.dashboard.adjust_time") {
+                        isAdjustTimePresented = true
+                    }
+                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
+                    .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
+                    .disabled(!isCommandButtonEnabled)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
 
                     Button(commandButtonTitleKey) {
                         let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
