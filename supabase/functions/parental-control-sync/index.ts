@@ -6,6 +6,7 @@ class DeviceAuthenticationError extends Error {}
 
 type Json = Record<string, unknown>;
 type ActionRequest = { action: string; payload: Json };
+type DeviceContext = { id: string; role: string; family_id: string | null };
 
 type RetryBatchOptions = {
   familyID?: string | null;
@@ -136,9 +137,9 @@ Deno.serve(async (req: Request) => {
       // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
       // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
       case "child_poll":
-        return await childPoll(authed.deviceId, payload);
+        return await childPoll(authed.device, payload);
       case "parent_poll":
-        return await parentPoll(authed.deviceId);
+        return await parentPoll(authed.device);
       case "upsert_child_runtime_bundle":
         return await upsertChildRuntimeBundle(authed.deviceId, payload);
       default:
@@ -300,8 +301,9 @@ async function deleteFamilyData(familyID: string): Promise<void> {
 
 /// Child → backend: всё, что ребёнок тянет каждый тик, одним вызовом.
 /// `includeParentSettings` (true раз в ~60с на клиенте) добавляет PIN/Pro родителя.
-async function childPoll(deviceId: string, payload: Json): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function childPoll(device: DeviceContext, payload: Json): Promise<Response> {
+  // Reuse the authenticated row from this request; never cache device/family state across requests.
+  const deviceId = device.id;
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can poll", 403);
   const includeParentSettings = payload.includeParentSettings === true;
 
@@ -362,8 +364,8 @@ async function childPoll(deviceId: string, payload: Json): Promise<Response> {
 
 /// Parent → backend: всё, что родитель тянет каждый тик, одним вызовом.
 /// Зеркало fetch_desired_focus_state + fetch_parent_snapshot + fetch_link_health + fetch_child_balance.
-async function parentPoll(deviceId: string): Promise<Response> {
-  const parent = await getDevice(deviceId);
+async function parentPoll(parent: DeviceContext): Promise<Response> {
+  // Authentication already loaded the role and family in this same request.
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can poll", 403);
   const familyID = parent.family_id;
 
@@ -703,7 +705,9 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
 
   const { data: rows, error } = await supabase
     .from("family_block_schedules")
-    .select("id, family_id, name, start_hour, start_minute, end_hour, end_minute, weekdays, is_enabled, is_currently_active, timezone_identifier, deleted_at");
+    .select("id, family_id, name, start_hour, start_minute, end_hour, end_minute, weekdays, is_enabled, is_currently_active, timezone_identifier, deleted_at")
+    // Keep active rows even if disabled/deleted: they still need their end transition.
+    .or("is_enabled.eq.true,is_currently_active.eq.true");
   if (error) return errorResponse(error.message, 400);
 
   const now = new Date();
@@ -1959,19 +1963,22 @@ async function createAndDispatchFocusCommand(args: {
   return okResponse(mapCommandForClient(command as FocusCommandRow));
 }
 
-async function requireDevice(req: Request): Promise<{ deviceId: string }> {
+async function requireDevice(req: Request): Promise<{ deviceId: string; device: DeviceContext }> {
   const installID = req.headers.get("x-device-install-id") ?? "";
   const secret = req.headers.get("x-device-secret") ?? "";
   if (!installID || !secret) throw new DeviceAuthenticationError("Missing device credentials");
 
   const { data, error } = await supabase
     .from("devices")
-    .select("id, device_secret")
+    .select("id, device_secret, role, family_id")
     .eq("install_id", installID)
     .maybeSingle();
   if (error || !data) throw new DeviceAuthenticationError("Device is not registered");
   if (data.device_secret !== secret) throw new DeviceAuthenticationError("Invalid device credentials");
-  return { deviceId: data.id };
+  return {
+    deviceId: data.id,
+    device: { id: data.id, role: data.role, family_id: data.family_id },
+  };
 }
 
 async function fetchPairingState(familyID: string) {
