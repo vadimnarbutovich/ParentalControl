@@ -2,8 +2,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
 
+class DeviceAuthenticationError extends Error {}
+
 type Json = Record<string, unknown>;
 type ActionRequest = { action: string; payload: Json };
+type DeviceContext = { id: string; role: string; family_id: string | null };
 
 type RetryBatchOptions = {
   familyID?: string | null;
@@ -32,7 +35,13 @@ const DEFAULT_RETRY_BATCH = 6;
 const DEFAULT_RETRY_MIN_AGE_SECONDS = 6;
 const DEFAULT_CRON_RETRY_BATCH = 50;
 const DEFAULT_CRON_RETRY_MIN_AGE_SECONDS = 10;
-const CRON_SHARED_TOKEN = "pc_retry_2026_04_20_w8pJQ7mN2xL5rV9d";
+// Cron credentials live in Supabase Vault, never in source control.
+async function isAuthorizedCron(req: Request): Promise<boolean> {
+  const token = req.headers.get("x-cron-token") ?? "";
+  if (token.length < 32 || token.length > 256) return false;
+  const { data, error } = await supabase.rpc("pc_validate_cron_token", { p_token: token });
+  return !error && data === true;
+}
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -56,7 +65,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "cron_retry_stuck_commands") return await cronRetryStuckCommands(req, payload);
     if (action === "cron_evaluate_block_schedules") return await cronEvaluateBlockSchedules(req);
-    if (action === "register_device") return await registerDevice(payload);
+    if (action === "register_device") return await registerDevice(req, payload);
 
     const authed = await requireDevice(req);
 
@@ -103,6 +112,16 @@ Deno.serve(async (req: Request) => {
         return await upsertBlockSchedule(authed.deviceId, payload);
       case "delete_block_schedule":
         return await deleteBlockSchedule(authed.deviceId, payload);
+      case "list_child_tasks":
+        return await listChildTasks(authed.deviceId);
+      case "upsert_child_task":
+        return await upsertChildTask(authed.deviceId, payload);
+      case "delete_child_task":
+        return await deleteChildTask(authed.deviceId, payload);
+      case "submit_child_task":
+        return await submitChildTask(authed.deviceId, payload);
+      case "approve_child_task":
+        return await approveChildTask(authed.deviceId, payload);
       case "set_parent_pin":
         return await setParentPin(authed.deviceId, payload);
       case "clear_parent_pin":
@@ -118,23 +137,28 @@ Deno.serve(async (req: Request) => {
       // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
       // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
       case "child_poll":
-        return await childPoll(authed.deviceId, payload);
+        return await childPoll(authed.device, payload);
       case "parent_poll":
-        return await parentPoll(authed.deviceId);
+        return await parentPoll(authed.device);
       case "upsert_child_runtime_bundle":
         return await upsertChildRuntimeBundle(authed.deviceId, payload);
       default:
         return errorResponse("Unknown action", 400);
     }
   } catch (error) {
+    if (error instanceof DeviceAuthenticationError) return errorResponse("Unauthorized", 401);
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return errorResponse(message, 500);
   }
 });
 
-async function registerDevice(payload: Json): Promise<Response> {
+async function registerDevice(req: Request, payload: Json): Promise<Response> {
   const installID = asString(payload.installID);
   const role = asString(payload.role);
+  const providedSecret = req.headers.get("x-device-secret") ?? "";
+  if (req.headers.get("x-device-install-id") !== installID || !/^[A-Fa-f0-9-]{64,128}$/.test(providedSecret)) {
+    return errorResponse("Valid device credentials are required", 401);
+  }
   if (!installID || (role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
 
   const { data: existing, error: existingError } = await supabase
@@ -145,11 +169,13 @@ async function registerDevice(payload: Json): Promise<Response> {
   if (existingError) return errorResponse(existingError.message, 400);
 
   if (existing) {
+    if (existing.device_secret !== providedSecret) return errorResponse("Invalid device credentials", 401);
     const pairingState = existing.family_id ? await fetchPairingState(existing.family_id) : null;
     return okResponse({ deviceSecret: existing.device_secret, pairingState });
   }
 
-  const deviceSecret = crypto.randomUUID() + crypto.randomUUID();
+  // The client saves this secret before its first request, so retries are safe.
+  const deviceSecret = providedSecret;
   const { error: insertError } = await supabase
     .from("devices")
     .insert({ install_id: installID, role, device_secret: deviceSecret });
@@ -255,6 +281,7 @@ async function deleteFamilyData(familyID: string): Promise<void> {
     "child_location_state",
     "family_focus_desired_state",
     "family_block_schedules",
+    "family_child_tasks",
   ];
   for (const table of tables) {
     const { error } = await supabase.from(table).delete().eq("family_id", familyID);
@@ -274,8 +301,9 @@ async function deleteFamilyData(familyID: string): Promise<void> {
 
 /// Child → backend: всё, что ребёнок тянет каждый тик, одним вызовом.
 /// `includeParentSettings` (true раз в ~60с на клиенте) добавляет PIN/Pro родителя.
-async function childPoll(deviceId: string, payload: Json): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function childPoll(device: DeviceContext, payload: Json): Promise<Response> {
+  // Reuse the authenticated row from this request; never cache device/family state across requests.
+  const deviceId = device.id;
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can poll", 403);
   const includeParentSettings = payload.includeParentSettings === true;
 
@@ -336,8 +364,8 @@ async function childPoll(deviceId: string, payload: Json): Promise<Response> {
 
 /// Parent → backend: всё, что родитель тянет каждый тик, одним вызовом.
 /// Зеркало fetch_desired_focus_state + fetch_parent_snapshot + fetch_link_health + fetch_child_balance.
-async function parentPoll(deviceId: string): Promise<Response> {
-  const parent = await getDevice(deviceId);
+async function parentPoll(parent: DeviceContext): Promise<Response> {
+  // Authentication already loaded the role and family in this same request.
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can poll", 403);
   const familyID = parent.family_id;
 
@@ -643,8 +671,7 @@ async function retryStuckCommands(deviceId: string, payload: Json): Promise<Resp
 }
 
 async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Response> {
-  const token = req.headers.get("x-cron-token") ?? "";
-  if (token !== CRON_SHARED_TOKEN) return errorResponse("Unauthorized", 401);
+  if (!(await isAuthorizedCron(req))) return errorResponse("Unauthorized", 401);
 
   const maxBatch = clampInt(asNumber(payload.maxBatch), DEFAULT_CRON_RETRY_BATCH, 1, 200);
   const minAgeSeconds = clampInt(asNumber(payload.minAgeSeconds), DEFAULT_CRON_RETRY_MIN_AGE_SECONDS, 5, 600);
@@ -659,8 +686,7 @@ async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Resp
 }
 
 async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
-  const token = req.headers.get("x-cron-token") ?? "";
-  if (token !== CRON_SHARED_TOKEN) return errorResponse("Unauthorized", 401);
+  if (!(await isAuthorizedCron(req))) return errorResponse("Unauthorized", 401);
 
   type ScheduleRow = {
     id: string;
@@ -679,7 +705,9 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
 
   const { data: rows, error } = await supabase
     .from("family_block_schedules")
-    .select("id, family_id, name, start_hour, start_minute, end_hour, end_minute, weekdays, is_enabled, is_currently_active, timezone_identifier, deleted_at");
+    .select("id, family_id, name, start_hour, start_minute, end_hour, end_minute, weekdays, is_enabled, is_currently_active, timezone_identifier, deleted_at")
+    // Keep active rows even if disabled/deleted: they still need their end transition.
+    .or("is_enabled.eq.true,is_currently_active.eq.true");
   if (error) return errorResponse(error.message, 400);
 
   const now = new Date();
@@ -1387,6 +1415,275 @@ async function deleteBlockSchedule(deviceId: string, payload: Json): Promise<Res
   return okResponse({ ok: true });
 }
 
+// MARK: Child tasks (задания для ребёнка)
+// Разовые задания parent → child. Фото-отчёт у нас НЕ хранится — ребёнок шлёт его родителю
+// через системный share sheet. Бэкенд ведёт только статус (pending → submitted → approved) и
+// награду во времени. Начисление при approve переиспользует add_earned_seconds (тот же apply-путь
+// на ребёнке, что и «Добавить время»). Синхронизация — пассивный push tasks_updated (как расписания).
+
+type ChildTaskRow = {
+  id: string;
+  family_id: string;
+  title: string;
+  details: string | null;
+  reward_seconds: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  submitted_at: string | null;
+  approved_at: string | null;
+};
+
+function mapChildTaskForClient(row: ChildTaskRow) {
+  return {
+    id: row.id,
+    title: row.title,
+    details: row.details ?? "",
+    rewardSeconds: Math.max(0, Number(row.reward_seconds ?? 0)),
+    status: row.status,
+    createdAtISO: row.created_at,
+    updatedAtISO: row.updated_at,
+    submittedAtISO: row.submitted_at,
+    approvedAtISO: row.approved_at,
+  };
+}
+
+async function listChildTasks(deviceId: string): Promise<Response> {
+  const device = await getDevice(deviceId);
+  if (!device.family_id) return errorResponse("Device is not paired", 403);
+
+  const { data, error } = await supabase
+    .from("family_child_tasks")
+    .select("id, family_id, title, details, reward_seconds, status, created_at, updated_at, submitted_at, approved_at, deleted_at")
+    .eq("family_id", device.family_id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+  if (error) return errorResponse(error.message, 400);
+
+  const items = (data ?? []).map((row) => mapChildTaskForClient(row as ChildTaskRow));
+  return okResponse({ tasks: items });
+}
+
+async function upsertChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can edit tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  const title = asString(payload.title);
+  const details = asString(payload.details) ?? "";
+  const rewardSeconds = asNumber(payload.rewardSeconds);
+
+  if (!id) return errorResponse("id is required (uuid)", 400);
+  if (!title) return errorResponse("title is required", 400);
+  if (rewardSeconds === null || rewardSeconds < 0) return errorResponse("rewardSeconds invalid", 400);
+
+  // Не перетираем жизненный цикл (status/submitted_at/approved_at), если задание уже существует —
+  // upsert используется и для редактирования. Создание: existing == null → status pending.
+  const { data: existing } = await supabase
+    .from("family_child_tasks")
+    .select("status, submitted_at, approved_at")
+    .eq("id", id)
+    .eq("family_id", parent.family_id)
+    .maybeSingle();
+
+  const nowIso = new Date().toISOString();
+  const { error: upsertError } = await supabase
+    .from("family_child_tasks")
+    .upsert({
+      id,
+      family_id: parent.family_id,
+      title,
+      details,
+      reward_seconds: Math.round(rewardSeconds),
+      status: existing?.status ?? "pending",
+      submitted_at: existing?.submitted_at ?? null,
+      approved_at: existing?.approved_at ?? null,
+      updated_at: nowIso,
+      deleted_at: null,
+    }, { onConflict: "id" });
+  if (upsertError) return errorResponse(upsertError.message, 400);
+
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true });
+}
+
+async function deleteChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can delete tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const { error: deleteError } = await supabase
+    .from("family_child_tasks")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("family_id", parent.family_id);
+  if (deleteError) return errorResponse(deleteError.message, 400);
+
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true });
+}
+
+async function submitChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const child = await getDevice(deviceId);
+  if (child.role !== "child" || !child.family_id) return errorResponse("Only paired child can submit tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const nowIso = new Date().toISOString();
+  // Только pending → submitted (нельзя пере-сабмитить approved/submitted).
+  const { data: updated, error } = await supabase
+    .from("family_child_tasks")
+    .update({ status: "submitted", submitted_at: nowIso, updated_at: nowIso })
+    .eq("id", id)
+    .eq("family_id", child.family_id)
+    .eq("status", "pending")
+    .select("id, title")
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+
+  // Уведомляем родителя alert-пушем только если статус реально сменился.
+  if (updated) {
+    await notifyParentTaskSubmitted(child.family_id, String((updated as { title?: string }).title ?? ""));
+  }
+  return okResponse({ ok: true });
+}
+
+async function approveChildTask(deviceId: string, payload: Json): Promise<Response> {
+  const parent = await getDevice(deviceId);
+  if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can approve tasks", 403);
+
+  const id = asUUIDString(payload.id);
+  if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const nowIso = new Date().toISOString();
+  // submitted → approved. Фильтр по status гарантирует идемпотентность: повторный approve
+  // вернёт 0 строк (статус уже approved) → начисления не будет.
+  const { data: updated, error } = await supabase
+    .from("family_child_tasks")
+    .update({ status: "approved", approved_at: nowIso, updated_at: nowIso })
+    .eq("id", id)
+    .eq("family_id", parent.family_id)
+    .eq("status", "submitted")
+    .select("id, reward_seconds")
+    .maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+  if (!updated) {
+    // Уже approved или не в submitted — без повторного начисления.
+    return okResponse({ ok: true, credited: false });
+  }
+
+  const reward = Math.max(0, Number((updated as { reward_seconds?: number }).reward_seconds ?? 0));
+  const { data: child } = await supabase
+    .from("devices")
+    .select("id, apns_token")
+    .eq("family_id", parent.family_id)
+    .eq("role", "child")
+    .maybeSingle();
+
+  if (child && reward > 0) {
+    // Начисление через тот же путь, что «Добавить время» (add_earned_seconds + APNs ребёнку).
+    await createAndDispatchFocusCommand({
+      familyID: parent.family_id,
+      parentDeviceID: parent.id,
+      childDeviceID: child.id,
+      childApnsToken: (child as { apns_token: string | null }).apns_token,
+      commandType: "add_earned_seconds",
+      durationSeconds: reward,
+      intentID: null,
+    });
+  }
+  // Синкаем список заданий ребёнку, чтобы задание ушло из активных (status approved).
+  await notifyChildTasksUpdated(parent.family_id, parent.id);
+  return okResponse({ ok: true, credited: reward > 0 });
+}
+
+async function notifyChildTasksUpdated(familyID: string, parentDeviceID: string): Promise<void> {
+  try {
+    const { data: child, error: childError } = await supabase
+      .from("devices")
+      .select("id, apns_token")
+      .eq("family_id", familyID)
+      .eq("role", "child")
+      .maybeSingle();
+    if (childError) {
+      console.warn("[notifyChildTasksUpdated] child lookup failed:", childError.message);
+      return;
+    }
+    if (!child) return;
+
+    await createAndDispatchFocusCommand({
+      familyID,
+      parentDeviceID,
+      childDeviceID: child.id,
+      childApnsToken: child.apns_token,
+      commandType: "tasks_updated",
+      durationSeconds: null,
+      intentID: null,
+    });
+  } catch (e) {
+    console.warn("[notifyChildTasksUpdated] dispatch failed:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+async function notifyParentTaskSubmitted(familyID: string, taskTitle: string): Promise<void> {
+  try {
+    const { data: parent, error: parentError } = await supabase
+      .from("devices")
+      .select("id, apns_token")
+      .eq("family_id", familyID)
+      .eq("role", "parent")
+      .maybeSingle();
+    if (parentError) {
+      console.warn("[notifyParentTaskSubmitted] parent lookup failed:", parentError.message);
+      return;
+    }
+    if (!parent || !parent.apns_token) return;
+    await sendApnsTaskSubmittedAlert(String(parent.apns_token), taskTitle);
+  } catch (e) {
+    console.warn("[notifyParentTaskSubmitted] dispatch failed:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+// Алерт родителю «ребёнок отправил отчёт». Не привязан к focus_commands (команды нацелены на
+// ребёнка), поэтому шлём прямой APNs alert. command_type=tasks_updated → приложение родителя
+// при обработке пуша обновит список заданий.
+async function sendApnsTaskSubmittedAlert(tokenRaw: string, taskTitle: string): Promise<void> {
+  const auth = await apnsAuthHeaders();
+  const token = tokenRaw.replace(/\s+/g, "");
+  const trimmed = taskTitle.trim();
+  const body = trimmed.length > 0
+    ? `Ребёнок отправил отчёт по заданию: ${trimmed}`
+    : "Ребёнок отправил отчёт по заданию";
+  const payload = {
+    aps: {
+      alert: { title: "ParentalControl", body },
+      sound: "default",
+      "interruption-level": "time-sensitive",
+      "content-available": 1,
+      "mutable-content": 1,
+    },
+    command_type: "tasks_updated",
+  };
+  const expirationEpoch = Math.floor(Date.now() / 1000) + 60 * 60;
+  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+    method: "POST",
+    headers: {
+      authorization: auth.authorization,
+      "apns-topic": auth.topic,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "apns-expiration": String(expirationEpoch),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`APNs error ${res.status}: ${text}`);
+}
+
 // MARK: Parent PIN (v22)
 // Родитель задаёт 4-значный PIN в своих настройках. На устройство приходит только хэш и соль —
 // исходный PIN никогда не покидает устройство, где введён. Backend хранит `parent_pin_hash` /
@@ -1666,19 +1963,22 @@ async function createAndDispatchFocusCommand(args: {
   return okResponse(mapCommandForClient(command as FocusCommandRow));
 }
 
-async function requireDevice(req: Request): Promise<{ deviceId: string }> {
+async function requireDevice(req: Request): Promise<{ deviceId: string; device: DeviceContext }> {
   const installID = req.headers.get("x-device-install-id") ?? "";
   const secret = req.headers.get("x-device-secret") ?? "";
-  if (!installID || !secret) throw new Error("Missing device credentials");
+  if (!installID || !secret) throw new DeviceAuthenticationError("Missing device credentials");
 
   const { data, error } = await supabase
     .from("devices")
-    .select("id, device_secret")
+    .select("id, device_secret, role, family_id")
     .eq("install_id", installID)
     .maybeSingle();
-  if (error || !data) throw new Error("Device is not registered");
-  if (data.device_secret !== secret) throw new Error("Invalid device credentials");
-  return { deviceId: data.id };
+  if (error || !data) throw new DeviceAuthenticationError("Device is not registered");
+  if (data.device_secret !== secret) throw new DeviceAuthenticationError("Invalid device credentials");
+  return {
+    deviceId: data.id,
+    device: { id: data.id, role: data.role, family_id: data.family_id },
+  };
 }
 
 async function fetchPairingState(familyID: string) {
@@ -1783,18 +2083,65 @@ function mapCommandForClient(command: FocusCommandRow) {
 function generateCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
-  for (let i = 0; i < 6; i += 1) result += alphabet[Math.floor(Math.random() * alphabet.length)];
+  // Rejection sampling avoids bias and uses cryptographic randomness.
+  const limit = 256 - (256 % alphabet.length);
+  while (result.length < 6) {
+    for (const value of crypto.getRandomValues(new Uint8Array(12))) {
+      if (value < limit) result += alphabet[value % alphabet.length];
+      if (result.length === 6) break;
+    }
+  }
   return result;
 }
 
-async function apnsAuthHeaders(): Promise<{ host: string; topic: string; authorization: string }> {
+type ApnsConfig = {
+  keyID: string;
+  teamID: string;
+  privateKey: string;
+  topic: string;
+  useSandbox: boolean;
+};
+
+let cachedApnsConfig: { value: ApnsConfig; expiresAt: number } | undefined;
+
+async function apnsConfig(): Promise<ApnsConfig> {
+  if (cachedApnsConfig && cachedApnsConfig.expiresAt > Date.now()) return cachedApnsConfig.value;
+
   const keyID = Deno.env.get("APNS_KEY_ID");
   const teamID = Deno.env.get("APNS_TEAM_ID");
-  const p8Raw = Deno.env.get("APNS_PRIVATE_KEY");
-  const topic = Deno.env.get("APNS_TOPIC") ?? "mycompny.ParentalControl";
-  const useSandbox = (Deno.env.get("APNS_USE_SANDBOX") ?? "true").toLowerCase() === "true";
+  const privateKey = Deno.env.get("APNS_PRIVATE_KEY");
+  let config: unknown;
+  if (keyID || teamID || privateKey) {
+    const sandbox = (Deno.env.get("APNS_USE_SANDBOX") ?? "true").toLowerCase();
+    if (sandbox !== "true" && sandbox !== "false") throw new Error("Invalid APNs environment");
+    config = {
+      keyID, teamID, privateKey,
+      topic: Deno.env.get("APNS_TOPIC") ?? "mycompny.ParentalControl",
+      useSandbox: sandbox === "true",
+    };
+  } else {
+    // This RPC is executable only by service_role, never by an app/public key.
+    const { data, error } = await supabase.rpc("pc_get_apns_config");
+    if (error) throw new Error("APNs credentials are unavailable");
+    config = data;
+  }
+  const value = config as Partial<ApnsConfig> | null;
+  if (!value ||
+      typeof value.keyID !== "string" || !/^[A-Z0-9]{10}$/.test(value.keyID) ||
+      typeof value.teamID !== "string" || !/^[A-Z0-9]{10}$/.test(value.teamID) ||
+      typeof value.privateKey !== "string" || !value.privateKey.includes("BEGIN PRIVATE KEY") ||
+      typeof value.topic !== "string" || value.topic.trim().length === 0 ||
+      typeof value.useSandbox !== "boolean") {
+    throw new Error("APNs credentials are not configured");
+  }
+  const validated = value as ApnsConfig;
+  cachedApnsConfig = { value: validated, expiresAt: Date.now() + 60_000 };
+  return validated;
+}
+
+async function apnsAuthHeaders(): Promise<{ host: string; topic: string; authorization: string }> {
+  const { keyID, teamID, privateKey: p8Raw, topic, useSandbox } = await apnsConfig();
   const host = useSandbox ? "api.sandbox.push.apple.com" : "api.push.apple.com";
-  if (!keyID || !teamID || !p8Raw) throw new Error("APNs credentials are not configured");
 
   const p8 = p8Raw.replace(/\\n/g, "\n");
   const privateKey = await jose.importPKCS8(p8, "ES256");
@@ -1830,6 +2177,8 @@ function commandLocalizedAlert(
       return { title: "ParentalControl", body: "Родитель запросил местоположение" };
     case "schedules_updated":
       return { title: "ParentalControl", body: "Расписание обновлено" };
+    case "tasks_updated":
+      return { title: "ParentalControl", body: "Задания обновлены" };
     case "schedule_started": {
       const name = (extras.scheduleName && extras.scheduleName.trim().length > 0)
         ? extras.scheduleName
@@ -1859,7 +2208,7 @@ async function sendApnsAlert(
   const auth = await apnsAuthHeaders();
   const token = tokenRaw.replace(/\s+/g, "");
   const localized = commandLocalizedAlert(commandType, durationSeconds, extras);
-  const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated";
+  const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated" || commandType === "tasks_updated";
   const interruptionLevel = isSilentCommand ? "passive" : "time-sensitive";
   const aps: Record<string, unknown> = {
     alert: {

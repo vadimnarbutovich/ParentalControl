@@ -124,7 +124,17 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonGreen)
+        // Запекаем glow/тени glass-card в Metal-текстуру (как на «Расписании»/Dashboard), чтобы
+        // скролл не пересчитывал shadow-слои покадрово. Запекаем только ФОН (Color.clear.glassCard),
+        // контент остаётся снаружи drawingGroup и полностью интерактивен. Обёртка
+        // padding(36)/drawingGroup/padding(-36) сохраняет эффекты в зоне padding и возвращает layout-frame.
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonGreen)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 
     private var appSection: some View {
@@ -181,7 +191,15 @@ struct SettingsView: View {
 #endif
         }
         .padding()
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+        // Запекаем фон glass-card (см. premiumSection). Контент с Toggle/полем ввода кода связки
+        // остаётся снаружи drawingGroup — интерактивность сохраняется.
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 
     private var parentPairingSection: some View {
@@ -363,7 +381,14 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonOrange)
+        // Запекаем фон glass-card (см. premiumSection). Кнопки PIN остаются интерактивными.
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonOrange)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 
     private var helpSection: some View {
@@ -388,10 +413,14 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonPurple)
-        .padding(36)
-        .drawingGroup()
-        .padding(-36)
+        // Запекаем фон glass-card (см. premiumSection) — единый безопасный паттерн со всеми секциями.
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonPurple)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
     }
 
     private func openFeedbackEmail() {

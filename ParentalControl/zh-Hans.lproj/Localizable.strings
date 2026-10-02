@@ -377,3 +377,45 @@
 "settings.pairing.unlink.confirm.title" = "解除设备关联？";
 "settings.pairing.unlink.confirm.message" = "家长设备与孩子设备之间的关联将被重置。要管理孩子的设备，需要重新配对。";
 "settings.pairing.unlink.confirm.button" = "解除关联";
+
+"tab.tasks" = "任务";
+
+"tasks.parent.subtitle" = "创建任务——完成后孩子可获得时间";
+"tasks.parent.empty.subtitle" = "为孩子创建第一个任务";
+"tasks.child.subtitle" = "完成任务并发送照片报告";
+"tasks.child.empty.subtitle" = "还没有来自家长的任务";
+"tasks.empty.title" = "暂无任务";
+"tasks.create_new" = "创建任务";
+"tasks.parent.approve" = "确认";
+"tasks.reward.minutes" = "%d 分钟";
+
+"tasks.status.pending" = "新建";
+"tasks.status.submitted" = "审核中";
+"tasks.status.approved" = "已完成";
+
+"tasks.editor.title.new" = "新建任务";
+"tasks.editor.title.edit" = "编辑任务";
+"tasks.editor.cancel" = "取消";
+"tasks.editor.save" = "保存";
+"tasks.editor.delete" = "删除任务";
+"tasks.editor.delete.confirm.title" = "删除任务？";
+"tasks.editor.delete.confirm.delete" = "删除";
+"tasks.editor.delete.confirm.message" = "任务将被删除。此操作无法撤销。";
+"tasks.editor.title.label" = "标题";
+"tasks.editor.title.placeholder" = "例如：洗碗";
+"tasks.editor.title.required" = "请输入标题";
+"tasks.editor.details.label" = "描述";
+"tasks.editor.details.placeholder" = "需要做什么";
+"tasks.editor.reward.label" = "完成奖励";
+"tasks.editor.reward.hint" = "孩子将获得多少时间";
+
+"tasks.detail.title" = "任务";
+"tasks.detail.reward" = "奖励：%d 分钟";
+"tasks.detail.send_hint" = "拍下已完成任务的照片并发送给家长";
+"tasks.detail.send_report" = "发送报告";
+"tasks.detail.report_source.title" = "附上照片";
+"tasks.detail.report_source.camera" = "拍照";
+"tasks.detail.report_source.library" = "从相册选择";
+"tasks.detail.submitted_hint" = "报告已发送。等待家长确认。";
+"tasks.detail.approved_hint" = "任务已确认，时间已到账。";
+"tasks.share.caption" = "任务报告：%@";

@@ -377,3 +377,45 @@
 "settings.pairing.unlink.confirm.title" = "إلغاء ربط الأجهزة؟";
 "settings.pairing.unlink.confirm.message" = "ستتم إعادة تعيين الربط بين جهازي الوالد والطفل. ستحتاج إلى الإقران مرة أخرى لإدارة جهاز الطفل.";
 "settings.pairing.unlink.confirm.button" = "إلغاء الربط";
+
+"tab.tasks" = "المهام";
+
+"tasks.parent.subtitle" = "أنشئ مهام — يكسب طفلك وقتًا عند إكمالها";
+"tasks.parent.empty.subtitle" = "أنشئ أول مهمة لطفلك";
+"tasks.child.subtitle" = "أكمل المهمة وأرسل تقريرًا بالصورة";
+"tasks.child.empty.subtitle" = "لا توجد مهام من والديك بعد";
+"tasks.empty.title" = "لا توجد مهام بعد";
+"tasks.create_new" = "إنشاء مهمة";
+"tasks.parent.approve" = "تأكيد";
+"tasks.reward.minutes" = "%d د";
+
+"tasks.status.pending" = "جديدة";
+"tasks.status.submitted" = "قيد المراجعة";
+"tasks.status.approved" = "مكتملة";
+
+"tasks.editor.title.new" = "مهمة جديدة";
+"tasks.editor.title.edit" = "تعديل المهمة";
+"tasks.editor.cancel" = "إلغاء";
+"tasks.editor.save" = "حفظ";
+"tasks.editor.delete" = "حذف المهمة";
+"tasks.editor.delete.confirm.title" = "حذف المهمة؟";
+"tasks.editor.delete.confirm.delete" = "حذف";
+"tasks.editor.delete.confirm.message" = "سيتم حذف المهمة. لا يمكن التراجع عن هذا الإجراء.";
+"tasks.editor.title.label" = "العنوان";
+"tasks.editor.title.placeholder" = "مثال: غسل الأطباق";
+"tasks.editor.title.required" = "أدخل عنوانًا";
+"tasks.editor.details.label" = "الوصف";
+"tasks.editor.details.placeholder" = "ما الذي يجب فعله";
+"tasks.editor.reward.label" = "مكافأة الإكمال";
+"tasks.editor.reward.hint" = "كم من الوقت سيحصل عليه طفلك";
+
+"tasks.detail.title" = "المهمة";
+"tasks.detail.reward" = "المكافأة: %d د";
+"tasks.detail.send_hint" = "التقط صورة للمهمة المكتملة وأرسلها إلى والديك";
+"tasks.detail.send_report" = "إرسال التقرير";
+"tasks.detail.report_source.title" = "إرفاق صورة";
+"tasks.detail.report_source.camera" = "التقاط صورة";
+"tasks.detail.report_source.library" = "اختيار من المعرض";
+"tasks.detail.submitted_hint" = "تم إرسال التقرير. في انتظار تأكيد والديك.";
+"tasks.detail.approved_hint" = "تم تأكيد المهمة وإضافة الوقت.";
+"tasks.share.caption" = "تقرير المهمة: %@";
