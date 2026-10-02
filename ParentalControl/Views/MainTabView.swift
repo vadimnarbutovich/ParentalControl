@@ -428,6 +428,7 @@ private struct ParentDashboardView: View {
     @EnvironmentObject private var appState: AppState
     /// Презентация шторки `AdjustTimeSheet` (изменить доступное время ребёнку).
     @State private var isAdjustTimePresented = false
+    @State private var isDailyLimitPresented = false
 
     private var isCommandButtonEnabled: Bool {
         appState.pairingState?.isLinked == true &&
@@ -571,16 +572,52 @@ private struct ParentDashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         if appState.pairingState?.isLinked == true {
-                            // Верхняя «balance»-карточка: кольцо с доступным временем ребёнка
-                            // + Заработано/Потрачено за сегодня. Виден только при связанной паре.
-                            // Параметры (cap кольца 240, glassCard + drawingGroup-запекание) совпадают
-                            // с детским DashboardView и ScreenBlocker — карточка выглядит идентично.
-                            ChildBalanceCard(
-                                availableSeconds: appState.parentChildAvailableSeconds ?? 0,
-                                earnedSecondsToday: appState.parentChildEarnedSecondsToday ?? 0,
-                                spentSecondsToday: appState.parentChildSpentSecondsToday ?? 0,
-                                isLoadingAvailable: appState.parentChildAvailableSeconds == nil
+                            // The saved limit is local; the child's usage loads independently.
+                            DailyBudgetBalanceCard(
+                                availableSeconds: appState.parentBudgetStatus?.state?.availableSeconds ?? appState.parentChildAvailableSeconds ?? 0,
+                                usedSeconds: appState.parentBudgetStatus?.state?.usedSeconds ?? appState.parentChildSpentSecondsToday ?? 0,
+                                limitSeconds: appState.parentBudgetStatus?.policy?.limitSeconds,
+                                earnedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.earnedSeconds) : nil,
+                                grantedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.grantedSeconds) : nil,
+                                isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
+                                isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget
                             )
+                            if appState.parentLinkHealth?.childLikelyOnline == false {
+                                Text("budget.last_known").font(.caption).foregroundStyle(.secondary)
+                            }
+
+                            Button {
+                                appState.budgetError = nil
+                                isDailyLimitPresented = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("budget.title").font(.headline)
+                                        if let policy = appState.parentBudgetStatus?.policy {
+                                            Text(L10n.duration(seconds: policy.limitSeconds) + " · " + L10n.tr("budget.every_day"))
+                                        } else if appState.hasLoadedParentBudget {
+                                            Text("budget.not_set")
+                                        } else {
+                                            ProgressView().controlSize(.small).tint(.white)
+                                        }
+                                        if appState.parentBudgetStatus?.isPending == true {
+                                            Text("budget.pending").font(.caption).foregroundStyle(AppTheme.neonOrange)
+                                        }
+                                    }
+                                    Spacer(minLength: 8)
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(.white)
+                                .padding().frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .background(Color.clear.glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                                .padding(36).drawingGroup().padding(-36))
+                            .disabled(appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget)
+                            if let error = appState.budgetError {
+                                Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
+                            }
 
                             // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
                             // Видна только если у Родителя в локальном кэше есть включённые расписания.
@@ -610,12 +647,12 @@ private struct ParentDashboardView: View {
                         .fill(.white.opacity(0.12))
                         .frame(height: 1)
 
-                    Button("parent.dashboard.adjust_time") {
+                    Button("budget.adjust_today") {
                         isAdjustTimePresented = true
                     }
                     .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                    .disabled(!isCommandButtonEnabled)
+                    .disabled(!isCommandButtonEnabled || appState.isBudgetSaving || appState.parentBudgetStatus?.policy == nil)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -646,6 +683,10 @@ private struct ParentDashboardView: View {
                 if appState.deviceRole == .parent {
                     await appState.refreshParentBlockSchedulesIfNeeded()
                 }
+            }
+            .sheet(isPresented: $isDailyLimitPresented) {
+                DailyLimitSheet(seconds: appState.parentBudgetStatus?.policy?.limitSeconds)
+                    .environmentObject(appState)
             }
             .sheet(isPresented: $isAdjustTimePresented) {
                 AdjustTimeSheet { deltaMinutes in
@@ -777,12 +818,12 @@ private struct AdjustTimeSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("parent.dashboard.adjust_time.title")
+            Text("budget.adjust_today")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white)
                 .padding(.top, 16)
 
-            Picker("parent.dashboard.adjust_time.title", selection: $selectedDelta) {
+            Picker("budget.adjust_today", selection: $selectedDelta) {
                 ForEach(Self.allowedDeltas, id: \.self) { delta in
                     Text(label(for: delta))
                         .foregroundStyle(.white)

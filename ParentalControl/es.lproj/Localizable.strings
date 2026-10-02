@@ -178,7 +178,7 @@
 "ledger.focus.session" = "Sesión de enfoque %d min";
 
 "shield.title" = "Gana minutos para continuar";
-"shield.subtitle" = "Camina o haz ejercicio para desbloquear esta app.";
+"shield.subtitle" = "Abre ParentalControl para ver el tiempo restante y tus tareas.";
 "shield.ok" = "Entendido";
 "shield.open.button" = "Abrir ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -419,3 +419,30 @@
 "tasks.detail.submitted_hint" = "Informe enviado. Esperando la aprobación de tus padres.";
 "tasks.detail.approved_hint" = "Tarea aprobada, tiempo acreditado.";
 "tasks.share.caption" = "Informe de la tarea: %@";
+
+/* Parent-managed daily screen time */
+"budget.remaining.stacked" = "Tiempo restante\nhoy";
+"budget.earned" = "Tiempo ganado";
+"budget.granted" = "Añadido por el progenitor";
+"budget.title" = "Límite diario";
+"budget.remaining" = "Tiempo restante hoy";
+"budget.used" = "Tiempo usado";
+"budget.extra" = "Tiempo extra hoy";
+"budget.not_set" = "Sin establecer";
+"budget.every_day" = "Todos los días";
+"budget.pending" = "Pendiente de aplicarse";
+"budget.explanation" = "Cuánto tiempo puede pasar tu hijo cada día en las apps seleccionadas.";
+"budget.hours" = "h";
+"budget.minutes" = "min";
+"budget.rules" = "El límite se renueva cada día. El tiempo restante y los minutos extra no se acumulan. 0 minutos significa que no se concede tiempo diario habitual.";
+"budget.first_activation" = "Este límite sustituye al saldo anterior. Se cuenta el tiempo ya usado hoy; el saldo restante anterior no se suma. El historial se conserva.";
+"budget.child_update" = "Abre la app actualizada en el dispositivo de tu hijo y espera a que se conecte.";
+"budget.save" = "Guardar";
+"budget.save_error" = "No se ha podido guardar. Comprueba la conexión e inténtalo de nuevo. Si el ajuste ha cambiado, vuelve a abrirlo.";
+"budget.apply_error" = "No se ha podido activar el límite. Comprueba el acceso a Tiempo de uso y vuelve a abrir la app.";
+"budget.adjust_today" = "Cambiar el tiempo de hoy";
+"budget.child_waiting" = "El progenitor aún no ha establecido un límite diario.";
+"budget.total" = "Tiempo asignado hoy";
+"budget.onboarding_title" = "Tiempo de uso bajo control";
+"budget.onboarding_body" = "El progenitor fija un límite diario para las apps seleccionadas. Las tareas completadas pueden dar minutos extra tras su aprobación.";
+"budget.last_known" = "Últimos datos del dispositivo del hijo";

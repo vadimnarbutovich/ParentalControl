@@ -178,7 +178,7 @@
 "ledger.focus.session" = "Fokus-Sitzung %d Min.";
 
 "shield.title" = "Sammle Minuten, um fortzufahren";
-"shield.subtitle" = "Mach Schritte oder Übungen, um diese App freizuschalten.";
+"shield.subtitle" = "Öffne ParentalControl, um deine verbleibende Zeit und Aufgaben anzusehen.";
 "shield.ok" = "Verstanden";
 "shield.open.button" = "ParentalControl öffnen";
 "shield.open.notification.title" = "ParentalControl";
@@ -419,3 +419,30 @@
 "tasks.detail.submitted_hint" = "Bericht gesendet. Warte auf die Bestätigung der Eltern.";
 "tasks.detail.approved_hint" = "Aufgabe bestätigt, Zeit gutgeschrieben.";
 "tasks.share.caption" = "Aufgabenbericht: %@";
+
+/* Parent-managed daily screen time */
+"budget.remaining.stacked" = "Heute\nverbleibend";
+"budget.earned" = "Verdient";
+"budget.granted" = "Von Eltern hinzugefügt";
+"budget.title" = "Tageslimit";
+"budget.remaining" = "Heute noch verfügbar";
+"budget.used" = "Genutzt";
+"budget.extra" = "Heute zusätzlich";
+"budget.not_set" = "Nicht festgelegt";
+"budget.every_day" = "Jeden Tag";
+"budget.pending" = "Wird noch übernommen";
+"budget.explanation" = "Wie viel Zeit dein Kind täglich in den ausgewählten Apps verbringen darf.";
+"budget.hours" = "Std.";
+"budget.minutes" = "Min.";
+"budget.rules" = "Das Limit gilt jeden Tag neu. Restzeit und zusätzliche Minuten werden nicht übertragen. 0 Minuten bedeutet: keine reguläre tägliche Nutzungszeit.";
+"budget.first_activation" = "Dieses Limit ersetzt das bisherige Guthaben. Heute bereits genutzte Zeit wird angerechnet; die bisherige Restzeit kommt nicht hinzu. Der Verlauf bleibt erhalten.";
+"budget.child_update" = "Öffne die aktualisierte App auf dem Gerät deines Kindes und warte auf die Verbindung.";
+"budget.save" = "Speichern";
+"budget.save_error" = "Speichern fehlgeschlagen. Prüfe die Verbindung und versuche es erneut. Wurde die Einstellung geändert, öffne sie erneut.";
+"budget.apply_error" = "Das Tageslimit konnte nicht aktiviert werden. Prüfe den Zugriff auf Bildschirmzeit und öffne die App erneut.";
+"budget.adjust_today" = "Zeit für heute ändern";
+"budget.child_waiting" = "Es wurde noch kein Tageslimit festgelegt.";
+"budget.total" = "Heute zugeteilt";
+"budget.onboarding_title" = "Bildschirmzeit im Blick";
+"budget.onboarding_body" = "Eltern legen ein Tageslimit für ausgewählte Apps fest. Für erledigte Aufgaben gibt es nach Bestätigung durch einen Elternteil zusätzliche Minuten.";
+"budget.last_known" = "Zuletzt vom Kind gemeldet";

@@ -24,9 +24,16 @@ final class DeviceActivityService {
             return false
         }
 
+        // Opening the main app must not restart a healthy chunk and lose partial usage.
+        // Changes to selection, limit, focus or pause explicitly stop the usage monitor first.
+        if DailyBudgetStore.shared.isEnabled, center.activities.contains(activityName),
+           let state = try? DailyBudgetStore.shared.current(), state.monitorEvent != nil {
+            return true
+        }
+
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+            intervalEnd: DateComponents(hour: 23, minute: 59, second: 59),
             repeats: true,
             warningTime: DateComponents(minute: 5)
         )
@@ -39,11 +46,14 @@ final class DeviceActivityService {
             applications: selection.applicationTokens,
             categories: selection.categoryTokens,
             webDomains: selection.webDomainTokens,
-            threshold: DateComponents(second: thresholdSeconds)
+            threshold: DateComponents(second: thresholdSeconds),
+            includesPastActivity: false
         )
-        let events = [usageBudgetEvent: usageEvent]
-
         do {
+            let eventName = DailyBudgetStore.shared.isEnabled
+                ? DeviceActivityEvent.Name(try DailyBudgetStore.shared.arm(threshold: thresholdSeconds))
+                : usageBudgetEvent
+            let events = [eventName: usageEvent]
             center.stopMonitoring([activityName])
             try center.startMonitoring(activityName, during: schedule, events: events)
             return true
@@ -55,6 +65,22 @@ final class DeviceActivityService {
     func stopMonitoring() {
         center.stopMonitoring([activityName])
         appStore.saveDeviceActivityThresholdSeconds(0)
+    }
+
+    func ensureDailyBudgetMonitoring() -> Bool {
+        let name = DeviceActivityName("parentalcontrol.dailyBudget")
+        guard DailyBudgetStore.shared.isEnabled else {
+            center.stopMonitoring([name])
+            return true
+        }
+        if center.activities.contains(name) { return true }
+        do {
+            try center.startMonitoring(name, during: DeviceActivitySchedule(
+                intervalStart: DateComponents(hour: 0, minute: 0),
+                intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: true
+            ))
+            return true
+        } catch { return false }
     }
 
     private func preferredChunkSeconds(for availableSeconds: Int) -> Int {

@@ -1,2 +1,2 @@
-"NSCameraUsageDescription" = "需要相机权限来计算深蹲和俯卧撑次数。";
+"NSCameraUsageDescription" = "相机用于拍摄已完成的任务，以便向家长提交照片报告。";
 "NSHealthShareUsageDescription" = "需要步数数据来将运动转换为使用时间。";

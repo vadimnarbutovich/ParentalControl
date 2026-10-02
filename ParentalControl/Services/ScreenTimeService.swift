@@ -61,6 +61,10 @@ final class ScreenTimeService: ObservableObject {
         isMonitoringEnabled = false
     }
 
+    func ensureDailyBudgetMonitoring() -> Bool {
+        deviceActivityService.ensureDailyBudgetMonitoring()
+    }
+
     func saveSelection() {
         guard let data = try? JSONEncoder().encode(selection) else { return }
         appStore.saveFamilySelectionData(data)

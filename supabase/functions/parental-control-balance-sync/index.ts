@@ -89,6 +89,11 @@ async function queueBalanceCommand(deviceId: string, payload: Json): Promise<Res
   const parentDevice = await getDevice(deviceId);
   if (parentDevice.role !== "parent" || !parentDevice.family_id) return errorResponse("Parent device is not paired", 403);
 
+  const { data: dailyPolicy, error: policyError } = await supabase.from("family_daily_policy")
+    .select("family_id").eq("family_id", parentDevice.family_id).maybeSingle();
+  if (policyError) return errorResponse(policyError.message, 400);
+  if (dailyPolicy) return errorResponse("Update the parent app to change today's daily budget", 409);
+
   const { data: child, error: childError } = await supabase
     .from("devices")
     .select("id, apns_token")

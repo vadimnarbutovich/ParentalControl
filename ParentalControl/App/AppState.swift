@@ -25,6 +25,13 @@ final class AppState: ObservableObject {
     @Published private(set) var balance: MinuteBalance
     @Published var settings: ConversionSettings
     @Published private(set) var ledger: [ActivityLedgerEntry]
+    @Published private(set) var dailyBudget: DailyBudgetState?
+    @Published private(set) var parentBudgetStatus: DailyBudgetStatus?
+    @Published private(set) var hasLoadedParentBudget = false
+    @Published private(set) var isBudgetSaving = false
+    @Published var budgetError: String?
+    private var budgetMonitorReady = false
+    private var budgetChangeIntent: (kind: String, seconds: Int, day: String, revision: Int, id: UUID)?
     @Published private(set) var todaySteps: Int = 0
     @Published private(set) var exerciseTotals: [String: Int]
     @Published private(set) var isHealthAuthorized = false
@@ -132,7 +139,6 @@ final class AppState: ObservableObject {
 
     var activePermissionReminder: PermissionReminderKind? {
         guard permissionStatusesReady, hasCompletedOnboarding, !permissionBannerSuppressedAfterCTA else { return nil }
-        if !isHealthAuthorized { return .health }
         if !screenTimeService.isAuthorized { return .screenTime }
         if !isNotificationAuthorized { return .notifications }
         if !isLiveActivitiesEnabled { return .liveActivities }
@@ -288,6 +294,7 @@ final class AppState: ObservableObject {
         self.parentResolvedFocusActive = nil
         self.isHealthAuthorized = false
         self.isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+        restoreParentBudgetCache()
         configureMainAppActivityTracking()
         configurePushObservers()
 
@@ -295,7 +302,7 @@ final class AppState: ObservableObject {
         storage.saveMainAppIsActive(true)
         resetDailyBalanceIfNeeded()
         ensureSpentBaselineForToday()
-        screenTimeService.stopDeviceActivityMonitoring()
+        if !DailyBudgetStore.shared.isEnabled { screenTimeService.stopDeviceActivityMonitoring() }
         restoreFocusSessionIfNeeded()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
 
@@ -317,16 +324,12 @@ final class AppState: ObservableObject {
     }
 
     func requestPermissions() async {
-        await requestHealthAccessOnly()
         await requestNotificationAccessOnly()
         await requestScreenTimeAccessOnly()
-        await requestCameraAccessOnly()
     }
 
     func refreshPermissionStatuses() async {
-        isHealthAuthorized = await healthService.hasStepReadAccess()
-        // Если доступ есть — отказа точно нет; если нет — проверяем, показывался ли диалог (чтобы отличить «не спрашивали» от «отказали»).
-        isHealthKitStepReadLikelyDenied = isHealthAuthorized ? false : await healthService.isStepReadLikelyDenied()
+        // HealthKit is no longer required.
         isNotificationAuthorized = await notificationService.isAuthorizedForAlerts()
         let notifStatus = await notificationService.currentAuthorizationStatus()
         isNotificationAuthorizationDenied = notifStatus == .denied
@@ -337,13 +340,7 @@ final class AppState: ObservableObject {
     }
 
     func requestHealthAccessOnly() async {
-        _ = await healthService.requestAccess()
-        isHealthAuthorized = await healthService.hasStepReadAccess()
-        isHealthKitStepReadLikelyDenied = isHealthAuthorized ? false : await healthService.isStepReadLikelyDenied()
-        if isHealthAuthorized {
-            startStepPolling()
-        }
-        syncScreenTimeEnforcement(notifyOnUnlock: false)
+        // No longer requested: exercise earning was removed.
     }
 
     func requestNotificationAccessOnly() async {
@@ -361,13 +358,7 @@ final class AppState: ObservableObject {
     }
 
     func requestCameraAccessOnly() async {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .denied || status == .restricted {
-            openAppSettingsURL()
-        } else {
-            _ = await cameraService.requestPermission()
-        }
-        refreshCameraAuthorizationFromSystem()
+        // No longer requested: exercise earning was removed.
     }
 
     func refreshCameraAuthorizationFromSystem() {
@@ -389,6 +380,7 @@ final class AppState: ObservableObject {
         guard deviceRole != role else { return }
         storage.saveDeviceRole(role)
         deviceRole = role
+        restoreParentBudgetCache()
         isParentChildStateResolved = role != .parent
         parentResolvedFocusActive = nil
         parentChildAvailableSeconds = nil
@@ -417,6 +409,24 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        if let family = pairingState?.familyID {
+            UserDefaults.standard.removeObject(forKey: parentBudgetCacheKey(family))
+        }
+        let hadDailyBudget = DailyBudgetStore.shared.isEnabled
+        do {
+            try DailyBudgetStore.shared.unlink()
+            if hadDailyBudget {
+                balance = .empty
+                storage.saveBalance(balance)
+            }
+        }
+        catch { budgetError = L10n.tr("budget.apply_error") }
+        dailyBudget = nil
+        parentBudgetStatus = nil
+        hasLoadedParentBudget = false
+        budgetChangeIntent = nil
+        budgetMonitorReady = false
+        _ = screenTimeService.ensureDailyBudgetMonitoring()
         parentPairingWaitTask?.cancel()
         parentPairingWaitTask = nil
         pairingState = nil
@@ -469,6 +479,7 @@ final class AppState: ObservableObject {
         do {
             let state = try await remoteSyncService.generatePairingCode()
             pairingState = state
+            restoreParentBudgetCache()
             parentPairingCode = state.pairingCode
             remoteStatusMessage = nil
             storage.savePairingState(state)
@@ -518,22 +529,95 @@ final class AppState: ObservableObject {
     ///   - иначе → `subtractEarnedSeconds` с `durationSeconds = |delta| * 60`.
     /// На стороне ребёнка `subtractEarnedSeconds` применяется как `addSeconds(-N)` с clamp 0.
     func sendParentAdjustTimeCommand(deltaMinutes: Int) async {
-        guard deltaMinutes != 0 else { return }
+        guard deltaMinutes != 0, parentBudgetStatus?.policy != nil else { return }
+        _ = await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
+    }
 
-        if deltaMinutes > 0 {
-            let seconds = deltaMinutes * 60
-            await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: seconds)
-            return
+    func saveParentDailyLimit(minutes: Int) async -> Bool {
+        await saveDailyBudgetChange(kind: "limit", seconds: minutes * 60)
+    }
+
+    private func parentBudgetCacheKey(_ family: UUID) -> String {
+        "parentalcontrol.parentDailyBudget." + family.uuidString.lowercased()
+    }
+
+    private func restoreParentBudgetCache() {
+        parentBudgetStatus = nil
+        hasLoadedParentBudget = false
+        guard deviceRole == .parent, let family = pairingState?.familyID,
+              let data = UserDefaults.standard.data(forKey: parentBudgetCacheKey(family)),
+              let cached = try? JSONDecoder().decode(DailyBudgetStatus.self, from: data),
+              cached.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
+        // Never present yesterday's cached usage as today's live balance.
+        parentBudgetStatus = DailyBudgetStatus(policy: cached.policy, childReady: cached.childReady,
+            appliedRevision: cached.appliedRevision, state: nil)
+    }
+
+    private func receiveParentBudget(_ status: DailyBudgetStatus) {
+        guard let family = pairingState?.familyID,
+              status.policy == nil || status.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
+        guard (status.policy?.revision ?? 0) >= (parentBudgetStatus?.policy?.revision ?? 0) else { return }
+        parentBudgetStatus = status
+        hasLoadedParentBudget = true
+        let cached = DailyBudgetStatus(policy: status.policy, childReady: status.childReady,
+            appliedRevision: status.appliedRevision, state: nil)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        if let data = try? encoder.encode(cached) {
+            let key = parentBudgetCacheKey(family)
+            if UserDefaults.standard.data(forKey: key) != data {
+                UserDefaults.standard.set(data, forKey: key)
+            }
         }
+    }
 
-        let absSeconds = abs(deltaMinutes) * 60
-        // Если родитель знает live-баланс ребёнка и запрос >= баланса — обнуляем целиком.
-        // Если live-баланс неизвестен (`nil`) — играем безопасно через subtract: ребёнок сам
-        // защитится clamp-ом до нуля.
-        if let availableSeconds = parentChildAvailableSeconds, absSeconds >= availableSeconds {
-            await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
-        } else {
-            await sendParentCommand(commandType: .subtractEarnedSeconds, durationSeconds: absSeconds)
+    private func saveDailyBudgetChange(kind: String, seconds: Int) async -> Bool {
+        guard deviceRole == .parent, pairingState?.isLinked == true, !isBudgetSaving else { return false }
+        let requestedFamily = pairingState?.familyID
+        isBudgetSaving = true
+        budgetError = nil
+        defer { isBudgetSaving = false }
+        let day = parentBudgetStatus?.policy?.extraDay ?? DailyBudgetState.dayKey()
+        if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds || budgetChangeIntent?.day != day {
+            budgetChangeIntent = (kind, seconds, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
+        }
+        guard let intent = budgetChangeIntent else { return false }
+        do {
+            let saved = try await remoteSyncService.changeDailyBudget(
+                kind: kind, seconds: seconds, expectedRevision: intent.revision, intentID: intent.id)
+            guard pairingState?.familyID == requestedFamily else { return false }
+            receiveParentBudget(saved)
+            budgetChangeIntent = nil
+            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds])
+            return true
+        } catch {
+            if error.localizedDescription.contains("budget_changed_refresh") { budgetChangeIntent = nil }
+            budgetError = L10n.tr("budget.save_error")
+            await refreshParentChildState()
+            return false
+        }
+    }
+
+    private func applyDailyBudgetPolicy(_ policy: DailyBudgetPolicy?) {
+        guard deviceRole == .child, let policy,
+              pairingState?.familyID.uuidString.lowercased() == policy.familyID.lowercased() else { return }
+        do {
+            let baseline = storage.loadSpentBaselineTotalSpentSeconds()
+            let administrative = dayLedgerEntries(for: Date())
+                .filter { $0.source == .parentAdjustment && $0.deltaSeconds < 0 }
+                .reduce(0) { $0 + abs($1.deltaSeconds) }
+            let previous = dailyBudget
+            dailyBudget = try DailyBudgetStore.shared.apply(policy,
+                legacyUsedToday: max(0, balance.totalSpentSeconds - baseline - administrative))
+            balance = storage.loadBalance()
+            if previous?.budgetSeconds != dailyBudget?.budgetSeconds || previous?.day != dailyBudget?.day {
+                screenTimeService.stopDeviceActivityMonitoring()
+            }
+            syncScreenTimeEnforcement(notifyOnUnlock: false)
+        } catch {
+            budgetError = L10n.tr("budget.apply_error")
+            budgetMonitorReady = false
+            screenTimeService.applyShield()
         }
     }
 
@@ -735,44 +819,6 @@ final class AppState: ObservableObject {
 
     func refreshStepsAndRewards() async {
         resetDailyBalanceIfNeeded()
-        guard await healthService.hasStepReadAccess() else {
-            isHealthAuthorized = false
-            isHealthKitStepReadLikelyDenied = true
-            todaySteps = 0
-            return
-        }
-        do {
-            let currentSteps = try await healthService.fetchTodaySteps()
-            isHealthAuthorized = true
-            isHealthKitStepReadLikelyDenied = false
-            if todaySteps != currentSteps {
-                todaySteps = currentSteps
-            }
-
-            let processed = processedStepsBaselineForToday()
-            let rewards = rewardEngine.stepSecondsEarned(
-                currentSteps: currentSteps,
-                lastProcessedSteps: processed,
-                settings: settings
-            )
-            // Keep baseline in sync even when earned seconds are zero.
-            if rewards.newProcessedSteps != processed {
-                storage.saveLastProcessedSteps(rewards.newProcessedSteps)
-            }
-            guard rewards.seconds > 0 else { return }
-
-            addSeconds(rewards.seconds, source: .steps, note: L10n.tr("ledger.steps"))
-            notificationService.notify(
-                title: L10n.tr("notification.minutes.added.title"),
-                body: L10n.f("notification.minutes.added.body", L10n.duration(seconds: rewards.seconds))
-            )
-        } catch {
-            if let hkError = error as? HKError, hkError.code == .errorAuthorizationDenied {
-                isHealthAuthorized = false
-                isHealthKitStepReadLikelyDenied = true
-                todaySteps = 0
-            }
-        }
     }
 
     func addExerciseReps(type: ExerciseType, reps: Int) {
@@ -1141,8 +1187,8 @@ final class AppState: ObservableObject {
 
         // 3) Backend sweep — pull anything the push payload may have missed (collapsed / lost).
         if deviceRole == .child {
-            await syncChildWithDesiredStateIfNeeded()
-            await processPendingRemoteCommandsIfNeeded()
+            await pollChildAndApply(includeParentSettings: false)
+            await syncChildStatsSnapshotIfNeeded()
         }
     }
 
@@ -1151,7 +1197,9 @@ final class AppState: ObservableObject {
         do {
             let bootstrap = try await remoteSyncService.registerDevice(role: role)
             if let serverPair = bootstrap.pairingState {
+                let familyChanged = pairingState?.familyID != serverPair.familyID
                 pairingState = serverPair
+                if familyChanged { restoreParentBudgetCache() }
                 storage.savePairingState(serverPair)
                 if role == .parent {
                     parentPairingCode = serverPair.pairingCode
@@ -1346,8 +1394,11 @@ final class AppState: ObservableObject {
     /// тем же кодом, что и одиночные пути (для совместимости с push-доставкой).
     private func pollChildAndApply(includeParentSettings: Bool) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        let requestedFamily = pairingState?.familyID
         do {
             let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
+            guard pairingState?.familyID == requestedFamily else { return }
+            applyDailyBudgetPolicy(poll.budget?.policy)
             await applyDesiredFocusState(poll.desired)
             let commands = poll.pendingCommands.map {
                 RemoteFocusCommand(
@@ -1604,6 +1655,11 @@ final class AppState: ObservableObject {
     }
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
+        if DailyBudgetStore.shared.isEnabled,
+           type == .addEarnedSeconds || type == .subtractEarnedSeconds || type == .resetEarnedBalance {
+            try? await remoteSyncService.ackCommand(id: id, status: .failed, errorMessage: "replaced_by_daily_budget")
+            return
+        }
         if storage.loadLastHandledRemoteCommandID() == id.uuidString {
             try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
             return
@@ -1658,6 +1714,7 @@ final class AppState: ObservableObject {
             // поэтому fetch делать не нужно.
             blockScheduleEnforcement.refreshFromStoredSchedules()
         case .tasksUpdated:
+            await pollChildAndApply(includeParentSettings: false)
             // Обычно tasks_updated отфильтровывается в applyPendingCommands; ветка здесь —
             // защита от случая, если команда дойдёт сюда как «последняя» (просто перетягиваем список).
             await refreshChildTasksFromServer()
@@ -1707,11 +1764,14 @@ final class AppState: ObservableObject {
             parentChildSpentSecondsToday = nil
             return
         }
+        let requestedFamily = pairingState?.familyID
         var lastError: Error?
         for attempt in 0..<2 {
             do {
                 // Один combined-вызов вместо desired + snapshot + linkHealth + childBalance.
                 let poll = try await remoteSyncService.parentPoll()
+                guard pairingState?.familyID == requestedFamily else { return }
+                if let status = poll.budget { receiveParentBudget(status) }
                 parentDesiredFocusActive = poll.desired.shouldFocusActive
                 parentLinkHealth = ParentLinkHealthState(
                     pendingCommands: poll.linkHealth.pendingCommands,
@@ -2096,23 +2156,18 @@ final class AppState: ObservableObject {
         let start = calendar.startOfDay(for: date)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
 
-        var steps = calendar.isDateInToday(date) ? todaySteps : 0
-        if await healthService.hasStepReadAccess() {
-            do {
-                let queryEnd = min(end, Date())
-                steps = try await healthService.fetchSteps(from: start, to: queryEnd)
-            } catch {
-                if calendar.isDateInToday(date) {
-                    steps = todaySteps
-                }
-            }
-        }
-
+        let steps = calendar.isDateInToday(date) ? todaySteps : 0
         return dailyStats(for: date, steps: steps)
     }
 
     func dailyStats(for date: Date, steps: Int) -> DailyStats {
         let calendar = Calendar.current
+        if let saved = try? DailyBudgetStore.shared.history(for: date) {
+            let focus = dayLedgerEntries(for: date).filter { $0.source == .focusSession }
+                .reduce(0) { $0 + max(0, $1.focusDurationSeconds ?? 0) }
+            return DailyStats(date: date, steps: 0, earnedSeconds: saved.budgetSeconds,
+                spentSeconds: saved.usedSeconds, pushUps: 0, squats: 0, focusSessionTotalSeconds: focus)
+        }
         let entries = dayLedgerEntries(for: date)
         let earned = entries
             .filter { $0.deltaSeconds > 0 }
@@ -2161,7 +2216,9 @@ final class AppState: ObservableObject {
 
     private func syncChildStatsSnapshotIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        resetDailyBalanceIfNeeded()
         let today = dailyStats(for: Date(), steps: todaySteps)
+        let history = (try? DailyBudgetStore.shared.pendingHistory()) ?? []
         do {
             // Один combined-вызов вместо трёх (upsert_child_day_stats + update_child_runtime
             // + update_child_balance). Runtime и balance пишутся в одну строку child_runtime_state.
@@ -2169,8 +2226,11 @@ final class AppState: ObservableObject {
                 stats: today,
                 isFocusActive: isFocusSessionActive,
                 focusEndsAt: focusSessionEndsAt,
-                availableSeconds: balance.availableSeconds
+                availableSeconds: balance.availableSeconds,
+                budgetState: budgetMonitorReady ? dailyBudget : nil,
+                budgetHistory: history
             )
+            try DailyBudgetStore.shared.markHistoryUploaded(history)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -2182,6 +2242,8 @@ final class AppState: ObservableObject {
         note: String,
         repetitionCount: Int? = nil
     ) {
+        guard source != .steps, source != .squat, source != .pushUp,
+              !DailyBudgetStore.shared.isEnabled else { return }
         balance.totalEarnedSeconds += seconds
         persistState()
         prependLedger(
@@ -2212,7 +2274,7 @@ final class AppState: ObservableObject {
         storage.saveMainAppIsActive(true)
         resetDailyBalanceIfNeeded()
         syncFocusSessionWithWallClock()
-        screenTimeService.stopDeviceActivityMonitoring()
+        if !DailyBudgetStore.shared.isEnabled { screenTimeService.stopDeviceActivityMonitoring() }
         refreshSharedStateFromAppGroup()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
         // Расписания: сразу регистрируем Device Activity из последнего JSON в App Group,
@@ -2277,17 +2339,11 @@ final class AppState: ObservableObject {
     }
 
     private func startStepPolling() {
-        Task { [weak self] in
-            guard let self else { return }
-            guard await self.healthService.hasStepReadAccess() else { return }
-            self.stepsSyncCoordinator.start { [weak self] in
-                guard let self else { return }
-                await self.refreshStepsAndRewards()
-            }
-        }
+        // No step-based earning.
     }
 
     private func reloadBalanceFromSharedStore() {
+        dailyBudget = try? DailyBudgetStore.shared.current()
         let freshBalance = storage.loadBalance()
         if freshBalance != balance {
             balance = freshBalance
@@ -2309,6 +2365,18 @@ final class AppState: ObservableObject {
     }
 
     private func syncScreenTimeEnforcement(notifyOnUnlock: Bool) {
+        if deviceRole == .child, DailyBudgetStore.shared.isEnabled {
+            dailyBudget = try? DailyBudgetStore.shared.current()
+            balance = storage.loadBalance()
+            budgetMonitorReady = screenTimeService.ensureDailyBudgetMonitoring()
+            if !budgetMonitorReady || dailyBudget == nil {
+                budgetError = L10n.tr("budget.apply_error")
+                screenTimeService.stopDeviceActivityMonitoring()
+                screenTimeService.applyShield()
+                return
+            }
+            if budgetError == L10n.tr("budget.apply_error") { budgetError = nil }
+        }
         if isFocusSessionActive {
             screenTimeService.stopDeviceActivityMonitoring()
             screenTimeService.applyShield()
@@ -2328,7 +2396,13 @@ final class AppState: ObservableObject {
 
         if hasSelection && balance.availableSeconds > 0 {
             if !screenTimeService.isMonitoringEnabled {
-                _ = screenTimeService.startDeviceActivityMonitoring(availableSeconds: balance.availableSeconds)
+                let started = screenTimeService.startDeviceActivityMonitoring(availableSeconds: balance.availableSeconds)
+                if DailyBudgetStore.shared.isEnabled && !started {
+                    budgetMonitorReady = false
+                    budgetError = L10n.tr("budget.apply_error")
+                    screenTimeService.applyShield()
+                    return
+                }
             }
         } else {
             screenTimeService.stopDeviceActivityMonitoring()
@@ -2440,29 +2514,13 @@ final class AppState: ObservableObject {
     }
 
     private func resetDailyBalanceIfNeeded() {
-        let todayStart = Calendar.current.startOfDay(for: Date())
-        if !isMidnightResetEnabled {
-            if let resetDay = storage.loadLastBalanceResetDayStart(),
-               Calendar.current.isDate(resetDay, inSameDayAs: todayStart) {
-                ensureSpentBaselineForToday()
-                return
-            }
-            storage.saveLastBalanceResetDayStart(todayStart)
-            storage.saveSpentBaseline(totalSpentSeconds: balance.totalSpentSeconds, dayStart: todayStart)
-            return
-        }
-
-        if let resetDay = storage.loadLastBalanceResetDayStart(),
-           Calendar.current.isDate(resetDay, inSameDayAs: todayStart) {
+        if DailyBudgetStore.shared.isEnabled {
+            dailyBudget = try? DailyBudgetStore.shared.current()
+            balance = storage.loadBalance()
+        } else {
+            // Preserve legacy balance until explicit parent activation.
             ensureSpentBaselineForToday()
-            return
         }
-
-        balance = .empty
-        storage.saveBalance(balance)
-        storage.saveLastBalanceResetDayStart(todayStart)
-        storage.saveSpentBaseline(totalSpentSeconds: 0, dayStart: todayStart)
-        syncScreenTimeEnforcement(notifyOnUnlock: false)
     }
 
     private func ensureSpentBaselineForToday() {
@@ -2814,6 +2872,7 @@ private struct DesiredFocusStateDTO: Codable {
 /// Ответ combined-экшена `child_poll`: всё, что ребёнок тянет за один тик.
 /// `parentPin`/`parentPro` присутствуют только когда клиент запросил `includeParentSettings`.
 private struct ChildPollDTO: Decodable {
+    let budget: DailyBudgetStatus?
     let desired: DesiredFocusStateDTO
     let pendingCommands: [PendingCommandDTO]
     let parentPin: ParentPinSyncDTO?
@@ -2822,6 +2881,7 @@ private struct ChildPollDTO: Decodable {
 
 /// Ответ combined-экшена `parent_poll`: объединяет desired + snapshot + linkHealth + childBalance.
 private struct ParentPollDTO: Decodable {
+    let budget: DailyBudgetStatus?
     let desired: DesiredFocusStateDTO
     let runtime: RemoteChildRuntimeState
     let dailyStats: ParentChildDailyStatsDTO?
@@ -3327,6 +3387,17 @@ private final class ParentalRemoteSyncService {
 
     /// Child → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_pending_commands`
     /// (+ `fetch_parent_pin` + `fetch_parent_pro`, если `includeParentSettings == true`).
+    func changeDailyBudget(kind: String, seconds: Int, expectedRevision: Int, intentID: UUID) async throws -> DailyBudgetStatus {
+        struct Payload: Encodable {
+            let kind: String
+            let seconds: Int
+            let expectedRevision: Int
+            let intentID: UUID
+        }
+        return try await call(action: "change_daily_budget", payload: Payload(
+            kind: kind, seconds: seconds, expectedRevision: expectedRevision, intentID: intentID))
+    }
+
     func childPoll(includeParentSettings: Bool) async throws -> ChildPollDTO {
         struct Payload: Encodable {
             let installID: String
@@ -3351,7 +3422,9 @@ private final class ParentalRemoteSyncService {
         stats: DailyStats,
         isFocusActive: Bool,
         focusEndsAt: Date?,
-        availableSeconds: Int
+        availableSeconds: Int,
+        budgetState: DailyBudgetState?,
+        budgetHistory: [DailyBudgetState]
     ) async throws {
         struct Payload: Encodable {
             let installID: String
@@ -3365,6 +3438,10 @@ private final class ParentalRemoteSyncService {
             let isFocusActive: Bool
             let focusEndsAt: String?
             let availableSeconds: Int
+            let budgetState: DailyBudgetState?
+            let budgetHistory: [DailyBudgetState]
+            let budgetProtocol = 1
+            let budgetTimezone = TimeZone.current.identifier
         }
         let dayStart = Calendar.current.startOfDay(for: stats.date)
         let dayISO = ISO8601DateFormatter().string(from: dayStart)
@@ -3382,7 +3459,9 @@ private final class ParentalRemoteSyncService {
                 focusSessionTotalSeconds: stats.focusSessionTotalSeconds,
                 isFocusActive: isFocusActive,
                 focusEndsAt: endISO,
-                availableSeconds: max(0, availableSeconds)
+                availableSeconds: max(0, availableSeconds),
+                budgetState: budgetState,
+                budgetHistory: budgetHistory
             )
         )
     }

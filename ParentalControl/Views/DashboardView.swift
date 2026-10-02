@@ -29,8 +29,14 @@ struct DashboardView: View {
                         if childNeedsPairing {
                             childPairingPromptCard
                         } else {
-                            balanceCard(daily: daily)
-                            earnMinutesSection(daily: daily)
+                            DailyBudgetBalanceCard(
+                                availableSeconds: appState.balance.availableSeconds,
+                                usedSeconds: appState.dailyBudget?.usedSeconds ?? daily.spentSeconds,
+                                limitSeconds: appState.dailyBudget?.policy.limitSeconds,
+                                earnedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.earnedSeconds,
+                                grantedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.grantedSeconds)
+                            if appState.dailyBudget == nil { Text("budget.child_waiting").foregroundStyle(.secondary) }
+                            if let error = appState.budgetError { Text(error).foregroundStyle(AppTheme.neonOrange) }
                             parentBlockingStatusCard
 #if DEBUG && !HIDE_DEBUG_UI
                             testingCard

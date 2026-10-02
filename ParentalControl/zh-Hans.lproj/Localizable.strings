@@ -178,7 +178,7 @@
 "ledger.focus.session" = "专注模式 %d 分钟";
 
 "shield.title" = "赚取时间以继续使用";
-"shield.subtitle" = "走走路或做运动来解锁此应用。";
+"shield.subtitle" = "打开 ParentalControl，查看剩余时间和任务。";
 "shield.ok" = "知道了";
 "shield.open.button" = "打开 ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -419,3 +419,30 @@
 "tasks.detail.submitted_hint" = "报告已发送。等待家长确认。";
 "tasks.detail.approved_hint" = "任务已确认，时间已到账。";
 "tasks.share.caption" = "任务报告：%@";
+
+/* Parent-managed daily screen time */
+"budget.remaining.stacked" = "今日\n剩余时间";
+"budget.earned" = "赚取的时间";
+"budget.granted" = "家长添加的时间";
+"budget.title" = "每日限额";
+"budget.remaining" = "今日剩余";
+"budget.used" = "已使用";
+"budget.extra" = "今日额外时间";
+"budget.not_set" = "未设置";
+"budget.every_day" = "每天";
+"budget.pending" = "等待生效";
+"budget.explanation" = "孩子每天可以使用所选 App 的时间。";
+"budget.hours" = "小时";
+"budget.minutes" = "分钟";
+"budget.rules" = "限额每天重置。剩余时间和额外时间不会结转到第二天。设为 0 分钟表示不提供常规每日使用时间。";
+"budget.first_activation" = "此限额将取代原有余额。今天已经使用的时间仍会扣除，原有剩余时间不会叠加。历史记录会保留。";
+"budget.child_update" = "请在孩子的设备上打开更新后的 App，并等待连接。";
+"budget.save" = "保存";
+"budget.save_error" = "无法保存。请检查连接后重试。如果设置已更改，请重新打开。";
+"budget.apply_error" = "无法启用每日限额。请检查“屏幕使用时间”访问权限，然后重新打开 App。";
+"budget.adjust_today" = "调整今日时间";
+"budget.child_waiting" = "家长尚未设置每日限额。";
+"budget.total" = "今日分配时间";
+"budget.onboarding_title" = "管理屏幕使用时间";
+"budget.onboarding_body" = "家长为所选 App 设置每日限额。孩子完成任务并经家长确认后，可以获得额外时间。";
+"budget.last_known" = "孩子设备上次同步的数据";

@@ -212,7 +212,7 @@ struct StatisticsView: View {
             spacing: 12
         ) {
             statisticsCard(
-                title: L10n.tr("statistics.earned"),
+                title: L10n.tr("budget.total"),
                 value: L10n.duration(seconds: dailyStats.earnedSeconds),
                 icon: .system("arrow.up.right"),
                 glow: AppTheme.neonGreen
@@ -223,6 +223,7 @@ struct StatisticsView: View {
                 icon: .system("arrow.down.right"),
                 glow: AppTheme.neonOrange
             )
+            if dailyStats.steps > 0 || dailyStats.squats > 0 || dailyStats.pushUps > 0 {
             statisticsCard(
                 title: L10n.tr("statistics.steps"),
                 value: formattedNumber(dailyStats.steps),
@@ -241,6 +242,7 @@ struct StatisticsView: View {
                 icon: .asset("pushups"),
                 glow: AppTheme.neonBlue
             )
+            }
             statisticsCard(
                 title: L10n.tr("statistics.focus.total"),
                 value: L10n.duration(seconds: dailyStats.focusSessionTotalSeconds),

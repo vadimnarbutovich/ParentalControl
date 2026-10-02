@@ -70,6 +70,8 @@ Deno.serve(async (req: Request) => {
     const authed = await requireDevice(req);
 
     switch (action) {
+      case "change_daily_budget":
+        return await changeDailyBudget(authed.device, payload);
       case "generate_pairing_code":
         return await generatePairingCode(authed.deviceId);
       case "join_pairing_code":
@@ -301,6 +303,31 @@ async function deleteFamilyData(familyID: string): Promise<void> {
 
 /// Child → backend: всё, что ребёнок тянет каждый тик, одним вызовом.
 /// `includeParentSettings` (true раз в ~60с на клиенте) добавляет PIN/Pro родителя.
+async function dailyBudgetSnapshot(deviceID: string): Promise<unknown> {
+  const { data, error } = await supabase.rpc("pc_daily_budget_snapshot", { p_device: deviceID });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function changeDailyBudget(device: DeviceContext, payload: Json): Promise<Response> {
+  if (device.role !== "parent" || !device.family_id) return errorResponse("Paired parent required", 403);
+  const seconds = asNumber(payload.seconds);
+  const revision = asNumber(payload.expectedRevision);
+  const intent = asUUIDString(payload.intentID);
+  const kind = asString(payload.kind);
+  if (!intent || seconds === null || !Number.isInteger(seconds) || revision === null ||
+      !Number.isSafeInteger(revision) || revision < 0 || (kind !== "limit" && kind !== "adjustment")) {
+    return errorResponse("Invalid budget request", 400);
+  }
+  const { data, error } = await supabase.rpc("pc_change_daily_budget", {
+    p_device: device.id, p_kind: kind, p_seconds: seconds, p_intent: intent, p_expected_revision: revision,
+  });
+  if (error) return errorResponse(error.message, 400);
+  // Reuse an already-supported wake signal; old clients never receive an unknown command enum.
+  await notifyChildTasksUpdated(device.family_id, device.id);
+  return okResponse(data);
+}
+
 async function childPoll(device: DeviceContext, payload: Json): Promise<Response> {
   // Reuse the authenticated row from this request; never cache device/family state across requests.
   const deviceId = device.id;
@@ -350,7 +377,9 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
     };
   }
 
+  const budget = await dailyBudgetSnapshot(deviceId);
   return okResponse({
+    budget,
     desired: {
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
@@ -440,7 +469,9 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   const oldestPendingAt = pendingRows?.[0]?.created_at ? Date.parse(pendingRows[0].created_at) : null;
   const childLastSeenAt = runtimeRow?.updated_at ? Date.parse(runtimeRow.updated_at) : null;
 
+  const budget = await dailyBudgetSnapshot(parent.id);
   return okResponse({
+    budget,
     desired: {
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
@@ -470,6 +501,22 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
   const device = await getDevice(deviceId);
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can sync", 403);
 
+  if (payload.budgetState !== undefined && payload.budgetState !== null) {
+    const state = payload.budgetState as Json;
+    const policy = state.policy as Json | undefined;
+    if (!policy || asUUIDString(policy.familyID) !== device.family_id ||
+        !Number.isSafeInteger(state.usedSeconds) || Number(state.usedSeconds) < 0 ||
+        Number(state.usedSeconds) > 691200 || !Number.isSafeInteger(policy.revision) ||
+        Number(policy.revision) < 1) {
+      return errorResponse("Invalid budget state", 400);
+    }
+  }
+
+  if (Array.isArray(payload.budgetHistory) && payload.budgetHistory.length > 0) {
+    const { error } = await supabase.rpc("pc_sync_budget_history", { p_device: deviceId, p_history: payload.budgetHistory });
+    if (error) return errorResponse(error.message, 400);
+  }
+
   const dayStartISO = asString(payload.dayStartISO);
   if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
 
@@ -492,6 +539,17 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
   const isFocusActive = asBool(payload.isFocusActive);
   const focusEndsAt = asString(payload.focusEndsAt);
   const availableSeconds = Math.max(0, asNumber(payload.availableSeconds) ?? 0);
+  const budgetFields: Json = {};
+  if (payload.budgetProtocol === 1) {
+    const timezone = asString(payload.budgetTimezone);
+    try { new Intl.DateTimeFormat("en", { timeZone: timezone ?? "" }).format(); }
+    catch { return errorResponse("Invalid budget timezone", 400); }
+    budgetFields.budget_protocol = 1;
+    budgetFields.budget_timezone = timezone;
+    if (payload.budgetState && typeof payload.budgetState === "object") {
+      budgetFields.budget_snapshot = payload.budgetState;
+    }
+  }
   const { error: runtimeErr } = await supabase
     .from("child_runtime_state")
     .upsert({
@@ -500,6 +558,7 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
       is_focus_active: isFocusActive,
       focus_ends_at: focusEndsAt || null,
       available_seconds: availableSeconds,
+      ...budgetFields,
       updated_at: new Date().toISOString(),
     }, { onConflict: "family_id" });
   if (runtimeErr) return errorResponse(runtimeErr.message, 400);
@@ -1558,6 +1617,15 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
   const id = asUUIDString(payload.id);
   if (!id) return errorResponse("id is required (uuid)", 400);
 
+  const { data: budgetApproval, error: budgetError } = await supabase.rpc("pc_approve_task_daily_budget", {
+    p_device: deviceId, p_task: id,
+  });
+  if (budgetError) return errorResponse(budgetError.message, 400);
+  if (budgetApproval?.legacy === false) {
+    await notifyChildTasksUpdated(parent.family_id, parent.id);
+    return okResponse({ ok: true, credited: budgetApproval.credited === true });
+  }
+
   const nowIso = new Date().toISOString();
   // submitted → approved. Фильтр по status гарантирует идемпотентность: повторный approve
   // вернёт 0 строк (статус уже approved) → начисления не будет.
@@ -2178,7 +2246,7 @@ function commandLocalizedAlert(
     case "schedules_updated":
       return { title: "ParentalControl", body: "Расписание обновлено" };
     case "tasks_updated":
-      return { title: "ParentalControl", body: "Задания обновлены" };
+      return { title: "ParentalControl", body: "Обновлены данные родителя" };
     case "schedule_started": {
       const name = (extras.scheduleName && extras.scheduleName.trim().length > 0)
         ? extras.scheduleName

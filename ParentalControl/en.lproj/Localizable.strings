@@ -181,7 +181,7 @@
 "ledger.parent.subtract_time" = "Parent took time";
 
 "shield.title" = "Earn minutes to continue";
-"shield.subtitle" = "Do steps or exercises to unlock this app.";
+"shield.subtitle" = "Open ParentalControl to check your remaining time and tasks.";
 "shield.ok" = "Got it";
 "shield.open.button" = "Open ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -501,3 +501,30 @@
 "tasks.detail.submitted_hint" = "Report sent. Waiting for your parent to approve.";
 "tasks.detail.approved_hint" = "Task approved, time credited.";
 "tasks.share.caption" = "Task report: %@";
+
+/* Parent-managed daily screen time */
+"budget.remaining.stacked" = "Remaining\ntoday";
+"budget.earned" = "Earned";
+"budget.granted" = "Added by parent";
+"budget.title" = "Daily limit";
+"budget.remaining" = "Remaining today";
+"budget.used" = "Used";
+"budget.extra" = "Extra today";
+"budget.not_set" = "Not set";
+"budget.every_day" = "Every day";
+"budget.pending" = "Waiting to apply";
+"budget.explanation" = "How much time your child can spend in the selected apps each day.";
+"budget.hours" = "hr";
+"budget.minutes" = "min";
+"budget.rules" = "The limit renews every day. Unused time and extra minutes do not carry over. A limit of 0 means no regular daily time.";
+"budget.first_activation" = "This limit replaces the previous balance. Time already used today still counts; the old remaining balance is not added. History is kept.";
+"budget.child_update" = "Open the updated app on your child's device and wait for it to connect.";
+"budget.save" = "Save";
+"budget.save_error" = "Couldn't save. Check your connection and try again. If the setting has changed, reopen it first.";
+"budget.apply_error" = "Couldn't enable the daily limit. Check Screen Time access and reopen the app.";
+"budget.adjust_today" = "Change today's time";
+"budget.child_waiting" = "The parent hasn't set a daily limit yet.";
+"budget.total" = "Allocated today";
+"budget.onboarding_title" = "Screen time, managed";
+"budget.onboarding_body" = "Parents set a daily limit for selected apps. Children can get extra minutes for completed tasks once a parent approves them.";
+"budget.last_known" = "Last reported by child";

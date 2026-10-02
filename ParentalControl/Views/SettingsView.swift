@@ -149,39 +149,10 @@ struct SettingsView: View {
                 childPairingSection
             }
 
-            // «Конвертация» (курсы заработка) и «Сброс в полночь» управляют механикой заработка
-            // и сброса баланса РЕБЁНКА — обе настройки локальные и применяются только на детском
-            // устройстве. На устройстве родителя они инертны, поэтому скрываем их там.
-            if appState.deviceRole == .child {
-                settingsRow(titleKey: "settings.item.conversion") {
-                    AppAnalytics.report("settings_conversion_open")
-                    activeSheet = .conversion
-                }
-            }
             settingsRow(titleKey: "settings.item.language") {
                 AppAnalytics.report("settings_language_tap")
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
-            }
-            if appState.deviceRole == .child {
-                settingsToggleRow(
-                    titleKey: "settings.item.midnight_reset",
-                    isOn: Binding(
-                        get: { appState.isMidnightResetEnabled },
-                        set: { newValue in
-                            if !newValue && !subscriptionService.isPro {
-                                AppAnalytics.report("settings_midnight_reset_toggle", parameters: ["action": "blocked"])
-                                showPaywall = true
-                                return
-                            }
-                            AppAnalytics.report(
-                                "settings_midnight_reset_toggle",
-                                parameters: ["enabled": newValue]
-                            )
-                            appState.updateMidnightResetEnabled(newValue)
-                        }
-                    )
-                )
             }
 #if DEBUG && !HIDE_DEBUG_UI
             settingsRow(titleKey: "settings.item.permissions") {
@@ -719,8 +690,6 @@ private struct PermissionsSettingsSheet: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    permissionRow("settings.permission.healthkit", isOn: appState.isHealthAuthorized)
-                    permissionRow("settings.permission.camera", isOn: appState.isCameraAuthorized)
                     permissionRow("settings.permission.notifications", isOn: appState.isNotificationAuthorized)
                     permissionRow("settings.permission.screentime", isOn: appState.screenTimeService.isAuthorized)
                     permissionRow("settings.permission.live_activity", isOn: appState.isLiveActivitiesEnabled)

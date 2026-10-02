@@ -42,6 +42,11 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         markHeartbeat("intervalDidStart")
+        if DailyBudgetStore.shared.isEnabled,
+           activity == activityName || activity.rawValue == "parentalcontrol.dailyBudget" {
+            enforceDailyBudget()
+            return
+        }
         if activity == activityName {
             resetDailyBalanceAndEnforceShieldIfNeeded(activity: activity)
         } else if let parsed = parseScheduleActivity(activity) {
@@ -79,6 +84,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     private func handleBudgetEvent(_ event: DeviceActivityEvent.Name, trigger: String) {
         markHeartbeat("eventDidReachThreshold:\(event.rawValue):\(trigger)")
+        if DailyBudgetStore.shared.isEnabled {
+            guard trigger == "threshold", event.rawValue.hasPrefix("parentalcontrol.usageBudget.") else { return }
+            guard let defaults = UserDefaults(suiteName: appGroupId), !budgetTemporarilyBlocked(defaults) else { return }
+            do {
+                guard let current = try DailyBudgetStore.shared.current() else { return }
+                if current.monitorEvent == nil { enforceDailyBudget(restartUsage: true); return }
+                guard current.monitorEvent == event.rawValue else { return }
+                _ = try DailyBudgetStore.shared.consume(event: event.rawValue)
+                enforceDailyBudget(restartUsage: true)
+            } catch { enforceDailyBudget() }
+            return
+        }
         guard event == usageBudgetEvent else { return }
         guard let defaults = UserDefaults(suiteName: appGroupId),
               let data = defaults.data(forKey: selectionKey),
@@ -112,6 +129,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         defaults.set(Int(Date().timeIntervalSince1970), forKey: lastConsumptionTimestampKey)
         defaults.synchronize()
 
+        if DailyBudgetStore.shared.isEnabled { enforceDailyBudget(); return }
         let remainingSeconds = max(0, balance.totalEarnedSeconds - balance.totalSpentSeconds)
         defaults.set(remainingSeconds, forKey: lastAvailableAfterKey)
         if remainingSeconds <= 0 {
@@ -135,6 +153,41 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         return try? JSONDecoder().decode(StoredBalance.self, from: data)
     }
 
+    private func budgetTemporarilyBlocked(_ defaults: UserDefaults) -> Bool {
+        if defaults.bool(forKey: "parentalcontrol.isDeviceActivityMonitoringPaused") { return true }
+        guard let data = defaults.data(forKey: "parentalcontrol.focusSessionSnapshot"),
+              let snapshot = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        guard let end = snapshot["endsAt"] as? String else { return true }
+        return (ISO8601DateFormatter().date(from: end) ?? .distantFuture) > Date()
+    }
+
+    private func enforceDailyBudget(restartUsage: Bool = false) {
+        guard let defaults = UserDefaults(suiteName: appGroupId),
+              let data = defaults.data(forKey: selectionKey),
+              let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) else { return }
+        // Manual focus and monitoring pause have priority. Named schedule shields are independent.
+        if budgetTemporarilyBlocked(defaults) { return }
+        guard let state = try? DailyBudgetStore.shared.current() else {
+            applyShield(selection: selection) // Do not unlock on corrupt/missing shared state.
+            centerStopMonitoring()
+            return
+        }
+        if state.availableSeconds == 0 {
+            applyShield(selection: selection)
+            centerStopMonitoring()
+            defaults.set(0, forKey: thresholdKey)
+        } else {
+            let center = DeviceActivityCenter()
+            if restartUsage || state.monitorEvent == nil || !center.activities.contains(activityName) {
+                guard startNextChunkMonitoring(selection: selection, availableSeconds: state.availableSeconds, defaults: defaults) else {
+                    applyShield(selection: selection)
+                    return
+                }
+            }
+            clearShield()
+        }
+    }
+
     private func saveBalance(_ balance: StoredBalance, defaults: UserDefaults) {
         guard let encoded = try? JSONEncoder().encode(balance) else { return }
         defaults.set(encoded, forKey: balanceKey)
@@ -155,18 +208,19 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         settingsStore.clearAllSettings()
     }
 
+    @discardableResult
     private func startNextChunkMonitoring(
         selection: FamilyActivitySelection,
         availableSeconds: Int,
         defaults: UserDefaults
-    ) {
+    ) -> Bool {
         let hasSelection = !selection.applicationTokens.isEmpty ||
             !selection.categoryTokens.isEmpty ||
             !selection.webDomainTokens.isEmpty
         guard hasSelection, availableSeconds > 0 else {
             centerStopMonitoring()
             defaults.set(0, forKey: thresholdKey)
-            return
+            return false
         }
 
         let chunkSeconds = preferredChunkSeconds(for: availableSeconds)
@@ -177,7 +231,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         incrementCounter(monitoringRestartCountKey)
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+            intervalEnd: DateComponents(hour: 23, minute: 59, second: 59),
             repeats: true,
             warningTime: DateComponents(minute: 5)
         )
@@ -185,20 +239,26 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             applications: selection.applicationTokens,
             categories: selection.categoryTokens,
             webDomains: selection.webDomainTokens,
-            threshold: DateComponents(second: threshold)
+            threshold: DateComponents(second: threshold),
+            includesPastActivity: false
         )
 
         do {
             let center = DeviceActivityCenter()
+            let eventName = DailyBudgetStore.shared.isEnabled
+                ? DeviceActivityEvent.Name(try DailyBudgetStore.shared.arm(threshold: threshold))
+                : usageBudgetEvent
             center.stopMonitoring([activityName])
             try center.startMonitoring(
                 activityName,
                 during: schedule,
-                events: [usageBudgetEvent: usageEvent]
+                events: [eventName: usageEvent]
             )
             markHeartbeat("startNextChunkMonitoring.success")
+            return true
         } catch {
             markHeartbeat("startNextChunkMonitoring.error")
+            return false
         }
     }
 
@@ -208,69 +268,15 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     }
 
     private func resetDailyBalanceAndEnforceShieldIfNeeded(activity: DeviceActivityName) {
-        guard activity == activityName else { return }
-        guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
-        // intervalDidStart can be fired on monitor restarts, not only at true day boundary.
-        // Restrict reset to a small window after local midnight.
-        guard shouldRunDailyResetNow() else {
-            markHeartbeat("dailyReset.skipped.notBoundary")
-            return
-        }
-
+        guard activity == activityName,
+              let defaults = UserDefaults(suiteName: appGroupId) else { return }
+        // Transition period: retain the old balance until the parent explicitly saves a limit.
         let todayStart = Calendar.current.startOfDay(for: Date())
-        let storedResetTs = defaults.integer(forKey: lastBalanceResetDayStartKey)
-        if storedResetTs > 0 {
-            let storedResetDate = Date(timeIntervalSince1970: TimeInterval(storedResetTs))
-            if Calendar.current.isDate(storedResetDate, inSameDayAs: todayStart) {
-                return
-            }
-        }
-
-        if defaults.integer(forKey: midnightResetDisabledKey) != 0 {
-            // Feature is disabled: keep marker in sync with current day, do not reset balance.
-            let currentSpent = loadBalance(defaults: defaults)?.totalSpentSeconds ?? defaults.integer(forKey: mirrorSpentKey)
-            saveSpentBaseline(totalSpentSeconds: currentSpent, dayStart: todayStart, defaults: defaults)
-            defaults.set(Int(todayStart.timeIntervalSince1970), forKey: lastBalanceResetDayStartKey)
-            defaults.synchronize()
-            markHeartbeat("dailyReset.disabled.dayChanged")
-            return
-        }
-
-        // If reset marker is missing, initialize it and do not force-reset in extension.
-        // Main app remains the primary source for first-day initialization.
-        guard storedResetTs > 0 else {
-            let currentSpent = loadBalance(defaults: defaults)?.totalSpentSeconds ?? defaults.integer(forKey: mirrorSpentKey)
-            saveSpentBaseline(totalSpentSeconds: currentSpent, dayStart: todayStart, defaults: defaults)
-            defaults.set(Int(todayStart.timeIntervalSince1970), forKey: lastBalanceResetDayStartKey)
-            defaults.synchronize()
-            markHeartbeat("dailyReset.markerInitialized")
-            return
-        }
-
-        let resetBalance = StoredBalance(totalEarnedSeconds: 0, totalSpentSeconds: 0)
-        saveBalance(resetBalance, defaults: defaults)
+        let timestamp = defaults.integer(forKey: lastBalanceResetDayStartKey)
+        if timestamp > 0, Calendar.current.isDate(Date(timeIntervalSince1970: TimeInterval(timestamp)), inSameDayAs: todayStart) { return }
+        let spent = loadBalance(defaults: defaults)?.totalSpentSeconds ?? defaults.integer(forKey: mirrorSpentKey)
+        saveSpentBaseline(totalSpentSeconds: spent, dayStart: todayStart, defaults: defaults)
         defaults.set(Int(todayStart.timeIntervalSince1970), forKey: lastBalanceResetDayStartKey)
-        saveSpentBaseline(totalSpentSeconds: 0, dayStart: todayStart, defaults: defaults)
-        defaults.set(0, forKey: thresholdKey)
-
-        if let data = defaults.data(forKey: selectionKey),
-           let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
-            let hasSelection = !selection.applicationTokens.isEmpty ||
-                !selection.categoryTokens.isEmpty ||
-                !selection.webDomainTokens.isEmpty
-            if hasSelection {
-                applyShield(selection: selection)
-                centerStopMonitoring()
-                markHeartbeat("dailyReset.appliedShield")
-            } else {
-                clearShield()
-                markHeartbeat("dailyReset.noSelection")
-            }
-        } else {
-            clearShield()
-            markHeartbeat("dailyReset.noSelectionData")
-        }
-
         defaults.synchronize()
     }
 

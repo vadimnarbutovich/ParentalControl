@@ -84,7 +84,7 @@ struct OnboardingFlowView: View {
         Group {
             switch step {
             case 0:
-                welcomePage(contentSize: size)
+                heroTextPage(titleKey: "budget.onboarding_title", bodyKey: "budget.onboarding_body", assetName: "timer", iconGlowColor: AppTheme.neonBlue, contentSize: size)
             case 1:
                 conversionPage(contentSize: size)
             case 2:
@@ -437,7 +437,7 @@ struct OnboardingFlowView: View {
                     .lineLimit(2)
                     .padding(.horizontal, 12)
 
-                Text("onboarding.done.body")
+                Text("budget.onboarding_body")
                     .font(.system(size: 19, weight: .medium, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.white.opacity(0.92))
@@ -473,7 +473,7 @@ struct OnboardingFlowView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 7) {
-            ForEach(0..<9, id: \.self) { index in
+            ForEach([0, 4, 5, 6, 7, 8], id: \.self) { index in
                 Circle()
                     .fill(index == step ? AppTheme.neonGreen : Color.white.opacity(0.22))
                     .frame(width: index == step ? 8 : 6, height: index == step ? 8 : 6)
@@ -527,7 +527,7 @@ struct OnboardingFlowView: View {
             defer { isAdvancing = false }
             switch step {
             case 0:
-                step = 1
+                step = 4
             case 1:
                 saveConversionForOnboarding()
                 step = 2

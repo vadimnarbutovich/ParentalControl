@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DA1100010000000000000001 /* DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* DailyBudget.swift */; };
 		D10229472F586559001A8F2B /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D10229462F586559001A8F2B /* DeviceActivity.framework */; };
 		D102294F2F586559001A8F2B /* DeviceActivityMonitorExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D10229442F586559001A8F2B /* DeviceActivityMonitorExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D102295B2F586576001A8F2B /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D102295A2F586576001A8F2B /* ManagedSettings.framework */; };
@@ -100,6 +101,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DA1100010000000000000002 /* DailyBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/DailyBudget.swift; sourceTree = SOURCE_ROOT; };
 		D10229442F586559001A8F2B /* DeviceActivityMonitorExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DeviceActivityMonitorExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D10229462F586559001A8F2B /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
 		D10229592F586576001A8F2B /* ShieldConfigurationExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldConfigurationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -625,6 +627,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA1100010000000000000001 /* DailyBudget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1150,7 +1153,7 @@
 				INFOPLIST_FILE = ParentalControl/Info.plist;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets you photograph completed tasks to share with your parent.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "ParentalControl records your exercise activity to convert it into screen time.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Постоянный доступ к геолокации позволяет родителю проверять местоположение ребёнка даже когда приложение свёрнуто. Координаты определяются ТОЛЬКО когда родитель явно нажимает «Обновить местоположение» — мы НЕ отслеживаем вас постоянно и не расходуем батарею.";
@@ -1202,7 +1205,7 @@
 				INFOPLIST_FILE = ParentalControl/Info.plist;
 				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets you photograph completed tasks to share with your parent.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "ParentalControl records your exercise activity to convert it into screen time.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Постоянный доступ к геолокации позволяет родителю проверять местоположение ребёнка даже когда приложение свёрнуто. Координаты определяются ТОЛЬКО когда родитель явно нажимает «Обновить местоположение» — мы НЕ отслеживаем вас постоянно и не расходуем батарею.";

@@ -178,7 +178,7 @@
 "ledger.focus.session" = "جلسة تركيز %d د";
 
 "shield.title" = "اكسب دقائق للمتابعة";
-"shield.subtitle" = "امشِ أو تمرّن لفتح هذا التطبيق.";
+"shield.subtitle" = "افتح ParentalControl للاطلاع على الوقت المتبقي والمهام.";
 "shield.ok" = "حسناً";
 "shield.open.button" = "فتح ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -419,3 +419,30 @@
 "tasks.detail.submitted_hint" = "تم إرسال التقرير. في انتظار تأكيد والديك.";
 "tasks.detail.approved_hint" = "تم تأكيد المهمة وإضافة الوقت.";
 "tasks.share.caption" = "تقرير المهمة: %@";
+
+/* Parent-managed daily screen time */
+"budget.remaining.stacked" = "الوقت المتبقي\nاليوم";
+"budget.earned" = "الوقت المكتسب";
+"budget.granted" = "وقت أضافه ولي الأمر";
+"budget.title" = "الحد اليومي";
+"budget.remaining" = "المتبقي اليوم";
+"budget.used" = "الوقت المستخدم";
+"budget.extra" = "وقت إضافي اليوم";
+"budget.not_set" = "غير محدد";
+"budget.every_day" = "كل يوم";
+"budget.pending" = "بانتظار التطبيق";
+"budget.explanation" = "الوقت الذي يمكن لطفلك قضاؤه يوميًا في التطبيقات المحددة.";
+"budget.hours" = "ساعة";
+"budget.minutes" = "دقيقة";
+"budget.rules" = "يتجدد الحد كل يوم. لا يُرحّل الوقت المتبقي أو الدقائق الإضافية لليوم التالي. اختيار 0 دقيقة يعني عدم تخصيص وقت يومي أساسي.";
+"budget.first_activation" = "سيحل هذا الحد محل الرصيد السابق. سيُحتسب الوقت المستخدم اليوم، ولن يُضاف الرصيد المتبقي القديم. سيُحفظ السجل.";
+"budget.child_update" = "افتح التطبيق المحدّث على جهاز طفلك وانتظر اتصاله.";
+"budget.save" = "حفظ";
+"budget.save_error" = "تعذّر الحفظ. تحقق من الاتصال وحاول مجددًا. إذا تغيّر الإعداد، فأعد فتحه.";
+"budget.apply_error" = "تعذّر تفعيل الحد اليومي. تحقق من إذن مدة استخدام الجهاز وأعد فتح التطبيق.";
+"budget.adjust_today" = "تعديل وقت اليوم";
+"budget.child_waiting" = "لم يحدد ولي الأمر حدًا يوميًا بعد.";
+"budget.total" = "الوقت المخصص اليوم";
+"budget.onboarding_title" = "إدارة وقت الشاشة";
+"budget.onboarding_body" = "يحدد ولي الأمر حدًا يوميًا للتطبيقات المختارة. يمكن للطفل الحصول على دقائق إضافية مقابل المهام المنجزة بعد موافقة ولي الأمر.";
+"budget.last_known" = "آخر بيانات من جهاز الطفل";
