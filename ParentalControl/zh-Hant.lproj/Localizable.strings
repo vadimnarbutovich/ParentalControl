@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "輸入已鎖定,請於 %d 秒後再試。";
 
 "settings.pin.section" = "家長 PIN";
-"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。孩子永遠不會看到 PIN 碼本身。";
+"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。";
 "settings.pin.requires_link" = "請先連接孩子裝置，才能設定 PIN 碼。";
 "settings.pin.status.set" = "已設定 PIN";
 "settings.pin.status.unset" = "尚未設定 PIN";
@@ -446,3 +446,6 @@
 "budget.total" = "今日分配時間";
 "budget.onboarding_title" = "管理螢幕使用時間";
 "budget.onboarding_body" = "家長為所選 App 設定每日限額。孩子完成任務並經家長確認後，可以獲得額外時間。";
+"settings.section.child_connection" = "連接孩子的裝置";
+"settings.section.parent_connection" = "連接家長的裝置";
+"settings.section.diagnostics" = "診斷";

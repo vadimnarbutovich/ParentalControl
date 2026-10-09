@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "Saisie verrouillée. Réessaie dans %d s.";
 
 "settings.pin.section" = "PIN parent";
-"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant. L'enfant ne voit jamais le PIN.";
+"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant.";
 "settings.pin.requires_link" = "Liez d'abord un appareil enfant pour définir un code PIN.";
 "settings.pin.status.set" = "PIN défini";
 "settings.pin.status.unset" = "PIN non défini";
@@ -446,3 +446,6 @@
 "budget.total" = "Temps accordé aujourd’hui";
 "budget.onboarding_title" = "Un temps d’écran encadré";
 "budget.onboarding_body" = "Le parent fixe une limite quotidienne pour les apps sélectionnées. Les tâches terminées peuvent rapporter des minutes supplémentaires après validation du parent.";
+"settings.section.child_connection" = "Connexion avec l’enfant";
+"settings.section.parent_connection" = "Connexion avec le parent";
+"settings.section.diagnostics" = "Diagnostic";

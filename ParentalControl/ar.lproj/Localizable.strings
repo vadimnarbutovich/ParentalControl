@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "تم قفل الإدخال. حاول مرة أخرى بعد %d ثانية.";
 
 "settings.pin.section" = "رمز PIN لولي الأمر";
-"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل. لن يرى الطفل الرمز أبداً.";
+"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل.";
 "settings.pin.requires_link" = "اربط جهاز الطفل أولاً لتعيين رمز PIN.";
 "settings.pin.status.set" = "تم تعيين رمز PIN";
 "settings.pin.status.unset" = "لم يتم تعيين رمز PIN";
@@ -446,3 +446,6 @@
 "budget.total" = "الوقت المخصص اليوم";
 "budget.onboarding_title" = "إدارة وقت الشاشة";
 "budget.onboarding_body" = "يحدد ولي الأمر حدًا يوميًا للتطبيقات المختارة. يمكن للطفل الحصول على دقائق إضافية مقابل المهام المنجزة بعد موافقة ولي الأمر.";
+"settings.section.child_connection" = "الاتصال بجهاز الطفل";
+"settings.section.parent_connection" = "الاتصال بجهاز ولي الأمر";
+"settings.section.diagnostics" = "التشخيص";

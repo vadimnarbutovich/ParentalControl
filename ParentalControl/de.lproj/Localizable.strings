@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "Eingabe gesperrt. Versuche es in %d Sek. erneut.";
 
 "settings.pin.section" = "Eltern-PIN";
-"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen. Das Kind sieht die PIN niemals.";
+"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen.";
 "settings.pin.requires_link" = "Verbinde zuerst ein Kindergerät, um eine PIN festzulegen.";
 "settings.pin.status.set" = "PIN ist festgelegt";
 "settings.pin.status.unset" = "Keine PIN festgelegt";
@@ -446,3 +446,6 @@
 "budget.total" = "Heute zugeteilt";
 "budget.onboarding_title" = "Bildschirmzeit im Blick";
 "budget.onboarding_body" = "Eltern legen ein Tageslimit für ausgewählte Apps fest. Für erledigte Aufgaben gibt es nach Bestätigung durch einen Elternteil zusätzliche Minuten.";
+"settings.section.child_connection" = "Verbindung zum Kind";
+"settings.section.parent_connection" = "Verbindung zum Elternteil";
+"settings.section.diagnostics" = "Diagnose";

@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "Input bloccato. Riprova tra %d sec.";
 
 "settings.pin.section" = "PIN genitore";
-"settings.pin.description" = "PIN a 4 cifre per aprire la modalità genitore sul dispositivo del bambino. Il bambino non vedrà mai il PIN.";
+"settings.pin.description" = "PIN a 4 cifre per aprire la modalità genitore sul dispositivo del bambino.";
 "settings.pin.requires_link" = "Collega prima un dispositivo del bambino per impostare un PIN.";
 "settings.pin.status.set" = "PIN impostato";
 "settings.pin.status.unset" = "PIN non impostato";
@@ -446,3 +446,6 @@
 "budget.total" = "Tempo assegnato oggi";
 "budget.onboarding_title" = "Tempo di utilizzo sotto controllo";
 "budget.onboarding_body" = "Il genitore imposta un limite giornaliero per le app selezionate. Le attività completate possono dare minuti extra dopo la conferma del genitore.";
+"settings.section.child_connection" = "Collegamento al figlio";
+"settings.section.parent_connection" = "Collegamento al genitore";
+"settings.section.diagnostics" = "Diagnostica";

@@ -429,7 +429,7 @@
 "parent_mode.entry.locked" = "Input locked. Try again in %d sec.";
 
 "settings.pin.section" = "Parent PIN";
-"settings.pin.description" = "4-digit PIN to open parent mode on the child device. The child never sees the PIN itself.";
+"settings.pin.description" = "4-digit PIN to open parent mode on the child device.";
 "settings.pin.requires_link" = "Link a child device first to set a PIN.";
 "settings.pin.status.set" = "PIN is set";
 "settings.pin.status.unset" = "PIN is not set";
@@ -528,3 +528,6 @@
 "budget.total" = "Allocated today";
 "budget.onboarding_title" = "Screen time, managed";
 "budget.onboarding_body" = "Parents set a daily limit for selected apps. Children can get extra minutes for completed tasks once a parent approves them.";
+"settings.section.child_connection" = "Connection to child";
+"settings.section.parent_connection" = "Connection to parent";
+"settings.section.diagnostics" = "Diagnostics";

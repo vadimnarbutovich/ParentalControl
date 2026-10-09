@@ -347,7 +347,7 @@
 "parent_mode.entry.locked" = "Entrada bloqueada. Inténtalo de nuevo en %d s.";
 
 "settings.pin.section" = "PIN de padre";
-"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño. El niño nunca verá el PIN.";
+"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño.";
 "settings.pin.requires_link" = "Primero vincula un dispositivo del niño para establecer un PIN.";
 "settings.pin.status.set" = "PIN establecido";
 "settings.pin.status.unset" = "PIN no establecido";
@@ -446,3 +446,6 @@
 "budget.total" = "Tiempo asignado hoy";
 "budget.onboarding_title" = "Tiempo de uso bajo control";
 "budget.onboarding_body" = "El progenitor fija un límite diario para las apps seleccionadas. Las tareas completadas pueden dar minutos extra tras su aprobación.";
+"settings.section.child_connection" = "Conexión con el hijo";
+"settings.section.parent_connection" = "Conexión con el progenitor";
+"settings.section.diagnostics" = "Diagnóstico";
