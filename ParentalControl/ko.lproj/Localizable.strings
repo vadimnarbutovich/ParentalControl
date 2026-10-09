@@ -421,6 +421,7 @@
 "tasks.share.caption" = "과제 리포트: %@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "차단 중";
 "budget.remaining.stacked" = "오늘\n남은 시간";
 "budget.earned" = "획득한 시간";
 "budget.granted" = "보호자가 추가한 시간";
@@ -430,7 +431,7 @@
 "budget.extra" = "오늘 추가 시간";
 "budget.not_set" = "설정 안 됨";
 "budget.every_day" = "매일";
-"budget.pending" = "적용 대기 중";
+"budget.pending" = "자녀 기기의 확인을 기다리는 중";
 "budget.explanation" = "자녀가 선택한 앱을 하루에 사용할 수 있는 시간입니다.";
 "budget.hours" = "시간";
 "budget.minutes" = "분";
@@ -445,4 +446,3 @@
 "budget.total" = "오늘 배정된 시간";
 "budget.onboarding_title" = "스크린 타임 관리";
 "budget.onboarding_body" = "보호자가 선택한 앱의 일일 한도를 설정합니다. 자녀는 할 일을 마치고 보호자의 승인을 받으면 추가 시간을 받을 수 있습니다.";
-"budget.last_known" = "자녀 기기의 마지막 보고";

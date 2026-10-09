@@ -503,6 +503,7 @@
 "tasks.share.caption" = "Task report: %@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "Blocking is on";
 "budget.remaining.stacked" = "Remaining\ntoday";
 "budget.earned" = "Earned";
 "budget.granted" = "Added by parent";
@@ -512,7 +513,7 @@
 "budget.extra" = "Extra today";
 "budget.not_set" = "Not set";
 "budget.every_day" = "Every day";
-"budget.pending" = "Waiting to apply";
+"budget.pending" = "Waiting for confirmation from your child's device";
 "budget.explanation" = "How much time your child can spend in the selected apps each day.";
 "budget.hours" = "hr";
 "budget.minutes" = "min";
@@ -527,4 +528,3 @@
 "budget.total" = "Allocated today";
 "budget.onboarding_title" = "Screen time, managed";
 "budget.onboarding_body" = "Parents set a daily limit for selected apps. Children can get extra minutes for completed tasks once a parent approves them.";
-"budget.last_known" = "Last reported by child";

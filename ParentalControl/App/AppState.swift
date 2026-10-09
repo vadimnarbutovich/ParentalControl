@@ -134,6 +134,18 @@ final class AppState: ObservableObject {
         return isRemoteChildFocusSessionActive(remoteChildState)
     }
 
+    /// Status decoration must not mistake an offline desired state for an applied block.
+    var isParentManualBlockConfirmed: Bool {
+        guard deviceRole == .parent, pairingState?.isLinked == true else { return false }
+        let runtime = lastNormalizedParentChildRuntime
+        if let delivery = parentCommandDelivery, delivery.status == .applied,
+           delivery.commandType == .startFocus || delivery.commandType == .endFocus,
+           (delivery.appliedAt ?? delivery.updatedAt) >= (runtime?.lastUpdatedAt ?? .distantPast) {
+            return delivery.commandType == .startFocus
+        }
+        return runtime.map { isRemoteChildFocusSessionActive($0) } ?? false
+    }
+
     let screenTimeService: ScreenTimeService
     private let blockScheduleEnforcement: BlockScheduleEnforcementService
 

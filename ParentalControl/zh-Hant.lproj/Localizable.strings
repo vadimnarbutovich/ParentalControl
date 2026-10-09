@@ -421,6 +421,7 @@
 "tasks.share.caption" = "任務報告：%@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "已開啟封鎖";
 "budget.remaining.stacked" = "今日\n剩餘時間";
 "budget.earned" = "賺取的時間";
 "budget.granted" = "家長新增的時間";
@@ -430,7 +431,7 @@
 "budget.extra" = "今日額外時間";
 "budget.not_set" = "尚未設定";
 "budget.every_day" = "每天";
-"budget.pending" = "等待生效";
+"budget.pending" = "正在等待孩子裝置的確認";
 "budget.explanation" = "孩子每天可以使用所選 App 的時間。";
 "budget.hours" = "小時";
 "budget.minutes" = "分鐘";
@@ -445,4 +446,3 @@
 "budget.total" = "今日分配時間";
 "budget.onboarding_title" = "管理螢幕使用時間";
 "budget.onboarding_body" = "家長為所選 App 設定每日限額。孩子完成任務並經家長確認後，可以獲得額外時間。";
-"budget.last_known" = "孩子裝置上次同步的資料";

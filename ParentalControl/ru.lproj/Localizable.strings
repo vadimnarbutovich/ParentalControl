@@ -503,6 +503,7 @@
 "tasks.share.caption" = "Отчёт по заданию: %@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "Блокировка включена";
 "budget.remaining.stacked" = "Осталось\nсегодня";
 "budget.earned" = "Заработано";
 "budget.granted" = "Добавлено родителем";
@@ -512,7 +513,7 @@
 "budget.extra" = "Дополнительно сегодня";
 "budget.not_set" = "Не установлен";
 "budget.every_day" = "Каждый день";
-"budget.pending" = "Ожидает применения";
+"budget.pending" = "Ожидаем подтверждения от устройства ребёнка";
 "budget.explanation" = "Сколько времени в день доступно ребёнку в выбранных приложениях.";
 "budget.hours" = "ч";
 "budget.minutes" = "мин";
@@ -527,4 +528,3 @@
 "budget.total" = "Выделено за день";
 "budget.onboarding_title" = "Время под контролем";
 "budget.onboarding_body" = "Родитель задаёт дневной лимит для выбранных приложений. За выполненные задания можно получить дополнительные минуты после подтверждения родителем.";
-"budget.last_known" = "Последние данные ребёнка";

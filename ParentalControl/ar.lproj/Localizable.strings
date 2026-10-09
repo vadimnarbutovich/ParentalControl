@@ -421,6 +421,7 @@
 "tasks.share.caption" = "تقرير المهمة: %@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "الحظر مفعّل";
 "budget.remaining.stacked" = "الوقت المتبقي\nاليوم";
 "budget.earned" = "الوقت المكتسب";
 "budget.granted" = "وقت أضافه ولي الأمر";
@@ -430,7 +431,7 @@
 "budget.extra" = "وقت إضافي اليوم";
 "budget.not_set" = "غير محدد";
 "budget.every_day" = "كل يوم";
-"budget.pending" = "بانتظار التطبيق";
+"budget.pending" = "بانتظار التأكيد من جهاز طفلك";
 "budget.explanation" = "الوقت الذي يمكن لطفلك قضاؤه يوميًا في التطبيقات المحددة.";
 "budget.hours" = "ساعة";
 "budget.minutes" = "دقيقة";
@@ -445,4 +446,3 @@
 "budget.total" = "الوقت المخصص اليوم";
 "budget.onboarding_title" = "إدارة وقت الشاشة";
 "budget.onboarding_body" = "يحدد ولي الأمر حدًا يوميًا للتطبيقات المختارة. يمكن للطفل الحصول على دقائق إضافية مقابل المهام المنجزة بعد موافقة ولي الأمر.";
-"budget.last_known" = "آخر بيانات من جهاز الطفل";

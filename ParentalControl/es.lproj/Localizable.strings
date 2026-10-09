@@ -421,6 +421,7 @@
 "tasks.share.caption" = "Informe de la tarea: %@";
 
 /* Parent-managed daily screen time */
+"budget.manual_block_active" = "Bloqueo activado";
 "budget.remaining.stacked" = "Tiempo restante\nhoy";
 "budget.earned" = "Tiempo ganado";
 "budget.granted" = "Añadido por el progenitor";
@@ -430,7 +431,7 @@
 "budget.extra" = "Tiempo extra hoy";
 "budget.not_set" = "Sin establecer";
 "budget.every_day" = "Todos los días";
-"budget.pending" = "Pendiente de aplicarse";
+"budget.pending" = "Esperando la confirmación del dispositivo de tu hijo";
 "budget.explanation" = "Cuánto tiempo puede pasar tu hijo cada día en las apps seleccionadas.";
 "budget.hours" = "h";
 "budget.minutes" = "min";
@@ -445,4 +446,3 @@
 "budget.total" = "Tiempo asignado hoy";
 "budget.onboarding_title" = "Tiempo de uso bajo control";
 "budget.onboarding_body" = "El progenitor fija un límite diario para las apps seleccionadas. Las tareas completadas pueden dar minutos extra tras su aprobación.";
-"budget.last_known" = "Últimos datos del dispositivo del hijo";

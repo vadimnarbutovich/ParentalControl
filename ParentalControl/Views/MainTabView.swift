@@ -36,29 +36,30 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.schedule)
 
-                MapTabView()
-                    .tabItem {
-                        Label("tab.map", systemImage: "map.fill")
-                    }
-                    .tag(MainTab.map)
-
-                StatisticsView()
-                    .tabItem {
-                        Label("tab.statistics", systemImage: "chart.bar.fill")
-                    }
-                    .tag(MainTab.statistics)
-
                 TasksTabView()
                     .tabItem {
                         Label("tab.tasks", systemImage: "checklist")
                     }
                     .tag(MainTab.tasks)
 
+                MapTabView()
+                    .tabItem {
+                        Label("tab.map", systemImage: "map.fill")
+                    }
+                    .tag(MainTab.map)
+
+                // On iPhone, the remaining tabs appear in the native More menu.
                 SettingsView()
                     .tabItem {
                         Label("tab.settings", systemImage: "gearshape.fill")
                     }
                     .tag(MainTab.settings)
+
+                StatisticsView()
+                    .tabItem {
+                        Label("tab.statistics", systemImage: "chart.bar.fill")
+                    }
+                    .tag(MainTab.statistics)
             } else if appState.isParentModeActive {
                 // Parent-режим на ребёнке: показываем те же экраны, что и в прошлой версии
                 // «обычного» ребёнка (Главная / Блокировка / Настройки) — то есть полный набор
@@ -580,11 +581,10 @@ private struct ParentDashboardView: View {
                                 earnedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.earnedSeconds) : nil,
                                 grantedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.grantedSeconds) : nil,
                                 isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
-                                isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget
+                                isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
+                                isManuallyBlocked: appState.isParentManualBlockConfirmed,
+                                isAwaitingConfirmation: appState.parentBudgetStatus?.isPending == true
                             )
-                            if appState.parentLinkHealth?.childLikelyOnline == false {
-                                Text("budget.last_known").font(.caption).foregroundStyle(.secondary)
-                            }
 
                             Button {
                                 appState.budgetError = nil
@@ -599,9 +599,6 @@ private struct ParentDashboardView: View {
                                             Text("budget.not_set")
                                         } else {
                                             ProgressView().controlSize(.small).tint(.white)
-                                        }
-                                        if appState.parentBudgetStatus?.isPending == true {
-                                            Text("budget.pending").font(.caption).foregroundStyle(AppTheme.neonOrange)
                                         }
                                     }
                                     Spacer(minLength: 8)
@@ -665,7 +662,7 @@ private struct ParentDashboardView: View {
                         NeonPrimaryButtonStyle(
                             tint: shouldShowDisabledVisualState
                                 ? .gray
-                                : ((appState.parentResolvedFocusActive ?? false) ? AppTheme.neonGreen : AppTheme.neonBlue)
+                                : (appState.isParentManualBlockConfirmed ? AppTheme.neonRed : AppTheme.neonBlue)
                         )
                     )
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)

@@ -8,39 +8,69 @@ struct DailyBudgetBalanceCard: View {
     let grantedSeconds: Int?
     var isLoading = false
     var isLimitLoading = false
+    var isManuallyBlocked = false
+    var isAwaitingConfirmation = false
 
     var body: some View {
         // Use the child's applied balance, not a newly saved limit still awaiting delivery.
         let budget = max(0, availableSeconds + usedSeconds)
-        HStack(alignment: .center, spacing: 20) {
-            VStack(alignment: .center, spacing: 12) {
-                Text("budget.remaining.stacked")
-                    .font(.headline).foregroundStyle(AppTheme.neonGreen)
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 20) {
+                VStack(alignment: .center, spacing: 12) {
+                    Text("budget.remaining.stacked")
+                        .font(.headline).foregroundStyle(AppTheme.neonGreen)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(Text("budget.remaining"))
+                    MinutesRingView(progress: CGFloat(min(1, Double(max(0, availableSeconds)) / Double(max(1, budget)))), lineWidth: 16) {
+                        VStack(spacing: 2) {
+                            if isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("\(availableSeconds < 60 ? max(0, availableSeconds) : availableSeconds / 60)")
+                                    .font(.system(size: 38, weight: .black, design: .rounded))
+                                    .minimumScaleFactor(0.6).lineLimit(1)
+                                Text(L10n.tr(availableSeconds < 60 ? "unit.seconds.abbrev" : "unit.minutes.abbrev"))
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                        }.foregroundStyle(.white)
+                            .opacity(isManuallyBlocked ? 0.2 : 1)
+                    }.frame(width: 124, height: 124)
+                        .overlay {
+                            if isManuallyBlocked {
+                                ZStack {
+                                    Circle().fill(.black.opacity(0.25))
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "lock.fill").accessibilityHidden(true)
+                                        Text("budget.manual_block_active")
+                                            .multilineTextAlignment(.center)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.85))
+                                    .padding(10)
+                                }
+                                .allowsHitTesting(false)
+                            }
+                        }
+                        // The 16-point stroke extends 8 points beyond the ring's layout.
+                        // Include its visible height when centering the title + ring group.
+                        .padding(.vertical, 8)
+                }.frame(width: 124)
+                VStack(alignment: .leading, spacing: 3) {
+                    metric("budget.title", value: isLimitLoading ? nil : limitSeconds.map { L10n.duration(seconds: $0) } ?? L10n.tr("budget.not_set"))
+                    metric("budget.used", value: isLoading ? nil : L10n.duration(seconds: usedSeconds))
+                    metric("budget.earned", value: earnedSeconds.map { L10n.duration(seconds: $0) })
+                    metric("budget.granted", value: grantedSeconds.map { L10n.duration(seconds: $0) })
+                }
+            }
+            if isAwaitingConfirmation {
+                Text("budget.pending")
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.neonOrange)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(Text("budget.remaining"))
-                MinutesRingView(progress: CGFloat(min(1, Double(max(0, availableSeconds)) / Double(max(1, budget)))), lineWidth: 16) {
-                    VStack(spacing: 2) {
-                        if isLoading {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("\(availableSeconds < 60 ? max(0, availableSeconds) : availableSeconds / 60)")
-                                .font(.system(size: 38, weight: .black, design: .rounded))
-                                .minimumScaleFactor(0.6).lineLimit(1)
-                            Text(L10n.tr(availableSeconds < 60 ? "unit.seconds.abbrev" : "unit.minutes.abbrev"))
-                                .font(.subheadline.weight(.semibold))
-                        }
-                    }.foregroundStyle(.white)
-                }.frame(width: 124, height: 124)
-                    // The 16-point stroke extends 8 points beyond the ring's layout.
-                    // Include its visible height when centering the title + ring group.
-                    .padding(.vertical, 8)
-            }.frame(width: 124)
-            VStack(alignment: .leading, spacing: 3) {
-                metric("budget.title", value: isLimitLoading ? nil : limitSeconds.map { L10n.duration(seconds: $0) } ?? L10n.tr("budget.not_set"))
-                metric("budget.used", value: isLoading ? nil : L10n.duration(seconds: usedSeconds))
-                metric("budget.earned", value: earnedSeconds.map { L10n.duration(seconds: $0) })
-                metric("budget.granted", value: grantedSeconds.map { L10n.duration(seconds: $0) })
+                    .frame(maxWidth: .infinity)
             }
         }
         .padding()
