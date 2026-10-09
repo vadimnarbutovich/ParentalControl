@@ -1,74 +1,70 @@
 import PhotosUI
 import SwiftUI
 
-/// Вкладка «Задания» на устройстве ребёнка (обычный режим). Ребёнок видит задания от родителя,
-/// открывает детально и отправляет фото-отчёт через системное «Поделиться» (мессенджер).
-/// Фото у нас не хранится — после успешного шеринга задание переходит в статус «На проверке».
-struct ChildTasksView: View {
+/// Задания на главной ребёнка. Использует NavigationStack главного экрана.
+struct ChildTasksSection: View {
     @EnvironmentObject private var appState: AppState
+    @State private var showsAll = false
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppBackgroundView()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        header
-
-                        if appState.childTasks.isEmpty {
-                            emptyState
-                        } else {
-                            VStack(spacing: 12) {
-                                ForEach(appState.childTasks) { task in
-                                    NavigationLink {
-                                        ChildTaskDetailView(taskID: task.id)
-                                            .environmentObject(appState)
-                                    } label: {
-                                        ChildTaskRowView(task: task)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let visible = appState.childTasks.filter { $0.isVisible(at: context.date) }
+            let active = visible.filter(\.isActive).sorted {
+                if $0.status != $1.status { return $0.status == .pending }
+                return $0.createdAt > $1.createdAt
+            }
+            let completed = visible.filter { !$0.isActive }.sorted {
+                ($0.approvedAt ?? $0.updatedAt) > ($1.approvedAt ?? $1.updatedAt)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Text("tab.tasks")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                if active.isEmpty && completed.isEmpty {
+                    emptyState
+                } else {
+                    if !active.isEmpty {
+                        Text("tasks.child.subtitle")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        ForEach(showsAll ? active : Array(active.prefix(3))) { task in
+                            taskLink(task)
+                        }
+                        if active.count > 3 {
+                            Button(showsAll ? "tasks.show_less" : "tasks.show_all") {
+                                showsAll.toggle()
                             }
+                            .font(.subheadline.weight(.semibold))
+                            .tint(AppTheme.neonBlue)
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 28)
+                    ForEach(completed) { task in taskLink(task) }
                 }
-                .scrollIndicators(.hidden)
             }
-            .navigationTitle("tab.tasks")
-            .navigationBarTitleDisplayMode(.inline)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .preferredColorScheme(.dark)
         .task { await appState.refreshChildTasksFromServer() }
     }
 
-    private var header: some View {
-        Text("tasks.child.subtitle")
-            .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.7))
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 6)
+    private func taskLink(_ task: ChildTask) -> some View {
+        NavigationLink {
+            ChildTaskDetailView(taskID: task.id)
+        } label: {
+            ChildTaskRowView(task: task)
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "checklist")
-                .font(.system(size: 40, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
-            Text("tasks.empty.title")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+        HStack(spacing: 12) {
+            Image(systemName: "checklist").foregroundStyle(AppTheme.neonBlue)
             Text("tasks.child.empty.subtitle")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.65))
-                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
         .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
         .padding(36)
         .drawingGroup()
@@ -99,9 +95,10 @@ private struct ChildTaskRowView: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
-                    Text(rewardText(task.rewardMinutes))
+                    Text(L10n.f("tasks.detail.reward", task.rewardMinutes))
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -136,6 +133,7 @@ private struct ChildTaskDetailView: View {
     @State private var isShareSheetPresented = false
     @State private var isLoadingPhoto = false
     @State private var isSubmitting = false
+    @State private var showMutationError = false
     /// Диалог выбора источника фото: «Сделать фото» (камера) или «Выбрать из галереи».
     @State private var showSourceDialog = false
     @State private var showCamera = false
@@ -172,6 +170,12 @@ private struct ChildTaskDetailView: View {
         .navigationTitle("tasks.detail.title")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
+        .alert("tasks.change_failed", isPresented: $showMutationError) {
+            Button("tasks.detail.send_report") { submit() }
+            Button("tasks.editor.cancel", role: .cancel) {}
+        } message: {
+            Text("tasks.change_failed.message")
+        }
         .confirmationDialog("tasks.detail.report_source.title", isPresented: $showSourceDialog, titleVisibility: .visible) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 Button("tasks.detail.report_source.camera") { showCamera = true }
@@ -296,9 +300,13 @@ private struct ChildTaskDetailView: View {
     }
 
     private func submit() {
+        guard !isSubmitting else { return }
         isSubmitting = true
         Task {
-            await appState.submitChildTask(taskID)
+            if !(await appState.submitChildTask(taskID)) {
+                await appState.refreshChildTasksFromServer()
+                showMutationError = true
+            }
             isSubmitting = false
         }
     }

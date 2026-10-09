@@ -40,6 +40,7 @@ struct DashboardView: View {
                             if appState.dailyBudget == nil { Text("budget.child_waiting").foregroundStyle(.secondary) }
                             if let error = appState.budgetError { Text(error).foregroundStyle(AppTheme.neonOrange) }
                             activeScheduleStatusCard
+                            ChildTasksSection()
 #if DEBUG && !HIDE_DEBUG_UI
                             testingCard
 #endif
@@ -48,6 +49,7 @@ struct DashboardView: View {
                     .padding()
                 }
                 .scrollIndicators(.hidden)
+                .refreshable { await appState.refreshChildTasksFromServer() }
                 .scrollDismissesKeyboard(.interactively)
             }
             .overlay {

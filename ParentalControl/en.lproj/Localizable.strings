@@ -464,11 +464,12 @@
 
 "tasks.parent.subtitle" = "Create tasks — your child earns time for completing them";
 "tasks.parent.empty.subtitle" = "Create the first task for your child";
-"tasks.child.subtitle" = "Complete the task and send a photo report";
+"tasks.child.subtitle" = "Complete a task and earn a reward";
 "tasks.child.empty.subtitle" = "No tasks from your parent yet";
 "tasks.empty.title" = "No tasks yet";
 "tasks.create_new" = "Create task";
 "tasks.parent.approve" = "Approve";
+"tasks.parent.review_needed" = "Needs your review";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "New";
@@ -482,7 +483,13 @@
 "tasks.editor.delete" = "Delete task";
 "tasks.editor.delete.confirm.title" = "Delete task?";
 "tasks.editor.delete.confirm.delete" = "Delete";
-"tasks.editor.delete.confirm.message" = "The task will be deleted. This action cannot be undone.";
+"tasks.editor.delete.confirm.message" = "The task will be permanently removed. Time already earned will be kept.";
+"tasks.edit" = "Edit";
+"tasks.show_all" = "Show all";
+"tasks.show_less" = "Show less";
+"tasks.completed.retention" = "Deleted 24 hours after approval. Earned time is kept.";
+"tasks.change_failed" = "Couldn’t confirm the change";
+"tasks.change_failed.message" = "Check your connection and refresh the task list, then try again.";
 "tasks.editor.title.label" = "Title";
 "tasks.editor.title.placeholder" = "E.g. Wash the dishes";
 "tasks.editor.title.required" = "Enter a title";

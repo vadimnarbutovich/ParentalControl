@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "أنشئ مهام — يكسب طفلك وقتًا عند إكمالها";
 "tasks.parent.empty.subtitle" = "أنشئ أول مهمة لطفلك";
-"tasks.child.subtitle" = "أكمل المهمة وأرسل تقريرًا بالصورة";
+"tasks.child.subtitle" = "أكمل المهمة واحصل على مكافأة";
 "tasks.child.empty.subtitle" = "لا توجد مهام من والديك بعد";
 "tasks.empty.title" = "لا توجد مهام بعد";
 "tasks.create_new" = "إنشاء مهمة";
 "tasks.parent.approve" = "تأكيد";
+"tasks.parent.review_needed" = "تحتاج إلى مراجعتك";
 "tasks.reward.minutes" = "%d د";
 
 "tasks.status.pending" = "جديدة";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "حذف المهمة";
 "tasks.editor.delete.confirm.title" = "حذف المهمة؟";
 "tasks.editor.delete.confirm.delete" = "حذف";
-"tasks.editor.delete.confirm.message" = "سيتم حذف المهمة. لا يمكن التراجع عن هذا الإجراء.";
+"tasks.editor.delete.confirm.message" = "ستُحذف المهمة نهائيًا. سيبقى وقت الاستخدام المكتسب محفوظًا.";
+"tasks.edit" = "تعديل";
+"tasks.show_all" = "عرض الكل";
+"tasks.show_less" = "عرض أقل";
+"tasks.completed.retention" = "تُحذف بعد 24 ساعة من الموافقة. يبقى وقت الاستخدام المكتسب محفوظًا.";
+"tasks.change_failed" = "تعذّر تأكيد التغيير";
+"tasks.change_failed.message" = "تحقّق من اتصالك وحدّث قائمة المهام، ثم حاول مرة أخرى.";
 "tasks.editor.title.label" = "العنوان";
 "tasks.editor.title.placeholder" = "مثال: غسل الأطباق";
 "tasks.editor.title.required" = "أدخل عنوانًا";

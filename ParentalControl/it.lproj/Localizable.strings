@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "Crea attività: completandole, tuo figlio guadagna tempo";
 "tasks.parent.empty.subtitle" = "Crea la prima attività per tuo figlio";
-"tasks.child.subtitle" = "Completa l'attività e invia un report con foto";
+"tasks.child.subtitle" = "Completa un’attività e ottieni una ricompensa";
 "tasks.child.empty.subtitle" = "Ancora nessuna attività dai genitori";
 "tasks.empty.title" = "Ancora nessuna attività";
 "tasks.create_new" = "Crea attività";
 "tasks.parent.approve" = "Conferma";
+"tasks.parent.review_needed" = "Da verificare";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "Nuova";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "Elimina attività";
 "tasks.editor.delete.confirm.title" = "Eliminare l'attività?";
 "tasks.editor.delete.confirm.delete" = "Elimina";
-"tasks.editor.delete.confirm.message" = "L'attività verrà eliminata. Questa azione non può essere annullata.";
+"tasks.editor.delete.confirm.message" = "L’attività verrà eliminata definitivamente. Il tempo già guadagnato verrà conservato.";
+"tasks.edit" = "Modifica";
+"tasks.show_all" = "Mostra tutte";
+"tasks.show_less" = "Mostra meno";
+"tasks.completed.retention" = "Eliminate 24 ore dopo l’approvazione. Il tempo guadagnato viene conservato.";
+"tasks.change_failed" = "Impossibile confermare la modifica";
+"tasks.change_failed.message" = "Controlla la connessione e aggiorna l’elenco delle attività, poi riprova.";
 "tasks.editor.title.label" = "Titolo";
 "tasks.editor.title.placeholder" = "Es.: Lavare i piatti";
 "tasks.editor.title.required" = "Inserisci un titolo";

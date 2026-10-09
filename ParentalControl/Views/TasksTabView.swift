@@ -2,54 +2,41 @@ import SwiftUI
 
 /// Вкладка «Задания» для роли parent. Родитель создаёт задания с наградой во времени,
 /// видит статусы (новое / на проверке / выполнено) и подтверждает отправленные ребёнком отчёты.
-/// При подтверждении бэкенд атомарно начисляет награду ребёнку (`add_earned_seconds`).
+/// При подтверждении бэкенд атомарно начисляет награду ребёнку.
 struct TasksTabView: View {
     @EnvironmentObject private var appState: AppState
     @State private var editingTask: ChildTask?
     @State private var draftTask: ChildTask?
     @State private var approvingTaskID: UUID?
+    @State private var taskToDelete: ChildTask?
+    @State private var showMutationError = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 AppBackgroundView()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        header
-
-                        if appState.childTasks.isEmpty {
-                            emptyState
-                        } else {
-                            VStack(spacing: 12) {
-                                ForEach(appState.childTasks) { task in
-                                    TaskParentRowView(
-                                        task: task,
-                                        isApproving: approvingTaskID == task.id,
-                                        onApprove: { approve(task) },
-                                        onTap: {
-                                            // Редактировать можно только не подтверждённое задание.
-                                            if task.status != .approved { editingTask = task }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        createNewButton
-                            .padding(.top, 4)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 28)
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    taskList(at: context.date)
                 }
-                .scrollIndicators(.hidden)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(.white.opacity(0.12))
+                        .frame(height: 1)
+                    createNewButton
+                        .disabled(appState.isUpdatingChildTasks)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                }
+                .background(.black.opacity(0.55))
             }
             .sheet(item: $editingTask) { task in
                 TaskEditorView(
                     initialTask: task,
                     isNew: false,
-                    onSave: { updated in appState.commitChildTask(updated) },
-                    onDelete: { appState.deleteChildTask(task.id) }
+                    onSave: { updated in await appState.commitChildTask(updated, isNew: false) },
+                    onDelete: { await appState.deleteChildTask(task.id) }
                 )
                 .environmentObject(appState)
             }
@@ -57,10 +44,31 @@ struct TasksTabView: View {
                 TaskEditorView(
                     initialTask: draft,
                     isNew: true,
-                    onSave: { updated in appState.commitChildTask(updated) },
+                    onSave: { updated in await appState.commitChildTask(updated, isNew: true) },
                     onDelete: nil
                 )
                 .environmentObject(appState)
+            }
+            .alert("tasks.editor.delete.confirm.title", isPresented: Binding(
+                get: { taskToDelete != nil },
+                set: { if !$0 { taskToDelete = nil } }
+            ), presenting: taskToDelete) { task in
+                Button("tasks.editor.delete.confirm.delete", role: .destructive) {
+                    Task {
+                        if !(await appState.deleteChildTask(task.id)) {
+                            await appState.refreshChildTasksFromServer()
+                            showMutationError = true
+                        }
+                    }
+                }
+                Button("tasks.editor.cancel", role: .cancel) {}
+            } message: { _ in
+                Text("tasks.editor.delete.confirm.message")
+            }
+            .alert("tasks.change_failed", isPresented: $showMutationError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("tasks.change_failed.message")
             }
         }
         .preferredColorScheme(.dark)
@@ -68,10 +76,108 @@ struct TasksTabView: View {
     }
 
     private func approve(_ task: ChildTask) {
+        guard !appState.isUpdatingChildTasks else { return }
         approvingTaskID = task.id
         Task {
-            await appState.approveChildTask(task.id)
+            if !(await appState.approveChildTask(task.id)) {
+                await appState.refreshChildTasksFromServer()
+                showMutationError = true
+            }
             approvingTaskID = nil
+        }
+    }
+
+    private func taskList(at date: Date) -> some View {
+        let visible = appState.childTasks.filter { $0.isVisible(at: date) }
+        let active = visible.filter(\.isActive).sorted {
+            if $0.status != $1.status { return $0.status == .submitted }
+            return $0.createdAt > $1.createdAt
+        }
+        let completed = visible.filter { !$0.isActive }.sorted {
+            ($0.approvedAt ?? $0.updatedAt) > ($1.approvedAt ?? $1.updatedAt)
+        }
+        return List {
+            Group {
+                header
+                if visible.isEmpty { emptyState }
+                ForEach(active) { task in taskRow(task) }
+                ForEach(completed) { task in taskRow(task) }
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .backgroundPreferenceValue(TaskCardGlowPreferenceKey.self) { cards in
+            GeometryReader { proxy in
+                ZStack(alignment: .topLeading) {
+                    ForEach(cards) { card in
+                        let bounds = proxy[card.bounds]
+                        Color.clear
+                            .frame(width: bounds.width, height: bounds.height)
+                            .glassCard(cornerRadius: 20, glowColor: card.color)
+                            .padding(36)
+                            .mask {
+                                Rectangle()
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .padding(36)
+                                            .blendMode(.destinationOut)
+                                    }
+                                    .compositingGroup()
+                            }
+                            .drawingGroup()
+                            .padding(-36)
+                            .position(x: bounds.midX, y: bounds.midY)
+                    }
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
+                // Clip at the scrolling viewport, not at each individual cell.
+                .clipped()
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+        .environment(\.defaultMinListRowHeight, 0)
+        .refreshable { await appState.refreshChildTasksFromServer() }
+    }
+
+    private func taskRow(_ task: ChildTask) -> some View {
+        TaskParentRowView(
+            task: task,
+            isApproving: approvingTaskID == task.id,
+            onApprove: { approve(task) },
+            onTap: { if task.isActive { editingTask = task } }
+        )
+        .disabled(appState.isUpdatingChildTasks)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) { taskToDelete = task } label: {
+                Label("tasks.editor.delete.confirm.delete", systemImage: "trash")
+            }
+            .disabled(appState.isUpdatingChildTasks)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if task.isActive {
+                Button { editingTask = task } label: {
+                    Label("tasks.edit", systemImage: "pencil")
+                }
+                .tint(AppTheme.neonBlue)
+                .disabled(appState.isUpdatingChildTasks)
+            }
+        }
+        .contextMenu {
+            if task.isActive {
+                Button { editingTask = task } label: {
+                    Label("tasks.edit", systemImage: "pencil")
+                }
+                .disabled(appState.isUpdatingChildTasks)
+            }
+            Button(role: .destructive) { taskToDelete = task } label: {
+                Label("tasks.editor.delete.confirm.delete", systemImage: "trash")
+            }
+            .disabled(appState.isUpdatingChildTasks)
         }
     }
 
@@ -102,10 +208,13 @@ struct TasksTabView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
         .padding(.horizontal, 16)
-        .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue)
+        .glassCard(cornerRadius: 20, glowColor: AppTheme.neonBlue, drawsOuterShadows: false)
         .padding(36)
         .drawingGroup()
         .padding(-36)
+        .anchorPreference(key: TaskCardGlowPreferenceKey.self, value: .bounds) {
+            [TaskCardGlowAnchor(id: "empty", bounds: $0, color: AppTheme.neonBlue)]
+        }
     }
 
     private var createNewButton: some View {
@@ -124,6 +233,22 @@ struct TasksTabView: View {
 
 // MARK: - Parent task row
 
+/// List clips shadows at cell boundaries. Render only the decorative background
+/// behind the list; the card face stays in the row and moves with native swipes.
+private struct TaskCardGlowAnchor: Identifiable {
+    let id: String
+    let bounds: Anchor<CGRect>
+    let color: Color
+}
+
+private struct TaskCardGlowPreferenceKey: PreferenceKey {
+    nonisolated static var defaultValue: [TaskCardGlowAnchor] { [] }
+
+    nonisolated static func reduce(value: inout [TaskCardGlowAnchor], nextValue: () -> [TaskCardGlowAnchor]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 private struct TaskParentRowView: View {
     let task: ChildTask
     let isApproving: Bool
@@ -131,70 +256,72 @@ private struct TaskParentRowView: View {
     let onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(task.status.accentColor.opacity(0.18))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: task.status.iconName)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(task.status.accentColor)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(task.title)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-
-                        Text(rewardText(task.rewardMinutes))
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    TaskStatusBadge(status: task.status)
-                }
-
-                if !task.details.isEmpty {
-                    Text(task.details)
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.6))
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if task.status == .submitted {
-                    Button(action: onApprove) {
-                        HStack(spacing: 8) {
-                            if isApproving {
-                                ProgressView().tint(.white)
-                            } else {
-                                Image(systemName: "checkmark.seal.fill")
-                            }
-                            Text("tasks.parent.approve")
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: onTap) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(task.status.accentColor.opacity(0.18))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: task.status.iconName)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(task.status.accentColor)
                         }
-                        .frame(maxWidth: .infinity)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(task.title)
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                            Text(rewardText(task.rewardMinutes))
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        TaskStatusBadge(status: task.status)
                     }
-                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
-                    .disabled(isApproving)
+                    if !task.details.isEmpty {
+                        Text(task.details)
+                            .font(.footnote)
+                            .foregroundStyle(.white.opacity(0.6))
+                            .lineLimit(2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .contentShape(Rectangle())
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                Color.clear
-                    .glassCard(cornerRadius: 20, glowColor: task.status.accentColor)
-                    .padding(36)
-                    .drawingGroup()
-                    .padding(-36)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .buttonStyle(.plain)
+
+            if task.status == .submitted {
+                Button(action: onApprove) {
+                    HStack(spacing: 8) {
+                        if isApproving {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "checkmark.seal.fill")
+                        }
+                        Text("tasks.parent.approve")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
+                .disabled(isApproving)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: task.status.accentColor, drawsOuterShadows: false)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .anchorPreference(key: TaskCardGlowPreferenceKey.self, value: .bounds) {
+            [TaskCardGlowAnchor(id: task.id.uuidString, bounds: $0, color: task.status.accentColor)]
+        }
     }
 }
 
@@ -204,16 +331,19 @@ private struct TaskParentRowView: View {
 /// ничего не сохраняет. Сохранение только по «Сохранить» при валидной форме (непустой заголовок).
 struct TaskEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
 
     let isNew: Bool
-    let onSave: (ChildTask) -> Void
-    let onDelete: (() -> Void)?
+    let onSave: (ChildTask) async -> Bool
+    let onDelete: (() async -> Bool)?
 
     @State private var title: String
     @State private var details: String
     @State private var rewardMinutes: Int
     @State private var showDeleteConfirm = false
     @State private var showTitleRequiredHint = false
+    @State private var isSaving = false
+    @State private var showMutationError = false
 
     private let id: UUID
     private let createdAt: Date
@@ -227,8 +357,8 @@ struct TaskEditorView: View {
     init(
         initialTask: ChildTask,
         isNew: Bool,
-        onSave: @escaping (ChildTask) -> Void,
-        onDelete: (() -> Void)?
+        onSave: @escaping (ChildTask) async -> Bool,
+        onDelete: (() async -> Bool)?
     ) {
         self.isNew = isNew
         self.onSave = onSave
@@ -266,29 +396,51 @@ struct TaskEditorView: View {
                 .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle(isNew ? "tasks.editor.title.new" : "tasks.editor.title.edit")
+            .disabled(isSaving)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("tasks.editor.cancel") { dismiss() }
                         .tint(.white)
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("tasks.editor.save") { saveAndDismiss() }
-                        .tint(AppTheme.neonBlue)
-                        .opacity(isFormValid ? 1 : 0.5)
+                    if isSaving {
+                        ProgressView().tint(AppTheme.neonBlue)
+                    } else {
+                        Button("tasks.editor.save") { saveAndDismiss() }
+                            .tint(AppTheme.neonBlue)
+                            .opacity(isFormValid ? 1 : 0.5)
+                    }
                 }
             }
             .alert("tasks.editor.delete.confirm.title", isPresented: $showDeleteConfirm) {
                 Button("tasks.editor.delete.confirm.delete", role: .destructive) {
-                    onDelete?()
-                    dismiss()
+                    guard let onDelete, !isSaving else { return }
+                    isSaving = true
+                    Task {
+                        let succeeded = await onDelete()
+                        isSaving = false
+                        if succeeded {
+                            dismiss()
+                        } else {
+                            await appState.refreshChildTasksFromServer()
+                            showMutationError = true
+                        }
+                    }
                 }
                 Button("tasks.editor.cancel", role: .cancel) {}
             } message: {
                 Text("tasks.editor.delete.confirm.message")
             }
+            .alert("tasks.change_failed", isPresented: $showMutationError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("tasks.change_failed.message")
+            }
         }
         .preferredColorScheme(.dark)
+        .interactiveDismissDisabled(isSaving)
     }
 
     private var isFormValid: Bool {
@@ -409,6 +561,7 @@ struct TaskEditorView: View {
     }
 
     private func saveAndDismiss() {
+        guard !isSaving else { return }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isFormValid else {
             withAnimation(.easeOut(duration: 0.15)) {
@@ -427,8 +580,17 @@ struct TaskEditorView: View {
             submittedAt: submittedAt,
             approvedAt: approvedAt
         )
-        onSave(updated)
-        dismiss()
+        isSaving = true
+        Task {
+            let succeeded = await onSave(updated)
+            isSaving = false
+            if succeeded {
+                dismiss()
+            } else {
+                await appState.refreshChildTasksFromServer()
+                showMutationError = true
+            }
+        }
     }
 }
 

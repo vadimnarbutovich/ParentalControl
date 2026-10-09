@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "과제를 만드세요. 완료하면 아이가 시간을 얻습니다";
 "tasks.parent.empty.subtitle" = "아이를 위한 첫 과제를 만드세요";
-"tasks.child.subtitle" = "과제를 완료하고 사진 리포트를 보내세요";
+"tasks.child.subtitle" = "할 일을 완료하고 보상을 받아요";
 "tasks.child.empty.subtitle" = "아직 부모가 보낸 과제가 없습니다";
 "tasks.empty.title" = "아직 과제가 없습니다";
 "tasks.create_new" = "과제 만들기";
 "tasks.parent.approve" = "승인";
+"tasks.parent.review_needed" = "확인이 필요해요";
 "tasks.reward.minutes" = "%d분";
 
 "tasks.status.pending" = "신규";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "과제 삭제";
 "tasks.editor.delete.confirm.title" = "과제를 삭제할까요?";
 "tasks.editor.delete.confirm.delete" = "삭제";
-"tasks.editor.delete.confirm.message" = "과제가 삭제됩니다. 이 작업은 취소할 수 없습니다.";
+"tasks.editor.delete.confirm.message" = "이 할 일은 삭제되며 복구할 수 없습니다. 이미 받은 이용 시간은 유지됩니다.";
+"tasks.edit" = "수정";
+"tasks.show_all" = "모두 보기";
+"tasks.show_less" = "접기";
+"tasks.completed.retention" = "승인 후 24시간이 지나면 삭제됩니다. 이미 받은 이용 시간은 유지됩니다.";
+"tasks.change_failed" = "변경 사항을 확인하지 못했어요";
+"tasks.change_failed.message" = "인터넷 연결을 확인하고 할 일 목록을 새로고침한 뒤 다시 시도해 주세요.";
 "tasks.editor.title.label" = "제목";
 "tasks.editor.title.placeholder" = "예: 설거지하기";
 "tasks.editor.title.required" = "제목을 입력하세요";

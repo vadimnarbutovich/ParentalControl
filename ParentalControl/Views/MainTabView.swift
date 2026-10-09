@@ -42,7 +42,10 @@ struct MainTabView: View {
     private var tabs: some View {
         TabView(selection: $selectedTab) {
             if appState.deviceRole == .parent {
-                ParentDashboardView(onOpenSchedules: { selectedTab = .schedule })
+                ParentDashboardView(
+                    onOpenSchedules: { selectedTab = .schedule },
+                    onOpenTasks: { selectedTab = .tasks }
+                )
                     .tabItem {
                         Label("tab.dashboard", systemImage: "person.2.fill")
                     }
@@ -100,19 +103,13 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.settings)
             } else {
-                // Обычный режим ребёнка: «Главная», «Задания» и «Родитель». При тапе по «Родитель»
+                // Задания находятся на главной. При тапе по «Родитель»
                 // открывается PIN-cover; сам этот View пустой — пользователь его никогда не видит.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
                     }
                     .tag(MainTab.home)
-
-                ChildTasksView()
-                    .tabItem {
-                        Label("tab.tasks", systemImage: "checklist")
-                    }
-                    .tag(MainTab.tasks)
 
                 Color.clear
                     .tabItem {
@@ -435,9 +432,57 @@ private struct ParentModeEntryView: View {
 private struct ParentDashboardView: View {
     @EnvironmentObject private var appState: AppState
     let onOpenSchedules: () -> Void
+    let onOpenTasks: () -> Void
     /// Презентация шторки `AdjustTimeSheet` (изменить доступное время ребёнку).
     @State private var isAdjustTimePresented = false
     @State private var isDailyLimitPresented = false
+
+    private var tasksAwaitingReview: [ChildTask] {
+        appState.childTasks
+            .filter { $0.status == .submitted }
+            .sorted { ($0.submittedAt ?? $0.updatedAt) < ($1.submittedAt ?? $1.updatedAt) }
+    }
+
+    private func taskAwaitingReviewCard(_ task: ChildTask) -> some View {
+        Button(action: onOpenTasks) {
+            HStack(spacing: 12) {
+                Image(systemName: ChildTaskStatus.submitted.iconName)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppTheme.neonOrange)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(AppTheme.neonOrange.opacity(0.18)))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("tasks.parent.review_needed")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppTheme.neonOrange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(task.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                    Text(L10n.f("tasks.detail.reward", task.rewardMinutes))
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: AppTheme.neonOrange)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+        .accessibilityHint(Text("tab.tasks"))
+    }
 
     private var isCommandButtonEnabled: Bool {
         appState.pairingState?.isLinked == true &&
@@ -627,6 +672,10 @@ private struct ParentDashboardView: View {
                                 Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
                             }
 
+                            ForEach(tasksAwaitingReview) { task in
+                                taskAwaitingReviewCard(task)
+                            }
+
                             // Карточка «Заблокировано по расписанию» / «Следующее расписание».
                             // Видна только если у Родителя в локальном кэше есть включённые расписания.
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
@@ -691,6 +740,7 @@ private struct ParentDashboardView: View {
                 // (без перехода на таб «Расписание») и локальный кэш ещё не успел синкнуться.
                 if appState.deviceRole == .parent {
                     await appState.refreshParentBlockSchedulesIfNeeded()
+                    await appState.refreshChildTasksFromServer()
                 }
             }
             .sheet(isPresented: $isDailyLimitPresented) {

@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "Erstelle Aufgaben — für die Erledigung erhält dein Kind Zeit";
 "tasks.parent.empty.subtitle" = "Erstelle die erste Aufgabe für dein Kind";
-"tasks.child.subtitle" = "Erledige die Aufgabe und sende einen Fotobericht";
+"tasks.child.subtitle" = "Erledige eine Aufgabe und verdiene dir eine Belohnung";
 "tasks.child.empty.subtitle" = "Noch keine Aufgaben von den Eltern";
 "tasks.empty.title" = "Noch keine Aufgaben";
 "tasks.create_new" = "Aufgabe erstellen";
 "tasks.parent.approve" = "Bestätigen";
+"tasks.parent.review_needed" = "Bitte überprüfen";
 "tasks.reward.minutes" = "%d Min";
 
 "tasks.status.pending" = "Neu";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "Aufgabe löschen";
 "tasks.editor.delete.confirm.title" = "Aufgabe löschen?";
 "tasks.editor.delete.confirm.delete" = "Löschen";
-"tasks.editor.delete.confirm.message" = "Die Aufgabe wird gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
+"tasks.editor.delete.confirm.message" = "Die Aufgabe wird unwiderruflich gelöscht. Bereits verdiente Zeit bleibt erhalten.";
+"tasks.edit" = "Bearbeiten";
+"tasks.show_all" = "Alle anzeigen";
+"tasks.show_less" = "Weniger anzeigen";
+"tasks.completed.retention" = "Aufgaben werden 24 Stunden nach der Bestätigung gelöscht. Verdiente Zeit bleibt erhalten.";
+"tasks.change_failed" = "Änderung nicht bestätigt";
+"tasks.change_failed.message" = "Prüfe deine Verbindung und aktualisiere die Aufgabenliste. Versuche es dann erneut.";
 "tasks.editor.title.label" = "Titel";
 "tasks.editor.title.placeholder" = "z. B. Geschirr spülen";
 "tasks.editor.title.required" = "Titel eingeben";

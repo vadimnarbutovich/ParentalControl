@@ -1523,8 +1523,24 @@ async function listChildTasks(deviceId: string): Promise<Response> {
     .order("created_at", { ascending: false });
   if (error) return errorResponse(error.message, 400);
 
-  const items = (data ?? []).map((row) => mapChildTaskForClient(row as ChildTaskRow));
+  // Hide expired rows immediately, independently of the periodic physical cleanup.
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const items = (data ?? [])
+    .filter((row) => row.status !== "approved" ||
+      Date.parse(row.approved_at ?? row.updated_at) > cutoff)
+    .map((row) => mapChildTaskForClient(row as ChildTaskRow));
   return okResponse({ tasks: items });
+}
+
+// Return authoritative lifecycle timestamps, not a speculative client-side status.
+async function childTaskMutationResponse(familyID: string, id: string, status: string): Promise<Response> {
+  const { data, error } = await supabase.from("family_child_tasks")
+    .select("*").eq("id", id).eq("family_id", familyID).is("deleted_at", null).maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+  // The parent can approve while the child's submit response is still in flight.
+  const matches = data && (data.status === status || (status === "submitted" && data.status === "approved"));
+  if (!matches) return errorResponse("Task changed or was removed", 409);
+  return okResponse({ ok: true, task: mapChildTaskForClient(data as ChildTaskRow) });
 }
 
 async function upsertChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1540,34 +1556,16 @@ async function upsertChildTask(deviceId: string, payload: Json): Promise<Respons
   if (!title) return errorResponse("title is required", 400);
   if (rewardSeconds === null || rewardSeconds < 0) return errorResponse("rewardSeconds invalid", 400);
 
-  // Не перетираем жизненный цикл (status/submitted_at/approved_at), если задание уже существует —
-  // upsert используется и для редактирования. Создание: existing == null → status pending.
-  const { data: existing } = await supabase
-    .from("family_child_tasks")
-    .select("status, submitted_at, approved_at")
-    .eq("id", id)
-    .eq("family_id", parent.family_id)
-    .maybeSingle();
-
-  const nowIso = new Date().toISOString();
-  const { error: upsertError } = await supabase
-    .from("family_child_tasks")
-    .upsert({
-      id,
-      family_id: parent.family_id,
-      title,
-      details,
-      reward_seconds: Math.round(rewardSeconds),
-      status: existing?.status ?? "pending",
-      submitted_at: existing?.submitted_at ?? null,
-      approved_at: existing?.approved_at ?? null,
-      updated_at: nowIso,
-      deleted_at: null,
-    }, { onConflict: "id" });
-  if (upsertError) return errorResponse(upsertError.message, 400);
+  const { data: saved, error: saveError } = await supabase.rpc("pc_save_child_task", {
+    p_device: parent.id, p_task: id, p_title: title, p_details: details,
+    p_reward_seconds: Math.round(rewardSeconds),
+    // Older builds did not distinguish creation from editing.
+    p_create: typeof payload.isNew === "boolean" ? payload.isNew : true,
+  });
+  if (saveError) return errorResponse(saveError.message, 409);
 
   await notifyChildTasksUpdated(parent.family_id, parent.id);
-  return okResponse({ ok: true });
+  return okResponse({ ok: true, task: mapChildTaskForClient(saved as ChildTaskRow) });
 }
 
 async function deleteChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1603,6 +1601,7 @@ async function submitChildTask(deviceId: string, payload: Json): Promise<Respons
     .eq("id", id)
     .eq("family_id", child.family_id)
     .eq("status", "pending")
+    .is("deleted_at", null)
     .select("id, title")
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
@@ -1611,7 +1610,7 @@ async function submitChildTask(deviceId: string, payload: Json): Promise<Respons
   if (updated) {
     await notifyParentTaskSubmitted(child.family_id, String((updated as { title?: string }).title ?? ""));
   }
-  return okResponse({ ok: true });
+  return childTaskMutationResponse(child.family_id, id, "submitted");
 }
 
 async function approveChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1627,7 +1626,7 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
   if (budgetError) return errorResponse(budgetError.message, 400);
   if (budgetApproval?.legacy === false) {
     await notifyChildTasksUpdated(parent.family_id, parent.id);
-    return okResponse({ ok: true, credited: budgetApproval.credited === true });
+    return childTaskMutationResponse(parent.family_id, id, "approved");
   }
 
   const nowIso = new Date().toISOString();
@@ -1639,12 +1638,13 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
     .eq("id", id)
     .eq("family_id", parent.family_id)
     .eq("status", "submitted")
+    .is("deleted_at", null)
     .select("id, reward_seconds")
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
   if (!updated) {
     // Уже approved или не в submitted — без повторного начисления.
-    return okResponse({ ok: true, credited: false });
+    return childTaskMutationResponse(parent.family_id, id, "approved");
   }
 
   const reward = Math.max(0, Number((updated as { reward_seconds?: number }).reward_seconds ?? 0));
@@ -1669,7 +1669,7 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
   }
   // Синкаем список заданий ребёнку, чтобы задание ушло из активных (status approved).
   await notifyChildTasksUpdated(parent.family_id, parent.id);
-  return okResponse({ ok: true, credited: reward > 0 });
+  return childTaskMutationResponse(parent.family_id, id, "approved");
 }
 
 async function notifyChildTasksUpdated(familyID: string, parentDeviceID: string): Promise<void> {

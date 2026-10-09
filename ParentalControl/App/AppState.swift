@@ -106,6 +106,10 @@ final class AppState: ObservableObject {
     /// отображаются и отправляются на проверку. Синкается через `family_child_tasks`
     /// (push `tasks_updated` + foreground refresh, без участия в 8-сек polling).
     @Published private(set) var childTasks: [ChildTask] = []
+    @Published private(set) var isUpdatingChildTasks = false
+    private var childTasksGeneration: UInt = 0
+    private var childTasksRequest: UInt = 0
+    private var childTasksRefreshPending = false
     /// Последняя известная координата ребёнка. Хранится также в App Group, чтобы
     /// карта моментально показывала «вчерашнюю» точку до того, как сервер ответит.
     @Published private(set) var childLocationSnapshot: ChildLocationSnapshot?
@@ -2874,9 +2878,21 @@ final class AppState: ObservableObject {
     /// доступен обеим ролям, поэтому метод универсален. Ошибки сети глотаем — остаётся кэш.
     func refreshChildTasksFromServer() async {
         guard pairingState?.isLinked == true else { return }
+        if isUpdatingChildTasks {
+            childTasksRefreshPending = true
+            return
+        }
+        let family = pairingState?.familyID
+        let generation = childTasksGeneration
+        childTasksRequest += 1
+        let request = childTasksRequest
         do {
             let dtos = try await remoteSyncService.fetchChildTasks()
-            let merged = dtos.map { ChildTask(remoteDTO: $0) }
+            guard pairingState?.familyID == family, pairingState?.isLinked == true,
+                  childTasksGeneration == generation, childTasksRequest == request,
+                  !isUpdatingChildTasks else { return }
+            let now = Date()
+            let merged = dtos.map { ChildTask(remoteDTO: $0) }.filter { $0.isVisible(at: now) }
             childTasks = merged
             storage.saveChildTasks(merged)
         } catch {
@@ -2889,95 +2905,66 @@ final class AppState: ObservableObject {
         ChildTask(title: "", details: "", rewardSeconds: Self.defaultChildTaskRewardSeconds)
     }
 
-    /// Создаёт/обновляет задание (роль parent): оптимистично кладём в список и пушим на сервер.
-    func commitChildTask(_ task: ChildTask) {
-        guard deviceRole == .parent else { return }
-        var updated = task
-        updated.updatedAt = Date()
-        var list = childTasks
-        if let index = list.firstIndex(where: { $0.id == task.id }) {
-            list[index] = updated
-        } else {
-            list.insert(updated, at: 0)
-        }
-        childTasks = list
-        storage.saveChildTasks(childTasks)
-        schedulePushChildTaskToServer(updated)
-    }
-
-    /// Удаляет задание (роль parent): локально + soft delete на сервере.
-    @discardableResult
-    func deleteChildTask(_ taskID: UUID) -> Bool {
+    /// UI меняется только после ответа сервера. Ошибка не удаляет локальное задание.
+    func commitChildTask(_ task: ChildTask, isNew: Bool) async -> Bool {
         guard deviceRole == .parent else { return false }
-        guard childTasks.contains(where: { $0.id == taskID }) else { return false }
-        scheduleDeleteChildTaskOnServer(id: taskID)
-        childTasks.removeAll { $0.id == taskID }
-        storage.saveChildTasks(childTasks)
-        return true
+        return await changeChildTask(task.id) {
+            let dto = try await self.remoteSyncService.upsertChildTask(task, isNew: isNew)
+            return ChildTask(remoteDTO: dto)
+        }
     }
 
-    /// Подтверждение задания родителем: статус → approved, ребёнку начисляется награда
-    /// (сервер делает это атомарно через add_earned_seconds). Оптимистично обновляем UI,
-    /// затем перетягиваем авторитетный список.
-    func approveChildTask(_ taskID: UUID) async {
-        guard deviceRole == .parent else { return }
-        if let index = childTasks.firstIndex(where: { $0.id == taskID }) {
-            var updated = childTasks[index]
-            updated.status = .approved
-            updated.approvedAt = Date()
-            updated.updatedAt = Date()
-            childTasks[index] = updated
-            storage.saveChildTasks(childTasks)
+    func deleteChildTask(_ taskID: UUID) async -> Bool {
+        guard deviceRole == .parent else { return false }
+        return await changeChildTask(taskID) {
+            try await self.remoteSyncService.deleteChildTask(id: taskID)
+            return nil
         }
-        do {
-            try await remoteSyncService.approveChildTask(id: taskID)
-        } catch {
-            os_log("approveChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
-        }
-        await refreshChildTasksFromServer()
     }
 
-    /// Ребёнок отправил отчёт (фото — через системный share sheet, у нас не хранится):
-    /// статус → submitted, сервер шлёт родителю alert. Оптимистично обновляем UI и refresh.
-    func submitChildTask(_ taskID: UUID) async {
-        guard deviceRole == .child else { return }
-        if let index = childTasks.firstIndex(where: { $0.id == taskID }) {
-            var updated = childTasks[index]
-            updated.status = .submitted
-            updated.submittedAt = Date()
-            updated.updatedAt = Date()
-            childTasks[index] = updated
-            storage.saveChildTasks(childTasks)
+    func approveChildTask(_ taskID: UUID) async -> Bool {
+        guard deviceRole == .parent else { return false }
+        return await changeChildTask(taskID) {
+            let dto = try await self.remoteSyncService.approveChildTask(id: taskID)
+            return ChildTask(remoteDTO: dto)
         }
-        do {
-            try await remoteSyncService.submitChildTask(id: taskID)
-        } catch {
-            os_log("submitChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
-        }
-        await refreshChildTasksFromServer()
     }
 
-    private func schedulePushChildTaskToServer(_ task: ChildTask) {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await self.remoteSyncService.upsertChildTask(task)
-            } catch {
-                os_log("upsertChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+    func submitChildTask(_ taskID: UUID) async -> Bool {
+        guard deviceRole == .child else { return false }
+        return await changeChildTask(taskID) {
+            let dto = try await self.remoteSyncService.submitChildTask(id: taskID)
+            return ChildTask(remoteDTO: dto)
+        }
+    }
+
+    private func changeChildTask(
+        _ id: UUID,
+        operation: () async throws -> ChildTask?
+    ) async -> Bool {
+        guard pairingState?.isLinked == true, !isUpdatingChildTasks else { return false }
+        let family = pairingState?.familyID
+        isUpdatingChildTasks = true
+        childTasksGeneration += 1
+        defer {
+            childTasksGeneration += 1
+            isUpdatingChildTasks = false
+            // Не теряем push-обновление, полученное во время сохранения.
+            if childTasksRefreshPending {
+                childTasksRefreshPending = false
+                Task { await self.refreshChildTasksFromServer() }
             }
         }
-    }
-
-    private func scheduleDeleteChildTaskOnServer(id: UUID) {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await self.remoteSyncService.deleteChildTask(id: id)
-            } catch {
-                os_log("deleteChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
-            }
+        do {
+            let result = try await operation()
+            guard pairingState?.familyID == family, pairingState?.isLinked == true else { return false }
+            childTasks.removeAll { $0.id == id }
+            if let result, result.isVisible(at: Date()) { childTasks.insert(result, at: 0) }
+            storage.saveChildTasks(childTasks)
+            return true
+        } catch {
+            os_log("changeChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
+            return false
         }
     }
 }
@@ -3795,22 +3782,29 @@ private final class ParentalRemoteSyncService {
         return response.tasks
     }
 
-    func upsertChildTask(_ task: ChildTask) async throws {
+    private struct TaskMutationResponse: Decodable {
+        let task: RemoteChildTaskDTO
+    }
+
+    func upsertChildTask(_ task: ChildTask, isNew: Bool) async throws -> RemoteChildTaskDTO {
         struct Payload: Encodable {
             let installID: String
             let id: String
             let title: String
             let details: String
             let rewardSeconds: Int
+            let isNew: Bool
         }
         let payload = Payload(
             installID: installID,
             id: task.id.uuidString,
             title: task.title,
             details: task.details,
-            rewardSeconds: max(0, task.rewardSeconds)
+            rewardSeconds: max(0, task.rewardSeconds),
+            isNew: isNew
         )
-        let _: EmptyResponse = try await call(action: "upsert_child_task", payload: payload)
+        let response: TaskMutationResponse = try await call(action: "upsert_child_task", payload: payload)
+        return response.task
     }
 
     func deleteChildTask(id: UUID) async throws {
@@ -3824,26 +3818,28 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func submitChildTask(id: UUID) async throws {
+    func submitChildTask(id: UUID) async throws -> RemoteChildTaskDTO {
         struct Payload: Encodable {
             let installID: String
             let id: String
         }
-        let _: EmptyResponse = try await call(
+        let response: TaskMutationResponse = try await call(
             action: "submit_child_task",
             payload: Payload(installID: installID, id: id.uuidString)
         )
+        return response.task
     }
 
-    func approveChildTask(id: UUID) async throws {
+    func approveChildTask(id: UUID) async throws -> RemoteChildTaskDTO {
         struct Payload: Encodable {
             let installID: String
             let id: String
         }
-        let _: EmptyResponse = try await call(
+        let response: TaskMutationResponse = try await call(
             action: "approve_child_task",
             payload: Payload(installID: installID, id: id.uuidString)
         )
+        return response.task
     }
 
     private func call<T: Decodable, P: Encodable>(

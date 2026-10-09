@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "Crea tareas: al completarlas, tu hijo gana tiempo";
 "tasks.parent.empty.subtitle" = "Crea la primera tarea para tu hijo";
-"tasks.child.subtitle" = "Completa la tarea y envía un informe con foto";
+"tasks.child.subtitle" = "Completa una tarea y gana una recompensa";
 "tasks.child.empty.subtitle" = "Aún no hay tareas de tus padres";
 "tasks.empty.title" = "Aún no hay tareas";
 "tasks.create_new" = "Crear tarea";
 "tasks.parent.approve" = "Aprobar";
+"tasks.parent.review_needed" = "Pendiente de tu revisión";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "Nueva";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "Eliminar tarea";
 "tasks.editor.delete.confirm.title" = "¿Eliminar tarea?";
 "tasks.editor.delete.confirm.delete" = "Eliminar";
-"tasks.editor.delete.confirm.message" = "La tarea se eliminará. Esta acción no se puede deshacer.";
+"tasks.editor.delete.confirm.message" = "La tarea se eliminará de forma permanente. El tiempo ya ganado se conservará.";
+"tasks.edit" = "Editar";
+"tasks.show_all" = "Ver todas";
+"tasks.show_less" = "Ver menos";
+"tasks.completed.retention" = "Se eliminan 24 horas después de aprobarlas. El tiempo ganado se conserva.";
+"tasks.change_failed" = "No se pudo confirmar el cambio";
+"tasks.change_failed.message" = "Comprueba la conexión y actualiza la lista de tareas. Después, inténtalo de nuevo.";
 "tasks.editor.title.label" = "Título";
 "tasks.editor.title.placeholder" = "Ej.: Lavar los platos";
 "tasks.editor.title.required" = "Introduce un título";

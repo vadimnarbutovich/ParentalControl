@@ -464,11 +464,12 @@
 
 "tasks.parent.subtitle" = "Создавайте задания — за выполнение ребёнок получит время";
 "tasks.parent.empty.subtitle" = "Создайте первое задание для ребёнка";
-"tasks.child.subtitle" = "Выполните задание и отправьте фото-отчёт";
+"tasks.child.subtitle" = "Выполни задание и получи награду";
 "tasks.child.empty.subtitle" = "Пока нет заданий от родителя";
 "tasks.empty.title" = "Заданий пока нет";
 "tasks.create_new" = "Создать задание";
 "tasks.parent.approve" = "Подтвердить";
+"tasks.parent.review_needed" = "Необходимо проверить";
 "tasks.reward.minutes" = "%d мин";
 
 "tasks.status.pending" = "Новое";
@@ -482,7 +483,13 @@
 "tasks.editor.delete" = "Удалить задание";
 "tasks.editor.delete.confirm.title" = "Удалить задание?";
 "tasks.editor.delete.confirm.delete" = "Удалить";
-"tasks.editor.delete.confirm.message" = "Задание будет удалено. Это действие нельзя отменить.";
+"tasks.editor.delete.confirm.message" = "Задание будет удалено без возможности восстановления. Уже начисленное время сохранится.";
+"tasks.edit" = "Редактировать";
+"tasks.show_all" = "Показать все";
+"tasks.show_less" = "Свернуть";
+"tasks.completed.retention" = "Удаляются через 24 часа после подтверждения. Начисленное время сохраняется.";
+"tasks.change_failed" = "Не удалось подтвердить изменение";
+"tasks.change_failed.message" = "Проверьте подключение и обновите список заданий. Затем попробуйте ещё раз.";
 "tasks.editor.title.label" = "Название";
 "tasks.editor.title.placeholder" = "Например, Помыть посуду";
 "tasks.editor.title.required" = "Укажите название";

@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "创建任务——完成后孩子可获得时间";
 "tasks.parent.empty.subtitle" = "为孩子创建第一个任务";
-"tasks.child.subtitle" = "完成任务并发送照片报告";
+"tasks.child.subtitle" = "完成任务，获得奖励";
 "tasks.child.empty.subtitle" = "还没有来自家长的任务";
 "tasks.empty.title" = "暂无任务";
 "tasks.create_new" = "创建任务";
 "tasks.parent.approve" = "确认";
+"tasks.parent.review_needed" = "需要您确认";
 "tasks.reward.minutes" = "%d 分钟";
 
 "tasks.status.pending" = "新建";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "删除任务";
 "tasks.editor.delete.confirm.title" = "删除任务？";
 "tasks.editor.delete.confirm.delete" = "删除";
-"tasks.editor.delete.confirm.message" = "任务将被删除。此操作无法撤销。";
+"tasks.editor.delete.confirm.message" = "此任务将被删除，且无法恢复。已获得的使用时长不受影响。";
+"tasks.edit" = "编辑";
+"tasks.show_all" = "显示全部";
+"tasks.show_less" = "收起";
+"tasks.completed.retention" = "家长确认24小时后自动删除，已获得的使用时长不受影响。";
+"tasks.change_failed" = "无法确认更改";
+"tasks.change_failed.message" = "请检查网络连接并刷新任务列表，然后重试。";
 "tasks.editor.title.label" = "标题";
 "tasks.editor.title.placeholder" = "例如：洗碗";
 "tasks.editor.title.required" = "请输入标题";

@@ -382,11 +382,12 @@
 
 "tasks.parent.subtitle" = "タスクを作成しましょう。完了するとお子さまが時間を獲得できます";
 "tasks.parent.empty.subtitle" = "お子さま向けの最初のタスクを作成しましょう";
-"tasks.child.subtitle" = "タスクを完了して写真レポートを送りましょう";
+"tasks.child.subtitle" = "タスクをクリアしてごほうびをもらおう";
 "tasks.child.empty.subtitle" = "保護者からのタスクはまだありません";
 "tasks.empty.title" = "タスクはまだありません";
 "tasks.create_new" = "タスクを作成";
 "tasks.parent.approve" = "承認";
+"tasks.parent.review_needed" = "確認が必要です";
 "tasks.reward.minutes" = "%d分";
 
 "tasks.status.pending" = "新規";
@@ -400,7 +401,13 @@
 "tasks.editor.delete" = "タスクを削除";
 "tasks.editor.delete.confirm.title" = "タスクを削除しますか？";
 "tasks.editor.delete.confirm.delete" = "削除";
-"tasks.editor.delete.confirm.message" = "タスクが削除されます。この操作は取り消せません。";
+"tasks.editor.delete.confirm.message" = "このタスクは削除され、元に戻せません。獲得済みの利用時間はそのまま残ります。";
+"tasks.edit" = "編集";
+"tasks.show_all" = "すべて表示";
+"tasks.show_less" = "閉じる";
+"tasks.completed.retention" = "承認から24時間後に削除されます。獲得した利用時間はそのまま残ります。";
+"tasks.change_failed" = "変更を確認できませんでした";
+"tasks.change_failed.message" = "通信状態を確認してタスク一覧を更新し、もう一度お試しください。";
 "tasks.editor.title.label" = "タイトル";
 "tasks.editor.title.placeholder" = "例：食器を洗う";
 "tasks.editor.title.required" = "タイトルを入力してください";
