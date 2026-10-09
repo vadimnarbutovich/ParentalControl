@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Ripetizioni per 1 minuto";
 "settings.save.conversion" = "Salva tassi di conversione";
 "settings.section.permissions" = "Permessi";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Fotocamera";
 "settings.permission.notifications" = "Notifiche";
 "settings.permission.screentime" = "Tempo di utilizzo";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "Iniziamo";
 "onboarding.welcome.title" = "Muoviti di più. Goditi le tue app.";
 "onboarding.welcome.subtitle" = "Guadagna minuti con passi ed esercizi — poi spendili sulle app che ami, senza sensi di colpa.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "Contiamo i passi di oggi per convertirli in tempo di utilizzo. I tuoi dati restano sul dispositivo.";
 "onboarding.screentime.title" = "Tempo di utilizzo";
 "onboarding.screentime.body" = "Serve per monitorare le app che scegli e bloccarle quando finisci i minuti.";
 "onboarding.notifications.title" = "Notifiche";
-"onboarding.notifications.body" = "Ti avviseremo quando guadagni tempo o quando cambia il tuo saldo, così sei sempre aggiornato.";
 "onboarding.conversion.title" = "Il tuo ritmo";
 "onboarding.conversion.subtitle" = "Quanta attività serve per guadagnare 1 minuto di utilizzo.";
 "onboarding.apps.title" = "App da monitorare";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "Ora puoi diventare più forte e più sano grazie alle tue app preferite.";
 
 "permission.banner.allow" = "Consenti";
-"permission.banner.health.title" = "Serve accesso a Salute";
-"permission.banner.health.body" = "Consenti il conteggio passi nell'app Salute: Profilo (o Condivisione) → App → ParentalControl → Passi. Se appare il pannello, attiva Passi.";
-"permission.banner.open_health" = "Apri Salute";
 "permission.banner.screentime.title" = "Serve Tempo di utilizzo";
 "permission.banner.screentime.body" = "Tempo di utilizzo è necessario per monitorare e limitare le app che scegli.";
 "permission.banner.notifications.title" = "Notifiche disattivate";
-"permission.banner.notifications.body" = "Attiva le notifiche per sapere quando guadagni tempo e quando cambia il tuo saldo.";
 "permission.banner.open_settings" = "Apri Impostazioni";
-"permission.banner.liveactivity.title" = "Attività live disattivate";
-"permission.banner.liveactivity.body" = "Attiva le Attività live per ParentalControl nelle Impostazioni per mostrare il tempo focus sulla schermata di blocco e sulla Dynamic Island.";
-"settings.permission.live_activity" = "Attività live";
 
 "exercise.camera.denied.title" = "Serve accesso alla fotocamera";
 "exercise.camera.denied.body" = "Usiamo la fotocamera per contare le ripetizioni. Consenti l'accesso nelle Impostazioni, poi torna qui.";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "Collega il dispositivo di tuo figlio per vedere le statistiche.";
 "reports.previous" = "Periodo precedente";
 "reports.next" = "Periodo successivo";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Ricevi una notifica quando tuo figlio invia un’attività da verificare.";
+"permission.notifications.child.body" = "Ricevi notifiche sulle modifiche al tempo disponibile e al blocco delle app.";
+"permission.camera.title" = "Fotocamera non disponibile";
+"permission.camera.body" = "Consenti l’accesso alla fotocamera nelle Impostazioni per fotografare un’attività. Puoi anche scegliere una foto esistente.";
+"onboarding.location.body" = "Consenti l’accesso alla posizione per permettere al tuo genitore di trovare questo dispositivo sulla mappa. Per le richieste in background serve l’autorizzazione «Sempre». Rileviamo la posizione solo su richiesta, senza monitoraggio continuo.";

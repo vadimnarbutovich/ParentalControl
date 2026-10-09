@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "1分鐘所需次數";
 "settings.save.conversion" = "儲存換算率";
 "settings.section.permissions" = "權限";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "相機";
 "settings.permission.notifications" = "通知";
 "settings.permission.screentime" = "螢幕使用時間";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "開始吧";
 "onboarding.welcome.title" = "多運動，享受 App。";
 "onboarding.welcome.subtitle" = "透過步行和運動賺取時間，然後無負擔地使用你喜愛的 App。";
-"onboarding.health.title" = "Apple 健康";
-"onboarding.health.body" = "我們計算你今天的步數，將其轉換為 App 使用時間。資料僅保留在你的裝置上。";
 "onboarding.screentime.title" = "螢幕使用時間";
 "onboarding.screentime.body" = "需要此權限來監控你選擇的 App，並在時間用完時進行封鎖。";
 "onboarding.notifications.title" = "通知";
-"onboarding.notifications.body" = "當你賺取時間或餘額變動時，我們會通知你，讓你隨時掌握狀況。";
 "onboarding.conversion.title" = "你的步調";
 "onboarding.conversion.subtitle" = "多少運動量可以換取1分鐘的 App 使用時間。";
 "onboarding.apps.title" = "管理的 App";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "現在你可以透過喜愛的 App 變得更強壯、更健康。";
 
 "permission.banner.allow" = "允許";
-"permission.banner.health.title" = "需要健康資料權限";
-"permission.banner.health.body" = "在健康 App 中允許步數存取：個人檔案（或共享）→ App → ParentalControl → 步數。若出現面板，請開啟步數。";
-"permission.banner.open_health" = "開啟健康";
 "permission.banner.screentime.title" = "需要螢幕使用時間";
 "permission.banner.screentime.body" = "需要螢幕使用時間權限來監控和限制你選擇的 App。";
 "permission.banner.notifications.title" = "通知已關閉";
-"permission.banner.notifications.body" = "開啟通知以了解你何時賺取了時間以及餘額變動。";
 "permission.banner.open_settings" = "開啟設定";
-"permission.banner.liveactivity.title" = "即時動態已停用";
-"permission.banner.liveactivity.body" = "在設定中為 ParentalControl 啟用即時動態，即可在鎖定畫面和動態島顯示專注時間。";
-"settings.permission.live_activity" = "即時動態";
 
 "exercise.camera.denied.title" = "需要相機權限";
 "exercise.camera.denied.body" = "我們使用相機來計算你的運動次數。請在設定中允許相機權限，然後返回這裡。";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "連結孩子的裝置後即可查看統計。";
 "reports.previous" = "上一期間";
 "reports.next" = "下一期間";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "孩子提交任務等待檢查時，您會收到通知。";
+"permission.notifications.child.body" = "可用時間或 App 封鎖狀態改變時，您會收到通知。";
+"permission.camera.title" = "無法使用相機";
+"permission.camera.body" = "請在設定中允許取用相機，以拍攝任務照片。您也可以選擇現有照片。";
+"onboarding.location.body" = "請允許取用位置，讓家長能在地圖上找到此裝置。回應背景要求需要「永遠」允許。我們僅在家長提出要求時取得位置，不會持續追蹤。";

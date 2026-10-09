@@ -16,11 +16,8 @@ struct ContentView: View {
             if let role = appState.deviceRole {
                 if role == .child {
                     if appState.hasCompletedOnboarding {
-                        ZStack(alignment: .top) {
-                            MainTabView()
-                                .environmentObject(subscriptionService)
-                            PermissionReminderBannerView()
-                        }
+                        MainTabView()
+                            .environmentObject(subscriptionService)
                     } else {
                         OnboardingFlowView()
                     }
@@ -30,6 +27,12 @@ struct ContentView: View {
             } else {
                 RoleSelectionView()
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            PermissionReminderBannerView()
+        }
+        .task(id: appState.deviceRole) {
+            await appState.requestParentNotificationsIfNeeded()
         }
         .onChange(of: subscriptionService.isPro) { _, isPro in
             appState.enforcePremiumFeatures(isPro: isPro, isStatusKnown: subscriptionService.isSubscriptionStatusKnown)

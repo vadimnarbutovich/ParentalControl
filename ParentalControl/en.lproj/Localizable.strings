@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Reps for 1 minute";
 "settings.save.conversion" = "Save conversion rates";
 "settings.section.permissions" = "Permissions";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Camera";
 "settings.permission.notifications" = "Notifications";
 "settings.permission.screentime" = "Screen Time";
@@ -198,14 +197,11 @@
 "onboarding.cta.close" = "Let's start";
 "onboarding.welcome.title" = "Move more. Enjoy your apps.";
 "onboarding.welcome.subtitle" = "Earn minutes with steps and exercises — then spend them on the apps you love, guilt-free.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "We count today's steps so you can trade them for app time. Your data stays on your device.";
 "onboarding.screentime.title" = "Screen Time";
 "onboarding.screentime.body" = "This is required to track the apps you choose and limit them when your minutes run out.";
 "onboarding.notifications.title" = "Notifications";
-"onboarding.notifications.body" = "We’ll notify you when you earn time or when your balance changes, so you always know where you stand.";
 "onboarding.location.title" = "Location";
-"onboarding.location.body" = "Lets the parent see this device on the map when they tap “Refresh location” — even when the app is in the background. Coordinates are only fetched on demand, no continuous tracking — that saves the battery. Pick “Always” for it to work reliably.";
+"onboarding.location.body" = "Allow location access so your parent can find this device on the map. Always access is needed for background requests. We check location only when your parent requests it, without continuous tracking.";
 "onboarding.conversion.title" = "Your pace";
 "onboarding.conversion.subtitle" = "How much activity earns 1 minute of app time.";
 "onboarding.apps.title" = "Apps to track";
@@ -217,17 +213,10 @@
 "onboarding.done.body" = "Now you can get stronger and healthier thanks to your favorite apps.";
 
 "permission.banner.allow" = "Allow";
-"permission.banner.health.title" = "Health access needed";
-"permission.banner.health.body" = "Allow step count in the Health app: Profile (or Sharing) → Apps → ParentalControl → Steps. If the sheet appears, turn Steps on.";
-"permission.banner.open_health" = "Open Health";
 "permission.banner.screentime.title" = "Screen Time needed";
 "permission.banner.screentime.body" = "Screen Time is required to monitor and limit the apps you choose.";
 "permission.banner.notifications.title" = "Notifications off";
-"permission.banner.notifications.body" = "Turn on alerts to see when you earn time and when your balance updates.";
 "permission.banner.open_settings" = "Open Settings";
-"permission.banner.liveactivity.title" = "Live Activities disabled";
-"permission.banner.liveactivity.body" = "Enable Live Activities for ParentalControl in Settings to show focus time on the Lock Screen and Dynamic Island.";
-"settings.permission.live_activity" = "Live Activities";
 
 "exercise.camera.denied.title" = "Camera access needed";
 "exercise.camera.denied.body" = "We use the camera to count your reps. Allow access in Settings, then return here.";
@@ -561,3 +550,8 @@
 "reports.unlinked" = "Link your child’s device to see statistics.";
 "reports.previous" = "Previous period";
 "reports.next" = "Next period";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Get notified when your child submits a task for review.";
+"permission.notifications.child.body" = "Get notified about changes to available time and app blocking.";
+"permission.camera.title" = "Camera unavailable";
+"permission.camera.body" = "Allow camera access in Settings to photograph a task. You can also choose an existing photo.";

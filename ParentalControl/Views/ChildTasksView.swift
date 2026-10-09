@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 
@@ -138,6 +139,7 @@ private struct ChildTaskDetailView: View {
     @State private var showSourceDialog = false
     @State private var showCamera = false
     @State private var showLibrary = false
+    @State private var showCameraPermissionAlert = false
 
     private var task: ChildTask? {
         appState.childTasks.first { $0.id == taskID }
@@ -178,10 +180,16 @@ private struct ChildTaskDetailView: View {
         }
         .confirmationDialog("tasks.detail.report_source.title", isPresented: $showSourceDialog, titleVisibility: .visible) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("tasks.detail.report_source.camera") { showCamera = true }
+                Button("tasks.detail.report_source.camera") { Task { await openTaskCamera() } }
             }
             Button("tasks.detail.report_source.library") { showLibrary = true }
             Button("tasks.editor.cancel", role: .cancel) {}
+        }
+        .alert("permission.camera.title", isPresented: $showCameraPermissionAlert) {
+            Button("settings.open.settings") { appState.openAppSettingsURL() }
+            Button("tasks.editor.cancel", role: .cancel) {}
+        } message: {
+            Text("permission.camera.body")
         }
         .photosPicker(isPresented: $showLibrary, selection: $photoItem, matching: .images, photoLibrary: .shared())
         .fullScreenCover(isPresented: $showCamera) {
@@ -280,6 +288,20 @@ private struct ChildTaskDetailView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard(cornerRadius: 20, glowColor: task.status.accentColor)
+    }
+
+    @MainActor
+    private func openTaskCamera() async {
+        guard appState.deviceRole == .child else { return }
+        let allowed: Bool
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized: allowed = true
+        case .notDetermined: allowed = await AVCaptureDevice.requestAccess(for: .video)
+        case .denied, .restricted: allowed = false
+        @unknown default: allowed = false
+        }
+        guard appState.deviceRole == .child, task?.status == .pending else { return }
+        if allowed { showCamera = true } else { showCameraPermissionAlert = true }
     }
 
     private func loadPhoto(_ item: PhotosPickerItem) {

@@ -1,2 +1,3 @@
 "NSCameraUsageDescription" = "完了したタスクを撮影し、保護者に報告するためにカメラを使用します。";
-"NSHealthShareUsageDescription" = "アクティビティを分に変換するために歩数データが必要です。";
+"NSLocationWhenInUseUsageDescription" = "位置情報へのアクセスを許可すると、保護者からのリクエストに応じて、この端末の場所を地図に表示できます。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "位置情報を「常に」許可すると、バックグラウンドでも保護者からの位置確認に応答できます。位置情報はリクエスト時のみ取得し、常時追跡は行いません。";

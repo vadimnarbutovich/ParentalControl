@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Répétitions pour 1 minute";
 "settings.save.conversion" = "Enregistrer les taux de conversion";
 "settings.section.permissions" = "Autorisations";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Appareil photo";
 "settings.permission.notifications" = "Notifications";
 "settings.permission.screentime" = "Temps d'écran";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "C'est parti";
 "onboarding.welcome.title" = "Bouge plus. Profite de tes apps.";
 "onboarding.welcome.subtitle" = "Gagne des minutes avec des pas et des exercices — puis dépense-les sur tes apps préférées, sans culpabilité.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "Nous comptons tes pas du jour pour les convertir en temps d'utilisation. Tes données restent sur ton appareil.";
 "onboarding.screentime.title" = "Temps d'écran";
 "onboarding.screentime.body" = "Nécessaire pour surveiller les apps que tu choisis et les bloquer quand tes minutes sont épuisées.";
 "onboarding.notifications.title" = "Notifications";
-"onboarding.notifications.body" = "On te prévient quand tu gagnes du temps ou quand ton solde change, pour que tu sois toujours au courant.";
 "onboarding.conversion.title" = "Ton rythme";
 "onboarding.conversion.subtitle" = "Combien d'activité pour gagner 1 minute d'utilisation.";
 "onboarding.apps.title" = "Apps à surveiller";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "Tu peux maintenant devenir plus fort et en meilleure santé grâce à tes apps préférées.";
 
 "permission.banner.allow" = "Autoriser";
-"permission.banner.health.title" = "Accès à Santé requis";
-"permission.banner.health.body" = "Autorise le comptage des pas dans l'app Santé : Profil (ou Partage) → Apps → ParentalControl → Pas. Si un panneau apparaît, active Pas.";
-"permission.banner.open_health" = "Ouvrir Santé";
 "permission.banner.screentime.title" = "Temps d'écran requis";
 "permission.banner.screentime.body" = "Temps d'écran est nécessaire pour surveiller et limiter les apps que tu choisis.";
 "permission.banner.notifications.title" = "Notifications désactivées";
-"permission.banner.notifications.body" = "Active les alertes pour voir quand tu gagnes du temps et quand ton solde change.";
 "permission.banner.open_settings" = "Ouvrir Réglages";
-"permission.banner.liveactivity.title" = "Activités en direct désactivées";
-"permission.banner.liveactivity.body" = "Active les Activités en direct pour ParentalControl dans les Réglages pour afficher le temps de focus sur l'écran de verrouillage et la Dynamic Island.";
-"settings.permission.live_activity" = "Activités en direct";
 
 "exercise.camera.denied.title" = "Accès à l'appareil photo requis";
 "exercise.camera.denied.body" = "Nous utilisons l'appareil photo pour compter tes répétitions. Autorise l'accès dans les Réglages, puis reviens ici.";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "Associez l’appareil de votre enfant pour voir les statistiques.";
 "reports.previous" = "Période précédente";
 "reports.next" = "Période suivante";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Recevez une notification lorsque votre enfant envoie une tâche à vérifier.";
+"permission.notifications.child.body" = "Recevez des notifications lorsque le temps disponible ou le blocage des apps change.";
+"permission.camera.title" = "Appareil photo indisponible";
+"permission.camera.body" = "Autorisez l’appareil photo dans Réglages pour photographier une tâche. Vous pouvez aussi choisir une photo existante.";
+"onboarding.location.body" = "Autorisez la localisation pour que votre parent puisse retrouver cet appareil sur la carte. L’autorisation « Toujours » est nécessaire pour les demandes en arrière-plan. La position est recherchée uniquement sur demande, sans suivi continu.";

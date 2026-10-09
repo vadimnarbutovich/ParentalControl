@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "1分钟所需次数";
 "settings.save.conversion" = "保存换算率";
 "settings.section.permissions" = "权限";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "相机";
 "settings.permission.notifications" = "通知";
 "settings.permission.screentime" = "屏幕使用时间";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "开始吧";
 "onboarding.welcome.title" = "多运动，享应用。";
 "onboarding.welcome.subtitle" = "通过步行和运动赚取时间，然后无负担地使用你喜欢的应用。";
-"onboarding.health.title" = "Apple 健康";
-"onboarding.health.body" = "我们统计你今天的步数，将其转化为应用使用时间。数据仅保存在你的设备上。";
 "onboarding.screentime.title" = "屏幕使用时间";
 "onboarding.screentime.body" = "需要此权限来监控你选择的应用，并在时间耗尽时进行屏蔽。";
 "onboarding.notifications.title" = "通知";
-"onboarding.notifications.body" = "当你赚取时间或余额变化时，我们会通知你，让你随时掌握情况。";
 "onboarding.conversion.title" = "你的节奏";
 "onboarding.conversion.subtitle" = "多少运动量可以换取1分钟的应用使用时间。";
 "onboarding.apps.title" = "管理的应用";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "现在你可以通过喜欢的应用变得更强壮、更健康。";
 
 "permission.banner.allow" = "允许";
-"permission.banner.health.title" = "需要健康数据权限";
-"permission.banner.health.body" = "在健康应用中允许步数访问：个人资料（或共享）→ 应用 → ParentalControl → 步数。如果弹出面板，请开启步数。";
-"permission.banner.open_health" = "打开健康";
 "permission.banner.screentime.title" = "需要屏幕使用时间";
 "permission.banner.screentime.body" = "需要屏幕使用时间权限来监控和限制你选择的应用。";
 "permission.banner.notifications.title" = "通知已关闭";
-"permission.banner.notifications.body" = "开启通知以了解你何时赚取了时间以及余额变化。";
 "permission.banner.open_settings" = "打开设置";
-"permission.banner.liveactivity.title" = "实时活动已禁用";
-"permission.banner.liveactivity.body" = "在设置中为 ParentalControl 启用实时活动，即可在锁屏界面和灵动岛显示专注时间。";
-"settings.permission.live_activity" = "实时活动";
 
 "exercise.camera.denied.title" = "需要相机权限";
 "exercise.camera.denied.body" = "我们使用相机来计算你的运动次数。请在设置中允许相机权限，然后返回这里。";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "关联孩子的设备后即可查看统计。";
 "reports.previous" = "上一时段";
 "reports.next" = "下一时段";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "孩子提交任务等待检查时，您会收到通知。";
+"permission.notifications.child.body" = "可用时间或 App 屏蔽状态发生变化时，您会收到通知。";
+"permission.camera.title" = "无法使用相机";
+"permission.camera.body" = "请在设置中允许访问相机，以拍摄任务照片。您也可以选择已有照片。";
+"onboarding.location.body" = "请允许访问位置，让家长能在地图上找到此设备。响应后台请求需要“始终”允许。我们仅在家长请求时获取位置，不会持续跟踪。";

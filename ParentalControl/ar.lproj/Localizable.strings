@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "تكرارات لدقيقة واحدة";
 "settings.save.conversion" = "حفظ معدلات التحويل";
 "settings.section.permissions" = "الأذونات";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "الكاميرا";
 "settings.permission.notifications" = "الإشعارات";
 "settings.permission.screentime" = "وقت الشاشة";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "هيا نبدأ";
 "onboarding.welcome.title" = "تحرّك أكثر. استمتع بتطبيقاتك.";
 "onboarding.welcome.subtitle" = "اكسب دقائق بالخطوات والتمارين — ثم استخدمها في تطبيقاتك المفضلة، بلا شعور بالذنب.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "نحسب خطواتك اليوم لتحويلها إلى وقت استخدام. بياناتك تبقى على جهازك.";
 "onboarding.screentime.title" = "وقت الشاشة";
 "onboarding.screentime.body" = "مطلوب لمراقبة التطبيقات التي تختارها وحظرها عند نفاد دقائقك.";
 "onboarding.notifications.title" = "الإشعارات";
-"onboarding.notifications.body" = "سنعلمك عندما تكسب وقتاً أو عندما يتغير رصيدك، لتبقى دائماً على اطلاع.";
 "onboarding.conversion.title" = "إيقاعك";
 "onboarding.conversion.subtitle" = "كم من النشاط يكسبك دقيقة واحدة من وقت التطبيقات.";
 "onboarding.apps.title" = "التطبيقات المراد مراقبتها";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "الآن يمكنك أن تصبح أقوى وأكثر صحة بفضل تطبيقاتك المفضلة.";
 
 "permission.banner.allow" = "السماح";
-"permission.banner.health.title" = "يلزم الوصول إلى تطبيق الصحة";
-"permission.banner.health.body" = "اسمح بعد الخطوات في تطبيق الصحة: الملف الشخصي (أو المشاركة) ← التطبيقات ← ParentalControl ← الخطوات. إذا ظهرت نافذة، فعّل الخطوات.";
-"permission.banner.open_health" = "فتح الصحة";
 "permission.banner.screentime.title" = "مطلوب وقت الشاشة";
 "permission.banner.screentime.body" = "وقت الشاشة مطلوب لمراقبة وتقييد التطبيقات التي تختارها.";
 "permission.banner.notifications.title" = "الإشعارات معطّلة";
-"permission.banner.notifications.body" = "فعّل الإشعارات لمعرفة متى تكسب وقتاً ومتى يتغير رصيدك.";
 "permission.banner.open_settings" = "فتح الإعدادات";
-"permission.banner.liveactivity.title" = "الأنشطة المباشرة معطّلة";
-"permission.banner.liveactivity.body" = "فعّل الأنشطة المباشرة لـ ParentalControl في الإعدادات لعرض وقت التركيز على شاشة القفل والجزيرة الديناميكية.";
-"settings.permission.live_activity" = "الأنشطة المباشرة";
 
 "exercise.camera.denied.title" = "يلزم الوصول إلى الكاميرا";
 "exercise.camera.denied.body" = "نستخدم الكاميرا لعد التكرارات. اسمح بالوصول في الإعدادات، ثم ارجع هنا.";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "اربط جهاز طفلك للاطلاع على الإحصاءات.";
 "reports.previous" = "الفترة السابقة";
 "reports.next" = "الفترة التالية";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "تلقَّ إشعارًا عندما يرسل طفلك مهمة للمراجعة.";
+"permission.notifications.child.body" = "تلقَّ إشعارات عند تغيّر الوقت المتاح أو حالة حظر التطبيقات.";
+"permission.camera.title" = "الكاميرا غير متاحة";
+"permission.camera.body" = "اسمح بالوصول إلى الكاميرا في الإعدادات لتصوير المهمة. يمكنك أيضًا اختيار صورة موجودة.";
+"onboarding.location.body" = "اسمح بالوصول إلى الموقع ليتمكن ولي أمرك من العثور على هذا الجهاز على الخريطة. تتطلب الطلبات في الخلفية خيار «دائمًا». نحدّد الموقع عند طلب ولي أمرك فقط، دون تتبّع مستمر.";

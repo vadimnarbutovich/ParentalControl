@@ -1,2 +1,3 @@
 "NSCameraUsageDescription" = "L’appareil photo te permet de photographier une tâche terminée pour la montrer à ton parent.";
-"NSHealthShareUsageDescription" = "L'accès aux pas est nécessaire pour convertir l'activité en minutes.";
+"NSLocationWhenInUseUsageDescription" = "L’accès à la position permet à votre parent de voir cet appareil sur la carte lorsqu’il le demande.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "L’autorisation « Toujours » permet de répondre aux demandes de position de votre parent en arrière-plan. La position est recherchée uniquement sur demande, sans suivi continu.";

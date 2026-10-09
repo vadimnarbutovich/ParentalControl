@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "1分に必要な回数";
 "settings.save.conversion" = "換算率を保存";
 "settings.section.permissions" = "権限";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "カメラ";
 "settings.permission.notifications" = "通知";
 "settings.permission.screentime" = "スクリーンタイム";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "始めよう";
 "onboarding.welcome.title" = "もっと動いて。アプリを楽しもう。";
 "onboarding.welcome.subtitle" = "歩数や運動で分を稼いで、好きなアプリに罪悪感なく使おう。";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "今日の歩数をカウントしてアプリ利用時間に変換します。データはデバイス上に保持されます。";
 "onboarding.screentime.title" = "スクリーンタイム";
 "onboarding.screentime.body" = "選択したアプリを監視し、分がなくなったらブロックするために必要です。";
 "onboarding.notifications.title" = "通知";
-"onboarding.notifications.body" = "時間を稼いだ時や残高が変わった時にお知らせします。";
 "onboarding.conversion.title" = "あなたのペース";
 "onboarding.conversion.subtitle" = "1分のアプリ利用時間を稼ぐのに必要な運動量。";
 "onboarding.apps.title" = "管理するアプリ";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "お気に入りのアプリのおかげで、もっと強く健康になれます。";
 
 "permission.banner.allow" = "許可";
-"permission.banner.health.title" = "ヘルスケアへのアクセスが必要";
-"permission.banner.health.body" = "ヘルスケアアプリで歩数のカウントを許可してください：プロフィル（または共有）→ アプリ → ParentalControl → 歩数。シートが表示されたら、歩数をオンにしてください。";
-"permission.banner.open_health" = "ヘルスケアを開く";
 "permission.banner.screentime.title" = "スクリーンタイムが必要";
 "permission.banner.screentime.body" = "選択したアプリの監視と制限にスクリーンタイムが必要です。";
 "permission.banner.notifications.title" = "通知がオフです";
-"permission.banner.notifications.body" = "時間獲得や残高変更の通知を受け取るには、通知をオンにしてください。";
 "permission.banner.open_settings" = "設定を開く";
-"permission.banner.liveactivity.title" = "ライブアクティビティが無効";
-"permission.banner.liveactivity.body" = "設定でParentalControlのライブアクティビティを有効にすると、ロック画面やDynamic Islandに集中時間が表示されます。";
-"settings.permission.live_activity" = "ライブアクティビティ";
 
 "exercise.camera.denied.title" = "カメラへのアクセスが必要";
 "exercise.camera.denied.body" = "回数をカウントするためにカメラを使用します。設定でアクセスを許可してから、ここに戻ってください。";
@@ -480,3 +469,9 @@
 "reports.unlinked" = "お子様の端末を連携すると統計が表示されます。";
 "reports.previous" = "前の期間";
 "reports.next" = "次の期間";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "お子様がタスクの確認を依頼したときに通知を受け取れます。";
+"permission.notifications.child.body" = "利用可能な時間やアプリのブロック状態が変わると通知します。";
+"permission.camera.title" = "カメラを利用できません";
+"permission.camera.body" = "タスクの写真を撮るには、設定でカメラへのアクセスを許可してください。既存の写真を選ぶこともできます。";
+"onboarding.location.body" = "保護者が地図でこの端末を見つけられるよう、位置情報へのアクセスを許可してください。バックグラウンドでの位置確認には「常に」の許可が必要です。保護者からのリクエスト時のみ取得し、常時追跡は行いません。";

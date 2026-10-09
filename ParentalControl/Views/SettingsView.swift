@@ -728,8 +728,9 @@ private struct PermissionsSettingsSheet: View {
             ScrollView {
                 VStack(spacing: 12) {
                     permissionRow("settings.permission.notifications", isOn: appState.isNotificationAuthorized)
-                    permissionRow("settings.permission.screentime", isOn: appState.screenTimeService.isAuthorized)
-                    permissionRow("settings.permission.live_activity", isOn: appState.isLiveActivitiesEnabled)
+                    if appState.deviceRole == .child {
+                        permissionRow("settings.permission.screentime", isOn: appState.screenTimeService.isAuthorized)
+                    }
 
                     Button("settings.request.permissions") {
                         Task {

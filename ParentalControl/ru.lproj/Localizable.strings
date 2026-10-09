@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Повторений за 1 минуту";
 "settings.save.conversion" = "Сохранить коэффициенты";
 "settings.section.permissions" = "Разрешения";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Камера";
 "settings.permission.notifications" = "Уведомления";
 "settings.permission.screentime" = "Screen Time";
@@ -198,14 +197,11 @@
 "onboarding.cta.close" = "Начнём";
 "onboarding.welcome.title" = "Движение → время для приложений";
 "onboarding.welcome.subtitle" = "Зарабатывайте минуты шагами и упражнениями — и тратьте их на любимые приложения без чувства вины.";
-"onboarding.health.title" = "Apple Здоровье";
-"onboarding.health.body" = "Считаем шаги за сегодня, чтобы менять их на время для приложений. Данные остаются на устройстве.";
 "onboarding.screentime.title" = "Экранное время";
 "onboarding.screentime.body" = "Необходимо, чтобы отслеживать выбранные приложения и ограничивать их, когда минуты закончились.";
 "onboarding.notifications.title" = "Уведомления";
-"onboarding.notifications.body" = "Покажем, когда начислили время и когда изменился баланс — чтобы вы всегда были в курсе.";
 "onboarding.location.title" = "Местоположение";
-"onboarding.location.body" = "Родитель сможет видеть, где находится телефон, когда нажмёт «Обновить местоположение» — даже если приложение свёрнуто. Координаты обновляются только по запросу, постоянного отслеживания нет — это бережёт батарею. Выберите «Всегда», чтобы это работало надёжно.";
+"onboarding.location.body" = "Разрешите геолокацию, чтобы родитель мог найти этот телефон на карте. Доступ «Всегда» нужен для запросов в фоне. Мы определяем координаты только по запросу родителя, без постоянного отслеживания.";
 "onboarding.conversion.title" = "Ваш темп";
 "onboarding.conversion.subtitle" = "Сколько активности даёт 1 минуту доступа к приложениям.";
 "onboarding.apps.title" = "Приложения для контроля";
@@ -217,17 +213,10 @@
 "onboarding.done.body" = "Теперь можно становиться сильнее и здоровее благодаря любимым приложениям.";
 
 "permission.banner.allow" = "Разрешить";
-"permission.banner.health.title" = "Нет доступа к Здоровью";
-"permission.banner.health.body" = "Включите шаги в приложении «Здоровье»: Профиль → Приложения (или «Доступ к данным и устройствам») → ParentalControl → Шаги. Если появится системный лист — включите «Шаги».";
-"permission.banner.open_health" = "Открыть «Здоровье»";
 "permission.banner.screentime.title" = "Нет доступа к Экранному времени";
 "permission.banner.screentime.body" = "Без Screen Time нельзя отслеживать и ограничивать выбранные приложения.";
 "permission.banner.notifications.title" = "Уведомления выключены";
-"permission.banner.notifications.body" = "Включите уведомления, чтобы видеть начисления и изменения баланса.";
 "permission.banner.open_settings" = "Открыть настройки";
-"permission.banner.liveactivity.title" = "Эфир активности выключен";
-"permission.banner.liveactivity.body" = "Включите Live Activities для ParentalControl в Настройках — чтобы видеть таймер фокуса на экране блокировки и в Dynamic Island.";
-"settings.permission.live_activity" = "Live Activities";
 
 "exercise.camera.denied.title" = "Нужен доступ к камере";
 "exercise.camera.denied.body" = "Камера нужна, чтобы считать повторы. Разрешите доступ в Настройках и вернитесь в упражнение.";
@@ -561,3 +550,8 @@
 "reports.unlinked" = "Подключите устройство ребёнка, чтобы видеть статистику.";
 "reports.previous" = "Предыдущий период";
 "reports.next" = "Следующий период";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Получайте уведомления, когда ребёнок отправляет задание на проверку.";
+"permission.notifications.child.body" = "Получайте уведомления об изменениях доступного времени и блокировки.";
+"permission.camera.title" = "Камера недоступна";
+"permission.camera.body" = "Разрешите доступ к камере в настройках, чтобы сфотографировать задание. Также можно выбрать готовое фото.";

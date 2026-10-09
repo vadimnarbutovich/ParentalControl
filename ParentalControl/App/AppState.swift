@@ -3,18 +3,14 @@ import Combine
 import CoreLocation
 import FamilyControls
 import Foundation
-import HealthKit
 import os.log
 import UIKit
 
 private let appStateLog = OSLog(subsystem: "mycompny.ParentalControl", category: "AppState")
 
 enum PermissionReminderKind: Hashable {
-    case health
     case screenTime
     case notifications
-    /// Live Activities (Dynamic Island / Lock Screen) — системного запроса нет, только Настройки.
-    case liveActivities
 }
 
 @MainActor
@@ -35,12 +31,9 @@ final class AppState: ObservableObject {
     @Published private(set) var todaySteps: Int = 0
     @Published private(set) var exerciseTotals: [String: Int]
     @Published private(set) var isHealthAuthorized = false
-    /// Явный запрет чтения шагов в «Здоровье» — снова показать системный лист нельзя, только настройки.
-    @Published private(set) var isHealthKitStepReadLikelyDenied = false
     @Published private(set) var isNotificationAuthorized = false
     /// `true`, если уведомления явно запрещены в системе — повторный `requestAuthorization` не покажет диалог.
     @Published private(set) var isNotificationAuthorizationDenied = false
-    @Published private(set) var isLiveActivitiesEnabled = true
     @Published private(set) var isCameraAuthorized = false
     @Published private(set) var isFocusSessionActive = false
     @Published private(set) var focusSessionEndsAt: Date?
@@ -121,7 +114,7 @@ final class AppState: ObservableObject {
     @Published private(set) var childLocationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
-    /// Пока `false`, баннер разрешений не показываем — избегаем кадра с устаревшим `isHealthAuthorized` до async-обновления.
+    /// Do not show permission reminders before the system statuses have loaded.
     @Published private(set) var permissionStatusesReady = false
     /// `true`, когда ребёнок успешно ввёл родительский PIN и сейчас доступны «скрытые» табы
     /// `Блокировка` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
@@ -163,21 +156,16 @@ final class AppState: ObservableObject {
     private let blockScheduleEnforcement: BlockScheduleEnforcementService
 
     var activePermissionReminder: PermissionReminderKind? {
-        guard permissionStatusesReady, hasCompletedOnboarding, !permissionBannerSuppressedAfterCTA else { return nil }
-        if !screenTimeService.isAuthorized { return .screenTime }
+        guard deviceRole != nil, permissionStatusesReady, hasCompletedOnboarding, !permissionBannerSuppressedAfterCTA else { return nil }
+        if deviceRole == .child, !screenTimeService.isAuthorized { return .screenTime }
         if !isNotificationAuthorized { return .notifications }
-        if !isLiveActivitiesEnabled { return .liveActivities }
         return nil
     }
 
     func permissionBannerPrimaryButtonKey(for kind: PermissionReminderKind) -> String {
         switch kind {
-        case .liveActivities:
-            return "permission.banner.open_settings"
         case .notifications where isNotificationAuthorizationDenied:
             return "permission.banner.open_settings"
-        case .health where isHealthKitStepReadLikelyDenied:
-            return "permission.banner.open_health"
         default:
             return "permission.banner.allow"
         }
@@ -188,31 +176,9 @@ final class AppState: ObservableObject {
         UIApplication.shared.open(url)
     }
 
-    /// Шаги включаются в приложении «Здоровье» → «Доступ к данным и устройствам», а не на странице настроек нашего приложения.
-    /// Схема `x-apple-health` не документирована Apple и может измениться; при неудаче — настройки приложения.
-    func openHealthAppForStepPermissions() {
-        tryOpenHealthDeepLink(index: 0, candidates: ["x-apple-health://Sources", "x-apple-health://"])
-    }
-
-    private func tryOpenHealthDeepLink(index: Int, candidates: [String]) {
-        guard index < candidates.count, let url = URL(string: candidates[index]) else {
-            openAppSettingsURL()
-            return
-        }
-        UIApplication.shared.open(url, options: [:]) { [weak self] success in
-            Task { @MainActor in
-                guard let self else { return }
-                if success { return }
-                self.tryOpenHealthDeepLink(index: index + 1, candidates: candidates)
-            }
-        }
-    }
-
     private let storage: AppGroupStore
     private let rewardEngine = RewardEngine()
-    private let healthService: HealthKitProviding
     private let notificationService: Notifying
-    private let cameraService: CameraCaptureService
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
@@ -279,16 +245,12 @@ final class AppState: ObservableObject {
 
     init() {
         let storage = AppGroupStore()
-        let healthService: HealthKitProviding = HealthKitService()
         let notificationService: Notifying = NotificationService()
-        let cameraService = CameraCaptureService()
         let remoteSyncService = ParentalRemoteSyncService(storage: storage)
         let locationService: LocationProviding = LocationService()
 
         self.storage = storage
-        self.healthService = healthService
         self.notificationService = notificationService
-        self.cameraService = cameraService
         self.remoteSyncService = remoteSyncService
         self.locationService = locationService
         self.screenTimeService = ScreenTimeService(appStore: storage)
@@ -358,7 +320,7 @@ final class AppState: ObservableObject {
 
     func requestPermissions() async {
         await requestNotificationAccessOnly()
-        await requestScreenTimeAccessOnly()
+        if deviceRole == .child { await requestScreenTimeAccessOnly() }
     }
 
     func refreshPermissionStatuses() async {
@@ -367,16 +329,23 @@ final class AppState: ObservableObject {
         let notifStatus = await notificationService.currentAuthorizationStatus()
         isNotificationAuthorizationDenied = notifStatus == .denied
         screenTimeService.refreshAuthorizationStatus()
-        isLiveActivitiesEnabled = LiveActivityPermission.isEnabledForApp
         isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+        if deviceRole == .child { refreshChildLocationAuthorizationStatus() }
         permissionStatusesReady = true
     }
 
-    func requestHealthAccessOnly() async {
-        // No longer requested: exercise earning was removed.
+    /// Parent onboarding is skipped; request only the alerts used for submitted tasks.
+    /// Automatic entry must never open Settings after a denial.
+    func requestParentNotificationsIfNeeded() async {
+        guard deviceRole == .parent else { return }
+        let status = await notificationService.currentAuthorizationStatus()
+        guard deviceRole == .parent else { return }
+        if status == .notDetermined { _ = await notificationService.requestAccess() }
+        await refreshPermissionStatuses()
     }
 
     func requestNotificationAccessOnly() async {
+        guard deviceRole != nil else { return }
         await notificationService.resolveNotificationAccess { [weak self] in
             self?.openAppSettingsURL()
         }
@@ -385,13 +354,10 @@ final class AppState: ObservableObject {
     }
 
     func requestScreenTimeAccessOnly() async {
+        guard deviceRole == .child else { return }
         await screenTimeService.requestAuthorization()
         screenTimeService.refreshAuthorizationStatus()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
-    }
-
-    func requestCameraAccessOnly() async {
-        // No longer requested: exercise earning was removed.
     }
 
     func refreshCameraAuthorizationFromSystem() {
@@ -437,6 +403,11 @@ final class AppState: ObservableObject {
             storage.saveHasCompletedOnboarding(true)
             hasCompletedOnboarding = true
             seedDefaultBlockSchedulesIfNeeded()
+        } else {
+            // A former parent device has never completed child permission setup.
+            // This only runs on an explicit role change, not on ordinary launches.
+            storage.saveHasCompletedOnboarding(false)
+            hasCompletedOnboarding = false
         }
         Task {
             await bootstrapRemoteIfNeeded()
@@ -943,17 +914,10 @@ final class AppState: ObservableObject {
 
     func handlePermissionBannerAllow(kind: PermissionReminderKind) async {
         switch kind {
-        case .health:
-            await requestHealthAccessOnly()
-            if !isHealthAuthorized {
-                openHealthAppForStepPermissions()
-            }
         case .screenTime:
             await requestScreenTimeAccessOnly()
         case .notifications:
             await requestNotificationAccessOnly()
-        case .liveActivities:
-            openAppSettingsURL()
         }
         await refreshPermissionStatuses()
         permissionBannerSuppressedAfterCTA = true
@@ -1680,18 +1644,18 @@ final class AppState: ObservableObject {
     /// Возвращает финальный статус. UI на онбординге может на его основе решать показывать ли алерт.
     @discardableResult
     func requestChildLocationPermissionIfNeeded() async -> CLAuthorizationStatus {
+        guard deviceRole == .child else { return locationService.authorizationStatus }
         let status = await locationService.requestWhenInUseAuthorization()
         childLocationAuthorizationStatus = status
         return status
     }
 
-    /// Запросить апгрейд до `Always`. Должен вызываться ПОСЛЕ того, как пользователь выдал
-    /// `When-in-Use` — это требование Apple. Возвращает финальный статус.
-    /// На устройстве ребёнка `Always` критически важен: он позволяет снимать GPS-fix по push'у,
-    /// даже когда приложение свёрнуто или выгружено из памяти. Расход батареи минимальный — мы
-    /// включаем фоновые апдейты только на момент одного capture.
+    /// Ask for Always after When In Use. iOS may defer or suppress the prompt;
+    /// return the current status without blocking onboarding. Background execution
+    /// and push delivery remain controlled by iOS, even with Always authorization.
     @discardableResult
     func requestChildLocationAlwaysAuthorizationIfNeeded() async -> CLAuthorizationStatus {
+        guard deviceRole == .child else { return locationService.authorizationStatus }
         let status = await locationService.requestAlwaysAuthorization()
         childLocationAuthorizationStatus = status
         return status
