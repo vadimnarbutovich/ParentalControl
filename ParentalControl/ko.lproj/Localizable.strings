@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "자녀 기기 연결";
 "settings.section.parent_connection" = "보호자 기기 연결";
 "settings.section.diagnostics" = "진단";
+"blocklist.manual_block.pending" = "이 기기에 변경 사항을 적용했어요. 보호자 기기와 동기화를 기다리고 있어요.";
+"blocklist.manual_block.changed" = "다른 기기에서 설정이 변경되어 최신 차단 상태를 적용했어요. 전환 버튼을 확인해 주세요.";

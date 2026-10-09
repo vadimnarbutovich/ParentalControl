@@ -82,6 +82,8 @@ Deno.serve(async (req: Request) => {
         return await queueFocusCommand(authed.deviceId, payload);
       case "replace_focus_command":
         return await replaceFocusCommand(authed.deviceId, payload);
+      case "set_local_manual_block":
+        return await setLocalManualBlock(authed.device, payload);
       case "fetch_pending_commands":
         return await fetchPendingCommands(authed.deviceId);
       case "fetch_desired_focus_state":
@@ -337,7 +339,7 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
   // desired focus state (зеркало fetchDesiredFocusState)
   const { data: desiredRow, error: desiredErr } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", device.family_id)
     .maybeSingle();
   if (desiredErr) return errorResponse(desiredErr.message, 400);
@@ -384,6 +386,7 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+      revision: desiredRow?.revision ?? 0,
     },
     pendingCommands: (pending ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)),
     parentPin,
@@ -411,7 +414,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
 
   const { data: desiredRow, error: desiredErr } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", familyID)
     .maybeSingle();
   if (desiredErr) return errorResponse(desiredErr.message, 400);
@@ -476,6 +479,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+      revision: desiredRow?.revision ?? 0,
     },
     runtime: {
       isFocusActive: runtimeRow?.is_focus_active ?? false,
@@ -557,6 +561,7 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
       child_device_id: device.id,
       is_focus_active: isFocusActive,
       focus_ends_at: focusEndsAt || null,
+      focus_revision: asNumber(payload.focusRevision),
       available_seconds: availableSeconds,
       ...budgetFields,
       updated_at: new Date().toISOString(),
@@ -576,32 +581,9 @@ async function updateApnsToken(deviceId: string, payload: Json): Promise<Respons
 }
 
 async function queueFocusCommand(deviceId: string, payload: Json): Promise<Response> {
-  const commandType = asString(payload.commandType);
-  const durationSeconds = asNumber(payload.durationSeconds);
-  const intentID = asUUIDString(payload.intentID);
-  if (commandType !== "start_focus" && commandType !== "end_focus") return errorResponse("Invalid command type", 400);
-
-  const parentDevice = await getDevice(deviceId);
-  if (parentDevice.role !== "parent" || !parentDevice.family_id) return errorResponse("Parent device is not paired", 403);
-
-  const { data: child, error: childError } = await supabase
-    .from("devices")
-    .select("id, apns_token")
-    .eq("family_id", parentDevice.family_id)
-    .eq("role", "child")
-    .single();
-  if (childError || !child) return errorResponse("Child device is not linked", 404);
-
-  await upsertDesiredFocusState(parentDevice.family_id, parentDevice.id, commandType, durationSeconds);
-
-  return await createAndDispatchFocusCommand({
-    familyID: parentDevice.family_id,
-    parentDeviceID: parentDevice.id,
-    childDeviceID: child.id,
-    childApnsToken: child.apns_token,
-    commandType,
-    durationSeconds,
-    intentID,
+  // Legacy callers use the same atomic path; only older requests lack an intent.
+  return await replaceFocusCommand(deviceId, {
+    ...payload, intentID: asUUIDString(payload.intentID) ?? crypto.randomUUID(),
   });
 }
 
@@ -623,8 +605,6 @@ async function replaceFocusCommand(deviceId: string, payload: Json): Promise<Res
     .single();
   if (childError || !child) return errorResponse("Child device is not linked", 404);
 
-  await upsertDesiredFocusState(parentDevice.family_id, parentDevice.id, commandType, durationSeconds);
-
   const hasToken = !!asString(child.apns_token);
   const { data: rpcData, error: rpcError } = await supabase.rpc("replace_focus_command_atomic", {
     p_family_id: parentDevice.family_id,
@@ -645,6 +625,26 @@ async function replaceFocusCommand(deviceId: string, payload: Json): Promise<Res
   }
 
   return okResponse(mapCommandForClient(command));
+}
+
+async function setLocalManualBlock(device: DeviceContext, payload: Json): Promise<Response> {
+  if (device.role !== "child" || !device.family_id) return errorResponse("Paired child required", 403);
+  if (asUUIDString(payload.familyID) !== device.family_id) return errorResponse("Family changed", 409);
+  const intent = asUUIDString(payload.intentID);
+  const revision = asNumber(payload.expectedRevision);
+  const pinSalt = asString(payload.pinVersion);
+  if (!intent || typeof payload.isActive !== "boolean" || revision === null ||
+      !Number.isSafeInteger(revision) || revision < 0 || !pinSalt || pinSalt.length > 64) {
+    return errorResponse("Invalid local focus request", 400);
+  }
+  // Device secret authenticates this request. PIN verification/lockout remains
+  // local (also offline); pinVersion prevents replay after the parent changed PIN.
+  const { data, error } = await supabase.rpc("pc_set_local_manual_block", {
+    p_device: device.id, p_active: payload.isActive, p_intent: intent,
+    p_expected_revision: revision, p_pin_salt: pinSalt,
+  });
+  if (error) return errorResponse(error.message, 400);
+  return okResponse(data);
 }
 
 async function fetchPendingCommands(deviceId: string): Promise<Response> {
@@ -672,7 +672,7 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
 
   const { data, error } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", device.family_id)
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
@@ -681,6 +681,7 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
     shouldFocusActive: data?.should_focus_active ?? false,
     durationSeconds: data?.desired_duration_seconds ?? null,
     updatedAt: data?.updated_at ?? new Date(0).toISOString(),
+    revision: data?.revision ?? 0,
   });
 }
 
@@ -1134,7 +1135,9 @@ async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
   const patch: Record<string, unknown> = { status, error_message: errorMessage || null };
   if (status === "applied") patch.applied_at = new Date().toISOString();
 
-  const { error } = await supabase.from("focus_commands").update(patch).eq("id", commandID);
+  // A delayed ACK must not resurrect an expired or superseded command.
+  const { error } = await supabase.from("focus_commands").update(patch).eq("id", commandID)
+    .in("status", ["queued", "sent", "delivered", "applied"]);
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
@@ -1212,6 +1215,7 @@ async function updateChildRuntime(deviceId: string, payload: Json): Promise<Resp
       child_device_id: child.id,
       is_focus_active: isFocusActive,
       focus_ends_at: focusEndsAt || null,
+      focus_revision: asNumber(payload.focusRevision),
       updated_at: new Date().toISOString(),
     }, { onConflict: "family_id" });
   if (error) return errorResponse(error.message, 400);
@@ -1952,24 +1956,6 @@ async function notifyChildSchedulesUpdated(familyID: string, parentDeviceID: str
   } catch (e) {
     console.warn("[notifyChildSchedulesUpdated] dispatch failed:", e instanceof Error ? e.message : String(e));
   }
-}
-
-async function upsertDesiredFocusState(
-  familyID: string,
-  updaterDeviceID: string,
-  commandType: string,
-  durationSeconds: number | null
-): Promise<void> {
-  const shouldActive = commandType === "start_focus";
-  await supabase
-    .from("family_focus_desired_state")
-    .upsert({
-      family_id: familyID,
-      should_focus_active: shouldActive,
-      desired_duration_seconds: shouldActive ? durationSeconds : null,
-      updated_by_device_id: updaterDeviceID,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "family_id" });
 }
 
 async function expireStalePendingCommands(familyID: string | null | undefined): Promise<void> {

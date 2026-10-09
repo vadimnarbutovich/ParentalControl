@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "连接孩子的设备";
 "settings.section.parent_connection" = "连接家长的设备";
 "settings.section.diagnostics" = "诊断";
+"blocklist.manual_block.pending" = "更改已在此设备上生效，等待与家长设备同步。";
+"blocklist.manual_block.changed" = "设置已在其他设备上更改，现已应用最新的锁定状态。请检查开关。";

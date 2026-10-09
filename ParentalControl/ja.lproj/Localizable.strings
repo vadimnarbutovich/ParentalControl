@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "お子様の端末との接続";
 "settings.section.parent_connection" = "保護者の端末との接続";
 "settings.section.diagnostics" = "診断";
+"blocklist.manual_block.pending" = "この端末に変更を適用しました。保護者の端末との同期を待っています。";
+"blocklist.manual_block.changed" = "別の端末で設定が変更されたため、最新のブロック状態を適用しました。切り替えボタンを確認してください。";

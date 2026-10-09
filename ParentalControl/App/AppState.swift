@@ -46,6 +46,10 @@ final class AppState: ObservableObject {
     @Published private(set) var focusSessionEndsAt: Date?
     @Published private(set) var focusRemainingSeconds: Int = 0
     @Published private(set) var isMonitoringPaused = false
+    @Published private var pendingLocalFocusChange: LocalManualBlockIntent?
+    @Published private(set) var isLocalManualBlockSyncing = false
+    @Published private(set) var localManualBlockNotice: String?
+    var isLocalManualBlockPending: Bool { pendingLocalFocusChange != nil }
     @Published private(set) var isMidnightResetEnabled = true
     #if DEBUG && !HIDE_DEBUG_UI
     @Published private(set) var deviceActivityDebug = DeviceActivityDebugSnapshot(
@@ -89,6 +93,11 @@ final class AppState: ObservableObject {
     @Published private(set) var parentChildEarnedSecondsToday: Int?
     @Published private(set) var parentChildSpentSecondsToday: Int?
     @Published private(set) var remoteCommandInFlight = false
+    @Published private var pendingParentManualBlock: Bool?
+    /// Optimistic position only for the disabled control, not confirmed child status.
+    var parentManualBlockControlState: Bool {
+        pendingParentManualBlock ?? parentResolvedFocusActive ?? false
+    }
     @Published private(set) var remoteStatusMessage: String?
     /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
     /// подставляется из `list_block_schedules` и применяется через Device Activity + named shields.
@@ -315,7 +324,14 @@ final class AppState: ObservableObject {
         resetDailyBalanceIfNeeded()
         ensureSpentBaselineForToday()
         if !DailyBudgetStore.shared.isEnabled { screenTimeService.stopDeviceActivityMonitoring() }
+        // The monitoring-pause control no longer exists. Restore normal allowance
+        // enforcement rather than leaving an invisible, permanent bypass enabled.
+        if deviceRole == .child, isMonitoringPaused {
+            isMonitoringPaused = false
+            storage.saveDeviceActivityMonitoringPaused(false)
+        }
         restoreFocusSessionIfNeeded()
+        restoreLocalManualBlockIntent()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
 
         Task { await self.refreshPermissionStatuses() }
@@ -390,6 +406,8 @@ final class AppState: ObservableObject {
 
     func chooseDeviceRole(_ role: DeviceRole) {
         guard deviceRole != role else { return }
+        pendingParentManualBlock = nil
+        clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
         deviceRole = role
         restoreParentBudgetCache()
@@ -421,8 +439,11 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        pendingParentManualBlock = nil
+        clearLocalManualBlockIntent()
         if let family = pairingState?.familyID {
             UserDefaults.standard.removeObject(forKey: parentBudgetCacheKey(family))
+            UserDefaults.standard.removeObject(forKey: focusRevisionKey(family))
         }
         let hadDailyBudget = DailyBudgetStore.shared.isEnabled
         do {
@@ -518,9 +539,108 @@ final class AppState: ObservableObject {
         }
     }
 
-    func sendParentFocusCommand(start: Bool) async {
+    func sendParentFocusCommand(start: Bool) {
         let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
-        await sendParentCommand(commandType: commandType, durationSeconds: nil)
+        // Commit the disabled control's new position in the same MainActor turn
+        // as the drag reset, before scheduling network work.
+        guard beginParentCommand(commandType: commandType) else { return }
+        Task {
+            await performParentCommand(commandType: commandType, durationSeconds: nil)
+        }
+    }
+
+    private func localFocusIntentKey(_ family: UUID) -> String {
+        "parentalcontrol.localManualBlock." + family.uuidString.lowercased()
+    }
+
+    private func focusRevisionKey(_ family: UUID) -> String {
+        "parentalcontrol.focusRevision." + family.uuidString.lowercased()
+    }
+
+    private var childFocusRevision: Int {
+        guard let family = pairingState?.familyID else { return 0 }
+        return UserDefaults.standard.integer(forKey: focusRevisionKey(family))
+    }
+
+    private func clearLocalManualBlockIntent() {
+        if let family = pairingState?.familyID {
+            UserDefaults.standard.removeObject(forKey: localFocusIntentKey(family))
+        }
+        pendingLocalFocusChange = nil
+        localManualBlockNotice = nil
+    }
+
+    private func restoreLocalManualBlockIntent() {
+        pendingLocalFocusChange = nil
+        guard deviceRole == .child, let family = pairingState?.familyID,
+              let data = UserDefaults.standard.data(forKey: localFocusIntentKey(family)),
+              let intent = try? JSONDecoder().decode(LocalManualBlockIntent.self, from: data),
+              intent.familyID == family else { return }
+        pendingLocalFocusChange = intent
+        applyLocalManualBlock(intent.isActive)
+    }
+
+    /// Only the PIN-unlocked parent mode may create a local action. Persist it
+    /// BEFORE changing shields; a restart/offline launch must not lose the intent.
+    func setLocalManualBlock(active: Bool) {
+        guard deviceRole == .child, isParentModeActive, pairingState?.isLinked == true,
+              !isLocalManualBlockSyncing, let family = pairingState?.familyID,
+              let metadata = parentPinService.loadMetadata() else { return }
+        let intent = LocalManualBlockIntent(id: UUID(), familyID: family, isActive: active,
+            expectedRevision: childFocusRevision, pinVersion: metadata.salt.base64EncodedString())
+        guard let data = try? JSONEncoder().encode(intent) else { return }
+        UserDefaults.standard.set(data, forKey: localFocusIntentKey(family))
+        pendingLocalFocusChange = intent
+        localManualBlockNotice = nil
+        applyLocalManualBlock(active)
+        AppAnalytics.report("blocklist_manual_block", parameters: ["action": active ? "block" : "unblock"])
+        Task {
+            _ = await flushLocalManualBlockIntent()
+            await syncChildStatsSnapshotIfNeeded()
+        }
+    }
+
+    private func applyLocalManualBlock(_ active: Bool) {
+        // This replaces the old monitoring pause, not the daily allowance or schedules.
+        if isMonitoringPaused {
+            isMonitoringPaused = false
+            storage.saveDeviceActivityMonitoringPaused(false)
+        }
+        if active {
+            if !isFocusSessionActive || focusSessionEndsAt != nil { startIndefiniteFocusSession() }
+        } else {
+            endFocusSession()
+        }
+        syncScreenTimeEnforcement(notifyOnUnlock: false)
+    }
+
+    @discardableResult
+    private func flushLocalManualBlockIntent() async -> Bool {
+        guard let intent = pendingLocalFocusChange else { return true }
+        guard deviceRole == .child, pairingState?.familyID == intent.familyID,
+              !isLocalManualBlockSyncing else { return false }
+        isLocalManualBlockSyncing = true
+        defer { isLocalManualBlockSyncing = false }
+        do {
+            let result = try await remoteSyncService.setLocalManualBlock(intent)
+            guard deviceRole == .child, pairingState?.familyID == intent.familyID,
+                  pendingLocalFocusChange?.id == intent.id else { return false }
+            guard ["accepted", "conflict", "pin_changed"].contains(result.outcome) else { return false }
+            clearLocalManualBlockIntent()
+            await applyDesiredFocusState(result.desired)
+            if result.outcome != "accepted" {
+                localManualBlockNotice = L10n.tr("blocklist.manual_block.changed")
+            }
+            if result.outcome == "pin_changed" {
+                exitParentMode()
+                await refreshChildParentPinIfNeeded()
+            }
+            return true
+        } catch {
+            // Keep the local result and persisted intent. Foreground/background sync
+            // retries the SAME id; no raw server errors or fake remote confirmation.
+            return false
+        }
     }
 
     func sendParentTakeAllTimeCommand() async {
@@ -1211,7 +1331,10 @@ final class AppState: ObservableObject {
             if let serverPair = bootstrap.pairingState {
                 let familyChanged = pairingState?.familyID != serverPair.familyID
                 pairingState = serverPair
-                if familyChanged { restoreParentBudgetCache() }
+                if familyChanged {
+                    restoreParentBudgetCache()
+                    restoreLocalManualBlockIntent()
+                }
                 storage.savePairingState(serverPair)
                 if role == .parent {
                     parentPairingCode = serverPair.pairingCode
@@ -1374,27 +1497,21 @@ final class AppState: ObservableObject {
                 && $0.commandType != .scheduleEnded
                 && $0.commandType != .tasksUpdated
         }
-        guard let latest = nonSchedule.last else { return }
-        if nonSchedule.count > 1 {
-            for stale in nonSchedule.dropLast() {
-                try? await remoteSyncService.ackCommand(
-                    id: stale.id,
-                    status: .failed,
-                    errorMessage: "superseded_by_newer_command"
-                )
-            }
+        // Only the backend supersedes focus commands. Location/budget work must
+        // not disappear just because a manual block arrived in the same poll.
+        for command in nonSchedule {
+            await applyRemoteCommandIfNeeded(id: command.id, type: command.commandType,
+                durationSeconds: command.durationSeconds)
         }
-        await applyRemoteCommandIfNeeded(
-            id: latest.id,
-            type: latest.commandType,
-            durationSeconds: latest.durationSeconds
-        )
     }
 
     private func syncChildWithDesiredStateIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard await flushLocalManualBlockIntent() else { return }
+        let requestedFamily = pairingState?.familyID
         do {
             let desired = try await remoteSyncService.fetchDesiredFocusState()
+            guard pairingState?.familyID == requestedFamily else { return }
             await applyDesiredFocusState(desired)
         } catch {
             remoteStatusMessage = error.localizedDescription
@@ -1406,6 +1523,8 @@ final class AppState: ObservableObject {
     /// тем же кодом, что и одиночные пути (для совместимости с push-доставкой).
     private func pollChildAndApply(includeParentSettings: Bool) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        // Continue fetching PIN, budget and schedules even if focus sync is offline.
+        _ = await flushLocalManualBlockIntent()
         let requestedFamily = pairingState?.familyID
         do {
             let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
@@ -1441,14 +1560,21 @@ final class AppState: ObservableObject {
 
     /// Применяет уже полученное desired-состояние фокуса (вынесено из `syncChildWithDesiredStateIfNeeded`).
     private func applyDesiredFocusState(_ desired: DesiredFocusStateDTO) async {
-        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard deviceRole == .child, pairingState?.isLinked == true,
+              pendingLocalFocusChange == nil, let family = pairingState?.familyID,
+              let revision = desired.revision, revision >= childFocusRevision else { return }
+        if revision != childFocusRevision {
+            UserDefaults.standard.set(revision, forKey: focusRevisionKey(family))
+        }
         do {
             let localIsActive: Bool = {
                 guard isFocusSessionActive else { return false }
                 if let end = focusSessionEndsAt { return end > Date() }
                 return true
             }()
-            guard desired.shouldFocusActive != localIsActive else { return }
+            let needsIndefiniteBlock = desired.shouldFocusActive
+                && (desired.durationSeconds ?? 0) <= 0 && focusSessionEndsAt != nil
+            guard desired.shouldFocusActive != localIsActive || needsIndefiniteBlock else { return }
 
             if desired.shouldFocusActive {
                 if let seconds = desired.durationSeconds, seconds > 0 {
@@ -1467,7 +1593,7 @@ final class AppState: ObservableObject {
                 lastUpdatedAt: Date()
             )
             remoteChildState = runtime
-            try await remoteSyncService.updateChildRuntimeState(runtime)
+            try await remoteSyncService.updateChildRuntimeState(runtime, focusRevision: revision)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1667,6 +1793,28 @@ final class AppState: ObservableObject {
     }
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        if type == .startFocus || type == .endFocus {
+            guard await flushLocalManualBlockIntent() else { return }
+            let requestedFamily = pairingState?.familyID
+            do {
+                // A delayed APNs/NSE payload is only a wake-up hint. Fetch current
+                // desired state instead of replaying a superseded start/end action.
+                let desired = try await remoteSyncService.fetchDesiredFocusState()
+                guard pairingState?.familyID == requestedFamily,
+                      pendingLocalFocusChange == nil,
+                      let revision = desired.revision, revision >= childFocusRevision else { return }
+                await applyDesiredFocusState(desired)
+                guard pairingState?.familyID == requestedFamily,
+                      pendingLocalFocusChange == nil, revision == childFocusRevision else { return }
+                let matches = desired.shouldFocusActive == (type == .startFocus)
+                try await remoteSyncService.ackCommand(id: id, status: matches ? .applied : .failed,
+                    errorMessage: matches ? nil : "superseded_by_newer_command")
+            } catch {
+                remoteStatusMessage = error.localizedDescription
+            }
+            return
+        }
         if DailyBudgetStore.shared.isEnabled,
            type == .addEarnedSeconds || type == .subtractEarnedSeconds || type == .resetEarnedBalance {
             try? await remoteSyncService.ackCommand(id: id, status: .failed, errorMessage: "replaced_by_daily_budget")
@@ -1681,15 +1829,8 @@ final class AppState: ObservableObject {
         // UNUserNotification here — otherwise the user gets two notifications for one command:
         // one from the server push and another from this local notify call.
         switch type {
-        case .startFocus:
-            if let durationSeconds, durationSeconds > 0 {
-                focusDurationMinutes = max(1, durationSeconds / 60)
-                startTimedFocusSession(totalSeconds: durationSeconds)
-            } else {
-                startIndefiniteFocusSession()
-            }
-        case .endFocus:
-            endFocusSession()
+        case .startFocus, .endFocus:
+            return // Handled above using authoritative, revisioned desired state.
         case .resetEarnedBalance:
             applyParentResetEarnedBalance()
         case .addEarnedSeconds:
@@ -1732,15 +1873,16 @@ final class AppState: ObservableObject {
             await refreshChildTasksFromServer()
         }
         storage.saveLastHandledRemoteCommandID(id.uuidString)
-        let newState = RemoteChildRuntimeState(
-            isFocusActive: isFocusSessionActive,
-            focusEndsAt: focusSessionEndsAt,
-            lastUpdatedAt: Date()
-        )
-        remoteChildState = newState
         do {
             try await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
-            try await remoteSyncService.updateChildRuntimeState(newState)
+            if pendingLocalFocusChange == nil {
+                // Capture state AND revision after the await: a local toggle may
+                // have completed while the acknowledgement was in flight.
+                let newState = RemoteChildRuntimeState(isFocusActive: isFocusSessionActive,
+                    focusEndsAt: focusSessionEndsAt, lastUpdatedAt: Date())
+                remoteChildState = newState
+                try await remoteSyncService.updateChildRuntimeState(newState, focusRevision: childFocusRevision)
+            }
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1968,7 +2110,17 @@ final class AppState: ObservableObject {
             }
             try? await Task.sleep(nanoseconds: 100_000_000)
         }
-        // `applied` на бэке есть; снапшот иногда «не сходится» по полям, но `status=applied` уже отражает применение — выставляем CTA от типа команды. Без немедленного `refresh` здесь: иначе устаревший snapshot снова даст неверный `parentResolved`.
+        // The local parent may have changed the block AFTER this command applied.
+        // Do not replace a newer confirmed runtime with an old command's projection.
+        if let runtime = lastNormalizedParentChildRuntime, let delivery = parentCommandDelivery,
+           runtime.lastUpdatedAt > (delivery.appliedAt ?? delivery.updatedAt) {
+            parentResolvedFocusActive = isFocusActiveNowOnParentUI(runtime)
+            remoteChildState = runtime
+            isParentChildStateResolved = true
+            finishParentCommandWatch(commandID: commandID)
+            return
+        }
+        // No newer runtime: retain the acknowledged command while the snapshot catches up.
         parentResolvedFocusActive = (commandType == .startFocus)
         remoteChildState = runtimeFromDesiredFallback(commandType == .startFocus, current: remoteChildState)
         isParentChildStateResolved = true
@@ -1978,6 +2130,7 @@ final class AppState: ObservableObject {
     private func finishParentCommandWatch(commandID: UUID) {
         guard activeParentCommandID == commandID else { return }
         activeParentCommandID = nil
+        pendingParentManualBlock = nil
         remoteCommandInFlight = false
     }
 
@@ -2021,7 +2174,13 @@ final class AppState: ObservableObject {
     }
 
     private func sendParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        guard beginParentCommand(commandType: commandType) else { return }
+        await performParentCommand(commandType: commandType, durationSeconds: durationSeconds)
+    }
+
+    private func beginParentCommand(commandType: RemoteFocusCommandType) -> Bool {
+        guard deviceRole == .parent, pairingState?.isLinked == true, !remoteCommandInFlight else { return false }
+        pendingParentManualBlock = commandType == .startFocus ? true : (commandType == .endFocus ? false : nil)
         remoteCommandInFlight = true
         remoteStatusMessage = L10n.tr("parent.command.processing")
         if commandType == .startFocus {
@@ -2029,6 +2188,10 @@ final class AppState: ObservableObject {
         } else if commandType == .endFocus {
             parentDesiredFocusActive = false
         }
+        return true
+    }
+
+    private func performParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
         let intentID = UUID()
         do {
             let command: RemoteFocusCommand
@@ -2063,6 +2226,7 @@ final class AppState: ObservableObject {
             await refreshParentChildState()
         } catch {
             activeParentCommandID = nil
+            pendingParentManualBlock = nil
             remoteCommandInFlight = false
             remoteStatusMessage = error.localizedDescription
         }
@@ -2228,6 +2392,7 @@ final class AppState: ObservableObject {
 
     private func syncChildStatsSnapshotIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard await flushLocalManualBlockIntent() else { return }
         resetDailyBalanceIfNeeded()
         let today = dailyStats(for: Date(), steps: todaySteps)
         let history = (try? DailyBudgetStore.shared.pendingHistory()) ?? []
@@ -2238,6 +2403,7 @@ final class AppState: ObservableObject {
                 stats: today,
                 isFocusActive: isFocusSessionActive,
                 focusEndsAt: focusSessionEndsAt,
+                focusRevision: childFocusRevision,
                 availableSeconds: balance.availableSeconds,
                 budgetState: budgetMonitorReady ? dailyBudget : nil,
                 budgetHistory: history
@@ -2879,6 +3045,20 @@ private struct DesiredFocusStateDTO: Codable {
     let shouldFocusActive: Bool
     let durationSeconds: Int?
     let updatedAt: Date
+    let revision: Int?
+}
+
+private struct LocalManualBlockIntent: Codable {
+    let id: UUID
+    let familyID: UUID
+    let isActive: Bool
+    let expectedRevision: Int
+    let pinVersion: String
+}
+
+private struct LocalManualBlockResult: Decodable {
+    let outcome: String
+    let desired: DesiredFocusStateDTO
 }
 
 /// Ответ combined-экшена `child_poll`: всё, что ребёнок тянет за один тик.
@@ -3360,16 +3540,18 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func updateChildRuntimeState(_ state: RemoteChildRuntimeState) async throws {
+    func updateChildRuntimeState(_ state: RemoteChildRuntimeState, focusRevision: Int) async throws {
         struct Payload: Encodable {
             let installID: String
             let isFocusActive: Bool
             let focusEndsAt: String?
+            let focusRevision: Int
         }
         let endISO = state.focusEndsAt.map { ISO8601DateFormatter().string(from: $0) }
         let _: EmptyResponse = try await call(
             action: "update_child_runtime",
-            payload: Payload(installID: installID, isFocusActive: state.isFocusActive, focusEndsAt: endISO)
+            payload: Payload(installID: installID, isFocusActive: state.isFocusActive,
+                focusEndsAt: endISO, focusRevision: focusRevision)
         )
     }
 
@@ -3393,6 +3575,19 @@ private final class ParentalRemoteSyncService {
     func fetchDesiredFocusState() async throws -> DesiredFocusStateDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "fetch_desired_focus_state", payload: Payload(installID: installID))
+    }
+
+    func setLocalManualBlock(_ intent: LocalManualBlockIntent) async throws -> LocalManualBlockResult {
+        struct Payload: Encodable {
+            let intentID: UUID
+            let familyID: UUID
+            let isActive: Bool
+            let expectedRevision: Int
+            let pinVersion: String
+        }
+        return try await call(action: "set_local_manual_block", payload: Payload(
+            intentID: intent.id, familyID: intent.familyID, isActive: intent.isActive,
+            expectedRevision: intent.expectedRevision, pinVersion: intent.pinVersion))
     }
 
     // MARK: - Combined polling endpoints (экономия Edge Function Invocations)
@@ -3434,6 +3629,7 @@ private final class ParentalRemoteSyncService {
         stats: DailyStats,
         isFocusActive: Bool,
         focusEndsAt: Date?,
+        focusRevision: Int,
         availableSeconds: Int,
         budgetState: DailyBudgetState?,
         budgetHistory: [DailyBudgetState]
@@ -3449,6 +3645,7 @@ private final class ParentalRemoteSyncService {
             let focusSessionTotalSeconds: Int
             let isFocusActive: Bool
             let focusEndsAt: String?
+            let focusRevision: Int
             let availableSeconds: Int
             let budgetState: DailyBudgetState?
             let budgetHistory: [DailyBudgetState]
@@ -3471,6 +3668,7 @@ private final class ParentalRemoteSyncService {
                 focusSessionTotalSeconds: stats.focusSessionTotalSeconds,
                 isFocusActive: isFocusActive,
                 focusEndsAt: endISO,
+                focusRevision: focusRevision,
                 availableSeconds: max(0, availableSeconds),
                 budgetState: budgetState,
                 budgetHistory: budgetHistory

@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "Collegamento al figlio";
 "settings.section.parent_connection" = "Collegamento al genitore";
 "settings.section.diagnostics" = "Diagnostica";
+"blocklist.manual_block.pending" = "Modifica applicata su questo dispositivo. In attesa di sincronizzazione con il dispositivo del genitore.";
+"blocklist.manual_block.changed" = "Le impostazioni sono cambiate su un altro dispositivo. È stato applicato lo stato di blocco più recente. Controlla il pulsante.";

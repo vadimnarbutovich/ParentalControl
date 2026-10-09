@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "Verbindung zum Kind";
 "settings.section.parent_connection" = "Verbindung zum Elternteil";
 "settings.section.diagnostics" = "Diagnose";
+"blocklist.manual_block.pending" = "Auf diesem Gerät geändert. Die Synchronisierung mit dem Elterngerät steht noch aus.";
+"blocklist.manual_block.changed" = "Die Einstellungen wurden auf einem anderen Gerät geändert. Der aktuelle Sperrstatus wurde übernommen. Bitte prüfe den Schalter.";

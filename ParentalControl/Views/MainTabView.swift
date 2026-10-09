@@ -654,16 +654,17 @@ private struct ParentDashboardView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                    Button(commandButtonTitleKey) {
-                        let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
-                        Task { await appState.sendParentFocusCommand(start: shouldStartFocus) }
-                    }
-                    .buttonStyle(
-                        NeonPrimaryButtonStyle(
-                            tint: shouldShowDisabledVisualState
-                                ? .gray
-                                : (appState.isParentManualBlockConfirmed ? AppTheme.neonRed : AppTheme.neonBlue)
-                        )
+                    ActionSlideButton(
+                        isOn: appState.parentManualBlockControlState,
+                        inactiveTitle: "parent.dashboard.start_focus",
+                        activeTitle: "parent.dashboard.stop_focus",
+                        inactiveSymbol: "lock.fill",
+                        activeSymbol: "lock.open.fill",
+                        activeTint: appState.isParentManualBlockConfirmed ? AppTheme.neonRed : AppTheme.neonBlue,
+                        isEnabled: isCommandButtonEnabled,
+                        overrideTitle: commandButtonTitleKey,
+                        onActivate: { appState.sendParentFocusCommand(start: true) },
+                        onDeactivate: { appState.sendParentFocusCommand(start: false) }
                     )
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
                     .disabled(!isCommandButtonEnabled)

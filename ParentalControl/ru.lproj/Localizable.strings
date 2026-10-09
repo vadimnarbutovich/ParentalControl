@@ -531,3 +531,5 @@
 "settings.section.child_connection" = "Связь с ребёнком";
 "settings.section.parent_connection" = "Связь с родителем";
 "settings.section.diagnostics" = "Диагностика";
+"blocklist.manual_block.pending" = "Изменено на этом устройстве. Ожидаем синхронизации с родителем.";
+"blocklist.manual_block.changed" = "Настройки изменились на другом устройстве. Применено актуальное состояние блокировки. Проверьте переключатель.";

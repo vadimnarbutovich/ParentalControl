@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "Connexion avec l’enfant";
 "settings.section.parent_connection" = "Connexion avec le parent";
 "settings.section.diagnostics" = "Diagnostic";
+"blocklist.manual_block.pending" = "Modification appliquée sur cet appareil. En attente de synchronisation avec l’appareil du parent.";
+"blocklist.manual_block.changed" = "Les réglages ont changé sur un autre appareil. Le dernier état du blocage a été appliqué. Vérifiez le bouton.";

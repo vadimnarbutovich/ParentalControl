@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "الاتصال بجهاز الطفل";
 "settings.section.parent_connection" = "الاتصال بجهاز ولي الأمر";
 "settings.section.diagnostics" = "التشخيص";
+"blocklist.manual_block.pending" = "تم تطبيق التغيير على هذا الجهاز. في انتظار المزامنة مع جهاز ولي الأمر.";
+"blocklist.manual_block.changed" = "تغيّرت الإعدادات على جهاز آخر، وتم تطبيق أحدث حالة للحظر. يُرجى التحقق من زر التبديل.";

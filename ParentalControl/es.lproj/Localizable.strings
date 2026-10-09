@@ -449,3 +449,5 @@
 "settings.section.child_connection" = "Conexión con el hijo";
 "settings.section.parent_connection" = "Conexión con el progenitor";
 "settings.section.diagnostics" = "Diagnóstico";
+"blocklist.manual_block.pending" = "Cambio aplicado en este dispositivo. Pendiente de sincronizar con el dispositivo del adulto.";
+"blocklist.manual_block.changed" = "Los ajustes cambiaron en otro dispositivo. Se ha aplicado el estado de bloqueo más reciente. Comprueba el botón.";

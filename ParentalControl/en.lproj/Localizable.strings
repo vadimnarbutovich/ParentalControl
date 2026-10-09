@@ -531,3 +531,5 @@
 "settings.section.child_connection" = "Connection to child";
 "settings.section.parent_connection" = "Connection to parent";
 "settings.section.diagnostics" = "Diagnostics";
+"blocklist.manual_block.pending" = "Changed on this device. Waiting to sync with the parent’s device.";
+"blocklist.manual_block.changed" = "Settings changed on another device. The latest lock state has been applied. Please check the switch.";
