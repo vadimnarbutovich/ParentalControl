@@ -9,12 +9,21 @@ struct DailyBudgetBalanceCard: View {
     var isLoading = false
     var isLimitLoading = false
     var isManuallyBlocked = false
+    var blockSchedules: [BlockSchedule] = []
     var isAwaitingConfirmation = false
 
     var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            balanceContent(isBlocked: isManuallyBlocked || blockSchedules.contains {
+                $0.isActive(at: context.date)
+            })
+        }
+    }
+
+    private func balanceContent(isBlocked: Bool) -> some View {
         // Use the child's applied balance, not a newly saved limit still awaiting delivery.
         let budget = max(0, availableSeconds + usedSeconds)
-        VStack(spacing: 12) {
+        return VStack(spacing: 12) {
             HStack(alignment: .center, spacing: 20) {
                 VStack(alignment: .center, spacing: 12) {
                     Text("budget.remaining.stacked")
@@ -34,10 +43,10 @@ struct DailyBudgetBalanceCard: View {
                                     .font(.subheadline.weight(.semibold))
                             }
                         }.foregroundStyle(.white)
-                            .opacity(isManuallyBlocked ? 0.2 : 1)
+                            .opacity(isBlocked ? 0.2 : 1)
                     }.frame(width: 124, height: 124)
                         .overlay {
-                            if isManuallyBlocked {
+                            if isBlocked {
                                 ZStack {
                                     Circle().fill(.black.opacity(0.25))
                                     VStack(spacing: 6) {

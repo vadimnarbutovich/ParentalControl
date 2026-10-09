@@ -451,3 +451,4 @@
 "settings.section.diagnostics" = "Diagnose";
 "blocklist.manual_block.pending" = "Auf diesem Gerät geändert. Die Synchronisierung mit dem Elterngerät steht noch aus.";
 "blocklist.manual_block.changed" = "Die Einstellungen wurden auf einem anderen Gerät geändert. Der aktuelle Sperrstatus wurde übernommen. Bitte prüfe den Schalter.";
+"dashboard.blocking.schedule_active" = "Durch Zeitplan gesperrt";

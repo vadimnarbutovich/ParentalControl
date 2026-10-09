@@ -25,7 +25,7 @@ struct DashboardView: View {
             ZStack {
                 AppBackgroundView()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if childNeedsPairing {
                             childPairingPromptCard
                         } else {
@@ -35,7 +35,8 @@ struct DashboardView: View {
                                 limitSeconds: appState.dailyBudget?.policy.limitSeconds,
                                 earnedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.earnedSeconds,
                                 grantedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.grantedSeconds,
-                                isManuallyBlocked: appState.isFocusSessionActive)
+                                isManuallyBlocked: appState.isFocusSessionActive,
+                                blockSchedules: appState.blockSchedules)
                             if appState.dailyBudget == nil { Text("budget.child_waiting").foregroundStyle(.secondary) }
                             if let error = appState.budgetError { Text(error).foregroundStyle(AppTheme.neonOrange) }
                             activeScheduleStatusCard
@@ -332,6 +333,7 @@ struct DashboardView: View {
                     blockingScheduleStatus(schedule: activeSchedule)
                 }
                 .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     Color.clear
                         .glassCard(cornerRadius: 22)

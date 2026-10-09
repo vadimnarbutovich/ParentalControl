@@ -451,3 +451,4 @@
 "settings.section.diagnostics" = "التشخيص";
 "blocklist.manual_block.pending" = "تم تطبيق التغيير على هذا الجهاز. في انتظار المزامنة مع جهاز ولي الأمر.";
 "blocklist.manual_block.changed" = "تغيّرت الإعدادات على جهاز آخر، وتم تطبيق أحدث حالة للحظر. يُرجى التحقق من زر التبديل.";
+"dashboard.blocking.schedule_active" = "الحظر مفعّل حسب الجدول";

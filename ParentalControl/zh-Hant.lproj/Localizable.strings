@@ -451,3 +451,4 @@
 "settings.section.diagnostics" = "診斷";
 "blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長裝置同步。";
 "blocklist.manual_block.changed" = "設定已在其他裝置上變更，現已套用最新的鎖定狀態。請檢查開關。";
+"dashboard.blocking.schedule_active" = "已依排程鎖定";

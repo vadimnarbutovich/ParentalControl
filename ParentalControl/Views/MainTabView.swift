@@ -22,9 +22,27 @@ struct MainTabView: View {
     @State private var isPinEntryPresented = false
 
     var body: some View {
+        // Reserve actual layout space above the tab container. An inset on
+        // TabView can be ignored by the NavigationStacks inside its tabs.
+        VStack(spacing: 0) {
+            if appState.deviceRole == .child, appState.isParentModeActive {
+                ParentModeExitBanner {
+                    AppAnalytics.report("parent_mode_exit_tap")
+                    appState.exitParentMode()
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .zIndex(1)
+            }
+            tabs
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .preferredColorScheme(.dark)
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             if appState.deviceRole == .parent {
-                ParentDashboardView()
+                ParentDashboardView(onOpenSchedules: { selectedTab = .schedule })
                     .tabItem {
                         Label("tab.dashboard", systemImage: "person.2.fill")
                     }
@@ -132,17 +150,6 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $isPinEntryPresented) {
             ParentModeEntryView(isPresented: $isPinEntryPresented)
                 .environmentObject(appState)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            // Красная плашка «Выход из родительского режима» — видна только на ребёнке, когда
-            // режим открыт. Тап по плашке немедленно закрывает режим (см. `exitParentMode()`).
-            // safeAreaInset аккуратно подвинет содержимое всех экранов TabView вниз — без хаков.
-            if appState.deviceRole == .child, appState.isParentModeActive {
-                ParentModeExitBanner {
-                    AppAnalytics.report("parent_mode_exit_tap")
-                    appState.exitParentMode()
-                }
-            }
         }
     }
 }
@@ -427,6 +434,7 @@ private struct ParentModeEntryView: View {
 
 private struct ParentDashboardView: View {
     @EnvironmentObject private var appState: AppState
+    let onOpenSchedules: () -> Void
     /// Презентация шторки `AdjustTimeSheet` (изменить доступное время ребёнку).
     @State private var isAdjustTimePresented = false
     @State private var isDailyLimitPresented = false
@@ -571,7 +579,7 @@ private struct ParentDashboardView: View {
             ZStack {
                 AppBackgroundView()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if appState.pairingState?.isLinked == true {
                             // The saved limit is local; the child's usage loads independently.
                             DailyBudgetBalanceCard(
@@ -583,6 +591,7 @@ private struct ParentDashboardView: View {
                                 isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
                                 isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
                                 isManuallyBlocked: appState.isParentManualBlockConfirmed,
+                                blockSchedules: appState.blockSchedules,
                                 isAwaitingConfirmation: appState.parentBudgetStatus?.isPending == true
                             )
 
@@ -591,7 +600,7 @@ private struct ParentDashboardView: View {
                                 isDailyLimitPresented = true
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 6) {
+                                    VStack(alignment: .leading, spacing: 3) {
                                         Text("budget.title").font(.headline)
                                         if let policy = appState.parentBudgetStatus?.policy {
                                             Text(L10n.duration(seconds: policy.limitSeconds) + " · " + L10n.tr("budget.every_day"))
@@ -605,7 +614,9 @@ private struct ParentDashboardView: View {
                                     Image(systemName: "chevron.right")
                                 }
                                 .foregroundStyle(.white)
-                                .padding().frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -616,11 +627,11 @@ private struct ParentDashboardView: View {
                                 Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
                             }
 
-                            // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
+                            // Карточка «Заблокировано по расписанию» / «Следующее расписание».
                             // Видна только если у Родителя в локальном кэше есть включённые расписания.
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
                             // поэтому не нужно дёргать AppState на каждом тике.
-                            ActiveBlockScheduleCard(appState: appState)
+                            ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
                         } else {
                             // Пары ещё нет — это важная для пользователя информация, поэтому она
                             // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.
