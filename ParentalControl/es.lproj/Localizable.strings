@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "Cambio aplicado en este dispositivo. Pendiente de sincronizar con el dispositivo del adulto.";
 "blocklist.manual_block.changed" = "Los ajustes cambiaron en otro dispositivo. Se ha aplicado el estado de bloqueo más reciente. Comprueba el botón.";
 "dashboard.blocking.schedule_active" = "Bloqueado por horario";
+// Parent usage and task reports.
+"reports.scope" = "En las apps seleccionadas";
+"reports.week" = "7 días";
+"reports.month" = "30 días";
+"reports.total" = "Tiempo total utilizado";
+"reports.average" = "Promedio diario";
+"reports.missing_hint" = "Toca una barra para elegir un día. Gris: sin datos. Azul: uso registrado.";
+"reports.coverage" = "Datos de %d de %d días. El promedio solo incluye los días con datos.";
+"reports.partial_today" = "El día de hoy aún no ha terminado.";
+"reports.rewards" = "Ganado con tareas";
+"reports.tasks" = "Tareas aprobadas";
+"reports.tasks_period" = "Tareas del período";
+"reports.updated" = "Datos actualizados: %@";
+"reports.legacy" = "Los datos anteriores se conservan, pero no se puede precisar el día ni el desglose. Las estadísticas detalladas aparecerán cuando se sincronice el dispositivo del menor.";
+"reports.retention" = "Historial disponible de los últimos 90 días.";
+"reports.no_data" = "Aún no hay datos de este día.";
+"reports.error" = "No se pudieron actualizar las estadísticas. Comprueba la conexión. Los datos cargados pueden estar desactualizados.";
+"reports.retry" = "Reintentar";
+"reports.unlinked" = "Vincula el dispositivo de tu hijo para ver las estadísticas.";
+"reports.previous" = "Período anterior";
+"reports.next" = "Período siguiente";

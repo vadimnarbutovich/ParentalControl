@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長裝置同步。";
 "blocklist.manual_block.changed" = "設定已在其他裝置上變更，現已套用最新的鎖定狀態。請檢查開關。";
 "dashboard.blocking.schedule_active" = "已依排程鎖定";
+// Parent usage and task reports.
+"reports.scope" = "所選 App 的使用情況";
+"reports.week" = "7天";
+"reports.month" = "30天";
+"reports.total" = "總使用時間";
+"reports.average" = "每日平均";
+"reports.missing_hint" = "點一下長條即可選擇日期。灰色表示尚無資料，藍色表示已記錄使用時間。";
+"reports.coverage" = "已取得 %d 天的資料（共 %d 天）。平均值僅根據有資料的日期計算。";
+"reports.partial_today" = "今天的資料僅統計到目前為止。";
+"reports.rewards" = "完成任務獲得的時間";
+"reports.tasks" = "已確認的任務";
+"reports.tasks_period" = "此期間的任務";
+"reports.updated" = "資料更新於：%@";
+"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的裝置同步後，將顯示詳細統計。";
+"reports.retention" = "顯示最近90天內可用的紀錄。";
+"reports.no_data" = "尚無當天的資料。";
+"reports.error" = "無法更新統計。請檢查網路連線。已載入的資料可能不是最新的。";
+"reports.retry" = "重試";
+"reports.unlinked" = "連結孩子的裝置後即可查看統計。";
+"reports.previous" = "上一期間";
+"reports.next" = "下一期間";

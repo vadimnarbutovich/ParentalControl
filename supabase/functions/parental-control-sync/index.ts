@@ -100,6 +100,17 @@ Deno.serve(async (req: Request) => {
         return await upsertChildDayStats(authed.deviceId, payload);
       case "fetch_child_day_stats":
         return await fetchChildDayStats(authed.deviceId, payload);
+      case "fetch_parent_statistics": {
+        const days = asNumber(payload.days);
+        const end = asString(payload.endDay);
+        if (![7, 30].includes(days ?? 0) || (end && !/^\d{4}-\d{2}-\d{2}$/.test(end))) {
+          return errorResponse("Invalid statistics period", 400);
+        }
+        const { data, error } = await supabase.rpc("pc_parent_statistics", {
+          p_device: authed.deviceId, p_days: days, p_end: end || null,
+        });
+        return error ? errorResponse(error.message, 400) : okResponse(data);
+      }
       case "update_child_runtime":
         return await updateChildRuntime(authed.deviceId, payload);
       case "fetch_parent_snapshot":
@@ -432,7 +443,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   if (childData?.id) {
     const { data: statsRow } = await supabase
       .from("daily_stats_snapshots")
-      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .select("day_start, earned_seconds, spent_seconds")
       .eq("child_device_id", childData.id)
       .order("day_start", { ascending: false })
       .limit(1)
@@ -440,12 +451,12 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
     if (statsRow) {
       dailyStats = {
         dayStartISO: statsRow.day_start,
-        steps: statsRow.steps ?? 0,
+        steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
         earnedSeconds: statsRow.earned_seconds ?? 0,
         spentSeconds: statsRow.spent_seconds ?? 0,
-        pushUps: statsRow.push_ups ?? 0,
-        squats: statsRow.squats ?? 0,
-        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+        pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
       };
     }
   }
@@ -516,29 +527,26 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
     }
   }
 
-  if (Array.isArray(payload.budgetHistory) && payload.budgetHistory.length > 0) {
-    const { error } = await supabase.rpc("pc_sync_budget_history", { p_device: deviceId, p_history: payload.budgetHistory });
+  const history = Array.isArray(payload.budgetHistory) ? payload.budgetHistory : [];
+  if (history.length > 30) return errorResponse("Invalid history", 400);
+  const states = payload.budgetState ? [...history, payload.budgetState] : history;
+  if (states.length > 0) {
+    const { error } = await supabase.rpc("pc_sync_budget_history", { p_device: deviceId, p_history: states });
     if (error) return errorResponse(error.message, 400);
   }
 
   const dayStartISO = asString(payload.dayStartISO);
   if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
 
-  const statsRow = {
-    family_id: device.family_id,
-    child_device_id: device.id,
-    day_start: dayStartISO,
-    steps: asNumber(payload.steps) ?? 0,
-    earned_seconds: asNumber(payload.earnedSeconds) ?? 0,
-    spent_seconds: asNumber(payload.spentSeconds) ?? 0,
-    push_ups: asNumber(payload.pushUps) ?? 0,
-    squats: asNumber(payload.squats) ?? 0,
-    focus_session_total_seconds: asNumber(payload.focusSessionTotalSeconds) ?? 0,
-  };
-  const { error: statsErr } = await supabase
-    .from("daily_stats_snapshots")
-    .upsert(statsRow, { onConflict: "child_device_id,day_start" });
-  if (statsErr) return errorResponse(statsErr.message, 400);
+  // A budget snapshot already wrote the day in the batch RPC above. No duplicate upsert.
+  // Retain this compatibility path only for devices without an activated daily limit.
+  if (!payload.budgetState) {
+    const { error: statsErr } = await supabase.rpc("pc_sync_legacy_stats", {
+      p_device: deviceId, p_start: dayStartISO,
+      p_allocated: asNumber(payload.earnedSeconds) ?? 0, p_used: asNumber(payload.spentSeconds) ?? 0,
+    });
+    if (statsErr) return errorResponse(statsErr.message, 400);
+  }
 
   const isFocusActive = asBool(payload.isFocusActive);
   const focusEndsAt = asString(payload.focusEndsAt);
@@ -1149,19 +1157,10 @@ async function upsertChildDayStats(deviceId: string, payload: Json): Promise<Res
   const dayStartISO = asString(payload.dayStartISO);
   if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
 
-  const row = {
-    family_id: device.family_id,
-    child_device_id: device.id,
-    day_start: dayStartISO,
-    steps: asNumber(payload.steps) ?? 0,
-    earned_seconds: asNumber(payload.earnedSeconds) ?? 0,
-    spent_seconds: asNumber(payload.spentSeconds) ?? 0,
-    push_ups: asNumber(payload.pushUps) ?? 0,
-    squats: asNumber(payload.squats) ?? 0,
-    focus_session_total_seconds: asNumber(payload.focusSessionTotalSeconds) ?? 0,
-  };
-
-  const { error } = await supabase.from("daily_stats_snapshots").upsert(row, { onConflict: "child_device_id,day_start" });
+  const { error } = await supabase.rpc("pc_sync_legacy_stats", {
+    p_device: deviceId, p_start: dayStartISO,
+    p_allocated: asNumber(payload.earnedSeconds) ?? 0, p_used: asNumber(payload.spentSeconds) ?? 0,
+  });
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
@@ -1183,7 +1182,7 @@ async function fetchChildDayStats(deviceId: string, payload: Json): Promise<Resp
 
   const { data, error } = await supabase
     .from("daily_stats_snapshots")
-    .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+    .select("day_start, earned_seconds, spent_seconds")
     .eq("child_device_id", child.id)
     .eq("day_start", dayStartISO)
     .maybeSingle();
@@ -1192,12 +1191,12 @@ async function fetchChildDayStats(deviceId: string, payload: Json): Promise<Resp
 
   return okResponse({
     dayStartISO: data.day_start,
-    steps: data.steps,
+    steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
     earnedSeconds: data.earned_seconds,
     spentSeconds: data.spent_seconds,
-    pushUps: data.push_ups,
-    squats: data.squats,
-    focusSessionTotalSeconds: data.focus_session_total_seconds,
+    pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+    squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+    focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
   });
 }
 
@@ -1252,7 +1251,7 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
   if (childData?.id) {
     const { data: statsRow } = await supabase
       .from("daily_stats_snapshots")
-      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .select("day_start, earned_seconds, spent_seconds")
       .eq("child_device_id", childData.id)
       .order("day_start", { ascending: false })
       .limit(1)
@@ -1260,12 +1259,12 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
     if (statsRow) {
       dailyStats = {
         dayStartISO: statsRow.day_start,
-        steps: statsRow.steps ?? 0,
+        steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
         earnedSeconds: statsRow.earned_seconds ?? 0,
         spentSeconds: statsRow.spent_seconds ?? 0,
-        pushUps: statsRow.push_ups ?? 0,
-        squats: statsRow.squats ?? 0,
-        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+        pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
       };
     }
   }

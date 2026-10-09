@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "Modification appliquée sur cet appareil. En attente de synchronisation avec l’appareil du parent.";
 "blocklist.manual_block.changed" = "Les réglages ont changé sur un autre appareil. Le dernier état du blocage a été appliqué. Vérifiez le bouton.";
 "dashboard.blocking.schedule_active" = "Blocage programmé en cours";
+// Parent usage and task reports.
+"reports.scope" = "Dans les apps sélectionnées";
+"reports.week" = "7 jours";
+"reports.month" = "30 jours";
+"reports.total" = "Temps total utilisé";
+"reports.average" = "Moyenne par jour";
+"reports.missing_hint" = "Touchez une barre pour choisir un jour. Gris : aucune donnée. Bleu : utilisation enregistrée.";
+"reports.coverage" = "Données pour %d jours sur %d. La moyenne tient compte uniquement des jours avec des données.";
+"reports.partial_today" = "La journée d’aujourd’hui n’est pas encore terminée.";
+"reports.rewards" = "Gagné grâce aux tâches";
+"reports.tasks" = "Tâches validées";
+"reports.tasks_period" = "Tâches sur la période";
+"reports.updated" = "Données mises à jour : %@";
+"reports.legacy" = "Les anciennes données sont conservées, mais leur date exacte et leur détail ne sont pas disponibles. Les statistiques détaillées apparaîtront après la synchronisation de l’appareil de l’enfant.";
+"reports.retention" = "Historique disponible sur les 90 derniers jours.";
+"reports.no_data" = "Pas encore de données pour ce jour.";
+"reports.error" = "Impossible d’actualiser les statistiques. Vérifiez la connexion. Les données déjà chargées peuvent être anciennes.";
+"reports.retry" = "Réessayer";
+"reports.unlinked" = "Associez l’appareil de votre enfant pour voir les statistiques.";
+"reports.previous" = "Période précédente";
+"reports.next" = "Période suivante";

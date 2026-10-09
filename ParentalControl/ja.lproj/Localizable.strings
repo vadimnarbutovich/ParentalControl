@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "この端末に変更を適用しました。保護者の端末との同期を待っています。";
 "blocklist.manual_block.changed" = "別の端末で設定が変更されたため、最新のブロック状態を適用しました。切り替えボタンを確認してください。";
 "dashboard.blocking.schedule_active" = "スケジュールによりブロック中";
+// Parent usage and task reports.
+"reports.scope" = "選択したアプリの利用状況";
+"reports.week" = "7日間";
+"reports.month" = "30日間";
+"reports.total" = "合計利用時間";
+"reports.average" = "1日あたりの平均";
+"reports.missing_hint" = "棒をタップすると日付を選べます。灰色はデータなし、青色は利用時間の記録ありを示します。";
+"reports.coverage" = "%d日分のデータがあります（対象：%d日間）。平均はデータがある日のみで計算しています。";
+"reports.partial_today" = "本日のデータは現時点までのものです。";
+"reports.rewards" = "タスクで獲得した時間";
+"reports.tasks" = "承認済みのタスク";
+"reports.tasks_period" = "期間中のタスク";
+"reports.updated" = "データ更新：%@";
+"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の端末が同期されると、詳細な統計が表示されます。";
+"reports.retention" = "過去90日間の利用可能な履歴を表示します。";
+"reports.no_data" = "この日のデータはまだありません。";
+"reports.error" = "統計を更新できませんでした。接続を確認してください。読み込み済みのデータは最新ではない可能性があります。";
+"reports.retry" = "再試行";
+"reports.unlinked" = "お子様の端末を連携すると統計が表示されます。";
+"reports.previous" = "前の期間";
+"reports.next" = "次の期間";

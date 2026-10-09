@@ -540,3 +540,24 @@
 "settings.section.diagnostics" = "Diagnostics";
 "blocklist.manual_block.pending" = "Changed on this device. Waiting to sync with the parent’s device.";
 "blocklist.manual_block.changed" = "Settings changed on another device. The latest lock state has been applied. Please check the switch.";
+// Parent usage and task reports.
+"reports.scope" = "In selected apps";
+"reports.week" = "7 days";
+"reports.month" = "30 days";
+"reports.total" = "Total time used";
+"reports.average" = "Daily average";
+"reports.missing_hint" = "Tap a bar to select a day. Grey means no data; blue means usage was recorded.";
+"reports.coverage" = "Data for %d of %d days. The average includes only days with data.";
+"reports.partial_today" = "Today is still in progress.";
+"reports.rewards" = "Earned through tasks";
+"reports.tasks" = "Tasks approved";
+"reports.tasks_period" = "Tasks this period";
+"reports.updated" = "Figures updated: %@";
+"reports.legacy" = "Older data is preserved, but its exact day and breakdown are unavailable. Detailed statistics will appear after the child’s device syncs.";
+"reports.retention" = "Available history from the last 90 days.";
+"reports.no_data" = "No data for this day yet.";
+"reports.error" = "Couldn’t refresh statistics. Check your connection. Previously loaded data may be out of date.";
+"reports.retry" = "Try again";
+"reports.unlinked" = "Link your child’s device to see statistics.";
+"reports.previous" = "Previous period";
+"reports.next" = "Next period";

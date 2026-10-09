@@ -216,6 +216,7 @@ final class AppState: ObservableObject {
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
+    private var statisticsCache: [String: (loadedAt: Date, report: ParentStatisticsReport)] = [:]
     private let locationService: LocationProviding
     /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
     /// Используется обеими ролями: parent — для `setParentPinFromUI/clearParentPinFromUI`,
@@ -694,6 +695,11 @@ final class AppState: ObservableObject {
               status.policy == nil || status.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
         guard (status.policy?.revision ?? 0) >= (parentBudgetStatus?.policy?.revision ?? 0) else { return }
         parentBudgetStatus = status
+        for key in Array(statisticsCache.keys) where key.hasPrefix(family.uuidString + ":") {
+            if let cached = statisticsCache[key] {
+                statisticsCache[key] = (cached.loadedAt, cached.report.merging(status))
+            }
+        }
         hasLoadedParentBudget = true
         let cached = DailyBudgetStatus(policy: status.policy, childReady: status.childReady,
             appliedRevision: status.appliedRevision, state: nil)
@@ -2313,31 +2319,31 @@ final class AppState: ObservableObject {
         dailyStats(for: Date(), steps: todaySteps)
     }
 
-    func dailyStats(for date: Date) async -> DailyStats {
-        if deviceRole == .parent, pairingState?.isLinked == true {
-            do {
-                if let remoteDay = try await remoteSyncService.fetchChildDayStats(for: date) {
-                    return remoteDay
-                }
-            } catch {
-                remoteStatusMessage = error.localizedDescription
-            }
-            return DailyStats(
-                date: date,
-                steps: 0,
-                earnedSeconds: 0,
-                spentSeconds: 0,
-                pushUps: 0,
-                squats: 0,
-                focusSessionTotalSeconds: 0
-            )
-        }
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+    /// One bounded range request, only when the statistics screen is visible.
+    /// Never replace missing remote observations with this device's local counters.
+    func cachedParentStatistics(days: Int, endDay: String?) -> ParentStatisticsReport? {
+        guard deviceRole == .parent, pairingState?.isLinked == true,
+              let family = pairingState?.familyID else { return nil }
+        let key = family.uuidString + ":" + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
+        return statisticsCache[key]?.report
+    }
 
-        let steps = calendar.isDateInToday(date) ? todaySteps : 0
-        return dailyStats(for: date, steps: steps)
+    func parentStatistics(days: Int, endDay: String?, force: Bool = false) async throws -> ParentStatisticsReport {
+        guard deviceRole == .parent, pairingState?.isLinked == true,
+              let family = pairingState?.familyID else { throw CancellationError() }
+        let prefix = family.uuidString + ":"
+        statisticsCache = statisticsCache.filter { $0.key.hasPrefix(prefix) }
+        let key = prefix + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
+        if !force, let cached = statisticsCache[key], Date().timeIntervalSince(cached.loadedAt) < 60 {
+            return cached.report
+        }
+        let remote = try await remoteSyncService.fetchParentStatistics(days: days, endDay: endDay)
+        try Task.checkCancellation()
+        guard deviceRole == .parent, pairingState?.familyID == family else { throw CancellationError() }
+        let report = remote.merging(parentBudgetStatus)
+        if statisticsCache.count >= 6 { statisticsCache.removeAll() }
+        statisticsCache[key] = (Date(), report)
+        return report
     }
 
     func dailyStats(for date: Date, steps: Int) -> DailyStats {
@@ -3475,58 +3481,6 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func upsertChildDayStats(_ stats: DailyStats) async throws {
-        struct Payload: Encodable {
-            let installID: String
-            let dayStartISO: String
-            let steps: Int
-            let earnedSeconds: Int
-            let spentSeconds: Int
-            let pushUps: Int
-            let squats: Int
-            let focusSessionTotalSeconds: Int
-        }
-        let dayStart = Calendar.current.startOfDay(for: stats.date)
-        let dayISO = ISO8601DateFormatter().string(from: dayStart)
-        let _: EmptyResponse = try await call(
-            action: "upsert_child_day_stats",
-            payload: Payload(
-                installID: installID,
-                dayStartISO: dayISO,
-                steps: stats.steps,
-                earnedSeconds: stats.earnedSeconds,
-                spentSeconds: stats.spentSeconds,
-                pushUps: stats.pushUps,
-                squats: stats.squats,
-                focusSessionTotalSeconds: stats.focusSessionTotalSeconds
-            )
-        )
-    }
-
-    func fetchChildDayStats(for date: Date) async throws -> DailyStats? {
-        struct Payload: Encodable {
-            let installID: String
-            let dayStartISO: String
-        }
-        let dayStart = Calendar.current.startOfDay(for: date)
-        let dayISO = ISO8601DateFormatter().string(from: dayStart)
-        let dto: BackendDayStatsDTO? = try await call(
-            action: "fetch_child_day_stats",
-            payload: Payload(installID: installID, dayStartISO: dayISO)
-        )
-        guard let dto else { return nil }
-        let parsedDate = ISO8601DateFormatter().date(from: dto.dayStartISO) ?? dayStart
-        return DailyStats(
-            date: parsedDate,
-            steps: dto.steps,
-            earnedSeconds: dto.earnedSeconds,
-            spentSeconds: dto.spentSeconds,
-            pushUps: dto.pushUps,
-            squats: dto.squats,
-            focusSessionTotalSeconds: dto.focusSessionTotalSeconds
-        )
-    }
-
     func updateChildRuntimeState(_ state: RemoteChildRuntimeState, focusRevision: Int) async throws {
         struct Payload: Encodable {
             let installID: String
@@ -3610,6 +3564,16 @@ private final class ParentalRemoteSyncService {
         return try await call(action: "parent_poll", payload: Payload(installID: installID))
     }
 
+    func fetchParentStatistics(days: Int, endDay: String?) async throws -> ParentStatisticsReport {
+        struct Payload: Encodable {
+            let installID: String
+            let days: Int
+            let endDay: String?
+        }
+        return try await call(action: "fetch_parent_statistics",
+                              payload: Payload(installID: installID, days: days, endDay: endDay))
+    }
+
     /// Child → backend: один вызов вместо `upsert_child_day_stats` + `update_child_runtime`
     /// + `update_child_balance`. Runtime и balance пишутся в одну строку `child_runtime_state`.
     func upsertChildRuntimeBundle(
@@ -3624,12 +3588,8 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable {
             let installID: String
             let dayStartISO: String
-            let steps: Int
             let earnedSeconds: Int
             let spentSeconds: Int
-            let pushUps: Int
-            let squats: Int
-            let focusSessionTotalSeconds: Int
             let isFocusActive: Bool
             let focusEndsAt: String?
             let focusRevision: Int
@@ -3647,12 +3607,8 @@ private final class ParentalRemoteSyncService {
             payload: Payload(
                 installID: installID,
                 dayStartISO: dayISO,
-                steps: stats.steps,
                 earnedSeconds: stats.earnedSeconds,
                 spentSeconds: stats.spentSeconds,
-                pushUps: stats.pushUps,
-                squats: stats.squats,
-                focusSessionTotalSeconds: stats.focusSessionTotalSeconds,
                 isFocusActive: isFocusActive,
                 focusEndsAt: endISO,
                 focusRevision: focusRevision,

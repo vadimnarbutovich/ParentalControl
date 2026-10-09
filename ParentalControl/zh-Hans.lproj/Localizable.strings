@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "更改已在此设备上生效，等待与家长设备同步。";
 "blocklist.manual_block.changed" = "设置已在其他设备上更改，现已应用最新的锁定状态。请检查开关。";
 "dashboard.blocking.schedule_active" = "已按计划锁定";
+// Parent usage and task reports.
+"reports.scope" = "所选 App 的使用情况";
+"reports.week" = "7天";
+"reports.month" = "30天";
+"reports.total" = "总使用时间";
+"reports.average" = "日均使用时间";
+"reports.missing_hint" = "轻点柱形可选择日期。灰色表示暂无数据，蓝色表示已记录使用时间。";
+"reports.coverage" = "已获取 %d 天的数据（共 %d 天）。平均值仅根据有数据的日期计算。";
+"reports.partial_today" = "今天的数据仅统计到当前时间。";
+"reports.rewards" = "完成任务获得的时间";
+"reports.tasks" = "已确认的任务";
+"reports.tasks_period" = "本时段的任务";
+"reports.updated" = "数据更新于：%@";
+"reports.legacy" = "旧数据仍已保留，但无法确定准确日期和详细分类。孩子的设备同步后，将显示详细统计。";
+"reports.retention" = "显示最近90天内可用的记录。";
+"reports.no_data" = "暂无当天的数据。";
+"reports.error" = "无法更新统计。请检查网络连接。已加载的数据可能不是最新的。";
+"reports.retry" = "重试";
+"reports.unlinked" = "关联孩子的设备后即可查看统计。";
+"reports.previous" = "上一时段";
+"reports.next" = "下一时段";

@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "이 기기에 변경 사항을 적용했어요. 보호자 기기와 동기화를 기다리고 있어요.";
 "blocklist.manual_block.changed" = "다른 기기에서 설정이 변경되어 최신 차단 상태를 적용했어요. 전환 버튼을 확인해 주세요.";
 "dashboard.blocking.schedule_active" = "일정에 따라 차단 중";
+// Parent usage and task reports.
+"reports.scope" = "선택한 앱의 사용 내역";
+"reports.week" = "7일";
+"reports.month" = "30일";
+"reports.total" = "총 사용 시간";
+"reports.average" = "일평균";
+"reports.missing_hint" = "막대를 누르면 날짜를 선택할 수 있습니다. 회색은 데이터 없음, 파란색은 사용 기록이 있음을 뜻합니다.";
+"reports.coverage" = "데이터가 있는 날: %d일 (조회 기간: %d일). 평균은 데이터가 있는 날만 기준으로 계산합니다.";
+"reports.partial_today" = "오늘의 데이터는 현재까지의 기록입니다.";
+"reports.rewards" = "할 일로 얻은 시간";
+"reports.tasks" = "승인된 할 일";
+"reports.tasks_period" = "기간 내 할 일";
+"reports.updated" = "데이터 업데이트: %@";
+"reports.legacy" = "이전 데이터는 보관되어 있지만 정확한 날짜와 세부 내역은 확인할 수 없습니다. 자녀 기기가 동기화되면 자세한 통계가 표시됩니다.";
+"reports.retention" = "최근 90일 중 확인 가능한 기록입니다.";
+"reports.no_data" = "이 날짜의 데이터가 아직 없습니다.";
+"reports.error" = "통계를 새로 고치지 못했습니다. 연결을 확인해 주세요. 기존 데이터는 최신 정보가 아닐 수 있습니다.";
+"reports.retry" = "다시 시도";
+"reports.unlinked" = "자녀 기기를 연결하면 통계를 볼 수 있습니다.";
+"reports.previous" = "이전 기간";
+"reports.next" = "다음 기간";

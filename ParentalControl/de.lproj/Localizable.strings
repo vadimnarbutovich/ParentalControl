@@ -459,3 +459,24 @@
 "blocklist.manual_block.pending" = "Auf diesem Gerät geändert. Die Synchronisierung mit dem Elterngerät steht noch aus.";
 "blocklist.manual_block.changed" = "Die Einstellungen wurden auf einem anderen Gerät geändert. Der aktuelle Sperrstatus wurde übernommen. Bitte prüfe den Schalter.";
 "dashboard.blocking.schedule_active" = "Durch Zeitplan gesperrt";
+// Parent usage and task reports.
+"reports.scope" = "In ausgewählten Apps";
+"reports.week" = "7 Tage";
+"reports.month" = "30 Tage";
+"reports.total" = "Insgesamt genutzt";
+"reports.average" = "Tagesdurchschnitt";
+"reports.missing_hint" = "Tippe auf einen Balken, um den Tag auszuwählen. Grau: keine Daten. Blau: Nutzung erfasst.";
+"reports.coverage" = "Daten für %d von %d Tagen. Der Durchschnitt berücksichtigt nur Tage mit Daten.";
+"reports.partial_today" = "Der heutige Tag ist noch nicht abgeschlossen.";
+"reports.rewards" = "Durch Aufgaben verdient";
+"reports.tasks" = "Bestätigte Aufgaben";
+"reports.tasks_period" = "Aufgaben im Zeitraum";
+"reports.updated" = "Werte aktualisiert: %@";
+"reports.legacy" = "Ältere Daten bleiben gespeichert, lassen sich aber nicht zuverlässig einem Tag zuordnen oder aufschlüsseln. Details erscheinen nach der Synchronisierung des Kindergeräts.";
+"reports.retention" = "Verfügbarer Verlauf der letzten 90 Tage.";
+"reports.no_data" = "Für diesen Tag liegen noch keine Daten vor.";
+"reports.error" = "Statistik konnte nicht aktualisiert werden. Prüfe die Verbindung. Geladene Daten können veraltet sein.";
+"reports.retry" = "Erneut versuchen";
+"reports.unlinked" = "Verknüpfe das Gerät deines Kindes, um die Statistik zu sehen.";
+"reports.previous" = "Vorheriger Zeitraum";
+"reports.next" = "Nächster Zeitraum";
