@@ -45,6 +45,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         if DailyBudgetStore.shared.isEnabled,
            activity == activityName || activity.rawValue == "parentalcontrol.dailyBudget" {
             enforceDailyBudget()
+            BackgroundUsageUploader.shared.scheduleFromMonitor()
             return
         }
         if activity == activityName {
@@ -93,6 +94,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                 guard current.monitorEvent == event.rawValue else { return }
                 _ = try DailyBudgetStore.shared.consume(event: event.rawValue)
                 enforceDailyBudget(restartUsage: true)
+                BackgroundUsageUploader.shared.scheduleFromMonitor()
             } catch { enforceDailyBudget() }
             return
         }

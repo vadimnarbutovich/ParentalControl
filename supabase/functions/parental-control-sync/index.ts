@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
+import { sendApnsToDevice } from "../_shared/apns-routing.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -70,6 +71,18 @@ Deno.serve(async (req: Request) => {
     const authed = await requireDevice(req);
 
     switch (action) {
+      case "report_child_usage": {
+        if (authed.device.role !== "child" || !authed.device.family_id) {
+          return errorResponse("Only paired child can report usage", 403);
+        }
+        const { error } = await supabase.rpc("pc_report_child_usage", {
+          p_device: authed.deviceId,
+          p_state: payload.budgetState ?? null,
+          p_timezone: asString(payload.budgetTimezone),
+          p_history: payload.budgetHistory ?? [],
+        });
+        return error ? errorResponse(error.message, 400) : okResponse({ ok: true });
+      }
       case "change_daily_budget":
         return await changeDailyBudget(authed.device, payload);
       case "generate_pairing_code":
@@ -582,8 +595,17 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
 async function updateApnsToken(deviceId: string, payload: Json): Promise<Response> {
   const token = asString(payload.apnsToken);
   if (!token) return errorResponse("apnsToken is required", 400);
-  const normalized = token.replace(/\s+/g, "").trim();
-  const { error } = await supabase.from("devices").update({ apns_token: normalized }).eq("id", deviceId);
+  const normalized = token.replace(/\s+/g, "").trim().toLowerCase();
+  if (!/^[0-9a-f]+$/.test(normalized) || normalized.length % 2 !== 0 || normalized.length > 1024) {
+    return errorResponse("Invalid APNs token", 400);
+  }
+  const environment = payload.apnsEnvironment ?? null;
+  if (environment !== null && environment !== "sandbox" && environment !== "production") {
+    return errorResponse("Invalid APNs environment", 400);
+  }
+  const { error } = await supabase.rpc("pc_register_apns_token", {
+    p_device_id: deviceId, p_token: normalized, p_environment: environment,
+  });
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
@@ -1739,7 +1761,7 @@ async function sendApnsTaskSubmittedAlert(tokenRaw: string, taskTitle: string): 
     command_type: "tasks_updated",
   };
   const expirationEpoch = Math.floor(Date.now() / 1000) + 60 * 60;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -1911,7 +1933,7 @@ async function sendApnsBackground(tokenRaw: string): Promise<void> {
     aps: { "content-available": 1 },
     command_type: "child_sync_request",
   };
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -2285,7 +2307,7 @@ async function sendApnsAlert(
   if (extras.scheduleName) payload.schedule_name = extras.scheduleName;
   if (extras.endHHMM) payload.schedule_end_hh_mm = extras.endHHMM;
   const expirationEpoch = Math.floor(Date.now() / 1000) + COMMAND_TTL_SECONDS;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,

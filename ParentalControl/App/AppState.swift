@@ -1218,9 +1218,12 @@ final class AppState: ObservableObject {
 
     func updateAPNSToken(_ token: String) {
         storage.saveAPNSToken(token)
+        // Only associate this build's environment with a freshly registered APNs
+        // token. Bootstrap may still hold a token from the previous installation.
+        let environment = APNsEnvironment.current()
         Task {
             do {
-                try await remoteSyncService.updateAPNSToken(token)
+                try await remoteSyncService.updateAPNSToken(token, environment: environment)
             } catch {
                 // Token sync retried on next bootstrap.
             }
@@ -3192,14 +3195,15 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func updateAPNSToken(_ token: String) async throws {
+    func updateAPNSToken(_ token: String, environment: String? = nil) async throws {
         struct Payload: Encodable {
             let installID: String
             let apnsToken: String
+            let apnsEnvironment: String?
         }
         let _: EmptyResponse = try await call(
             action: "update_apns_token",
-            payload: Payload(installID: installID, apnsToken: token)
+            payload: Payload(installID: installID, apnsToken: token, apnsEnvironment: environment)
         )
     }
 

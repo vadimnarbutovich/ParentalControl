@@ -24,6 +24,7 @@
 		D1CF8F672F9FF5900077ABB8 /* NotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D1E17B5C2F859BF000B76264 /* DeviceActivityReportExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */; };
+		DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +115,7 @@
 		D1A266222F5737A7005689EB /* ParentalControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ParentalControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/DailyBudget.swift; sourceTree = SOURCE_ROOT; };
+		DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/BackgroundUsageUploader.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -336,6 +338,7 @@
 			isa = PBXGroup;
 			children = (
 				DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */,
+				DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -637,6 +640,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
+				DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1155,7 +1159,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1203,7 +1207,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
+import { sendApnsToDevice } from "../_shared/apns-routing.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -360,7 +361,7 @@ async function sendApnsAlert(
     duration_seconds: durationSeconds,
   };
   const expirationEpoch = Math.floor(Date.now() / 1000) + COMMAND_TTL_SECONDS;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -391,7 +392,7 @@ async function sendApnsBackground(tokenRaw: string, commandType: string): Promis
   };
   // 5 минут TTL: silent push без срочности, iOS сам решит когда доставить.
   const expirationEpoch = Math.floor(Date.now() / 1000) + 300;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
