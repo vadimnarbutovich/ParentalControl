@@ -11,6 +11,7 @@ import SwiftUI
 ///   - изменения логики «активно/следующее» не размазаны по нескольким файлам.
 struct ActiveBlockScheduleCard: View {
     @ObservedObject var appState: AppState
+    let onOpenSchedules: () -> Void
 
     var body: some View {
         // Показываем карточку только когда есть включённые расписания. Для корректной авто-
@@ -20,9 +21,17 @@ struct ActiveBlockScheduleCard: View {
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 let active = appState.activeBlockSchedules(at: context.date)
                 if !active.isEmpty {
-                    activeContent(active)
+                    Button(action: onOpenSchedules) {
+                        activeContent(active)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 } else if let next = appState.nextScheduledBlock(after: context.date) {
-                    nextContent(schedule: next.schedule, startDate: next.startDate, now: context.date)
+                    Button(action: onOpenSchedules) {
+                        nextContent(schedule: next.schedule, startDate: next.startDate, now: context.date)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -32,7 +41,7 @@ struct ActiveBlockScheduleCard: View {
 
     private func activeContent(_ schedules: [BlockSchedule]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(L10n.tr("dashboard.active_schedule.title"), systemImage: "calendar.badge.clock")
+            Label(L10n.tr("dashboard.blocking.schedule_active"), systemImage: "calendar.badge.clock")
                 .font(.headline.bold())
                 .foregroundStyle(.white.opacity(0.9))
 
@@ -47,6 +56,7 @@ struct ActiveBlockScheduleCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard(cornerRadius: 22, glowColor: AppTheme.neonOrange)
     }
 
@@ -105,6 +115,7 @@ struct ActiveBlockScheduleCard: View {
             }
         }
         .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard(cornerRadius: 22, glowColor: AppTheme.neonGreen)
     }
 

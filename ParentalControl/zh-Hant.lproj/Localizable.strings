@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "1分鐘所需次數";
 "settings.save.conversion" = "儲存換算率";
 "settings.section.permissions" = "權限";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "相機";
 "settings.permission.notifications" = "通知";
 "settings.permission.screentime" = "螢幕使用時間";
@@ -178,7 +177,7 @@
 "ledger.focus.session" = "專注時段 %d 分鐘";
 
 "shield.title" = "賺取時間以繼續使用";
-"shield.subtitle" = "走走路或做運動來解鎖此 App。";
+"shield.subtitle" = "開啟 ParentalControl，查看剩餘時間和任務。";
 "shield.ok" = "了解";
 "shield.open.button" = "開啟 ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "開始吧";
 "onboarding.welcome.title" = "多運動，享受 App。";
 "onboarding.welcome.subtitle" = "透過步行和運動賺取時間，然後無負擔地使用你喜愛的 App。";
-"onboarding.health.title" = "Apple 健康";
-"onboarding.health.body" = "我們計算你今天的步數，將其轉換為 App 使用時間。資料僅保留在你的裝置上。";
 "onboarding.screentime.title" = "螢幕使用時間";
 "onboarding.screentime.body" = "需要此權限來監控你選擇的 App，並在時間用完時進行封鎖。";
 "onboarding.notifications.title" = "通知";
-"onboarding.notifications.body" = "當你賺取時間或餘額變動時，我們會通知你，讓你隨時掌握狀況。";
 "onboarding.conversion.title" = "你的步調";
 "onboarding.conversion.subtitle" = "多少運動量可以換取1分鐘的 App 使用時間。";
 "onboarding.apps.title" = "管理的 App";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "現在你可以透過喜愛的 App 變得更強壯、更健康。";
 
 "permission.banner.allow" = "允許";
-"permission.banner.health.title" = "需要健康資料權限";
-"permission.banner.health.body" = "在健康 App 中允許步數存取：個人檔案（或共享）→ App → ParentalControl → 步數。若出現面板，請開啟步數。";
-"permission.banner.open_health" = "開啟健康";
 "permission.banner.screentime.title" = "需要螢幕使用時間";
 "permission.banner.screentime.body" = "需要螢幕使用時間權限來監控和限制你選擇的 App。";
 "permission.banner.notifications.title" = "通知已關閉";
-"permission.banner.notifications.body" = "開啟通知以了解你何時賺取了時間以及餘額變動。";
 "permission.banner.open_settings" = "開啟設定";
-"permission.banner.liveactivity.title" = "即時動態已停用";
-"permission.banner.liveactivity.body" = "在設定中為 ParentalControl 啟用即時動態，即可在鎖定畫面和動態島顯示專注時間。";
-"settings.permission.live_activity" = "即時動態";
 
 "exercise.camera.denied.title" = "需要相機權限";
 "exercise.camera.denied.body" = "我們使用相機來計算你的運動次數。請在設定中允許相機權限，然後返回這裡。";
@@ -347,7 +336,7 @@
 "parent_mode.entry.locked" = "輸入已鎖定,請於 %d 秒後再試。";
 
 "settings.pin.section" = "家長 PIN";
-"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。孩子永遠不會看到 PIN 碼本身。";
+"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。";
 "settings.pin.requires_link" = "請先連接孩子裝置，才能設定 PIN 碼。";
 "settings.pin.status.set" = "已設定 PIN";
 "settings.pin.status.unset" = "尚未設定 PIN";
@@ -382,11 +371,12 @@
 
 "tasks.parent.subtitle" = "建立任務——完成後孩子可獲得時間";
 "tasks.parent.empty.subtitle" = "為孩子建立第一個任務";
-"tasks.child.subtitle" = "完成任務並傳送照片報告";
+"tasks.child.subtitle" = "完成任務，獲得獎勵";
 "tasks.child.empty.subtitle" = "還沒有來自家長的任務";
 "tasks.empty.title" = "暫無任務";
 "tasks.create_new" = "建立任務";
 "tasks.parent.approve" = "確認";
+"tasks.parent.review_needed" = "需要您確認";
 "tasks.reward.minutes" = "%d 分鐘";
 
 "tasks.status.pending" = "新建";
@@ -400,7 +390,13 @@
 "tasks.editor.delete" = "刪除任務";
 "tasks.editor.delete.confirm.title" = "刪除任務？";
 "tasks.editor.delete.confirm.delete" = "刪除";
-"tasks.editor.delete.confirm.message" = "任務將被刪除。此操作無法復原。";
+"tasks.editor.delete.confirm.message" = "此任務將被刪除，且無法復原。已獲得的使用時間不受影響。";
+"tasks.edit" = "編輯";
+"tasks.show_all" = "顯示全部";
+"tasks.show_less" = "收起";
+"tasks.completed.retention" = "家長確認24小時後自動刪除，已獲得的使用時間不受影響。";
+"tasks.change_failed" = "無法確認變更";
+"tasks.change_failed.message" = "請檢查網路連線並重新整理任務列表，然後再試一次。";
 "tasks.editor.title.label" = "標題";
 "tasks.editor.title.placeholder" = "例如：洗碗";
 "tasks.editor.title.required" = "請輸入標題";
@@ -419,3 +415,63 @@
 "tasks.detail.submitted_hint" = "報告已傳送。等待家長確認。";
 "tasks.detail.approved_hint" = "任務已確認，時間已入帳。";
 "tasks.share.caption" = "任務報告：%@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "已開啟封鎖";
+"budget.remaining.stacked" = "今日\n剩餘時間";
+"budget.earned" = "賺取的時間";
+"budget.granted" = "家長新增的時間";
+"budget.title" = "每日限額";
+"budget.remaining" = "今日剩餘";
+"budget.used" = "已使用";
+"budget.extra" = "今日額外時間";
+"budget.not_set" = "尚未設定";
+"budget.every_day" = "每天";
+"budget.pending" = "正在等待孩子裝置的確認";
+"budget.explanation" = "孩子每天可以使用所選 App 的時間。";
+"budget.hours" = "小時";
+"budget.minutes" = "分鐘";
+"budget.rules" = "限額每天重設。剩餘時間和額外時間不會累積到隔天。設為 0 分鐘表示不提供一般每日使用時間。";
+"budget.first_activation" = "此限額將取代原有餘額。今天已使用的時間仍會扣除，原有剩餘時間不會疊加。歷史記錄會保留。";
+"budget.child_update" = "請在孩子的裝置上開啟更新後的 App，並等待連線。";
+"budget.save" = "儲存";
+"budget.save_error" = "無法儲存。請檢查連線後再試一次。如果設定已變更，請重新開啟。";
+"budget.apply_error" = "無法啟用每日限額。請檢查「螢幕使用時間」存取權限，再重新開啟 App。";
+"budget.adjust_today" = "調整今日時間";
+"budget.child_waiting" = "家長尚未設定每日限額。";
+"budget.total" = "今日分配時間";
+"budget.onboarding_title" = "管理螢幕使用時間";
+"budget.onboarding_body" = "家長為所選 App 設定每日限額。孩子完成任務並經家長確認後，可以獲得額外時間。";
+"settings.section.child_connection" = "連接孩子的裝置";
+"settings.section.parent_connection" = "連接家長的裝置";
+"settings.section.diagnostics" = "診斷";
+"blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長裝置同步。";
+"blocklist.manual_block.changed" = "設定已在其他裝置上變更，現已套用最新的鎖定狀態。請檢查開關。";
+"dashboard.blocking.schedule_active" = "已依排程鎖定";
+// Parent usage and task reports.
+"reports.scope" = "所選 App 的使用情況";
+"reports.week" = "7天";
+"reports.month" = "30天";
+"reports.total" = "總使用時間";
+"reports.average" = "每日平均";
+"reports.missing_hint" = "點一下長條即可選擇日期。灰色表示尚無資料，藍色表示已記錄使用時間。";
+"reports.coverage" = "已取得 %d 天的資料（共 %d 天）。平均值僅根據有資料的日期計算。";
+"reports.partial_today" = "今天的資料僅統計到目前為止。";
+"reports.rewards" = "完成任務獲得的時間";
+"reports.tasks" = "已確認的任務";
+"reports.tasks_period" = "此期間的任務";
+"reports.updated" = "資料更新於：%@";
+"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的裝置同步後，將顯示詳細統計。";
+"reports.retention" = "顯示最近90天內可用的紀錄。";
+"reports.no_data" = "尚無當天的資料。";
+"reports.error" = "無法更新統計。請檢查網路連線。已載入的資料可能不是最新的。";
+"reports.retry" = "重試";
+"reports.unlinked" = "連結孩子的裝置後即可查看統計。";
+"reports.previous" = "上一期間";
+"reports.next" = "下一期間";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "孩子提交任務等待檢查時，您會收到通知。";
+"permission.notifications.child.body" = "可用時間或 App 封鎖狀態改變時，您會收到通知。";
+"permission.camera.title" = "無法使用相機";
+"permission.camera.body" = "請在設定中允許取用相機，以拍攝任務照片。您也可以選擇現有照片。";
+"onboarding.location.body" = "請允許取用位置，讓家長能在地圖上找到此裝置。回應背景要求需要「永遠」允許。我們僅在家長提出要求時取得位置，不會持續追蹤。";

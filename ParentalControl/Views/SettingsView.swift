@@ -41,12 +41,18 @@ struct SettingsView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        premiumSection
-                        appSection
+                        if appState.deviceRole == .parent {
+                            premiumSection
+                        }
+                        pairingSection
                         if appState.deviceRole == .parent {
                             parentPinSection
                         }
+                        appSection
                         helpSection
+#if DEBUG && !HIDE_DEBUG_UI
+                        diagnosticsSection
+#endif
                     }
                     .padding()
                 }
@@ -102,8 +108,10 @@ struct SettingsView: View {
                     .environmentObject(appState.screenTimeService)
             }
             .fullScreenCover(isPresented: $showPaywall) {
-                PaywallView(isPresented: $showPaywall, openSource: .settings)
-                    .environmentObject(subscriptionService)
+                if appState.deviceRole == .parent {
+                    PaywallView(isPresented: $showPaywall, openSource: .settings)
+                        .environmentObject(subscriptionService)
+                }
             }
         }
     }
@@ -119,6 +127,7 @@ struct SettingsView: View {
                     ? "settings.premium.active"
                     : "settings.premium.unlock_all"
             ) {
+                guard appState.deviceRole == .parent else { return }
                 AppAnalytics.report("settings_premium_tap")
                 showPaywall = true
             }
@@ -137,62 +146,23 @@ struct SettingsView: View {
         )
     }
 
-    private var appSection: some View {
+    private var pairingSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("settings.section.app")
+            Text(L10n.tr(appState.deviceRole == .parent
+                 ? "settings.section.child_connection"
+                 : "settings.section.parent_connection"))
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.95))
+                .fixedSize(horizontal: false, vertical: true)
 
             if appState.deviceRole == .parent {
                 parentPairingSection
             } else {
                 childPairingSection
             }
-
-            // «Конвертация» (курсы заработка) и «Сброс в полночь» управляют механикой заработка
-            // и сброса баланса РЕБЁНКА — обе настройки локальные и применяются только на детском
-            // устройстве. На устройстве родителя они инертны, поэтому скрываем их там.
-            if appState.deviceRole == .child {
-                settingsRow(titleKey: "settings.item.conversion") {
-                    AppAnalytics.report("settings_conversion_open")
-                    activeSheet = .conversion
-                }
-            }
-            settingsRow(titleKey: "settings.item.language") {
-                AppAnalytics.report("settings_language_tap")
-                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                UIApplication.shared.open(url)
-            }
-            if appState.deviceRole == .child {
-                settingsToggleRow(
-                    titleKey: "settings.item.midnight_reset",
-                    isOn: Binding(
-                        get: { appState.isMidnightResetEnabled },
-                        set: { newValue in
-                            if !newValue && !subscriptionService.isPro {
-                                AppAnalytics.report("settings_midnight_reset_toggle", parameters: ["action": "blocked"])
-                                showPaywall = true
-                                return
-                            }
-                            AppAnalytics.report(
-                                "settings_midnight_reset_toggle",
-                                parameters: ["enabled": newValue]
-                            )
-                            appState.updateMidnightResetEnabled(newValue)
-                        }
-                    )
-                )
-            }
-#if DEBUG && !HIDE_DEBUG_UI
-            settingsRow(titleKey: "settings.item.permissions") {
-                AppAnalytics.report("settings_permissions_open")
-                activeSheet = .permissions
-            }
-#endif
         }
         .padding()
-        // Запекаем фон glass-card (см. premiumSection). Контент с Toggle/полем ввода кода связки
-        // остаётся снаружи drawingGroup — интерактивность сохраняется.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             Color.clear
                 .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
@@ -202,11 +172,52 @@ struct SettingsView: View {
         )
     }
 
+    private var appSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("settings.section.app")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.95))
+
+            settingsRow(titleKey: "settings.item.language") {
+                AppAnalytics.report("settings_language_tap")
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            }
+        }
+        .padding()
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+    }
+
+#if DEBUG && !HIDE_DEBUG_UI
+    private var diagnosticsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("settings.section.diagnostics")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.95))
+            settingsRow(titleKey: "settings.item.permissions") {
+                AppAnalytics.report("settings_permissions_open")
+                activeSheet = .permissions
+            }
+        }
+        .padding()
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+    }
+#endif
+
     private var parentPairingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("settings.parent.link.title")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.9))
             if appState.pairingState?.isLinked == true {
                 linkedPairingView
             } else {
@@ -235,9 +246,6 @@ struct SettingsView: View {
 
     private var childPairingSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("settings.child.link.title")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.9))
             if appState.pairingState?.isLinked == true {
                 linkedPairingView
             } else {
@@ -719,11 +727,10 @@ private struct PermissionsSettingsSheet: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    permissionRow("settings.permission.healthkit", isOn: appState.isHealthAuthorized)
-                    permissionRow("settings.permission.camera", isOn: appState.isCameraAuthorized)
                     permissionRow("settings.permission.notifications", isOn: appState.isNotificationAuthorized)
-                    permissionRow("settings.permission.screentime", isOn: appState.screenTimeService.isAuthorized)
-                    permissionRow("settings.permission.live_activity", isOn: appState.isLiveActivitiesEnabled)
+                    if appState.deviceRole == .child {
+                        permissionRow("settings.permission.screentime", isOn: appState.screenTimeService.isAuthorized)
+                    }
 
                     Button("settings.request.permissions") {
                         Task {

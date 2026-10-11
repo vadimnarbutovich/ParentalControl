@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Répétitions pour 1 minute";
 "settings.save.conversion" = "Enregistrer les taux de conversion";
 "settings.section.permissions" = "Autorisations";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Appareil photo";
 "settings.permission.notifications" = "Notifications";
 "settings.permission.screentime" = "Temps d'écran";
@@ -178,7 +177,7 @@
 "ledger.focus.session" = "Session focus %d min";
 
 "shield.title" = "Gagne des minutes pour continuer";
-"shield.subtitle" = "Fais des pas ou des exercices pour débloquer cette app.";
+"shield.subtitle" = "Ouvre ParentalControl pour voir ton temps restant et tes tâches.";
 "shield.ok" = "Compris";
 "shield.open.button" = "Ouvrir ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "C'est parti";
 "onboarding.welcome.title" = "Bouge plus. Profite de tes apps.";
 "onboarding.welcome.subtitle" = "Gagne des minutes avec des pas et des exercices — puis dépense-les sur tes apps préférées, sans culpabilité.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "Nous comptons tes pas du jour pour les convertir en temps d'utilisation. Tes données restent sur ton appareil.";
 "onboarding.screentime.title" = "Temps d'écran";
 "onboarding.screentime.body" = "Nécessaire pour surveiller les apps que tu choisis et les bloquer quand tes minutes sont épuisées.";
 "onboarding.notifications.title" = "Notifications";
-"onboarding.notifications.body" = "On te prévient quand tu gagnes du temps ou quand ton solde change, pour que tu sois toujours au courant.";
 "onboarding.conversion.title" = "Ton rythme";
 "onboarding.conversion.subtitle" = "Combien d'activité pour gagner 1 minute d'utilisation.";
 "onboarding.apps.title" = "Apps à surveiller";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "Tu peux maintenant devenir plus fort et en meilleure santé grâce à tes apps préférées.";
 
 "permission.banner.allow" = "Autoriser";
-"permission.banner.health.title" = "Accès à Santé requis";
-"permission.banner.health.body" = "Autorise le comptage des pas dans l'app Santé : Profil (ou Partage) → Apps → ParentalControl → Pas. Si un panneau apparaît, active Pas.";
-"permission.banner.open_health" = "Ouvrir Santé";
 "permission.banner.screentime.title" = "Temps d'écran requis";
 "permission.banner.screentime.body" = "Temps d'écran est nécessaire pour surveiller et limiter les apps que tu choisis.";
 "permission.banner.notifications.title" = "Notifications désactivées";
-"permission.banner.notifications.body" = "Active les alertes pour voir quand tu gagnes du temps et quand ton solde change.";
 "permission.banner.open_settings" = "Ouvrir Réglages";
-"permission.banner.liveactivity.title" = "Activités en direct désactivées";
-"permission.banner.liveactivity.body" = "Active les Activités en direct pour ParentalControl dans les Réglages pour afficher le temps de focus sur l'écran de verrouillage et la Dynamic Island.";
-"settings.permission.live_activity" = "Activités en direct";
 
 "exercise.camera.denied.title" = "Accès à l'appareil photo requis";
 "exercise.camera.denied.body" = "Nous utilisons l'appareil photo pour compter tes répétitions. Autorise l'accès dans les Réglages, puis reviens ici.";
@@ -347,7 +336,7 @@
 "parent_mode.entry.locked" = "Saisie verrouillée. Réessaie dans %d s.";
 
 "settings.pin.section" = "PIN parent";
-"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant. L'enfant ne voit jamais le PIN.";
+"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant.";
 "settings.pin.requires_link" = "Liez d'abord un appareil enfant pour définir un code PIN.";
 "settings.pin.status.set" = "PIN défini";
 "settings.pin.status.unset" = "PIN non défini";
@@ -382,11 +371,12 @@
 
 "tasks.parent.subtitle" = "Créez des tâches — votre enfant gagne du temps en les accomplissant";
 "tasks.parent.empty.subtitle" = "Créez la première tâche pour votre enfant";
-"tasks.child.subtitle" = "Accomplissez la tâche et envoyez un compte rendu photo";
+"tasks.child.subtitle" = "Accomplis une tâche et gagne une récompense";
 "tasks.child.empty.subtitle" = "Aucune tâche de vos parents pour l'instant";
 "tasks.empty.title" = "Aucune tâche pour l'instant";
 "tasks.create_new" = "Créer une tâche";
 "tasks.parent.approve" = "Valider";
+"tasks.parent.review_needed" = "À vérifier";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "Nouvelle";
@@ -400,7 +390,13 @@
 "tasks.editor.delete" = "Supprimer la tâche";
 "tasks.editor.delete.confirm.title" = "Supprimer la tâche ?";
 "tasks.editor.delete.confirm.delete" = "Supprimer";
-"tasks.editor.delete.confirm.message" = "La tâche sera supprimée. Cette action est irréversible.";
+"tasks.editor.delete.confirm.message" = "La tâche sera supprimée définitivement. Le temps déjà gagné sera conservé.";
+"tasks.edit" = "Modifier";
+"tasks.show_all" = "Tout afficher";
+"tasks.show_less" = "Réduire";
+"tasks.completed.retention" = "Supprimées 24 heures après validation. Le temps gagné est conservé.";
+"tasks.change_failed" = "Modification non confirmée";
+"tasks.change_failed.message" = "Vérifiez votre connexion et actualisez la liste des tâches, puis réessayez.";
 "tasks.editor.title.label" = "Titre";
 "tasks.editor.title.placeholder" = "Ex. : Faire la vaisselle";
 "tasks.editor.title.required" = "Saisissez un titre";
@@ -419,3 +415,63 @@
 "tasks.detail.submitted_hint" = "Compte rendu envoyé. En attente de validation par vos parents.";
 "tasks.detail.approved_hint" = "Tâche validée, temps crédité.";
 "tasks.share.caption" = "Compte rendu de la tâche : %@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "Blocage activé";
+"budget.remaining.stacked" = "Temps restant\naujourd’hui";
+"budget.earned" = "Temps gagné";
+"budget.granted" = "Ajouté par le parent";
+"budget.title" = "Limite quotidienne";
+"budget.remaining" = "Temps restant aujourd’hui";
+"budget.used" = "Temps utilisé";
+"budget.extra" = "Temps ajouté aujourd’hui";
+"budget.not_set" = "Non définie";
+"budget.every_day" = "Tous les jours";
+"budget.pending" = "En attente de confirmation de l’appareil de votre enfant";
+"budget.explanation" = "Le temps que votre enfant peut passer chaque jour dans les apps sélectionnées.";
+"budget.hours" = "h";
+"budget.minutes" = "min";
+"budget.rules" = "La limite est renouvelée chaque jour. Le temps restant et les minutes supplémentaires ne sont pas reportés. 0 minute signifie qu’aucun temps quotidien n’est accordé.";
+"budget.first_activation" = "Cette limite remplace le solde précédent. Le temps déjà utilisé aujourd’hui est déduit ; l’ancien temps restant n’est pas ajouté. L’historique est conservé.";
+"budget.child_update" = "Ouvrez l’app mise à jour sur l’appareil de votre enfant et attendez la connexion.";
+"budget.save" = "Enregistrer";
+"budget.save_error" = "Impossible d’enregistrer. Vérifiez la connexion et réessayez. Si le réglage a changé, rouvrez-le.";
+"budget.apply_error" = "Impossible d’activer la limite. Vérifiez l’accès à Temps d’écran et rouvrez l’app.";
+"budget.adjust_today" = "Modifier le temps d’aujourd’hui";
+"budget.child_waiting" = "Le parent n’a pas encore défini de limite quotidienne.";
+"budget.total" = "Temps accordé aujourd’hui";
+"budget.onboarding_title" = "Un temps d’écran encadré";
+"budget.onboarding_body" = "Le parent fixe une limite quotidienne pour les apps sélectionnées. Les tâches terminées peuvent rapporter des minutes supplémentaires après validation du parent.";
+"settings.section.child_connection" = "Connexion avec l’enfant";
+"settings.section.parent_connection" = "Connexion avec le parent";
+"settings.section.diagnostics" = "Diagnostic";
+"blocklist.manual_block.pending" = "Modification appliquée sur cet appareil. En attente de synchronisation avec l’appareil du parent.";
+"blocklist.manual_block.changed" = "Les réglages ont changé sur un autre appareil. Le dernier état du blocage a été appliqué. Vérifiez le bouton.";
+"dashboard.blocking.schedule_active" = "Blocage programmé en cours";
+// Parent usage and task reports.
+"reports.scope" = "Dans les apps sélectionnées";
+"reports.week" = "7 jours";
+"reports.month" = "30 jours";
+"reports.total" = "Temps total utilisé";
+"reports.average" = "Moyenne par jour";
+"reports.missing_hint" = "Touchez une barre pour choisir un jour. Gris : aucune donnée. Bleu : utilisation enregistrée.";
+"reports.coverage" = "Données pour %d jours sur %d. La moyenne tient compte uniquement des jours avec des données.";
+"reports.partial_today" = "La journée d’aujourd’hui n’est pas encore terminée.";
+"reports.rewards" = "Gagné grâce aux tâches";
+"reports.tasks" = "Tâches validées";
+"reports.tasks_period" = "Tâches sur la période";
+"reports.updated" = "Données mises à jour : %@";
+"reports.legacy" = "Les anciennes données sont conservées, mais leur date exacte et leur détail ne sont pas disponibles. Les statistiques détaillées apparaîtront après la synchronisation de l’appareil de l’enfant.";
+"reports.retention" = "Historique disponible sur les 90 derniers jours.";
+"reports.no_data" = "Pas encore de données pour ce jour.";
+"reports.error" = "Impossible d’actualiser les statistiques. Vérifiez la connexion. Les données déjà chargées peuvent être anciennes.";
+"reports.retry" = "Réessayer";
+"reports.unlinked" = "Associez l’appareil de votre enfant pour voir les statistiques.";
+"reports.previous" = "Période précédente";
+"reports.next" = "Période suivante";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Recevez une notification lorsque votre enfant envoie une tâche à vérifier.";
+"permission.notifications.child.body" = "Recevez des notifications lorsque le temps disponible ou le blocage des apps change.";
+"permission.camera.title" = "Appareil photo indisponible";
+"permission.camera.body" = "Autorisez l’appareil photo dans Réglages pour photographier une tâche. Vous pouvez aussi choisir une photo existante.";
+"onboarding.location.body" = "Autorisez la localisation pour que votre parent puisse retrouver cet appareil sur la carte. L’autorisation « Toujours » est nécessaire pour les demandes en arrière-plan. La position est recherchée uniquement sur demande, sans suivi continu.";

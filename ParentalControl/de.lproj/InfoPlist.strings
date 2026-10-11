@@ -1,2 +1,3 @@
-"NSCameraUsageDescription" = "Kamerazugriff wird benötigt, um Kniebeugen und Liegestütze zu zählen.";
-"NSHealthShareUsageDescription" = "Zugriff auf Schrittdaten wird benötigt, um Aktivität in Minuten umzurechnen.";
+"NSCameraUsageDescription" = "Mit der Kamera kannst du ein Foto einer erledigten Aufgabe für deine Eltern aufnehmen.";
+"NSLocationWhenInUseUsageDescription" = "Der Standortzugriff ermöglicht es deinen Eltern, dieses Gerät auf Anfrage auf der Karte zu sehen.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Mit der Standortfreigabe „Immer“ kann das Gerät auch im Hintergrund auf Standortanfragen deiner Eltern reagieren. Der Standort wird nur auf Anfrage ermittelt, nicht dauerhaft.";

@@ -51,27 +51,21 @@ struct PermissionReminderBannerView: View {
 
     private func titleKey(for kind: PermissionReminderKind) -> LocalizedStringKey {
         switch kind {
-        case .health:
-            return "permission.banner.health.title"
         case .screenTime:
             return "permission.banner.screentime.title"
         case .notifications:
             return "permission.banner.notifications.title"
-        case .liveActivities:
-            return "permission.banner.liveactivity.title"
         }
     }
 
     private func bodyKey(for kind: PermissionReminderKind) -> LocalizedStringKey {
         switch kind {
-        case .health:
-            return "permission.banner.health.body"
         case .screenTime:
             return "permission.banner.screentime.body"
         case .notifications:
-            return "permission.banner.notifications.body"
-        case .liveActivities:
-            return "permission.banner.liveactivity.body"
+            return appState.deviceRole == .parent
+                ? "permission.notifications.parent.body"
+                : "permission.notifications.child.body"
         }
     }
 }

@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Repeticiones para 1 minuto";
 "settings.save.conversion" = "Guardar tasas de conversión";
 "settings.section.permissions" = "Permisos";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Cámara";
 "settings.permission.notifications" = "Notificaciones";
 "settings.permission.screentime" = "Tiempo de uso";
@@ -178,7 +177,7 @@
 "ledger.focus.session" = "Sesión de enfoque %d min";
 
 "shield.title" = "Gana minutos para continuar";
-"shield.subtitle" = "Camina o haz ejercicio para desbloquear esta app.";
+"shield.subtitle" = "Abre ParentalControl para ver el tiempo restante y tus tareas.";
 "shield.ok" = "Entendido";
 "shield.open.button" = "Abrir ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "Empecemos";
 "onboarding.welcome.title" = "Muévete más. Disfruta tus apps.";
 "onboarding.welcome.subtitle" = "Gana minutos con pasos y ejercicio — y úsalos en tus apps favoritas, sin remordimientos.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "Contamos tus pasos de hoy para que los conviertas en tiempo de uso. Tus datos no salen de tu dispositivo.";
 "onboarding.screentime.title" = "Tiempo de uso";
 "onboarding.screentime.body" = "Es necesario para controlar las apps que elijas y bloquearlas cuando se acaben tus minutos.";
 "onboarding.notifications.title" = "Notificaciones";
-"onboarding.notifications.body" = "Te avisaremos cuando ganes tiempo o cuando cambie tu saldo, para que siempre estés al tanto.";
 "onboarding.conversion.title" = "Tu ritmo";
 "onboarding.conversion.subtitle" = "Cuánta actividad te da 1 minuto de uso de apps.";
 "onboarding.apps.title" = "Apps a controlar";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "Ahora puedes ponerte más fuerte y sano gracias a tus apps favoritas.";
 
 "permission.banner.allow" = "Permitir";
-"permission.banner.health.title" = "Se necesita acceso a Salud";
-"permission.banner.health.body" = "Permite el conteo de pasos en la app Salud: Perfil (o Compartir) → Apps → ParentalControl → Pasos. Si aparece una ventana, activa Pasos.";
-"permission.banner.open_health" = "Abrir Salud";
 "permission.banner.screentime.title" = "Se necesita Tiempo de uso";
 "permission.banner.screentime.body" = "Tiempo de uso es necesario para monitorizar y limitar las apps que elijas.";
 "permission.banner.notifications.title" = "Notificaciones desactivadas";
-"permission.banner.notifications.body" = "Activa las alertas para ver cuándo ganas tiempo y cuándo cambia tu saldo.";
 "permission.banner.open_settings" = "Abrir Ajustes";
-"permission.banner.liveactivity.title" = "Actividades en vivo desactivadas";
-"permission.banner.liveactivity.body" = "Activa Actividades en vivo para ParentalControl en Ajustes para mostrar el tiempo de enfoque en la pantalla de bloqueo y la Dynamic Island.";
-"settings.permission.live_activity" = "Actividades en vivo";
 
 "exercise.camera.denied.title" = "Se necesita acceso a la cámara";
 "exercise.camera.denied.body" = "Usamos la cámara para contar tus repeticiones. Permite el acceso en Ajustes y vuelve aquí.";
@@ -347,7 +336,7 @@
 "parent_mode.entry.locked" = "Entrada bloqueada. Inténtalo de nuevo en %d s.";
 
 "settings.pin.section" = "PIN de padre";
-"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño. El niño nunca verá el PIN.";
+"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño.";
 "settings.pin.requires_link" = "Primero vincula un dispositivo del niño para establecer un PIN.";
 "settings.pin.status.set" = "PIN establecido";
 "settings.pin.status.unset" = "PIN no establecido";
@@ -382,11 +371,12 @@
 
 "tasks.parent.subtitle" = "Crea tareas: al completarlas, tu hijo gana tiempo";
 "tasks.parent.empty.subtitle" = "Crea la primera tarea para tu hijo";
-"tasks.child.subtitle" = "Completa la tarea y envía un informe con foto";
+"tasks.child.subtitle" = "Completa una tarea y gana una recompensa";
 "tasks.child.empty.subtitle" = "Aún no hay tareas de tus padres";
 "tasks.empty.title" = "Aún no hay tareas";
 "tasks.create_new" = "Crear tarea";
 "tasks.parent.approve" = "Aprobar";
+"tasks.parent.review_needed" = "Pendiente de tu revisión";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "Nueva";
@@ -400,7 +390,13 @@
 "tasks.editor.delete" = "Eliminar tarea";
 "tasks.editor.delete.confirm.title" = "¿Eliminar tarea?";
 "tasks.editor.delete.confirm.delete" = "Eliminar";
-"tasks.editor.delete.confirm.message" = "La tarea se eliminará. Esta acción no se puede deshacer.";
+"tasks.editor.delete.confirm.message" = "La tarea se eliminará de forma permanente. El tiempo ya ganado se conservará.";
+"tasks.edit" = "Editar";
+"tasks.show_all" = "Ver todas";
+"tasks.show_less" = "Ver menos";
+"tasks.completed.retention" = "Se eliminan 24 horas después de aprobarlas. El tiempo ganado se conserva.";
+"tasks.change_failed" = "No se pudo confirmar el cambio";
+"tasks.change_failed.message" = "Comprueba la conexión y actualiza la lista de tareas. Después, inténtalo de nuevo.";
 "tasks.editor.title.label" = "Título";
 "tasks.editor.title.placeholder" = "Ej.: Lavar los platos";
 "tasks.editor.title.required" = "Introduce un título";
@@ -419,3 +415,63 @@
 "tasks.detail.submitted_hint" = "Informe enviado. Esperando la aprobación de tus padres.";
 "tasks.detail.approved_hint" = "Tarea aprobada, tiempo acreditado.";
 "tasks.share.caption" = "Informe de la tarea: %@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "Bloqueo activado";
+"budget.remaining.stacked" = "Tiempo restante\nhoy";
+"budget.earned" = "Tiempo ganado";
+"budget.granted" = "Añadido por el progenitor";
+"budget.title" = "Límite diario";
+"budget.remaining" = "Tiempo restante hoy";
+"budget.used" = "Tiempo usado";
+"budget.extra" = "Tiempo extra hoy";
+"budget.not_set" = "Sin establecer";
+"budget.every_day" = "Todos los días";
+"budget.pending" = "Esperando la confirmación del dispositivo de tu hijo";
+"budget.explanation" = "Cuánto tiempo puede pasar tu hijo cada día en las apps seleccionadas.";
+"budget.hours" = "h";
+"budget.minutes" = "min";
+"budget.rules" = "El límite se renueva cada día. El tiempo restante y los minutos extra no se acumulan. 0 minutos significa que no se concede tiempo diario habitual.";
+"budget.first_activation" = "Este límite sustituye al saldo anterior. Se cuenta el tiempo ya usado hoy; el saldo restante anterior no se suma. El historial se conserva.";
+"budget.child_update" = "Abre la app actualizada en el dispositivo de tu hijo y espera a que se conecte.";
+"budget.save" = "Guardar";
+"budget.save_error" = "No se ha podido guardar. Comprueba la conexión e inténtalo de nuevo. Si el ajuste ha cambiado, vuelve a abrirlo.";
+"budget.apply_error" = "No se ha podido activar el límite. Comprueba el acceso a Tiempo de uso y vuelve a abrir la app.";
+"budget.adjust_today" = "Cambiar el tiempo de hoy";
+"budget.child_waiting" = "El progenitor aún no ha establecido un límite diario.";
+"budget.total" = "Tiempo asignado hoy";
+"budget.onboarding_title" = "Tiempo de uso bajo control";
+"budget.onboarding_body" = "El progenitor fija un límite diario para las apps seleccionadas. Las tareas completadas pueden dar minutos extra tras su aprobación.";
+"settings.section.child_connection" = "Conexión con el hijo";
+"settings.section.parent_connection" = "Conexión con el progenitor";
+"settings.section.diagnostics" = "Diagnóstico";
+"blocklist.manual_block.pending" = "Cambio aplicado en este dispositivo. Pendiente de sincronizar con el dispositivo del adulto.";
+"blocklist.manual_block.changed" = "Los ajustes cambiaron en otro dispositivo. Se ha aplicado el estado de bloqueo más reciente. Comprueba el botón.";
+"dashboard.blocking.schedule_active" = "Bloqueado por horario";
+// Parent usage and task reports.
+"reports.scope" = "En las apps seleccionadas";
+"reports.week" = "7 días";
+"reports.month" = "30 días";
+"reports.total" = "Tiempo total utilizado";
+"reports.average" = "Promedio diario";
+"reports.missing_hint" = "Toca una barra para elegir un día. Gris: sin datos. Azul: uso registrado.";
+"reports.coverage" = "Datos de %d de %d días. El promedio solo incluye los días con datos.";
+"reports.partial_today" = "El día de hoy aún no ha terminado.";
+"reports.rewards" = "Ganado con tareas";
+"reports.tasks" = "Tareas aprobadas";
+"reports.tasks_period" = "Tareas del período";
+"reports.updated" = "Datos actualizados: %@";
+"reports.legacy" = "Los datos anteriores se conservan, pero no se puede precisar el día ni el desglose. Las estadísticas detalladas aparecerán cuando se sincronice el dispositivo del menor.";
+"reports.retention" = "Historial disponible de los últimos 90 días.";
+"reports.no_data" = "Aún no hay datos de este día.";
+"reports.error" = "No se pudieron actualizar las estadísticas. Comprueba la conexión. Los datos cargados pueden estar desactualizados.";
+"reports.retry" = "Reintentar";
+"reports.unlinked" = "Vincula el dispositivo de tu hijo para ver las estadísticas.";
+"reports.previous" = "Período anterior";
+"reports.next" = "Período siguiente";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Recibe una notificación cuando tu hijo envíe una tarea para que la revises.";
+"permission.notifications.child.body" = "Recibe avisos sobre cambios en el tiempo disponible y el bloqueo de apps.";
+"permission.camera.title" = "Cámara no disponible";
+"permission.camera.body" = "Permite el acceso a la cámara en Ajustes para fotografiar la tarea. También puedes elegir una foto existente.";
+"onboarding.location.body" = "Permite el acceso a la ubicación para que tu padre o madre encuentre este dispositivo en el mapa. Las solicitudes en segundo plano necesitan el permiso «Siempre». Solo consultamos la ubicación cuando se solicita, sin seguimiento continuo.";

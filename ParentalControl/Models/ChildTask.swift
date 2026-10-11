@@ -55,6 +55,11 @@ struct ChildTask: Codable, Equatable, Identifiable {
     /// Активные (не подтверждённые) задания — отображаются как «текущие».
     var isActive: Bool { status != .approved }
 
+    /// Один и тот же срок на обоих устройствах, в том числе для офлайн-кэша.
+    func isVisible(at date: Date) -> Bool {
+        isActive || date < (approvedAt ?? updatedAt).addingTimeInterval(24 * 60 * 60)
+    }
+
     /// Маппинг DTO с бэкенда (`list_child_tasks`).
     init(remoteDTO: RemoteChildTaskDTO) {
         let isoFrac = ISO8601DateFormatter()

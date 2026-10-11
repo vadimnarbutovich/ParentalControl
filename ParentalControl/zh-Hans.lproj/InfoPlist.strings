@@ -1,2 +1,3 @@
-"NSCameraUsageDescription" = "需要相机权限来计算深蹲和俯卧撑次数。";
-"NSHealthShareUsageDescription" = "需要步数数据来将运动转换为使用时间。";
+"NSCameraUsageDescription" = "相机用于拍摄已完成的任务，以便向家长提交照片报告。";
+"NSLocationWhenInUseUsageDescription" = "允许访问位置后，家长可以在请求更新时查看此设备在地图上的位置。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "选择“始终”允许访问位置后，此设备可以在后台响应家长的位置请求。仅在收到请求时获取位置，不会持续跟踪。";

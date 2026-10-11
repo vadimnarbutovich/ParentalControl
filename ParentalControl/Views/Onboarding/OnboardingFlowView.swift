@@ -10,9 +10,6 @@ struct OnboardingFlowView: View {
 
     @State private var step = 0
     @State private var isAdvancing = false
-    @State private var stepsText = ""
-    @State private var squatsText = ""
-    @State private var pushUpsText = ""
     @State private var confettiTrigger = 0
 
     /// Горизонтальный отступ контента онбординга — совпадает с кнопкой «Далее» / «Начать».
@@ -25,11 +22,6 @@ struct OnboardingFlowView: View {
         /// Иллюстрация ButtonGo на финале (+⅓ к прежним 300×(132×1.35)).
         static let finalGoIllustrationMaxWidth: CGFloat = 300 * 4 / 3
         static let finalGoIllustrationMaxHeight: CGFloat = 132 * 1.35 * 4 / 3
-        /// Компактная вёрстка шага «Фокус-сессия»: больше ширина под текст, меньше вертикальные зазоры.
-        static let focusSessionTopSpacer: CGFloat = 8
-        static let focusSessionTextHorizontalInset: CGFloat = 12
-        static let focusSessionTextToImagesTop: CGFloat = 4
-        static let focusSessionBetweenImages: CGFloat = 4
     }
 
     var body: some View {
@@ -63,7 +55,6 @@ struct OnboardingFlowView: View {
             }
         }
         .onAppear {
-            syncConversionFieldsFromState()
             let mode = onReplayFinished == nil ? "first_launch" : "replay"
             AppAnalytics.report("onboarding_flow_shown", parameters: ["mode": mode])
         }
@@ -84,19 +75,7 @@ struct OnboardingFlowView: View {
         Group {
             switch step {
             case 0:
-                welcomePage(contentSize: size)
-            case 1:
-                conversionPage(contentSize: size)
-            case 2:
-                focusSessionPage(contentSize: size)
-            case 3:
-                heroTextPage(
-                    titleKey: "onboarding.health.title",
-                    bodyKey: "onboarding.health.body",
-                    assetName: "health",
-                    iconGlowColor: AppTheme.neonBlue,
-                    contentSize: size
-                )
+                heroTextPage(titleKey: "budget.onboarding_title", bodyKey: "budget.onboarding_body", assetName: "timer", iconGlowColor: AppTheme.neonBlue, contentSize: size)
             case 4:
                 heroTextPage(
                     titleKey: "onboarding.screentime.title",
@@ -108,7 +87,7 @@ struct OnboardingFlowView: View {
             case 5:
                 heroTextPage(
                     titleKey: "onboarding.notifications.title",
-                    bodyKey: "onboarding.notifications.body",
+                    bodyKey: appState.deviceRole == .parent ? "permission.notifications.parent.body" : "permission.notifications.child.body",
                     assetName: "notification",
                     iconGlowColor: AppTheme.neonGreen,
                     contentSize: size
@@ -215,98 +194,6 @@ struct OnboardingFlowView: View {
         .frame(width: contentSize.width, height: contentSize.height)
     }
 
-    private func conversionPage(contentSize: CGSize) -> some View {
-        let compact = contentSize.height < 640
-        let thumb: CGFloat = compact ? 56 : 72
-        let fieldSpacing: CGFloat = compact ? 10 : 14
-        let titleSize: CGFloat = compact ? 28 : 32
-        let subtitleSize: CGFloat = compact ? 16 : 18
-        return VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            VStack(spacing: compact ? 10 : 14) {
-                VStack(spacing: OnboardingLayout.onboardingTitleToBodySpacing) {
-                    Text("onboarding.conversion.title")
-                        .font(.system(size: titleSize, weight: .bold, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
-                        .minimumScaleFactor(0.78)
-                        .lineLimit(2)
-
-                    Text("onboarding.conversion.subtitle")
-                        .font(.system(size: subtitleSize, weight: .medium, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white.opacity(0.88))
-                        .minimumScaleFactor(0.82)
-                        .lineLimit(3)
-                        .padding(.horizontal, 10)
-                }
-
-                HStack(spacing: compact ? 14 : 20) {
-                    onboardingActivityThumb(asset: "walk", tint: AppTheme.neonBlue, side: thumb)
-                    onboardingActivityThumb(asset: "squat", tint: AppTheme.neonGreen, side: thumb)
-                    onboardingActivityThumb(asset: "pushups", tint: Color.orange.opacity(0.95), side: thumb)
-                }
-                .padding(.vertical, compact ? 4 : 8)
-
-                VStack(alignment: .leading, spacing: fieldSpacing) {
-                    conversionField("settings.conversion.steps.per.minute", text: $stepsText, compact: compact)
-                    conversionField("settings.conversion.squats.per.minute", text: $squatsText, compact: compact)
-                    conversionField("settings.conversion.pushups.per.minute", text: $pushUpsText, compact: compact)
-                }
-                .padding(.horizontal, 6)
-
-                Button("settings.conversion.reset.defaults") {
-                    let d = ConversionSettings.default
-                    stepsText = "\(d.stepsPerMinute)"
-                    squatsText = "\(d.squatsPerMinute)"
-                    pushUpsText = "\(d.pushUpsPerMinute)"
-                }
-                .font(.system(size: compact ? 15 : 16, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppTheme.neonBlue)
-                .padding(.top, 2)
-            }
-            .padding(.horizontal, 22)
-            Spacer(minLength: 0)
-        }
-        .frame(width: contentSize.width, height: contentSize.height)
-    }
-
-    private func onboardingActivityThumb(asset: String, tint: Color, side: CGFloat) -> some View {
-        Image(asset)
-            .resizable()
-            .scaledToFit()
-            .frame(width: side, height: side)
-            .shadow(color: tint.opacity(0.45), radius: 14, y: 2)
-    }
-
-    private func conversionField(_ titleKey: String, text: Binding<String>, compact: Bool) -> some View {
-        let vPad: CGFloat = compact ? 8 : 12
-        let titleFont: CGFloat = compact ? 14 : 15
-        let valueFont: CGFloat = compact ? 20 : 22
-        return VStack(alignment: .leading, spacing: compact ? 6 : 8) {
-            Text(LocalizedStringKey(titleKey))
-                .font(.system(size: titleFont, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.75))
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-            TextField("", text: text)
-                .keyboardType(.numberPad)
-                .font(.system(size: valueFont, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, vPad)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(AppTheme.glassBorder.opacity(0.4), lineWidth: 1)
-                        )
-                )
-        }
-    }
-
     private func appsPage(contentSize: CGSize) -> some View {
         let iconSide = min(
             OnboardingLayout.onboardingStepIconSize,
@@ -349,79 +236,6 @@ struct OnboardingFlowView: View {
         .frame(width: contentSize.width, height: contentSize.height)
     }
 
-    private func focusSessionPage(contentSize: CGSize) -> some View {
-        VStack(spacing: 0) {
-            VStack(spacing: OnboardingLayout.onboardingTitleToBodySpacing) {
-                Text("onboarding.focus.title")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(2)
-
-                Text("onboarding.focus.body")
-                    .font(.system(size: 19, weight: .medium, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.92))
-                    .lineSpacing(2)
-                    .minimumScaleFactor(0.68)
-                    .lineLimit(8)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, OnboardingLayout.focusSessionTextHorizontalInset)
-            .padding(.top, OnboardingLayout.focusSessionTopSpacer)
-            .fixedSize(horizontal: false, vertical: true)
-
-            GeometryReader { geo in
-                let w = geo.size.width
-                let h = geo.size.height
-                let firstWidth = w * 0.75
-                let firstCap = h * 0.56
-                let imagesGap = OnboardingLayout.focusSessionBetweenImages
-                let secondCap = max(h * 0.44, h - firstCap - imagesGap)
-                VStack(alignment: .leading, spacing: imagesGap) {
-                    Image("focusSession")
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .frame(maxWidth: firstWidth, maxHeight: firstCap, alignment: .topLeading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .clipShape(
-                            UnevenRoundedRectangle(
-                                cornerRadii: .init(
-                                    topLeading: 0,
-                                    bottomLeading: 0,
-                                    bottomTrailing: 18,
-                                    topTrailing: 18
-                                ),
-                                style: .continuous
-                            )
-                        )
-                        .shadow(color: AppTheme.neonBlue.opacity(0.35), radius: 18, y: 4)
-
-                    HStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        Image("focusTime")
-                            .resizable()
-                            .interpolation(.high)
-                            .scaledToFit()
-                            .frame(maxWidth: w * 0.6)
-                            .frame(maxHeight: secondCap, alignment: .center)
-                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .shadow(color: AppTheme.neonGreen.opacity(0.35), radius: 18, y: 4)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .frame(width: w, height: h, alignment: .topLeading)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, OnboardingLayout.focusSessionTextToImagesTop)
-        }
-        .frame(width: contentSize.width, height: contentSize.height)
-    }
-
     private func finalPage(contentSize: CGSize) -> some View {
         let maxGoW = min(OnboardingLayout.finalGoIllustrationMaxWidth, contentSize.width - 24)
         let maxGoH = min(OnboardingLayout.finalGoIllustrationMaxHeight, contentSize.height * 0.34)
@@ -437,7 +251,7 @@ struct OnboardingFlowView: View {
                     .lineLimit(2)
                     .padding(.horizontal, 12)
 
-                Text("onboarding.done.body")
+                Text("budget.onboarding_body")
                     .font(.system(size: 19, weight: .medium, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.white.opacity(0.92))
@@ -473,29 +287,12 @@ struct OnboardingFlowView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 7) {
-            ForEach(0..<9, id: \.self) { index in
+            ForEach(appState.deviceRole == .parent ? [0, 5, 8] : [0, 4, 5, 6, 7, 8], id: \.self) { index in
                 Circle()
                     .fill(index == step ? AppTheme.neonGreen : Color.white.opacity(0.22))
                     .frame(width: index == step ? 8 : 6, height: index == step ? 8 : 6)
             }
         }
-    }
-
-    private func syncConversionFieldsFromState() {
-        let s = appState.settings
-        stepsText = "\(s.stepsPerMinute)"
-        squatsText = "\(s.squatsPerMinute)"
-        pushUpsText = "\(s.pushUpsPerMinute)"
-    }
-
-    private func saveConversionForOnboarding() {
-        let def = ConversionSettings.default
-        let steps = Int(stepsText).flatMap { $0 > 0 ? $0 : nil } ?? def.stepsPerMinute
-        let squats = Int(squatsText).flatMap { $0 > 0 ? $0 : nil } ?? def.squatsPerMinute
-        let pushUps = Int(pushUpsText).flatMap { $0 > 0 ? $0 : nil } ?? def.pushUpsPerMinute
-        appState.updateSettings(
-            ConversionSettings(stepsPerMinute: steps, squatsPerMinute: squats, pushUpsPerMinute: pushUps)
-        )
     }
 
     private func completeOnboardingExit() {
@@ -527,18 +324,7 @@ struct OnboardingFlowView: View {
             defer { isAdvancing = false }
             switch step {
             case 0:
-                step = 1
-            case 1:
-                saveConversionForOnboarding()
-                step = 2
-            case 2:
-                step = 3
-            case 3:
-                if !appState.isHealthAuthorized {
-                    await appState.requestHealthAccessOnly()
-                }
-                await appState.refreshPermissionStatuses()
-                step = 4
+                step = appState.deviceRole == .parent ? 5 : 4
             case 4:
                 if !screenTimeService.isAuthorized {
                     await appState.requestScreenTimeAccessOnly()
@@ -551,13 +337,9 @@ struct OnboardingFlowView: View {
                     await appState.requestNotificationAccessOnly()
                 }
                 await appState.refreshPermissionStatuses()
-                step = 6
+                step = appState.deviceRole == .parent ? 8 : 6
             case 6:
-                // Двухэтапный запрос геолокации:
-                // 1) When-in-Use — обязателен, без него Apple не покажет диалог Always;
-                // 2) Always — нужен, чтобы снять координату, когда приложение свёрнуто/выгружено
-                //    из памяти. Мы НЕ держим GPS постоянно — фоновые апдейты включаются строго
-                //    on-demand на момент одного capture (см. LocationService).
+                // Location belongs only to the child device. iOS controls the Always prompt.
                 let whenInUse = await appState.requestChildLocationPermissionIfNeeded()
                 if whenInUse == .authorizedWhenInUse || whenInUse == .authorizedAlways {
                     _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()

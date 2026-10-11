@@ -1,2 +1,3 @@
-"NSCameraUsageDescription" = "Camera access is required to count squats and push-ups.";
-"NSHealthShareUsageDescription" = "Health steps are required to convert activity into minutes.";
+"NSCameraUsageDescription" = "Camera access lets you take a photo of a completed task to share with your parent.";
+"NSLocationWhenInUseUsageDescription" = "Location access lets your parent see this device on the map when they request an update.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Always location access lets this device respond to a parent’s location request in the background. Location is checked only on request, not continuously.";

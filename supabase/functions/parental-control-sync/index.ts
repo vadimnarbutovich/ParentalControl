@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
+import { sendApnsToDevice } from "../_shared/apns-routing.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -70,6 +71,20 @@ Deno.serve(async (req: Request) => {
     const authed = await requireDevice(req);
 
     switch (action) {
+      case "report_child_usage": {
+        if (authed.device.role !== "child" || !authed.device.family_id) {
+          return errorResponse("Only paired child can report usage", 403);
+        }
+        const { error } = await supabase.rpc("pc_report_child_usage", {
+          p_device: authed.deviceId,
+          p_state: payload.budgetState ?? null,
+          p_timezone: asString(payload.budgetTimezone),
+          p_history: payload.budgetHistory ?? [],
+        });
+        return error ? errorResponse(error.message, 400) : okResponse({ ok: true });
+      }
+      case "change_daily_budget":
+        return await changeDailyBudget(authed.device, payload);
       case "generate_pairing_code":
         return await generatePairingCode(authed.deviceId);
       case "join_pairing_code":
@@ -80,6 +95,8 @@ Deno.serve(async (req: Request) => {
         return await queueFocusCommand(authed.deviceId, payload);
       case "replace_focus_command":
         return await replaceFocusCommand(authed.deviceId, payload);
+      case "set_local_manual_block":
+        return await setLocalManualBlock(authed.device, payload);
       case "fetch_pending_commands":
         return await fetchPendingCommands(authed.deviceId);
       case "fetch_desired_focus_state":
@@ -96,6 +113,17 @@ Deno.serve(async (req: Request) => {
         return await upsertChildDayStats(authed.deviceId, payload);
       case "fetch_child_day_stats":
         return await fetchChildDayStats(authed.deviceId, payload);
+      case "fetch_parent_statistics": {
+        const days = asNumber(payload.days);
+        const end = asString(payload.endDay);
+        if (![7, 30].includes(days ?? 0) || (end && !/^\d{4}-\d{2}-\d{2}$/.test(end))) {
+          return errorResponse("Invalid statistics period", 400);
+        }
+        const { data, error } = await supabase.rpc("pc_parent_statistics", {
+          p_device: authed.deviceId, p_days: days, p_end: end || null,
+        });
+        return error ? errorResponse(error.message, 400) : okResponse(data);
+      }
       case "update_child_runtime":
         return await updateChildRuntime(authed.deviceId, payload);
       case "fetch_parent_snapshot":
@@ -301,6 +329,31 @@ async function deleteFamilyData(familyID: string): Promise<void> {
 
 /// Child → backend: всё, что ребёнок тянет каждый тик, одним вызовом.
 /// `includeParentSettings` (true раз в ~60с на клиенте) добавляет PIN/Pro родителя.
+async function dailyBudgetSnapshot(deviceID: string): Promise<unknown> {
+  const { data, error } = await supabase.rpc("pc_daily_budget_snapshot", { p_device: deviceID });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function changeDailyBudget(device: DeviceContext, payload: Json): Promise<Response> {
+  if (device.role !== "parent" || !device.family_id) return errorResponse("Paired parent required", 403);
+  const seconds = asNumber(payload.seconds);
+  const revision = asNumber(payload.expectedRevision);
+  const intent = asUUIDString(payload.intentID);
+  const kind = asString(payload.kind);
+  if (!intent || seconds === null || !Number.isInteger(seconds) || revision === null ||
+      !Number.isSafeInteger(revision) || revision < 0 || (kind !== "limit" && kind !== "adjustment")) {
+    return errorResponse("Invalid budget request", 400);
+  }
+  const { data, error } = await supabase.rpc("pc_change_daily_budget", {
+    p_device: device.id, p_kind: kind, p_seconds: seconds, p_intent: intent, p_expected_revision: revision,
+  });
+  if (error) return errorResponse(error.message, 400);
+  // Reuse an already-supported wake signal; old clients never receive an unknown command enum.
+  await notifyChildTasksUpdated(device.family_id, device.id);
+  return okResponse(data);
+}
+
 async function childPoll(device: DeviceContext, payload: Json): Promise<Response> {
   // Reuse the authenticated row from this request; never cache device/family state across requests.
   const deviceId = device.id;
@@ -310,7 +363,7 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
   // desired focus state (зеркало fetchDesiredFocusState)
   const { data: desiredRow, error: desiredErr } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", device.family_id)
     .maybeSingle();
   if (desiredErr) return errorResponse(desiredErr.message, 400);
@@ -350,11 +403,14 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
     };
   }
 
+  const budget = await dailyBudgetSnapshot(deviceId);
   return okResponse({
+    budget,
     desired: {
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+      revision: desiredRow?.revision ?? 0,
     },
     pendingCommands: (pending ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)),
     parentPin,
@@ -382,7 +438,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
 
   const { data: desiredRow, error: desiredErr } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", familyID)
     .maybeSingle();
   if (desiredErr) return errorResponse(desiredErr.message, 400);
@@ -400,7 +456,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   if (childData?.id) {
     const { data: statsRow } = await supabase
       .from("daily_stats_snapshots")
-      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .select("day_start, earned_seconds, spent_seconds")
       .eq("child_device_id", childData.id)
       .order("day_start", { ascending: false })
       .limit(1)
@@ -408,12 +464,12 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
     if (statsRow) {
       dailyStats = {
         dayStartISO: statsRow.day_start,
-        steps: statsRow.steps ?? 0,
+        steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
         earnedSeconds: statsRow.earned_seconds ?? 0,
         spentSeconds: statsRow.spent_seconds ?? 0,
-        pushUps: statsRow.push_ups ?? 0,
-        squats: statsRow.squats ?? 0,
-        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+        pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
       };
     }
   }
@@ -440,11 +496,14 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   const oldestPendingAt = pendingRows?.[0]?.created_at ? Date.parse(pendingRows[0].created_at) : null;
   const childLastSeenAt = runtimeRow?.updated_at ? Date.parse(runtimeRow.updated_at) : null;
 
+  const budget = await dailyBudgetSnapshot(parent.id);
   return okResponse({
+    budget,
     desired: {
       shouldFocusActive: desiredRow?.should_focus_active ?? false,
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
+      revision: desiredRow?.revision ?? 0,
     },
     runtime: {
       isFocusActive: runtimeRow?.is_focus_active ?? false,
@@ -470,28 +529,52 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
   const device = await getDevice(deviceId);
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can sync", 403);
 
+  if (payload.budgetState !== undefined && payload.budgetState !== null) {
+    const state = payload.budgetState as Json;
+    const policy = state.policy as Json | undefined;
+    if (!policy || asUUIDString(policy.familyID) !== device.family_id ||
+        !Number.isSafeInteger(state.usedSeconds) || Number(state.usedSeconds) < 0 ||
+        Number(state.usedSeconds) > 691200 || !Number.isSafeInteger(policy.revision) ||
+        Number(policy.revision) < 1) {
+      return errorResponse("Invalid budget state", 400);
+    }
+  }
+
+  const history = Array.isArray(payload.budgetHistory) ? payload.budgetHistory : [];
+  if (history.length > 30) return errorResponse("Invalid history", 400);
+  const states = payload.budgetState ? [...history, payload.budgetState] : history;
+  if (states.length > 0) {
+    const { error } = await supabase.rpc("pc_sync_budget_history", { p_device: deviceId, p_history: states });
+    if (error) return errorResponse(error.message, 400);
+  }
+
   const dayStartISO = asString(payload.dayStartISO);
   if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
 
-  const statsRow = {
-    family_id: device.family_id,
-    child_device_id: device.id,
-    day_start: dayStartISO,
-    steps: asNumber(payload.steps) ?? 0,
-    earned_seconds: asNumber(payload.earnedSeconds) ?? 0,
-    spent_seconds: asNumber(payload.spentSeconds) ?? 0,
-    push_ups: asNumber(payload.pushUps) ?? 0,
-    squats: asNumber(payload.squats) ?? 0,
-    focus_session_total_seconds: asNumber(payload.focusSessionTotalSeconds) ?? 0,
-  };
-  const { error: statsErr } = await supabase
-    .from("daily_stats_snapshots")
-    .upsert(statsRow, { onConflict: "child_device_id,day_start" });
-  if (statsErr) return errorResponse(statsErr.message, 400);
+  // A budget snapshot already wrote the day in the batch RPC above. No duplicate upsert.
+  // Retain this compatibility path only for devices without an activated daily limit.
+  if (!payload.budgetState) {
+    const { error: statsErr } = await supabase.rpc("pc_sync_legacy_stats", {
+      p_device: deviceId, p_start: dayStartISO,
+      p_allocated: asNumber(payload.earnedSeconds) ?? 0, p_used: asNumber(payload.spentSeconds) ?? 0,
+    });
+    if (statsErr) return errorResponse(statsErr.message, 400);
+  }
 
   const isFocusActive = asBool(payload.isFocusActive);
   const focusEndsAt = asString(payload.focusEndsAt);
   const availableSeconds = Math.max(0, asNumber(payload.availableSeconds) ?? 0);
+  const budgetFields: Json = {};
+  if (payload.budgetProtocol === 1) {
+    const timezone = asString(payload.budgetTimezone);
+    try { new Intl.DateTimeFormat("en", { timeZone: timezone ?? "" }).format(); }
+    catch { return errorResponse("Invalid budget timezone", 400); }
+    budgetFields.budget_protocol = 1;
+    budgetFields.budget_timezone = timezone;
+    if (payload.budgetState && typeof payload.budgetState === "object") {
+      budgetFields.budget_snapshot = payload.budgetState;
+    }
+  }
   const { error: runtimeErr } = await supabase
     .from("child_runtime_state")
     .upsert({
@@ -499,7 +582,9 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
       child_device_id: device.id,
       is_focus_active: isFocusActive,
       focus_ends_at: focusEndsAt || null,
+      focus_revision: asNumber(payload.focusRevision),
       available_seconds: availableSeconds,
+      ...budgetFields,
       updated_at: new Date().toISOString(),
     }, { onConflict: "family_id" });
   if (runtimeErr) return errorResponse(runtimeErr.message, 400);
@@ -510,39 +595,25 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
 async function updateApnsToken(deviceId: string, payload: Json): Promise<Response> {
   const token = asString(payload.apnsToken);
   if (!token) return errorResponse("apnsToken is required", 400);
-  const normalized = token.replace(/\s+/g, "").trim();
-  const { error } = await supabase.from("devices").update({ apns_token: normalized }).eq("id", deviceId);
+  const normalized = token.replace(/\s+/g, "").trim().toLowerCase();
+  if (!/^[0-9a-f]+$/.test(normalized) || normalized.length % 2 !== 0 || normalized.length > 1024) {
+    return errorResponse("Invalid APNs token", 400);
+  }
+  const environment = payload.apnsEnvironment ?? null;
+  if (environment !== null && environment !== "sandbox" && environment !== "production") {
+    return errorResponse("Invalid APNs environment", 400);
+  }
+  const { error } = await supabase.rpc("pc_register_apns_token", {
+    p_device_id: deviceId, p_token: normalized, p_environment: environment,
+  });
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
 
 async function queueFocusCommand(deviceId: string, payload: Json): Promise<Response> {
-  const commandType = asString(payload.commandType);
-  const durationSeconds = asNumber(payload.durationSeconds);
-  const intentID = asUUIDString(payload.intentID);
-  if (commandType !== "start_focus" && commandType !== "end_focus") return errorResponse("Invalid command type", 400);
-
-  const parentDevice = await getDevice(deviceId);
-  if (parentDevice.role !== "parent" || !parentDevice.family_id) return errorResponse("Parent device is not paired", 403);
-
-  const { data: child, error: childError } = await supabase
-    .from("devices")
-    .select("id, apns_token")
-    .eq("family_id", parentDevice.family_id)
-    .eq("role", "child")
-    .single();
-  if (childError || !child) return errorResponse("Child device is not linked", 404);
-
-  await upsertDesiredFocusState(parentDevice.family_id, parentDevice.id, commandType, durationSeconds);
-
-  return await createAndDispatchFocusCommand({
-    familyID: parentDevice.family_id,
-    parentDeviceID: parentDevice.id,
-    childDeviceID: child.id,
-    childApnsToken: child.apns_token,
-    commandType,
-    durationSeconds,
-    intentID,
+  // Legacy callers use the same atomic path; only older requests lack an intent.
+  return await replaceFocusCommand(deviceId, {
+    ...payload, intentID: asUUIDString(payload.intentID) ?? crypto.randomUUID(),
   });
 }
 
@@ -564,8 +635,6 @@ async function replaceFocusCommand(deviceId: string, payload: Json): Promise<Res
     .single();
   if (childError || !child) return errorResponse("Child device is not linked", 404);
 
-  await upsertDesiredFocusState(parentDevice.family_id, parentDevice.id, commandType, durationSeconds);
-
   const hasToken = !!asString(child.apns_token);
   const { data: rpcData, error: rpcError } = await supabase.rpc("replace_focus_command_atomic", {
     p_family_id: parentDevice.family_id,
@@ -586,6 +655,26 @@ async function replaceFocusCommand(deviceId: string, payload: Json): Promise<Res
   }
 
   return okResponse(mapCommandForClient(command));
+}
+
+async function setLocalManualBlock(device: DeviceContext, payload: Json): Promise<Response> {
+  if (device.role !== "child" || !device.family_id) return errorResponse("Paired child required", 403);
+  if (asUUIDString(payload.familyID) !== device.family_id) return errorResponse("Family changed", 409);
+  const intent = asUUIDString(payload.intentID);
+  const revision = asNumber(payload.expectedRevision);
+  const pinSalt = asString(payload.pinVersion);
+  if (!intent || typeof payload.isActive !== "boolean" || revision === null ||
+      !Number.isSafeInteger(revision) || revision < 0 || !pinSalt || pinSalt.length > 64) {
+    return errorResponse("Invalid local focus request", 400);
+  }
+  // Device secret authenticates this request. PIN verification/lockout remains
+  // local (also offline); pinVersion prevents replay after the parent changed PIN.
+  const { data, error } = await supabase.rpc("pc_set_local_manual_block", {
+    p_device: device.id, p_active: payload.isActive, p_intent: intent,
+    p_expected_revision: revision, p_pin_salt: pinSalt,
+  });
+  if (error) return errorResponse(error.message, 400);
+  return okResponse(data);
 }
 
 async function fetchPendingCommands(deviceId: string): Promise<Response> {
@@ -613,7 +702,7 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
 
   const { data, error } = await supabase
     .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at")
+    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
     .eq("family_id", device.family_id)
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
@@ -622,6 +711,7 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
     shouldFocusActive: data?.should_focus_active ?? false,
     durationSeconds: data?.desired_duration_seconds ?? null,
     updatedAt: data?.updated_at ?? new Date(0).toISOString(),
+    revision: data?.revision ?? 0,
   });
 }
 
@@ -1075,7 +1165,9 @@ async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
   const patch: Record<string, unknown> = { status, error_message: errorMessage || null };
   if (status === "applied") patch.applied_at = new Date().toISOString();
 
-  const { error } = await supabase.from("focus_commands").update(patch).eq("id", commandID);
+  // A delayed ACK must not resurrect an expired or superseded command.
+  const { error } = await supabase.from("focus_commands").update(patch).eq("id", commandID)
+    .in("status", ["queued", "sent", "delivered", "applied"]);
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
@@ -1087,19 +1179,10 @@ async function upsertChildDayStats(deviceId: string, payload: Json): Promise<Res
   const dayStartISO = asString(payload.dayStartISO);
   if (!dayStartISO) return errorResponse("dayStartISO is required", 400);
 
-  const row = {
-    family_id: device.family_id,
-    child_device_id: device.id,
-    day_start: dayStartISO,
-    steps: asNumber(payload.steps) ?? 0,
-    earned_seconds: asNumber(payload.earnedSeconds) ?? 0,
-    spent_seconds: asNumber(payload.spentSeconds) ?? 0,
-    push_ups: asNumber(payload.pushUps) ?? 0,
-    squats: asNumber(payload.squats) ?? 0,
-    focus_session_total_seconds: asNumber(payload.focusSessionTotalSeconds) ?? 0,
-  };
-
-  const { error } = await supabase.from("daily_stats_snapshots").upsert(row, { onConflict: "child_device_id,day_start" });
+  const { error } = await supabase.rpc("pc_sync_legacy_stats", {
+    p_device: deviceId, p_start: dayStartISO,
+    p_allocated: asNumber(payload.earnedSeconds) ?? 0, p_used: asNumber(payload.spentSeconds) ?? 0,
+  });
   if (error) return errorResponse(error.message, 400);
   return okResponse({ ok: true });
 }
@@ -1121,7 +1204,7 @@ async function fetchChildDayStats(deviceId: string, payload: Json): Promise<Resp
 
   const { data, error } = await supabase
     .from("daily_stats_snapshots")
-    .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+    .select("day_start, earned_seconds, spent_seconds")
     .eq("child_device_id", child.id)
     .eq("day_start", dayStartISO)
     .maybeSingle();
@@ -1130,12 +1213,12 @@ async function fetchChildDayStats(deviceId: string, payload: Json): Promise<Resp
 
   return okResponse({
     dayStartISO: data.day_start,
-    steps: data.steps,
+    steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
     earnedSeconds: data.earned_seconds,
     spentSeconds: data.spent_seconds,
-    pushUps: data.push_ups,
-    squats: data.squats,
-    focusSessionTotalSeconds: data.focus_session_total_seconds,
+    pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+    squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+    focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
   });
 }
 
@@ -1153,6 +1236,7 @@ async function updateChildRuntime(deviceId: string, payload: Json): Promise<Resp
       child_device_id: child.id,
       is_focus_active: isFocusActive,
       focus_ends_at: focusEndsAt || null,
+      focus_revision: asNumber(payload.focusRevision),
       updated_at: new Date().toISOString(),
     }, { onConflict: "family_id" });
   if (error) return errorResponse(error.message, 400);
@@ -1189,7 +1273,7 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
   if (childData?.id) {
     const { data: statsRow } = await supabase
       .from("daily_stats_snapshots")
-      .select("day_start, steps, earned_seconds, spent_seconds, push_ups, squats, focus_session_total_seconds")
+      .select("day_start, earned_seconds, spent_seconds")
       .eq("child_device_id", childData.id)
       .order("day_start", { ascending: false })
       .limit(1)
@@ -1197,12 +1281,12 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
     if (statsRow) {
       dailyStats = {
         dayStartISO: statsRow.day_start,
-        steps: statsRow.steps ?? 0,
+        steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
         earnedSeconds: statsRow.earned_seconds ?? 0,
         spentSeconds: statsRow.spent_seconds ?? 0,
-        pushUps: statsRow.push_ups ?? 0,
-        squats: statsRow.squats ?? 0,
-        focusSessionTotalSeconds: statsRow.focus_session_total_seconds ?? 0,
+        pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+        focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
       };
     }
   }
@@ -1460,8 +1544,24 @@ async function listChildTasks(deviceId: string): Promise<Response> {
     .order("created_at", { ascending: false });
   if (error) return errorResponse(error.message, 400);
 
-  const items = (data ?? []).map((row) => mapChildTaskForClient(row as ChildTaskRow));
+  // Hide expired rows immediately, independently of the periodic physical cleanup.
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const items = (data ?? [])
+    .filter((row) => row.status !== "approved" ||
+      Date.parse(row.approved_at ?? row.updated_at) > cutoff)
+    .map((row) => mapChildTaskForClient(row as ChildTaskRow));
   return okResponse({ tasks: items });
+}
+
+// Return authoritative lifecycle timestamps, not a speculative client-side status.
+async function childTaskMutationResponse(familyID: string, id: string, status: string): Promise<Response> {
+  const { data, error } = await supabase.from("family_child_tasks")
+    .select("*").eq("id", id).eq("family_id", familyID).is("deleted_at", null).maybeSingle();
+  if (error) return errorResponse(error.message, 400);
+  // The parent can approve while the child's submit response is still in flight.
+  const matches = data && (data.status === status || (status === "submitted" && data.status === "approved"));
+  if (!matches) return errorResponse("Task changed or was removed", 409);
+  return okResponse({ ok: true, task: mapChildTaskForClient(data as ChildTaskRow) });
 }
 
 async function upsertChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1477,34 +1577,16 @@ async function upsertChildTask(deviceId: string, payload: Json): Promise<Respons
   if (!title) return errorResponse("title is required", 400);
   if (rewardSeconds === null || rewardSeconds < 0) return errorResponse("rewardSeconds invalid", 400);
 
-  // Не перетираем жизненный цикл (status/submitted_at/approved_at), если задание уже существует —
-  // upsert используется и для редактирования. Создание: existing == null → status pending.
-  const { data: existing } = await supabase
-    .from("family_child_tasks")
-    .select("status, submitted_at, approved_at")
-    .eq("id", id)
-    .eq("family_id", parent.family_id)
-    .maybeSingle();
-
-  const nowIso = new Date().toISOString();
-  const { error: upsertError } = await supabase
-    .from("family_child_tasks")
-    .upsert({
-      id,
-      family_id: parent.family_id,
-      title,
-      details,
-      reward_seconds: Math.round(rewardSeconds),
-      status: existing?.status ?? "pending",
-      submitted_at: existing?.submitted_at ?? null,
-      approved_at: existing?.approved_at ?? null,
-      updated_at: nowIso,
-      deleted_at: null,
-    }, { onConflict: "id" });
-  if (upsertError) return errorResponse(upsertError.message, 400);
+  const { data: saved, error: saveError } = await supabase.rpc("pc_save_child_task", {
+    p_device: parent.id, p_task: id, p_title: title, p_details: details,
+    p_reward_seconds: Math.round(rewardSeconds),
+    // Older builds did not distinguish creation from editing.
+    p_create: typeof payload.isNew === "boolean" ? payload.isNew : true,
+  });
+  if (saveError) return errorResponse(saveError.message, 409);
 
   await notifyChildTasksUpdated(parent.family_id, parent.id);
-  return okResponse({ ok: true });
+  return okResponse({ ok: true, task: mapChildTaskForClient(saved as ChildTaskRow) });
 }
 
 async function deleteChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1540,6 +1622,7 @@ async function submitChildTask(deviceId: string, payload: Json): Promise<Respons
     .eq("id", id)
     .eq("family_id", child.family_id)
     .eq("status", "pending")
+    .is("deleted_at", null)
     .select("id, title")
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
@@ -1548,7 +1631,7 @@ async function submitChildTask(deviceId: string, payload: Json): Promise<Respons
   if (updated) {
     await notifyParentTaskSubmitted(child.family_id, String((updated as { title?: string }).title ?? ""));
   }
-  return okResponse({ ok: true });
+  return childTaskMutationResponse(child.family_id, id, "submitted");
 }
 
 async function approveChildTask(deviceId: string, payload: Json): Promise<Response> {
@@ -1557,6 +1640,15 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
 
   const id = asUUIDString(payload.id);
   if (!id) return errorResponse("id is required (uuid)", 400);
+
+  const { data: budgetApproval, error: budgetError } = await supabase.rpc("pc_approve_task_daily_budget", {
+    p_device: deviceId, p_task: id,
+  });
+  if (budgetError) return errorResponse(budgetError.message, 400);
+  if (budgetApproval?.legacy === false) {
+    await notifyChildTasksUpdated(parent.family_id, parent.id);
+    return childTaskMutationResponse(parent.family_id, id, "approved");
+  }
 
   const nowIso = new Date().toISOString();
   // submitted → approved. Фильтр по status гарантирует идемпотентность: повторный approve
@@ -1567,12 +1659,13 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
     .eq("id", id)
     .eq("family_id", parent.family_id)
     .eq("status", "submitted")
+    .is("deleted_at", null)
     .select("id, reward_seconds")
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
   if (!updated) {
     // Уже approved или не в submitted — без повторного начисления.
-    return okResponse({ ok: true, credited: false });
+    return childTaskMutationResponse(parent.family_id, id, "approved");
   }
 
   const reward = Math.max(0, Number((updated as { reward_seconds?: number }).reward_seconds ?? 0));
@@ -1597,7 +1690,7 @@ async function approveChildTask(deviceId: string, payload: Json): Promise<Respon
   }
   // Синкаем список заданий ребёнку, чтобы задание ушло из активных (status approved).
   await notifyChildTasksUpdated(parent.family_id, parent.id);
-  return okResponse({ ok: true, credited: reward > 0 });
+  return childTaskMutationResponse(parent.family_id, id, "approved");
 }
 
 async function notifyChildTasksUpdated(familyID: string, parentDeviceID: string): Promise<void> {
@@ -1668,7 +1761,7 @@ async function sendApnsTaskSubmittedAlert(tokenRaw: string, taskTitle: string): 
     command_type: "tasks_updated",
   };
   const expirationEpoch = Math.floor(Date.now() / 1000) + 60 * 60;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -1840,7 +1933,7 @@ async function sendApnsBackground(tokenRaw: string): Promise<void> {
     aps: { "content-available": 1 },
     command_type: "child_sync_request",
   };
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -1884,24 +1977,6 @@ async function notifyChildSchedulesUpdated(familyID: string, parentDeviceID: str
   } catch (e) {
     console.warn("[notifyChildSchedulesUpdated] dispatch failed:", e instanceof Error ? e.message : String(e));
   }
-}
-
-async function upsertDesiredFocusState(
-  familyID: string,
-  updaterDeviceID: string,
-  commandType: string,
-  durationSeconds: number | null
-): Promise<void> {
-  const shouldActive = commandType === "start_focus";
-  await supabase
-    .from("family_focus_desired_state")
-    .upsert({
-      family_id: familyID,
-      should_focus_active: shouldActive,
-      desired_duration_seconds: shouldActive ? durationSeconds : null,
-      updated_by_device_id: updaterDeviceID,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "family_id" });
 }
 
 async function expireStalePendingCommands(familyID: string | null | undefined): Promise<void> {
@@ -2178,7 +2253,7 @@ function commandLocalizedAlert(
     case "schedules_updated":
       return { title: "ParentalControl", body: "Расписание обновлено" };
     case "tasks_updated":
-      return { title: "ParentalControl", body: "Задания обновлены" };
+      return { title: "ParentalControl", body: "Обновлены данные родителя" };
     case "schedule_started": {
       const name = (extras.scheduleName && extras.scheduleName.trim().length > 0)
         ? extras.scheduleName
@@ -2232,7 +2307,7 @@ async function sendApnsAlert(
   if (extras.scheduleName) payload.schedule_name = extras.scheduleName;
   if (extras.endHHMM) payload.schedule_end_hh_mm = extras.endHHMM;
   const expirationEpoch = Math.floor(Date.now() / 1000) + COMMAND_TTL_SECONDS;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,

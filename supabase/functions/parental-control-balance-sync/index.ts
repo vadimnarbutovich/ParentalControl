@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
+import { sendApnsToDevice } from "../_shared/apns-routing.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -88,6 +89,11 @@ async function queueBalanceCommand(deviceId: string, payload: Json): Promise<Res
 
   const parentDevice = await getDevice(deviceId);
   if (parentDevice.role !== "parent" || !parentDevice.family_id) return errorResponse("Parent device is not paired", 403);
+
+  const { data: dailyPolicy, error: policyError } = await supabase.from("family_daily_policy")
+    .select("family_id").eq("family_id", parentDevice.family_id).maybeSingle();
+  if (policyError) return errorResponse(policyError.message, 400);
+  if (dailyPolicy) return errorResponse("Update the parent app to change today's daily budget", 409);
 
   const { data: child, error: childError } = await supabase
     .from("devices")
@@ -355,7 +361,7 @@ async function sendApnsAlert(
     duration_seconds: durationSeconds,
   };
   const expirationEpoch = Math.floor(Date.now() / 1000) + COMMAND_TTL_SECONDS;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,
@@ -386,7 +392,7 @@ async function sendApnsBackground(tokenRaw: string, commandType: string): Promis
   };
   // 5 минут TTL: silent push без срочности, iOS сам решит когда доставить.
   const expirationEpoch = Math.floor(Date.now() / 1000) + 300;
-  const res = await fetch(`https://${auth.host}/3/device/${token}`, {
+  const res = await sendApnsToDevice(supabase, token, auth.host, {
     method: "POST",
     headers: {
       authorization: auth.authorization,

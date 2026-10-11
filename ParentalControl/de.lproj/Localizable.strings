@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Wiederholungen für 1 Minute";
 "settings.save.conversion" = "Umrechnungsraten speichern";
 "settings.section.permissions" = "Berechtigungen";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Kamera";
 "settings.permission.notifications" = "Mitteilungen";
 "settings.permission.screentime" = "Bildschirmzeit";
@@ -178,7 +177,7 @@
 "ledger.focus.session" = "Fokus-Sitzung %d Min.";
 
 "shield.title" = "Sammle Minuten, um fortzufahren";
-"shield.subtitle" = "Mach Schritte oder Übungen, um diese App freizuschalten.";
+"shield.subtitle" = "Öffne ParentalControl, um deine verbleibende Zeit und Aufgaben anzusehen.";
 "shield.ok" = "Verstanden";
 "shield.open.button" = "ParentalControl öffnen";
 "shield.open.notification.title" = "ParentalControl";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "Los geht's";
 "onboarding.welcome.title" = "Mehr bewegen. Apps genießen.";
 "onboarding.welcome.subtitle" = "Verdiene Minuten durch Schritte und Übungen — und nutze sie für deine Lieblings-Apps, ganz ohne schlechtes Gewissen.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "Wir zählen deine heutigen Schritte, damit du sie in App-Zeit umwandeln kannst. Deine Daten bleiben auf deinem Gerät.";
 "onboarding.screentime.title" = "Bildschirmzeit";
 "onboarding.screentime.body" = "Wird benötigt, um deine gewählten Apps zu überwachen und zu sperren, wenn deine Minuten aufgebraucht sind.";
 "onboarding.notifications.title" = "Mitteilungen";
-"onboarding.notifications.body" = "Wir informieren dich, wenn du Zeit verdienst oder sich dein Guthaben ändert — damit du immer den Überblick hast.";
 "onboarding.conversion.title" = "Dein Tempo";
 "onboarding.conversion.subtitle" = "Wie viel Bewegung dir 1 Minute App-Zeit einbringt.";
 "onboarding.apps.title" = "Apps zum Überwachen";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "Jetzt kannst du dank deiner Lieblings-Apps stärker und gesünder werden.";
 
 "permission.banner.allow" = "Erlauben";
-"permission.banner.health.title" = "Zugriff auf Health nötig";
-"permission.banner.health.body" = "Erlaube Schrittzählung in der Health-App: Profil (oder Teilen) → Apps → ParentalControl → Schritte. Falls ein Fenster erscheint, aktiviere Schritte.";
-"permission.banner.open_health" = "Health öffnen";
 "permission.banner.screentime.title" = "Bildschirmzeit erforderlich";
 "permission.banner.screentime.body" = "Bildschirmzeit wird benötigt, um deine gewählten Apps zu überwachen und einzuschränken.";
 "permission.banner.notifications.title" = "Mitteilungen deaktiviert";
-"permission.banner.notifications.body" = "Aktiviere Mitteilungen, um zu sehen, wann du Zeit verdienst und sich dein Guthaben ändert.";
 "permission.banner.open_settings" = "Einstellungen öffnen";
-"permission.banner.liveactivity.title" = "Live-Aktivitäten deaktiviert";
-"permission.banner.liveactivity.body" = "Aktiviere Live-Aktivitäten für ParentalControl in den Einstellungen, um die Fokuszeit auf dem Sperrbildschirm und der Dynamic Island anzuzeigen.";
-"settings.permission.live_activity" = "Live-Aktivitäten";
 
 "exercise.camera.denied.title" = "Kamerazugriff erforderlich";
 "exercise.camera.denied.body" = "Wir nutzen die Kamera, um deine Wiederholungen zu zählen. Erlaube den Zugriff in den Einstellungen und komm dann hierher zurück.";
@@ -347,7 +336,7 @@
 "parent_mode.entry.locked" = "Eingabe gesperrt. Versuche es in %d Sek. erneut.";
 
 "settings.pin.section" = "Eltern-PIN";
-"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen. Das Kind sieht die PIN niemals.";
+"settings.pin.description" = "4-stellige PIN, um auf dem Kindergerät den Elternmodus zu öffnen.";
 "settings.pin.requires_link" = "Verbinde zuerst ein Kindergerät, um eine PIN festzulegen.";
 "settings.pin.status.set" = "PIN ist festgelegt";
 "settings.pin.status.unset" = "Keine PIN festgelegt";
@@ -382,11 +371,12 @@
 
 "tasks.parent.subtitle" = "Erstelle Aufgaben — für die Erledigung erhält dein Kind Zeit";
 "tasks.parent.empty.subtitle" = "Erstelle die erste Aufgabe für dein Kind";
-"tasks.child.subtitle" = "Erledige die Aufgabe und sende einen Fotobericht";
+"tasks.child.subtitle" = "Erledige eine Aufgabe und verdiene dir eine Belohnung";
 "tasks.child.empty.subtitle" = "Noch keine Aufgaben von den Eltern";
 "tasks.empty.title" = "Noch keine Aufgaben";
 "tasks.create_new" = "Aufgabe erstellen";
 "tasks.parent.approve" = "Bestätigen";
+"tasks.parent.review_needed" = "Bitte überprüfen";
 "tasks.reward.minutes" = "%d Min";
 
 "tasks.status.pending" = "Neu";
@@ -400,7 +390,13 @@
 "tasks.editor.delete" = "Aufgabe löschen";
 "tasks.editor.delete.confirm.title" = "Aufgabe löschen?";
 "tasks.editor.delete.confirm.delete" = "Löschen";
-"tasks.editor.delete.confirm.message" = "Die Aufgabe wird gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
+"tasks.editor.delete.confirm.message" = "Die Aufgabe wird unwiderruflich gelöscht. Bereits verdiente Zeit bleibt erhalten.";
+"tasks.edit" = "Bearbeiten";
+"tasks.show_all" = "Alle anzeigen";
+"tasks.show_less" = "Weniger anzeigen";
+"tasks.completed.retention" = "Aufgaben werden 24 Stunden nach der Bestätigung gelöscht. Verdiente Zeit bleibt erhalten.";
+"tasks.change_failed" = "Änderung nicht bestätigt";
+"tasks.change_failed.message" = "Prüfe deine Verbindung und aktualisiere die Aufgabenliste. Versuche es dann erneut.";
 "tasks.editor.title.label" = "Titel";
 "tasks.editor.title.placeholder" = "z. B. Geschirr spülen";
 "tasks.editor.title.required" = "Titel eingeben";
@@ -419,3 +415,63 @@
 "tasks.detail.submitted_hint" = "Bericht gesendet. Warte auf die Bestätigung der Eltern.";
 "tasks.detail.approved_hint" = "Aufgabe bestätigt, Zeit gutgeschrieben.";
 "tasks.share.caption" = "Aufgabenbericht: %@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "Sperre aktiv";
+"budget.remaining.stacked" = "Heute\nverbleibend";
+"budget.earned" = "Verdient";
+"budget.granted" = "Von Eltern hinzugefügt";
+"budget.title" = "Tageslimit";
+"budget.remaining" = "Heute noch verfügbar";
+"budget.used" = "Genutzt";
+"budget.extra" = "Heute zusätzlich";
+"budget.not_set" = "Nicht festgelegt";
+"budget.every_day" = "Jeden Tag";
+"budget.pending" = "Warten auf die Bestätigung vom Gerät deines Kindes";
+"budget.explanation" = "Wie viel Zeit dein Kind täglich in den ausgewählten Apps verbringen darf.";
+"budget.hours" = "Std.";
+"budget.minutes" = "Min.";
+"budget.rules" = "Das Limit gilt jeden Tag neu. Restzeit und zusätzliche Minuten werden nicht übertragen. 0 Minuten bedeutet: keine reguläre tägliche Nutzungszeit.";
+"budget.first_activation" = "Dieses Limit ersetzt das bisherige Guthaben. Heute bereits genutzte Zeit wird angerechnet; die bisherige Restzeit kommt nicht hinzu. Der Verlauf bleibt erhalten.";
+"budget.child_update" = "Öffne die aktualisierte App auf dem Gerät deines Kindes und warte auf die Verbindung.";
+"budget.save" = "Speichern";
+"budget.save_error" = "Speichern fehlgeschlagen. Prüfe die Verbindung und versuche es erneut. Wurde die Einstellung geändert, öffne sie erneut.";
+"budget.apply_error" = "Das Tageslimit konnte nicht aktiviert werden. Prüfe den Zugriff auf Bildschirmzeit und öffne die App erneut.";
+"budget.adjust_today" = "Zeit für heute ändern";
+"budget.child_waiting" = "Es wurde noch kein Tageslimit festgelegt.";
+"budget.total" = "Heute zugeteilt";
+"budget.onboarding_title" = "Bildschirmzeit im Blick";
+"budget.onboarding_body" = "Eltern legen ein Tageslimit für ausgewählte Apps fest. Für erledigte Aufgaben gibt es nach Bestätigung durch einen Elternteil zusätzliche Minuten.";
+"settings.section.child_connection" = "Verbindung zum Kind";
+"settings.section.parent_connection" = "Verbindung zum Elternteil";
+"settings.section.diagnostics" = "Diagnose";
+"blocklist.manual_block.pending" = "Auf diesem Gerät geändert. Die Synchronisierung mit dem Elterngerät steht noch aus.";
+"blocklist.manual_block.changed" = "Die Einstellungen wurden auf einem anderen Gerät geändert. Der aktuelle Sperrstatus wurde übernommen. Bitte prüfe den Schalter.";
+"dashboard.blocking.schedule_active" = "Durch Zeitplan gesperrt";
+// Parent usage and task reports.
+"reports.scope" = "In ausgewählten Apps";
+"reports.week" = "7 Tage";
+"reports.month" = "30 Tage";
+"reports.total" = "Insgesamt genutzt";
+"reports.average" = "Tagesdurchschnitt";
+"reports.missing_hint" = "Tippe auf einen Balken, um den Tag auszuwählen. Grau: keine Daten. Blau: Nutzung erfasst.";
+"reports.coverage" = "Daten für %d von %d Tagen. Der Durchschnitt berücksichtigt nur Tage mit Daten.";
+"reports.partial_today" = "Der heutige Tag ist noch nicht abgeschlossen.";
+"reports.rewards" = "Durch Aufgaben verdient";
+"reports.tasks" = "Bestätigte Aufgaben";
+"reports.tasks_period" = "Aufgaben im Zeitraum";
+"reports.updated" = "Werte aktualisiert: %@";
+"reports.legacy" = "Ältere Daten bleiben gespeichert, lassen sich aber nicht zuverlässig einem Tag zuordnen oder aufschlüsseln. Details erscheinen nach der Synchronisierung des Kindergeräts.";
+"reports.retention" = "Verfügbarer Verlauf der letzten 90 Tage.";
+"reports.no_data" = "Für diesen Tag liegen noch keine Daten vor.";
+"reports.error" = "Statistik konnte nicht aktualisiert werden. Prüfe die Verbindung. Geladene Daten können veraltet sein.";
+"reports.retry" = "Erneut versuchen";
+"reports.unlinked" = "Verknüpfe das Gerät deines Kindes, um die Statistik zu sehen.";
+"reports.previous" = "Vorheriger Zeitraum";
+"reports.next" = "Nächster Zeitraum";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Erhalte eine Nachricht, wenn dein Kind eine Aufgabe zur Prüfung einreicht.";
+"permission.notifications.child.body" = "Erhalte Mitteilungen über Änderungen der verfügbaren Zeit und der App-Sperre.";
+"permission.camera.title" = "Kamera nicht verfügbar";
+"permission.camera.body" = "Erlaube den Kamerazugriff in den Einstellungen, um eine Aufgabe zu fotografieren. Du kannst auch ein vorhandenes Foto auswählen.";
+"onboarding.location.body" = "Erlaube den Standortzugriff, damit deine Eltern dieses Gerät auf der Karte finden können. Für Anfragen im Hintergrund wird „Immer“ benötigt. Der Standort wird nur auf Anfrage deiner Eltern ermittelt, nicht dauerhaft.";

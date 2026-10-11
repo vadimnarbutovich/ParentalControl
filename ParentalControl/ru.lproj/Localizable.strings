@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Повторений за 1 минуту";
 "settings.save.conversion" = "Сохранить коэффициенты";
 "settings.section.permissions" = "Разрешения";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Камера";
 "settings.permission.notifications" = "Уведомления";
 "settings.permission.screentime" = "Screen Time";
@@ -181,7 +180,7 @@
 "ledger.parent.subtract_time" = "Родитель забрал время";
 
 "shield.title" = "Нужно заработать минуты";
-"shield.subtitle" = "Сделайте шаги или упражнения, чтобы открыть приложение.";
+"shield.subtitle" = "Открой ParentalControl, чтобы посмотреть оставшееся время и задания.";
 "shield.ok" = "Понятно";
 "shield.open.button" = "Открыть ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -198,14 +197,11 @@
 "onboarding.cta.close" = "Начнём";
 "onboarding.welcome.title" = "Движение → время для приложений";
 "onboarding.welcome.subtitle" = "Зарабатывайте минуты шагами и упражнениями — и тратьте их на любимые приложения без чувства вины.";
-"onboarding.health.title" = "Apple Здоровье";
-"onboarding.health.body" = "Считаем шаги за сегодня, чтобы менять их на время для приложений. Данные остаются на устройстве.";
 "onboarding.screentime.title" = "Экранное время";
 "onboarding.screentime.body" = "Необходимо, чтобы отслеживать выбранные приложения и ограничивать их, когда минуты закончились.";
 "onboarding.notifications.title" = "Уведомления";
-"onboarding.notifications.body" = "Покажем, когда начислили время и когда изменился баланс — чтобы вы всегда были в курсе.";
 "onboarding.location.title" = "Местоположение";
-"onboarding.location.body" = "Родитель сможет видеть, где находится телефон, когда нажмёт «Обновить местоположение» — даже если приложение свёрнуто. Координаты обновляются только по запросу, постоянного отслеживания нет — это бережёт батарею. Выберите «Всегда», чтобы это работало надёжно.";
+"onboarding.location.body" = "Разрешите геолокацию, чтобы родитель мог найти этот телефон на карте. Доступ «Всегда» нужен для запросов в фоне. Мы определяем координаты только по запросу родителя, без постоянного отслеживания.";
 "onboarding.conversion.title" = "Ваш темп";
 "onboarding.conversion.subtitle" = "Сколько активности даёт 1 минуту доступа к приложениям.";
 "onboarding.apps.title" = "Приложения для контроля";
@@ -217,17 +213,10 @@
 "onboarding.done.body" = "Теперь можно становиться сильнее и здоровее благодаря любимым приложениям.";
 
 "permission.banner.allow" = "Разрешить";
-"permission.banner.health.title" = "Нет доступа к Здоровью";
-"permission.banner.health.body" = "Включите шаги в приложении «Здоровье»: Профиль → Приложения (или «Доступ к данным и устройствам») → ParentalControl → Шаги. Если появится системный лист — включите «Шаги».";
-"permission.banner.open_health" = "Открыть «Здоровье»";
 "permission.banner.screentime.title" = "Нет доступа к Экранному времени";
 "permission.banner.screentime.body" = "Без Screen Time нельзя отслеживать и ограничивать выбранные приложения.";
 "permission.banner.notifications.title" = "Уведомления выключены";
-"permission.banner.notifications.body" = "Включите уведомления, чтобы видеть начисления и изменения баланса.";
 "permission.banner.open_settings" = "Открыть настройки";
-"permission.banner.liveactivity.title" = "Эфир активности выключен";
-"permission.banner.liveactivity.body" = "Включите Live Activities для ParentalControl в Настройках — чтобы видеть таймер фокуса на экране блокировки и в Dynamic Island.";
-"settings.permission.live_activity" = "Live Activities";
 
 "exercise.camera.denied.title" = "Нужен доступ к камере";
 "exercise.camera.denied.body" = "Камера нужна, чтобы считать повторы. Разрешите доступ в Настройках и вернитесь в упражнение.";
@@ -429,7 +418,7 @@
 "parent_mode.entry.locked" = "Ввод заблокирован. Повторите через %d сек.";
 
 "settings.pin.section" = "Родительский PIN";
-"settings.pin.description" = "4-значный PIN для входа в родительский режим на устройстве ребёнка. Ребёнок никогда не увидит сам PIN.";
+"settings.pin.description" = "4-значный PIN для входа в родительский режим на устройстве ребёнка.";
 "settings.pin.requires_link" = "Сначала свяжите устройство с ребёнком, чтобы задать PIN.";
 "settings.pin.status.set" = "PIN установлен";
 "settings.pin.status.unset" = "PIN не установлен";
@@ -464,11 +453,12 @@
 
 "tasks.parent.subtitle" = "Создавайте задания — за выполнение ребёнок получит время";
 "tasks.parent.empty.subtitle" = "Создайте первое задание для ребёнка";
-"tasks.child.subtitle" = "Выполните задание и отправьте фото-отчёт";
+"tasks.child.subtitle" = "Выполни задание и получи награду";
 "tasks.child.empty.subtitle" = "Пока нет заданий от родителя";
 "tasks.empty.title" = "Заданий пока нет";
 "tasks.create_new" = "Создать задание";
 "tasks.parent.approve" = "Подтвердить";
+"tasks.parent.review_needed" = "Необходимо проверить";
 "tasks.reward.minutes" = "%d мин";
 
 "tasks.status.pending" = "Новое";
@@ -482,7 +472,13 @@
 "tasks.editor.delete" = "Удалить задание";
 "tasks.editor.delete.confirm.title" = "Удалить задание?";
 "tasks.editor.delete.confirm.delete" = "Удалить";
-"tasks.editor.delete.confirm.message" = "Задание будет удалено. Это действие нельзя отменить.";
+"tasks.editor.delete.confirm.message" = "Задание будет удалено без возможности восстановления. Уже начисленное время сохранится.";
+"tasks.edit" = "Редактировать";
+"tasks.show_all" = "Показать все";
+"tasks.show_less" = "Свернуть";
+"tasks.completed.retention" = "Удаляются через 24 часа после подтверждения. Начисленное время сохраняется.";
+"tasks.change_failed" = "Не удалось подтвердить изменение";
+"tasks.change_failed.message" = "Проверьте подключение и обновите список заданий. Затем попробуйте ещё раз.";
 "tasks.editor.title.label" = "Название";
 "tasks.editor.title.placeholder" = "Например, Помыть посуду";
 "tasks.editor.title.required" = "Укажите название";
@@ -501,3 +497,61 @@
 "tasks.detail.submitted_hint" = "Отчёт отправлен. Ждём подтверждения родителя.";
 "tasks.detail.approved_hint" = "Задание подтверждено, время начислено.";
 "tasks.share.caption" = "Отчёт по заданию: %@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "Блокировка включена";
+"budget.remaining.stacked" = "Осталось\nсегодня";
+"budget.earned" = "Заработано";
+"budget.granted" = "Добавлено родителем";
+"budget.title" = "Дневной лимит";
+"budget.remaining" = "Осталось сегодня";
+"budget.used" = "Использовано";
+"budget.extra" = "Дополнительно сегодня";
+"budget.not_set" = "Не установлен";
+"budget.every_day" = "Каждый день";
+"budget.pending" = "Ожидаем подтверждения от устройства ребёнка";
+"budget.explanation" = "Сколько времени в день доступно ребёнку в выбранных приложениях.";
+"budget.hours" = "ч";
+"budget.minutes" = "мин";
+"budget.rules" = "Каждый день лимит обновляется. Остаток и дополнительные минуты не переносятся. 0 минут означает, что обычное время недоступно.";
+"budget.first_activation" = "Выбранный лимит заменит прежний баланс. Уже использованное сегодня время будет учтено, прежний остаток не прибавится. История сохранится.";
+"budget.child_update" = "Откройте обновлённое приложение на устройстве ребёнка и дождитесь подключения.";
+"budget.save" = "Сохранить";
+"budget.save_error" = "Не удалось сохранить. Проверьте подключение и повторите попытку; если настройка изменилась, откройте её заново.";
+"budget.apply_error" = "Не удалось включить дневной лимит. Проверьте доступ к Экранному времени и снова откройте приложение.";
+"budget.adjust_today" = "Изменить время на сегодня";
+"budget.child_waiting" = "Родитель ещё не установил дневной лимит.";
+"budget.total" = "Выделено за день";
+"budget.onboarding_title" = "Время под контролем";
+"budget.onboarding_body" = "Родитель задаёт дневной лимит для выбранных приложений. За выполненные задания можно получить дополнительные минуты после подтверждения родителем.";
+"settings.section.child_connection" = "Связь с ребёнком";
+"settings.section.parent_connection" = "Связь с родителем";
+"settings.section.diagnostics" = "Диагностика";
+"blocklist.manual_block.pending" = "Изменено на этом устройстве. Ожидаем синхронизации с родителем.";
+"blocklist.manual_block.changed" = "Настройки изменились на другом устройстве. Применено актуальное состояние блокировки. Проверьте переключатель.";
+// Parent usage and task reports.
+"reports.scope" = "В выбранных приложениях";
+"reports.week" = "7 дней";
+"reports.month" = "30 дней";
+"reports.total" = "Всего использовано";
+"reports.average" = "В среднем за день";
+"reports.missing_hint" = "Нажмите на столбик, чтобы выбрать день. Серый — нет данных, синий — время учтено.";
+"reports.coverage" = "Данные за %d из %d дней. Среднее рассчитано только по дням с данными.";
+"reports.partial_today" = "Сегодняшний день ещё не завершён.";
+"reports.rewards" = "Заработано заданиями";
+"reports.tasks" = "Подтверждено заданий";
+"reports.tasks_period" = "Задания за период";
+"reports.updated" = "Показатели обновлены: %@";
+"reports.legacy" = "Старые данные сохранены, но точная дата и разбивка недоступны. Подробная статистика появится после синхронизации ребёнка.";
+"reports.retention" = "Доступная история за последние 90 дней.";
+"reports.no_data" = "Данных за этот день пока нет.";
+"reports.error" = "Не удалось обновить статистику. Проверьте подключение. Ранее загруженные данные могут быть устаревшими.";
+"reports.retry" = "Повторить";
+"reports.unlinked" = "Подключите устройство ребёнка, чтобы видеть статистику.";
+"reports.previous" = "Предыдущий период";
+"reports.next" = "Следующий период";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Получайте уведомления, когда ребёнок отправляет задание на проверку.";
+"permission.notifications.child.body" = "Получайте уведомления об изменениях доступного времени и блокировки.";
+"permission.camera.title" = "Камера недоступна";
+"permission.camera.body" = "Разрешите доступ к камере в настройках, чтобы сфотографировать задание. Также можно выбрать готовое фото.";

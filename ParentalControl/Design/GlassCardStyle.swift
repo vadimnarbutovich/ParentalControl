@@ -4,6 +4,7 @@ struct GlassCardModifier: ViewModifier {
     var cornerRadius: CGFloat = 24
     var glowColor: Color? = nil
     var borderOpacity: Double = 0.30
+    var drawsOuterShadows: Bool = true
 
     func body(content: Content) -> some View {
         content
@@ -20,7 +21,7 @@ struct GlassCardModifier: ViewModifier {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: .black.opacity(0.30), radius: 12, x: 0, y: 7)
+                    .shadow(color: drawsOuterShadows ? .black.opacity(0.30) : .clear, radius: 12, x: 0, y: 7)
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(
@@ -41,7 +42,7 @@ struct GlassCardModifier: ViewModifier {
                             .stroke(AppTheme.glassBorder.opacity(borderOpacity), lineWidth: 1)
                     )
             )
-            .ifLet(glowColor) { view, color in
+            .ifLet(drawsOuterShadows ? glowColor : nil) { view, color in
                 view
                     .shadow(color: color.opacity(0.26), radius: 14, x: 0, y: 0)
                     .shadow(color: color.opacity(0.16), radius: 24, x: 0, y: 0)
@@ -171,8 +172,8 @@ private struct ChipHorizontalSizing: ViewModifier {
 }
 
 extension View {
-    func glassCard(cornerRadius: CGFloat = 24, glowColor: Color? = nil) -> some View {
-        modifier(GlassCardModifier(cornerRadius: cornerRadius, glowColor: glowColor))
+    func glassCard(cornerRadius: CGFloat = 24, glowColor: Color? = nil, drawsOuterShadows: Bool = true) -> some View {
+        modifier(GlassCardModifier(cornerRadius: cornerRadius, glowColor: glowColor, drawsOuterShadows: drawsOuterShadows))
     }
 }
 

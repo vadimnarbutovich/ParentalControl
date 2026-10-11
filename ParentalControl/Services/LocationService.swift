@@ -109,16 +109,11 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
 
     func requestAlwaysAuthorization() async -> CLAuthorizationStatus {
         let current = cachedAuthorizationStatus
-        // Если пользователь уже выбрал .denied/.restricted/.always — повторный запрос не покажет диалог.
-        if current == .denied || current == .restricted || current == .authorizedAlways {
-            return current
-        }
-        // Apple требует, чтобы When-in-Use был выдан до запроса Always. Если статус notDetermined —
-        // SDK покажет When-in-Use, а Always запросим повторно после того, как он станет authorizedWhenInUse.
-        return await withCheckedContinuation { continuation in
-            pendingAuthorizationContinuations.append(continuation)
-            manager.requestAlwaysAuthorization()
-        }
+        guard current == .authorizedWhenInUse else { return current }
+        // iOS may defer this prompt, or retain When In Use without a delegate callback.
+        // Never suspend onboarding waiting for an authorization change that may not happen.
+        manager.requestAlwaysAuthorization()
+        return manager.authorizationStatus
     }
 
     func captureCurrentLocation(timeout: TimeInterval) async throws -> CLLocation {

@@ -1,2 +1,3 @@
-"NSCameraUsageDescription" = "Se necesita acceso a la cámara para contar sentadillas y flexiones.";
-"NSHealthShareUsageDescription" = "Se necesita acceso a los pasos de Salud para convertir la actividad en minutos.";
+"NSCameraUsageDescription" = "La cámara te permite fotografiar una tarea completada para enseñársela a tu progenitor.";
+"NSLocationWhenInUseUsageDescription" = "El acceso a la ubicación permite que tu padre o madre vea este dispositivo en el mapa cuando lo solicite.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "El permiso de ubicación «Siempre» permite responder a las solicitudes de tu padre o madre en segundo plano. La ubicación solo se consulta cuando se solicita, sin seguimiento continuo.";

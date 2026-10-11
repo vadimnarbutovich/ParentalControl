@@ -23,7 +23,7 @@ struct BlockListView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         selectedAppsSection
-                        monitoringSliderSection
+                        manualBlockSliderSection
                         #if DEBUG && !HIDE_DEBUG_UI
                         debugSection
                         #endif
@@ -154,23 +154,28 @@ struct BlockListView: View {
         .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
     }
 
-    private var monitoringSliderSection: some View {
-        MonitoringSlideButton(
-            isPaused: appState.isMonitoringPaused,
-            onPause: {
-                if subscriptionService.isPro {
-                    AppAnalytics.report("blocklist_monitoring_slide", parameters: ["action": "pause"])
-                    appState.pauseMonitoring()
-                } else {
-                    AppAnalytics.report("blocklist_monitoring_slide", parameters: ["action": "pause_blocked"])
-                    showPaywall = true
-                }
-            },
-            onResume: {
-                AppAnalytics.report("blocklist_monitoring_slide", parameters: ["action": "resume"])
-                appState.resumeMonitoring()
+    private var manualBlockSliderSection: some View {
+        VStack(spacing: 10) {
+            ActionSlideButton(
+                isOn: appState.isFocusSessionActive,
+                inactiveTitle: "parent.dashboard.start_focus",
+                activeTitle: "parent.dashboard.stop_focus",
+                inactiveSymbol: "lock.fill",
+                activeSymbol: "lock.open.fill",
+                activeTint: AppTheme.neonRed,
+                isEnabled: appState.isParentModeActive && appState.pairingState?.isLinked == true
+                    && !appState.isLocalManualBlockSyncing,
+                onActivate: { appState.setLocalManualBlock(active: true) },
+                onDeactivate: { appState.setLocalManualBlock(active: false) }
+            )
+            if let notice = appState.localManualBlockNotice {
+                Text(notice)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        )
+        }
     }
 
     #if DEBUG && !HIDE_DEBUG_UI
@@ -265,143 +270,6 @@ struct BlockListView: View {
     }
     #endif
 
-}
-
-private struct MonitoringSlideButton: View {
-    let isPaused: Bool
-    let onPause: () -> Void
-    let onResume: () -> Void
-
-    @State private var dragTranslation: CGFloat = 0
-    @State private var isDragging = false
-    @State private var hintOffset: CGFloat = 0
-    @State private var hintLoopTask: Task<Void, Never>?
-
-    private let trackHeight: CGFloat = 68
-    private let knobSize: CGFloat = 56
-    private let horizontalPadding: CGFloat = 6
-    private let hintNudge: CGFloat = 10
-    @State private var dragBaseOffset: CGFloat?
-
-    var body: some View {
-        GeometryReader { proxy in
-            let maxOffset = max(0, proxy.size.width - knobSize - (horizontalPadding * 2))
-            let restingOffset = isPaused ? maxOffset : 0
-            let liveOffset = min(max(restingOffset + dragTranslation, 0), maxOffset)
-            let iconColor = isPaused ? AppTheme.neonGreen : AppTheme.neonBlue
-
-            // Капсула + круг: дуга левого края дорожки и окружность ручки имеют общий центр (геометрия «slide»).
-            // Одно число cornerRadius у прямоугольника 56×56 и полосы 68 не даёт совпадающих дуг.
-            ZStack(alignment: .leading) {
-                Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                    )
-                    .frame(width: proxy.size.width, height: trackHeight)
-
-                Text(isPaused ? "blocklist.resume.monitoring" : "blocklist.pause.monitoring")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.horizontal, knobSize + 18)
-
-                Circle()
-                    .fill(iconColor)
-                    .frame(width: knobSize, height: knobSize)
-                    .overlay(
-                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                            .font(.title3.weight(.heavy))
-                            .foregroundStyle(.white)
-                    )
-                    .shadow(color: iconColor.opacity(0.35), radius: 8, x: 0, y: 0)
-                    .offset(x: liveOffset + horizontalPadding + hintOffset)
-            }
-            .frame(width: proxy.size.width, height: trackHeight)
-            .contentShape(Rectangle())
-            .onAppear { restartHintLoopIfNeeded() }
-            .onDisappear { stopHintLoop(resetOffset: true) }
-            .onChange(of: isPaused) { _, paused in
-                if paused {
-                    stopHintLoop(resetOffset: true)
-                } else {
-                    restartHintLoopIfNeeded()
-                }
-            }
-            .onChange(of: isDragging) { _, dragging in
-                if dragging {
-                    stopHintLoop(resetOffset: true)
-                } else {
-                    restartHintLoopIfNeeded()
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 8)
-                    .onChanged { value in
-                        if !isDragging {
-                            isDragging = true
-                        }
-                        if dragBaseOffset == nil {
-                            dragBaseOffset = restingOffset
-                        }
-                        dragTranslation = value.translation.width
-                    }
-                    .onEnded { value in
-                        let baseOffset = dragBaseOffset ?? restingOffset
-                        let finalOffset = min(max(baseOffset + value.translation.width, 0), maxOffset)
-                        let shouldPause = !isPaused && finalOffset > maxOffset * 0.78
-                        let shouldResume = isPaused && finalOffset < maxOffset * 0.22
-
-                        // Reset visual drag first to avoid jump when state flips.
-                        dragTranslation = 0
-                        dragBaseOffset = nil
-
-                        if shouldPause {
-                            onPause()
-                        } else if shouldResume {
-                            onResume()
-                        }
-                        isDragging = false
-                    }
-            )
-        }
-        .frame(height: trackHeight)
-    }
-
-    private func restartHintLoopIfNeeded() {
-        stopHintLoop(resetOffset: false)
-        guard !isPaused, !isDragging else {
-            if hintOffset != 0 {
-                var t = Transaction()
-                t.disablesAnimations = true
-                withTransaction(t) { hintOffset = 0 }
-            }
-            return
-        }
-        hintLoopTask = Task { @MainActor in
-            while !Task.isCancelled {
-                withAnimation(.easeInOut(duration: 1.05)) {
-                    hintOffset = hintNudge
-                }
-                try? await Task.sleep(nanoseconds: 1_050_000_000)
-                guard !Task.isCancelled else { break }
-                withAnimation(.easeInOut(duration: 1.05)) {
-                    hintOffset = 0
-                }
-                try? await Task.sleep(nanoseconds: 1_050_000_000)
-            }
-        }
-    }
-
-    private func stopHintLoop(resetOffset: Bool) {
-        hintLoopTask?.cancel()
-        hintLoopTask = nil
-        guard resetOffset, hintOffset != 0 else { return }
-        var t = Transaction()
-        t.disablesAnimations = true
-        withTransaction(t) { hintOffset = 0 }
-    }
 }
 
 #if DEBUG && !HIDE_DEBUG_UI

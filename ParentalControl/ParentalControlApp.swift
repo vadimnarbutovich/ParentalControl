@@ -83,6 +83,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
     }
 
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        guard identifier == BackgroundUsageUploader.sessionIdentifier else {
+            completionHandler()
+            return
+        }
+        // Does not depend on a visible SwiftUI scene / AppState being attached.
+        BackgroundUsageUploader.shared.handleBackgroundEvents(completionHandler: completionHandler)
+    }
+
     private func handleChildRefreshTask(_ task: BGAppRefreshTask) {
         scheduleChildRefreshIfNeeded()
         refreshTask?.cancel()

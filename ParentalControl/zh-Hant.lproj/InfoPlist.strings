@@ -1,2 +1,3 @@
-"NSCameraUsageDescription" = "需要相機權限來計算深蹲和伏地挺身次數。";
-"NSHealthShareUsageDescription" = "需要步數資料來將活動轉換為使用時間。";
+"NSCameraUsageDescription" = "相機用於拍攝已完成的任務，以便向家長提交照片報告。";
+"NSLocationWhenInUseUsageDescription" = "允許取用位置後，家長可以在要求更新時查看此裝置在地圖上的位置。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "選擇「永遠」允許取用位置後，此裝置可以在背景回應家長的位置要求。僅在收到要求時取得位置，不會持續追蹤。";

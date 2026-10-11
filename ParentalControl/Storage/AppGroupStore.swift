@@ -144,6 +144,10 @@ final class AppGroupStore {
     }
 
     func loadBalance() -> MinuteBalance {
+        if DailyBudgetStore.shared.isEnabled {
+            guard let state = try? DailyBudgetStore.shared.current() else { return .empty }
+            return MinuteBalance(totalEarnedSeconds: state.budgetSeconds, totalSpentSeconds: state.usedSeconds)
+        }
         if let defaults = UserDefaults(suiteName: appGroupId) {
             defaults.synchronize()
             let earned = defaults.integer(forKey: StorageKey.deviceActivityMirrorEarnedSeconds)
@@ -160,6 +164,8 @@ final class AppGroupStore {
     }
 
     func saveBalance(_ balance: MinuteBalance) {
+        // The legacy writer must never overwrite the app/extension's atomic daily budget.
+        guard !DailyBudgetStore.shared.isEnabled else { return }
         if let defaults = UserDefaults(suiteName: appGroupId) {
             if let data = try? encoder.encode(balance) {
                 defaults.set(data, forKey: StorageKey.balance)

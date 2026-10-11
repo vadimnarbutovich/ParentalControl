@@ -23,6 +23,8 @@
 		D1AM00032F580001005689EB /* AppMetricaCore in Frameworks */ = {isa = PBXBuildFile; productRef = D1AM00022F580001005689EB /* AppMetricaCore */; };
 		D1CF8F672F9FF5900077ABB8 /* NotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D1E17B5C2F859BF000B76264 /* DeviceActivityReportExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */; };
+		DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +114,8 @@
 		D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DeviceActivityReportExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1A266222F5737A7005689EB /* ParentalControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ParentalControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/DailyBudget.swift; sourceTree = SOURCE_ROOT; };
+		DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/BackgroundUsageUploader.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -312,6 +316,7 @@
 				D1CF8F612F9FF5900077ABB8 /* NotificationServiceExtension */,
 				D10229452F586559001A8F2B /* Frameworks */,
 				D1A266232F5737A7005689EB /* Products */,
+				D1FE29673078CB3900519888 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -327,6 +332,15 @@
 				D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D1FE29673078CB3900519888 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */,
+				DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -625,6 +639,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
+				DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1143,23 +1159,19 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ParentalControl/Info.plist;
-				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "ParentalControl records your exercise activity to convert it into screen time.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Постоянный доступ к геолокации позволяет родителю проверять местоположение ребёнка даже когда приложение свёрнуто. Координаты определяются ТОЛЬКО когда родитель явно нажимает «Обновить местоположение» — мы НЕ отслеживаем вас постоянно и не расходуем батарею.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Доступ к местоположению нужен, чтобы родитель видел, где находится ребёнок, когда нажимает «Обновить местоположение».";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets you photograph completed tasks to share with your parent.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always location access lets this device respond to a parent’s location request in the background. Location is checked only on request, not continuously.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets your parent see this device on the map when they request an update.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification location";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1195,23 +1207,19 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ParentalControl/Info.plist;
-				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "mycompny.parentalcontrol.child-refresh";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is required to count squats and push-ups.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Health steps are required to convert activity into minutes.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "ParentalControl records your exercise activity to convert it into screen time.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Постоянный доступ к геолокации позволяет родителю проверять местоположение ребёнка даже когда приложение свёрнуто. Координаты определяются ТОЛЬКО когда родитель явно нажимает «Обновить местоположение» — мы НЕ отслеживаем вас постоянно и не расходуем батарею.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Доступ к местоположению нужен, чтобы родитель видел, где находится ребёнок, когда нажимает «Обновить местоположение».";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets you photograph completed tasks to share with your parent.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always location access lets this device respond to a parent’s location request in the background. Location is checked only on request, not continuously.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets your parent see this device on the map when they request an update.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification location";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";

@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "Reps for 1 minute";
 "settings.save.conversion" = "Save conversion rates";
 "settings.section.permissions" = "Permissions";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "Camera";
 "settings.permission.notifications" = "Notifications";
 "settings.permission.screentime" = "Screen Time";
@@ -181,7 +180,7 @@
 "ledger.parent.subtract_time" = "Parent took time";
 
 "shield.title" = "Earn minutes to continue";
-"shield.subtitle" = "Do steps or exercises to unlock this app.";
+"shield.subtitle" = "Open ParentalControl to check your remaining time and tasks.";
 "shield.ok" = "Got it";
 "shield.open.button" = "Open ParentalControl";
 "shield.open.notification.title" = "ParentalControl";
@@ -198,14 +197,11 @@
 "onboarding.cta.close" = "Let's start";
 "onboarding.welcome.title" = "Move more. Enjoy your apps.";
 "onboarding.welcome.subtitle" = "Earn minutes with steps and exercises — then spend them on the apps you love, guilt-free.";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "We count today's steps so you can trade them for app time. Your data stays on your device.";
 "onboarding.screentime.title" = "Screen Time";
 "onboarding.screentime.body" = "This is required to track the apps you choose and limit them when your minutes run out.";
 "onboarding.notifications.title" = "Notifications";
-"onboarding.notifications.body" = "We’ll notify you when you earn time or when your balance changes, so you always know where you stand.";
 "onboarding.location.title" = "Location";
-"onboarding.location.body" = "Lets the parent see this device on the map when they tap “Refresh location” — even when the app is in the background. Coordinates are only fetched on demand, no continuous tracking — that saves the battery. Pick “Always” for it to work reliably.";
+"onboarding.location.body" = "Allow location access so your parent can find this device on the map. Always access is needed for background requests. We check location only when your parent requests it, without continuous tracking.";
 "onboarding.conversion.title" = "Your pace";
 "onboarding.conversion.subtitle" = "How much activity earns 1 minute of app time.";
 "onboarding.apps.title" = "Apps to track";
@@ -217,17 +213,10 @@
 "onboarding.done.body" = "Now you can get stronger and healthier thanks to your favorite apps.";
 
 "permission.banner.allow" = "Allow";
-"permission.banner.health.title" = "Health access needed";
-"permission.banner.health.body" = "Allow step count in the Health app: Profile (or Sharing) → Apps → ParentalControl → Steps. If the sheet appears, turn Steps on.";
-"permission.banner.open_health" = "Open Health";
 "permission.banner.screentime.title" = "Screen Time needed";
 "permission.banner.screentime.body" = "Screen Time is required to monitor and limit the apps you choose.";
 "permission.banner.notifications.title" = "Notifications off";
-"permission.banner.notifications.body" = "Turn on alerts to see when you earn time and when your balance updates.";
 "permission.banner.open_settings" = "Open Settings";
-"permission.banner.liveactivity.title" = "Live Activities disabled";
-"permission.banner.liveactivity.body" = "Enable Live Activities for ParentalControl in Settings to show focus time on the Lock Screen and Dynamic Island.";
-"settings.permission.live_activity" = "Live Activities";
 
 "exercise.camera.denied.title" = "Camera access needed";
 "exercise.camera.denied.body" = "We use the camera to count your reps. Allow access in Settings, then return here.";
@@ -429,7 +418,7 @@
 "parent_mode.entry.locked" = "Input locked. Try again in %d sec.";
 
 "settings.pin.section" = "Parent PIN";
-"settings.pin.description" = "4-digit PIN to open parent mode on the child device. The child never sees the PIN itself.";
+"settings.pin.description" = "4-digit PIN to open parent mode on the child device.";
 "settings.pin.requires_link" = "Link a child device first to set a PIN.";
 "settings.pin.status.set" = "PIN is set";
 "settings.pin.status.unset" = "PIN is not set";
@@ -464,11 +453,12 @@
 
 "tasks.parent.subtitle" = "Create tasks — your child earns time for completing them";
 "tasks.parent.empty.subtitle" = "Create the first task for your child";
-"tasks.child.subtitle" = "Complete the task and send a photo report";
+"tasks.child.subtitle" = "Complete a task and earn a reward";
 "tasks.child.empty.subtitle" = "No tasks from your parent yet";
 "tasks.empty.title" = "No tasks yet";
 "tasks.create_new" = "Create task";
 "tasks.parent.approve" = "Approve";
+"tasks.parent.review_needed" = "Needs your review";
 "tasks.reward.minutes" = "%d min";
 
 "tasks.status.pending" = "New";
@@ -482,7 +472,13 @@
 "tasks.editor.delete" = "Delete task";
 "tasks.editor.delete.confirm.title" = "Delete task?";
 "tasks.editor.delete.confirm.delete" = "Delete";
-"tasks.editor.delete.confirm.message" = "The task will be deleted. This action cannot be undone.";
+"tasks.editor.delete.confirm.message" = "The task will be permanently removed. Time already earned will be kept.";
+"tasks.edit" = "Edit";
+"tasks.show_all" = "Show all";
+"tasks.show_less" = "Show less";
+"tasks.completed.retention" = "Deleted 24 hours after approval. Earned time is kept.";
+"tasks.change_failed" = "Couldn’t confirm the change";
+"tasks.change_failed.message" = "Check your connection and refresh the task list, then try again.";
 "tasks.editor.title.label" = "Title";
 "tasks.editor.title.placeholder" = "E.g. Wash the dishes";
 "tasks.editor.title.required" = "Enter a title";
@@ -501,3 +497,61 @@
 "tasks.detail.submitted_hint" = "Report sent. Waiting for your parent to approve.";
 "tasks.detail.approved_hint" = "Task approved, time credited.";
 "tasks.share.caption" = "Task report: %@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "Blocking is on";
+"budget.remaining.stacked" = "Remaining\ntoday";
+"budget.earned" = "Earned";
+"budget.granted" = "Added by parent";
+"budget.title" = "Daily limit";
+"budget.remaining" = "Remaining today";
+"budget.used" = "Used";
+"budget.extra" = "Extra today";
+"budget.not_set" = "Not set";
+"budget.every_day" = "Every day";
+"budget.pending" = "Waiting for confirmation from your child's device";
+"budget.explanation" = "How much time your child can spend in the selected apps each day.";
+"budget.hours" = "hr";
+"budget.minutes" = "min";
+"budget.rules" = "The limit renews every day. Unused time and extra minutes do not carry over. A limit of 0 means no regular daily time.";
+"budget.first_activation" = "This limit replaces the previous balance. Time already used today still counts; the old remaining balance is not added. History is kept.";
+"budget.child_update" = "Open the updated app on your child's device and wait for it to connect.";
+"budget.save" = "Save";
+"budget.save_error" = "Couldn't save. Check your connection and try again. If the setting has changed, reopen it first.";
+"budget.apply_error" = "Couldn't enable the daily limit. Check Screen Time access and reopen the app.";
+"budget.adjust_today" = "Change today's time";
+"budget.child_waiting" = "The parent hasn't set a daily limit yet.";
+"budget.total" = "Allocated today";
+"budget.onboarding_title" = "Screen time, managed";
+"budget.onboarding_body" = "Parents set a daily limit for selected apps. Children can get extra minutes for completed tasks once a parent approves them.";
+"settings.section.child_connection" = "Connection to child";
+"settings.section.parent_connection" = "Connection to parent";
+"settings.section.diagnostics" = "Diagnostics";
+"blocklist.manual_block.pending" = "Changed on this device. Waiting to sync with the parent’s device.";
+"blocklist.manual_block.changed" = "Settings changed on another device. The latest lock state has been applied. Please check the switch.";
+// Parent usage and task reports.
+"reports.scope" = "In selected apps";
+"reports.week" = "7 days";
+"reports.month" = "30 days";
+"reports.total" = "Total time used";
+"reports.average" = "Daily average";
+"reports.missing_hint" = "Tap a bar to select a day. Grey means no data; blue means usage was recorded.";
+"reports.coverage" = "Data for %d of %d days. The average includes only days with data.";
+"reports.partial_today" = "Today is still in progress.";
+"reports.rewards" = "Earned through tasks";
+"reports.tasks" = "Tasks approved";
+"reports.tasks_period" = "Tasks this period";
+"reports.updated" = "Figures updated: %@";
+"reports.legacy" = "Older data is preserved, but its exact day and breakdown are unavailable. Detailed statistics will appear after the child’s device syncs.";
+"reports.retention" = "Available history from the last 90 days.";
+"reports.no_data" = "No data for this day yet.";
+"reports.error" = "Couldn’t refresh statistics. Check your connection. Previously loaded data may be out of date.";
+"reports.retry" = "Try again";
+"reports.unlinked" = "Link your child’s device to see statistics.";
+"reports.previous" = "Previous period";
+"reports.next" = "Next period";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "Get notified when your child submits a task for review.";
+"permission.notifications.child.body" = "Get notified about changes to available time and app blocking.";
+"permission.camera.title" = "Camera unavailable";
+"permission.camera.body" = "Allow camera access in Settings to photograph a task. You can also choose an existing photo.";

@@ -135,7 +135,6 @@
 "settings.reps.per.minute" = "1分に必要な回数";
 "settings.save.conversion" = "換算率を保存";
 "settings.section.permissions" = "権限";
-"settings.permission.healthkit" = "HealthKit";
 "settings.permission.camera" = "カメラ";
 "settings.permission.notifications" = "通知";
 "settings.permission.screentime" = "スクリーンタイム";
@@ -178,7 +177,7 @@
 "ledger.focus.session" = "集中セッション %d分";
 
 "shield.title" = "続けるには分を稼ぎましょう";
-"shield.subtitle" = "歩いたり運動してこのアプリを解除しましょう。";
+"shield.subtitle" = "ParentalControlを開いて、残り時間とタスクを確認しましょう。";
 "shield.ok" = "了解";
 "shield.open.button" = "ParentalControlを開く";
 "shield.open.notification.title" = "ParentalControl";
@@ -195,12 +194,9 @@
 "onboarding.cta.close" = "始めよう";
 "onboarding.welcome.title" = "もっと動いて。アプリを楽しもう。";
 "onboarding.welcome.subtitle" = "歩数や運動で分を稼いで、好きなアプリに罪悪感なく使おう。";
-"onboarding.health.title" = "Apple Health";
-"onboarding.health.body" = "今日の歩数をカウントしてアプリ利用時間に変換します。データはデバイス上に保持されます。";
 "onboarding.screentime.title" = "スクリーンタイム";
 "onboarding.screentime.body" = "選択したアプリを監視し、分がなくなったらブロックするために必要です。";
 "onboarding.notifications.title" = "通知";
-"onboarding.notifications.body" = "時間を稼いだ時や残高が変わった時にお知らせします。";
 "onboarding.conversion.title" = "あなたのペース";
 "onboarding.conversion.subtitle" = "1分のアプリ利用時間を稼ぐのに必要な運動量。";
 "onboarding.apps.title" = "管理するアプリ";
@@ -212,17 +208,10 @@
 "onboarding.done.body" = "お気に入りのアプリのおかげで、もっと強く健康になれます。";
 
 "permission.banner.allow" = "許可";
-"permission.banner.health.title" = "ヘルスケアへのアクセスが必要";
-"permission.banner.health.body" = "ヘルスケアアプリで歩数のカウントを許可してください：プロフィル（または共有）→ アプリ → ParentalControl → 歩数。シートが表示されたら、歩数をオンにしてください。";
-"permission.banner.open_health" = "ヘルスケアを開く";
 "permission.banner.screentime.title" = "スクリーンタイムが必要";
 "permission.banner.screentime.body" = "選択したアプリの監視と制限にスクリーンタイムが必要です。";
 "permission.banner.notifications.title" = "通知がオフです";
-"permission.banner.notifications.body" = "時間獲得や残高変更の通知を受け取るには、通知をオンにしてください。";
 "permission.banner.open_settings" = "設定を開く";
-"permission.banner.liveactivity.title" = "ライブアクティビティが無効";
-"permission.banner.liveactivity.body" = "設定でParentalControlのライブアクティビティを有効にすると、ロック画面やDynamic Islandに集中時間が表示されます。";
-"settings.permission.live_activity" = "ライブアクティビティ";
 
 "exercise.camera.denied.title" = "カメラへのアクセスが必要";
 "exercise.camera.denied.body" = "回数をカウントするためにカメラを使用します。設定でアクセスを許可してから、ここに戻ってください。";
@@ -347,7 +336,7 @@
 "parent_mode.entry.locked" = "入力がロックされました。%d秒後に再試行してください。";
 
 "settings.pin.section" = "保護者PIN";
-"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。お子様にPINが表示されることはありません。";
+"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。";
 "settings.pin.requires_link" = "PINを設定するには、まずお子様の端末を連携してください。";
 "settings.pin.status.set" = "PINを設定済み";
 "settings.pin.status.unset" = "PINは未設定";
@@ -382,11 +371,12 @@
 
 "tasks.parent.subtitle" = "タスクを作成しましょう。完了するとお子さまが時間を獲得できます";
 "tasks.parent.empty.subtitle" = "お子さま向けの最初のタスクを作成しましょう";
-"tasks.child.subtitle" = "タスクを完了して写真レポートを送りましょう";
+"tasks.child.subtitle" = "タスクをクリアしてごほうびをもらおう";
 "tasks.child.empty.subtitle" = "保護者からのタスクはまだありません";
 "tasks.empty.title" = "タスクはまだありません";
 "tasks.create_new" = "タスクを作成";
 "tasks.parent.approve" = "承認";
+"tasks.parent.review_needed" = "確認が必要です";
 "tasks.reward.minutes" = "%d分";
 
 "tasks.status.pending" = "新規";
@@ -400,7 +390,13 @@
 "tasks.editor.delete" = "タスクを削除";
 "tasks.editor.delete.confirm.title" = "タスクを削除しますか？";
 "tasks.editor.delete.confirm.delete" = "削除";
-"tasks.editor.delete.confirm.message" = "タスクが削除されます。この操作は取り消せません。";
+"tasks.editor.delete.confirm.message" = "このタスクは削除され、元に戻せません。獲得済みの利用時間はそのまま残ります。";
+"tasks.edit" = "編集";
+"tasks.show_all" = "すべて表示";
+"tasks.show_less" = "閉じる";
+"tasks.completed.retention" = "承認から24時間後に削除されます。獲得した利用時間はそのまま残ります。";
+"tasks.change_failed" = "変更を確認できませんでした";
+"tasks.change_failed.message" = "通信状態を確認してタスク一覧を更新し、もう一度お試しください。";
 "tasks.editor.title.label" = "タイトル";
 "tasks.editor.title.placeholder" = "例：食器を洗う";
 "tasks.editor.title.required" = "タイトルを入力してください";
@@ -419,3 +415,63 @@
 "tasks.detail.submitted_hint" = "レポートを送信しました。保護者の承認を待っています。";
 "tasks.detail.approved_hint" = "タスクが承認され、時間が付与されました。";
 "tasks.share.caption" = "タスクのレポート：%@";
+
+/* Parent-managed daily screen time */
+"budget.manual_block_active" = "ブロック中";
+"budget.remaining.stacked" = "今日の\n残り時間";
+"budget.earned" = "獲得した時間";
+"budget.granted" = "保護者が追加した時間";
+"budget.title" = "1日の上限";
+"budget.remaining" = "今日の残り時間";
+"budget.used" = "使用済み";
+"budget.extra" = "今日の追加時間";
+"budget.not_set" = "未設定";
+"budget.every_day" = "毎日";
+"budget.pending" = "お子様の端末からの確認を待っています";
+"budget.explanation" = "お子様が選択したアプリを1日に使える時間です。";
+"budget.hours" = "時間";
+"budget.minutes" = "分";
+"budget.rules" = "上限は毎日リセットされます。残り時間や追加の時間は翌日に持ち越されません。0分にすると、通常の利用時間は付与されません。";
+"budget.first_activation" = "この上限が現在の残り時間に代わって適用されます。今日すでに使った時間は差し引かれ、以前の残り時間は加算されません。履歴は保持されます。";
+"budget.child_update" = "お子様の端末で更新後のアプリを開き、接続されるまでお待ちください。";
+"budget.save" = "保存";
+"budget.save_error" = "保存できませんでした。接続を確認してやり直してください。設定が変更された場合は、もう一度開いてください。";
+"budget.apply_error" = "上限を有効にできませんでした。スクリーンタイムへのアクセスを確認し、アプリを開き直してください。";
+"budget.adjust_today" = "今日の時間を変更";
+"budget.child_waiting" = "保護者が1日の上限をまだ設定していません。";
+"budget.total" = "今日の利用可能時間";
+"budget.onboarding_title" = "利用時間を見守る";
+"budget.onboarding_body" = "保護者が選択したアプリの1日の上限を設定します。お子様がタスクを終えると、保護者の承認後に追加の時間を受け取れます。";
+"settings.section.child_connection" = "お子様の端末との接続";
+"settings.section.parent_connection" = "保護者の端末との接続";
+"settings.section.diagnostics" = "診断";
+"blocklist.manual_block.pending" = "この端末に変更を適用しました。保護者の端末との同期を待っています。";
+"blocklist.manual_block.changed" = "別の端末で設定が変更されたため、最新のブロック状態を適用しました。切り替えボタンを確認してください。";
+"dashboard.blocking.schedule_active" = "スケジュールによりブロック中";
+// Parent usage and task reports.
+"reports.scope" = "選択したアプリの利用状況";
+"reports.week" = "7日間";
+"reports.month" = "30日間";
+"reports.total" = "合計利用時間";
+"reports.average" = "1日あたりの平均";
+"reports.missing_hint" = "棒をタップすると日付を選べます。灰色はデータなし、青色は利用時間の記録ありを示します。";
+"reports.coverage" = "%d日分のデータがあります（対象：%d日間）。平均はデータがある日のみで計算しています。";
+"reports.partial_today" = "本日のデータは現時点までのものです。";
+"reports.rewards" = "タスクで獲得した時間";
+"reports.tasks" = "承認済みのタスク";
+"reports.tasks_period" = "期間中のタスク";
+"reports.updated" = "データ更新：%@";
+"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の端末が同期されると、詳細な統計が表示されます。";
+"reports.retention" = "過去90日間の利用可能な履歴を表示します。";
+"reports.no_data" = "この日のデータはまだありません。";
+"reports.error" = "統計を更新できませんでした。接続を確認してください。読み込み済みのデータは最新ではない可能性があります。";
+"reports.retry" = "再試行";
+"reports.unlinked" = "お子様の端末を連携すると統計が表示されます。";
+"reports.previous" = "前の期間";
+"reports.next" = "次の期間";
+// Permissions requested for the selected device role.
+"permission.notifications.parent.body" = "お子様がタスクの確認を依頼したときに通知を受け取れます。";
+"permission.notifications.child.body" = "利用可能な時間やアプリのブロック状態が変わると通知します。";
+"permission.camera.title" = "カメラを利用できません";
+"permission.camera.body" = "タスクの写真を撮るには、設定でカメラへのアクセスを許可してください。既存の写真を選ぶこともできます。";
+"onboarding.location.body" = "保護者が地図でこの端末を見つけられるよう、位置情報へのアクセスを許可してください。バックグラウンドでの位置確認には「常に」の許可が必要です。保護者からのリクエスト時のみ取得し、常時追跡は行いません。";

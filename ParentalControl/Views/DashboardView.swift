@@ -25,13 +25,22 @@ struct DashboardView: View {
             ZStack {
                 AppBackgroundView()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if childNeedsPairing {
                             childPairingPromptCard
                         } else {
-                            balanceCard(daily: daily)
-                            earnMinutesSection(daily: daily)
-                            parentBlockingStatusCard
+                            DailyBudgetBalanceCard(
+                                availableSeconds: appState.balance.availableSeconds,
+                                usedSeconds: appState.dailyBudget?.usedSeconds ?? daily.spentSeconds,
+                                limitSeconds: appState.dailyBudget?.policy.limitSeconds,
+                                earnedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.earnedSeconds,
+                                grantedSeconds: appState.dailyBudget == nil ? 0 : appState.dailyBudget?.grantedSeconds,
+                                isManuallyBlocked: appState.isFocusSessionActive,
+                                blockSchedules: appState.blockSchedules)
+                            if appState.dailyBudget == nil { Text("budget.child_waiting").foregroundStyle(.secondary) }
+                            if let error = appState.budgetError { Text(error).foregroundStyle(AppTheme.neonOrange) }
+                            activeScheduleStatusCard
+                            ChildTasksSection()
 #if DEBUG && !HIDE_DEBUG_UI
                             testingCard
 #endif
@@ -40,6 +49,7 @@ struct DashboardView: View {
                     .padding()
                 }
                 .scrollIndicators(.hidden)
+                .refreshable { await appState.refreshChildTasksFromServer() }
                 .scrollDismissesKeyboard(.interactively)
             }
             .overlay {
@@ -312,55 +322,28 @@ struct DashboardView: View {
         }
     }
 
-    /// Карточка «Блокировка» на дашборде Ребёнка. Учитывает три состояния:
-    ///   1) Нет связи с Родителем — подсказка «не залинкован».
-    ///   2) Активно расписание — основной приоритет, потому что блокировка идёт **именно по нему**;
-    ///      вместо общей «Blocking is on» показываем имя расписания и до какого времени.
-    ///   3) Идёт принудительная focus-сессия (нажата «Заблокировать сейчас»).
-    ///   4) Иначе — обычное «выключено».
-    /// `TimelineView` нужен чтобы при пересечении границы окна расписания текст обновлялся
-    /// без ручных таймеров (раз в 30 секунд достаточно для UI-рендера статуса).
-    private var parentBlockingStatusCard: some View {
-        let linked = appState.pairingState?.isLinked == true
-
-        return TimelineView(.periodic(from: .now, by: 30)) { context in
-            VStack(alignment: .leading, spacing: 12) {
-                Label("dashboard.blocking.title", systemImage: "lock.shield")
-                    .font(.headline.bold())
-                    .foregroundStyle(.white.opacity(0.9))
-
-                if !linked {
-                    Text("dashboard.blocking.not_linked")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else if let activeSchedule = appState.activeBlockSchedules(at: context.date).first {
+    /// Manual blocking is shown on the balance ring. Keep a separate card only
+    /// for an active schedule, including its name and end time.
+    private var activeScheduleStatusCard: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            if appState.pairingState?.isLinked == true,
+               let activeSchedule = appState.activeBlockSchedules(at: context.date).first {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("dashboard.blocking.title", systemImage: "lock.shield")
+                        .font(.headline.bold())
+                        .foregroundStyle(.white.opacity(0.9))
                     blockingScheduleStatus(schedule: activeSchedule)
-                } else if appState.isFocusSessionActive {
-                    Text("dashboard.blocking.enabled")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(AppTheme.neonOrange)
-                    Text("dashboard.blocking.hint.enabled")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("dashboard.blocking.disabled")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(AppTheme.neonGreen)
-                    Text("dashboard.blocking.hint.disabled")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    Color.clear
+                        .glassCard(cornerRadius: 22)
+                        .padding(36)
+                        .drawingGroup()
+                        .padding(-36)
+                )
             }
-            .padding()
-            // Запекаем фон glass-card (контент только текстовый). Снижает покадровую перекомпозицию
-            // shadow-слоёв при скролле детского дашборда.
-            .background(
-                Color.clear
-                    .glassCard(cornerRadius: 22)
-                    .padding(36)
-                    .drawingGroup()
-                    .padding(-36)
-            )
         }
     }
 

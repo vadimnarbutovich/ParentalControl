@@ -22,9 +22,30 @@ struct MainTabView: View {
     @State private var isPinEntryPresented = false
 
     var body: some View {
+        // Reserve actual layout space above the tab container. An inset on
+        // TabView can be ignored by the NavigationStacks inside its tabs.
+        VStack(spacing: 0) {
+            if appState.deviceRole == .child, appState.isParentModeActive {
+                ParentModeExitBanner {
+                    AppAnalytics.report("parent_mode_exit_tap")
+                    appState.exitParentMode()
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .zIndex(1)
+            }
+            tabs
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .preferredColorScheme(.dark)
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             if appState.deviceRole == .parent {
-                ParentDashboardView()
+                ParentDashboardView(
+                    onOpenSchedules: { selectedTab = .schedule },
+                    onOpenTasks: { selectedTab = .tasks }
+                )
                     .tabItem {
                         Label("tab.dashboard", systemImage: "person.2.fill")
                     }
@@ -36,29 +57,30 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.schedule)
 
-                MapTabView()
-                    .tabItem {
-                        Label("tab.map", systemImage: "map.fill")
-                    }
-                    .tag(MainTab.map)
-
-                StatisticsView()
-                    .tabItem {
-                        Label("tab.statistics", systemImage: "chart.bar.fill")
-                    }
-                    .tag(MainTab.statistics)
-
                 TasksTabView()
                     .tabItem {
                         Label("tab.tasks", systemImage: "checklist")
                     }
                     .tag(MainTab.tasks)
 
+                MapTabView()
+                    .tabItem {
+                        Label("tab.map", systemImage: "map.fill")
+                    }
+                    .tag(MainTab.map)
+
+                // On iPhone, the remaining tabs appear in the native More menu.
                 SettingsView()
                     .tabItem {
                         Label("tab.settings", systemImage: "gearshape.fill")
                     }
                     .tag(MainTab.settings)
+
+                StatisticsView()
+                    .tabItem {
+                        Label("tab.statistics", systemImage: "chart.bar.fill")
+                    }
+                    .tag(MainTab.statistics)
             } else if appState.isParentModeActive {
                 // Parent-режим на ребёнке: показываем те же экраны, что и в прошлой версии
                 // «обычного» ребёнка (Главная / Блокировка / Настройки) — то есть полный набор
@@ -81,19 +103,13 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.settings)
             } else {
-                // Обычный режим ребёнка: «Главная», «Задания» и «Родитель». При тапе по «Родитель»
+                // Задания находятся на главной. При тапе по «Родитель»
                 // открывается PIN-cover; сам этот View пустой — пользователь его никогда не видит.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
                     }
                     .tag(MainTab.home)
-
-                ChildTasksView()
-                    .tabItem {
-                        Label("tab.tasks", systemImage: "checklist")
-                    }
-                    .tag(MainTab.tasks)
 
                 Color.clear
                     .tabItem {
@@ -131,17 +147,6 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $isPinEntryPresented) {
             ParentModeEntryView(isPresented: $isPinEntryPresented)
                 .environmentObject(appState)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            // Красная плашка «Выход из родительского режима» — видна только на ребёнке, когда
-            // режим открыт. Тап по плашке немедленно закрывает режим (см. `exitParentMode()`).
-            // safeAreaInset аккуратно подвинет содержимое всех экранов TabView вниз — без хаков.
-            if appState.deviceRole == .child, appState.isParentModeActive {
-                ParentModeExitBanner {
-                    AppAnalytics.report("parent_mode_exit_tap")
-                    appState.exitParentMode()
-                }
-            }
         }
     }
 }
@@ -426,8 +431,58 @@ private struct ParentModeEntryView: View {
 
 private struct ParentDashboardView: View {
     @EnvironmentObject private var appState: AppState
+    let onOpenSchedules: () -> Void
+    let onOpenTasks: () -> Void
     /// Презентация шторки `AdjustTimeSheet` (изменить доступное время ребёнку).
     @State private var isAdjustTimePresented = false
+    @State private var isDailyLimitPresented = false
+
+    private var tasksAwaitingReview: [ChildTask] {
+        appState.childTasks
+            .filter { $0.status == .submitted }
+            .sorted { ($0.submittedAt ?? $0.updatedAt) < ($1.submittedAt ?? $1.updatedAt) }
+    }
+
+    private func taskAwaitingReviewCard(_ task: ChildTask) -> some View {
+        Button(action: onOpenTasks) {
+            HStack(spacing: 12) {
+                Image(systemName: ChildTaskStatus.submitted.iconName)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppTheme.neonOrange)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(AppTheme.neonOrange.opacity(0.18)))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("tasks.parent.review_needed")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppTheme.neonOrange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(task.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                    Text(L10n.f("tasks.detail.reward", task.rewardMinutes))
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 20, glowColor: AppTheme.neonOrange)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+        .accessibilityHint(Text("tab.tasks"))
+    }
 
     private var isCommandButtonEnabled: Bool {
         appState.pairingState?.isLinked == true &&
@@ -569,24 +624,63 @@ private struct ParentDashboardView: View {
             ZStack {
                 AppBackgroundView()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         if appState.pairingState?.isLinked == true {
-                            // Верхняя «balance»-карточка: кольцо с доступным временем ребёнка
-                            // + Заработано/Потрачено за сегодня. Виден только при связанной паре.
-                            // Параметры (cap кольца 240, glassCard + drawingGroup-запекание) совпадают
-                            // с детским DashboardView и ScreenBlocker — карточка выглядит идентично.
-                            ChildBalanceCard(
-                                availableSeconds: appState.parentChildAvailableSeconds ?? 0,
-                                earnedSecondsToday: appState.parentChildEarnedSecondsToday ?? 0,
-                                spentSecondsToday: appState.parentChildSpentSecondsToday ?? 0,
-                                isLoadingAvailable: appState.parentChildAvailableSeconds == nil
+                            // The saved limit is local; the child's usage loads independently.
+                            DailyBudgetBalanceCard(
+                                availableSeconds: appState.parentBudgetStatus?.state?.availableSeconds ?? appState.parentChildAvailableSeconds ?? 0,
+                                usedSeconds: appState.parentBudgetStatus?.state?.usedSeconds ?? appState.parentChildSpentSecondsToday ?? 0,
+                                limitSeconds: appState.parentBudgetStatus?.policy?.limitSeconds,
+                                earnedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.earnedSeconds) : nil,
+                                grantedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.grantedSeconds) : nil,
+                                isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
+                                isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
+                                isManuallyBlocked: appState.isParentManualBlockConfirmed,
+                                blockSchedules: appState.blockSchedules,
+                                isAwaitingConfirmation: appState.parentBudgetStatus?.isPending == true
                             )
 
-                            // Карточка-индикатор «Сейчас активно расписание …» / «Следующее расписание».
+                            Button {
+                                appState.budgetError = nil
+                                isDailyLimitPresented = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("budget.title").font(.headline)
+                                        if let policy = appState.parentBudgetStatus?.policy {
+                                            Text(L10n.duration(seconds: policy.limitSeconds) + " · " + L10n.tr("budget.every_day"))
+                                        } else if appState.hasLoadedParentBudget {
+                                            Text("budget.not_set")
+                                        } else {
+                                            ProgressView().controlSize(.small).tint(.white)
+                                        }
+                                    }
+                                    Spacer(minLength: 8)
+                                    Image(systemName: "chevron.right")
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .background(Color.clear.glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                                .padding(36).drawingGroup().padding(-36))
+                            .disabled(appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget)
+                            if let error = appState.budgetError {
+                                Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
+                            }
+
+                            ForEach(tasksAwaitingReview) { task in
+                                taskAwaitingReviewCard(task)
+                            }
+
+                            // Карточка «Заблокировано по расписанию» / «Следующее расписание».
                             // Видна только если у Родителя в локальном кэше есть включённые расписания.
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
                             // поэтому не нужно дёргать AppState на каждом тике.
-                            ActiveBlockScheduleCard(appState: appState)
+                            ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
                         } else {
                             // Пары ещё нет — это важная для пользователя информация, поэтому она
                             // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.
@@ -610,26 +704,27 @@ private struct ParentDashboardView: View {
                         .fill(.white.opacity(0.12))
                         .frame(height: 1)
 
-                    Button("parent.dashboard.adjust_time") {
+                    Button("budget.adjust_today") {
                         isAdjustTimePresented = true
                     }
                     .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                    .disabled(!isCommandButtonEnabled)
+                    .disabled(!isCommandButtonEnabled || appState.isBudgetSaving || appState.parentBudgetStatus?.policy == nil)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                    Button(commandButtonTitleKey) {
-                        let shouldStartFocus = !(appState.parentResolvedFocusActive ?? false)
-                        Task { await appState.sendParentFocusCommand(start: shouldStartFocus) }
-                    }
-                    .buttonStyle(
-                        NeonPrimaryButtonStyle(
-                            tint: shouldShowDisabledVisualState
-                                ? .gray
-                                : ((appState.parentResolvedFocusActive ?? false) ? AppTheme.neonGreen : AppTheme.neonBlue)
-                        )
+                    ActionSlideButton(
+                        isOn: appState.parentManualBlockControlState,
+                        inactiveTitle: "parent.dashboard.start_focus",
+                        activeTitle: "parent.dashboard.stop_focus",
+                        inactiveSymbol: "lock.fill",
+                        activeSymbol: "lock.open.fill",
+                        activeTint: appState.isParentManualBlockConfirmed ? AppTheme.neonRed : AppTheme.neonBlue,
+                        isEnabled: isCommandButtonEnabled,
+                        overrideTitle: commandButtonTitleKey,
+                        onActivate: { appState.sendParentFocusCommand(start: true) },
+                        onDeactivate: { appState.sendParentFocusCommand(start: false) }
                     )
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
                     .disabled(!isCommandButtonEnabled)
@@ -645,7 +740,12 @@ private struct ParentDashboardView: View {
                 // (без перехода на таб «Расписание») и локальный кэш ещё не успел синкнуться.
                 if appState.deviceRole == .parent {
                     await appState.refreshParentBlockSchedulesIfNeeded()
+                    await appState.refreshChildTasksFromServer()
                 }
+            }
+            .sheet(isPresented: $isDailyLimitPresented) {
+                DailyLimitSheet(seconds: appState.parentBudgetStatus?.policy?.limitSeconds)
+                    .environmentObject(appState)
             }
             .sheet(isPresented: $isAdjustTimePresented) {
                 AdjustTimeSheet { deltaMinutes in
@@ -777,12 +877,12 @@ private struct AdjustTimeSheet: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("parent.dashboard.adjust_time.title")
+            Text("budget.adjust_today")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white)
                 .padding(.top, 16)
 
-            Picker("parent.dashboard.adjust_time.title", selection: $selectedDelta) {
+            Picker("budget.adjust_today", selection: $selectedDelta) {
                 ForEach(Self.allowedDeltas, id: \.self) { delta in
                     Text(label(for: delta))
                         .foregroundStyle(.white)
