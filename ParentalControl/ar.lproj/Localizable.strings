@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "استخدام التطبيقات والمواقع المحددة على هذا الجهاز.";
+"statistics.local.previous_day" = "اليوم السابق";
+"statistics.local.next_day" = "اليوم التالي";
+"statistics.local.refresh" = "تحديث التقرير";
+"statistics.local.report_hint" = "قد يتأخر تحديث تقرير iOS. الوقت المستخدم أدناه هو الوقت المخصوم من المدة اليومية المسموح بها.";
+
 "tab.dashboard" = "الرئيسية";
 "tab.statistics" = "الإحصائيات";
 "tab.block" = "قائمة الحظر";

@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "Ausgewählte Apps und Websites auf diesem Gerät.";
+"statistics.local.previous_day" = "Vorheriger Tag";
+"statistics.local.next_day" = "Nächster Tag";
+"statistics.local.refresh" = "Bericht aktualisieren";
+"statistics.local.report_hint" = "Der iOS-Bericht kann verzögert aktualisiert werden. „Verbraucht“ unten zeigt die vom Tagesbudget abgezogene Zeit.";
+
 "tab.dashboard" = "Übersicht";
 "tab.statistics" = "Statistik";
 "tab.block" = "Sperrliste";

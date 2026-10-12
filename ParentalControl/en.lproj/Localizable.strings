@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "Selected apps and websites on this device.";
+"statistics.local.previous_day" = "Previous day";
+"statistics.local.next_day" = "Next day";
+"statistics.local.refresh" = "Refresh report";
+"statistics.local.report_hint" = "The iOS report may take time to update. “Used” below shows time deducted from the daily allowance.";
+
 "tab.dashboard" = "Dashboard";
 "tab.statistics" = "Statistics";
 "tab.block" = "Block List";

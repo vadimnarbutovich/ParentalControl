@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "此裝置上所選 App 和網站的使用情況。";
+"statistics.local.previous_day" = "前一天";
+"statistics.local.next_day" = "後一天";
+"statistics.local.refresh" = "重新整理報告";
+"statistics.local.report_hint" = "iOS 報告可能延遲更新。下方的已用時間是從每日可用時間中扣除的時長。";
+
 "tab.dashboard" = "首頁";
 "tab.statistics" = "統計";
 "tab.block" = "封鎖列表";

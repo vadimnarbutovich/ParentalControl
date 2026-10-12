@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "Выбранные приложения и сайты на этом устройстве.";
+"statistics.local.previous_day" = "Предыдущий день";
+"statistics.local.next_day" = "Следующий день";
+"statistics.local.refresh" = "Обновить отчёт";
+"statistics.local.report_hint" = "Отчёт iOS может обновляться с задержкой. «Использовано» ниже — расход дневного лимита.";
+
 "tab.dashboard" = "Главная";
 "tab.statistics" = "Статистика";
 "tab.block" = "Блокировка";

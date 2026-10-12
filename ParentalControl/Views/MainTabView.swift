@@ -69,22 +69,14 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.map)
 
-                // On iPhone, the remaining tabs appear in the native More menu.
                 SettingsView()
                     .tabItem {
                         Label("tab.settings", systemImage: "gearshape.fill")
                     }
                     .tag(MainTab.settings)
 
-                StatisticsView()
-                    .tabItem {
-                        Label("tab.statistics", systemImage: "chart.bar.fill")
-                    }
-                    .tag(MainTab.statistics)
             } else if appState.isParentModeActive {
-                // Parent-режим на ребёнке: показываем те же экраны, что и в прошлой версии
-                // «обычного» ребёнка (Главная / Блокировка / Настройки) — то есть полный набор
-                // управления, доступный родителю физически на устройстве ребёнка.
+                // Local usage reports stay on the child's device, behind the parent PIN.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
@@ -96,6 +88,12 @@ struct MainTabView: View {
                         Label("tab.block", systemImage: "checklist")
                     }
                     .tag(MainTab.blocklist)
+
+                StatisticsView()
+                    .tabItem {
+                        Label("tab.statistics", systemImage: "chart.bar.fill")
+                    }
+                    .tag(MainTab.statistics)
 
                 SettingsView()
                     .tabItem {

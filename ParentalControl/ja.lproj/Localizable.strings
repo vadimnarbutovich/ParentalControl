@@ -1,3 +1,10 @@
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.scope" = "このデバイスで選択したアプリとWebサイトの利用状況。";
+"statistics.local.previous_day" = "前の日";
+"statistics.local.next_day" = "次の日";
+"statistics.local.refresh" = "レポートを更新";
+"statistics.local.report_hint" = "iOSのレポートは更新に時間がかかることがあります。下の使用時間は、1日の利用可能時間から差し引かれた時間です。";
+
 "tab.dashboard" = "ホーム";
 "tab.statistics" = "統計";
 "tab.block" = "ブロックリスト";

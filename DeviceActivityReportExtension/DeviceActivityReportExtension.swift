@@ -5,10 +5,9 @@ import FamilyControls
 import ManagedSettings
 import SwiftUI
 
-private let appGroupId = "group.mycompny.parentalcontrol"
-
 @main
 struct ParentalControlDeviceActivityReportExtension: DeviceActivityReportExtension {
+    @available(iOS 26.2, *)
     @AppExtensionPoint.Bind
     var extensionPoint: AppExtensionPoint {
         AppExtensionPoint.Identifier("com.apple.deviceactivityui.report-extension")
@@ -30,9 +29,10 @@ private struct ParentalControlDailyActivityReport<Content: View>: DeviceActivity
     func makeConfiguration(
         representing data: DeviceActivityResults<DeviceActivityData>
     ) async -> ParentalControlDailyActivityConfiguration {
-        let trackedTokens = loadTrackedApplicationTokens()
-        let shouldFilterByTrackedTokens = !trackedTokens.isEmpty
-        var usageByApp: [ParentalControlAppUsageKey: Int] = [:]
+        // The host passes the complete selection in DeviceActivityFilter. Filtering
+        // again by application tokens would discard apps from selected categories.
+        var usageByApp: [ParentalControlAppUsageKey: TimeInterval] = [:]
+        var usageByWebsite: [WebDomain: TimeInterval] = [:]
 
         for await activityData in data {
             for await segment in activityData.activitySegments {
@@ -40,18 +40,17 @@ private struct ParentalControlDailyActivityReport<Content: View>: DeviceActivity
                     for await app in category.applications {
                         let appName = app.application.localizedDisplayName ?? tr("report.app_usage.other")
                         let token = app.application.token
-                        if shouldFilterByTrackedTokens {
-                            guard let token, trackedTokens.contains(token) else {
-                                continue
-                            }
-                        }
-                        let seconds = Int(app.totalActivityDuration.rounded())
+                        let seconds = app.totalActivityDuration
                         guard seconds > 0 else { continue }
                         let key = ParentalControlAppUsageKey(
                             name: appName,
                             token: token
                         )
                         usageByApp[key, default: 0] += seconds
+                    }
+                    for await website in category.webDomains {
+                        guard website.totalActivityDuration > 0 else { continue }
+                        usageByWebsite[website.webDomain, default: 0] += website.totalActivityDuration
                     }
                 }
             }
@@ -62,7 +61,7 @@ private struct ParentalControlDailyActivityReport<Content: View>: DeviceActivity
                 ParentalControlAppUsageItem(
                     name: $0.key.name,
                     token: $0.key.token,
-                    durationSeconds: $0.value
+                    durationSeconds: Int($0.value.rounded())
                 )
             }
             .sorted { lhs, rhs in
@@ -73,8 +72,10 @@ private struct ParentalControlDailyActivityReport<Content: View>: DeviceActivity
             }
 
         return ParentalControlDailyActivityConfiguration(
-            totalDurationSeconds: items.reduce(0) { $0 + $1.durationSeconds },
-            items: items
+            items: items,
+            websites: usageByWebsite.map {
+                ParentalControlWebsiteUsageItem(domain: $0.key, durationSeconds: Int($0.value.rounded()))
+            }.sorted { $0.durationSeconds > $1.durationSeconds }
         )
     }
 
@@ -90,11 +91,7 @@ private struct ParentalControlDailyActivityReportView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(formatDuration(configuration.totalDurationSeconds))
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.primary)
-
-                if configuration.items.isEmpty {
+                if configuration.items.isEmpty && configuration.websites.isEmpty {
                     Text(tr("report.app_usage.empty"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -102,7 +99,7 @@ private struct ParentalControlDailyActivityReportView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         LazyVStack(alignment: .leading, spacing: 10) {
-                            ForEach(configuration.items.prefix(30)) { item in
+                            ForEach(configuration.items) { item in
                                 HStack(spacing: 10) {
                                     if let token = item.token {
                                         appIdentityView(token: token, name: item.name)
@@ -117,6 +114,26 @@ private struct ParentalControlDailyActivityReportView: View {
                                         .monospacedDigit()
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if !configuration.websites.isEmpty {
+                                Text(tr("report.websites.title"))
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.top, configuration.items.isEmpty ? 0 : 8)
+                                ForEach(configuration.websites) { item in
+                                    HStack(spacing: 10) {
+                                        if let token = item.domain.token {
+                                            Label(token).labelStyle(.titleOnly)
+                                                .font(.subheadline).lineLimit(1)
+                                        } else {
+                                            Text(item.domain.domain ?? tr("report.app_usage.other"))
+                                                .font(.subheadline).lineLimit(1)
+                                        }
+                                        Spacer()
+                                        Text(formatDuration(item.durationSeconds))
+                                            .font(.subheadline.weight(.semibold)).monospacedDigit()
+                                    }
+                                }
                             }
                         }
                     }
@@ -133,7 +150,7 @@ private struct ParentalControlDailyActivityReportView: View {
 
     private func formatDuration(_ seconds: Int) -> String {
         let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = seconds >= 3600 ? [.hour, .minute] : [.minute]
+        formatter.allowedUnits = seconds >= 3600 ? [.hour, .minute] : (seconds >= 60 ? [.minute] : [.second])
         formatter.unitsStyle = .abbreviated
         formatter.zeroFormattingBehavior = [.pad]
         return formatter.string(from: TimeInterval(seconds)) ?? "0m"
@@ -157,8 +174,14 @@ private struct ParentalControlDailyActivityReportView: View {
 }
 
 private struct ParentalControlDailyActivityConfiguration {
-    let totalDurationSeconds: Int
     let items: [ParentalControlAppUsageItem]
+    let websites: [ParentalControlWebsiteUsageItem]
+}
+
+private struct ParentalControlWebsiteUsageItem: Identifiable {
+    var id: WebDomain { domain }
+    let domain: WebDomain
+    let durationSeconds: Int
 }
 
 private struct ParentalControlAppUsageItem: Identifiable {
@@ -179,14 +202,4 @@ private extension DeviceActivityReport.Context {
 
 private func tr(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
-}
-
-private func loadTrackedApplicationTokens() -> Set<ApplicationToken> {
-    let selectionKey = "parentalcontrol.familySelection"
-    guard let defaults = UserDefaults(suiteName: appGroupId),
-          let data = defaults.data(forKey: selectionKey),
-          let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) else {
-        return []
-    }
-    return selection.applicationTokens
 }

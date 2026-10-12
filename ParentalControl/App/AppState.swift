@@ -117,7 +117,7 @@ final class AppState: ObservableObject {
     /// Do not show permission reminders before the system statuses have loaded.
     @Published private(set) var permissionStatusesReady = false
     /// `true`, когда ребёнок успешно ввёл родительский PIN и сейчас доступны «скрытые» табы
-    /// `Блокировка` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
+    /// `Блокировка` / `Статистика` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
     /// разрыве пейринга и тапе по красной плашке «Выход».
     @Published private(set) var isParentModeActive = false
     /// `true`, если в Keychain есть кэшированный родительский PIN (хэш+соль). У ребёнка обновляется
@@ -182,7 +182,6 @@ final class AppState: ObservableObject {
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
-    private var statisticsCache: [String: (loadedAt: Date, report: ParentStatisticsReport)] = [:]
     private let locationService: LocationProviding
     /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
     /// Используется обеими ролями: parent — для `setParentPinFromUI/clearParentPinFromUI`,
@@ -666,11 +665,6 @@ final class AppState: ObservableObject {
               status.policy == nil || status.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
         guard (status.policy?.revision ?? 0) >= (parentBudgetStatus?.policy?.revision ?? 0) else { return }
         parentBudgetStatus = status
-        for key in Array(statisticsCache.keys) where key.hasPrefix(family.uuidString + ":") {
-            if let cached = statisticsCache[key] {
-                statisticsCache[key] = (cached.loadedAt, cached.report.merging(status))
-            }
-        }
         hasLoadedParentBudget = true
         let cached = DailyBudgetStatus(policy: status.policy, childReady: status.childReady,
             appliedRevision: status.appliedRevision, state: nil)
@@ -2286,33 +2280,6 @@ final class AppState: ObservableObject {
         dailyStats(for: Date(), steps: todaySteps)
     }
 
-    /// One bounded range request, only when the statistics screen is visible.
-    /// Never replace missing remote observations with this device's local counters.
-    func cachedParentStatistics(days: Int, endDay: String?) -> ParentStatisticsReport? {
-        guard deviceRole == .parent, pairingState?.isLinked == true,
-              let family = pairingState?.familyID else { return nil }
-        let key = family.uuidString + ":" + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
-        return statisticsCache[key]?.report
-    }
-
-    func parentStatistics(days: Int, endDay: String?, force: Bool = false) async throws -> ParentStatisticsReport {
-        guard deviceRole == .parent, pairingState?.isLinked == true,
-              let family = pairingState?.familyID else { throw CancellationError() }
-        let prefix = family.uuidString + ":"
-        statisticsCache = statisticsCache.filter { $0.key.hasPrefix(prefix) }
-        let key = prefix + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
-        if !force, let cached = statisticsCache[key], Date().timeIntervalSince(cached.loadedAt) < 60 {
-            return cached.report
-        }
-        let remote = try await remoteSyncService.fetchParentStatistics(days: days, endDay: endDay)
-        try Task.checkCancellation()
-        guard deviceRole == .parent, pairingState?.familyID == family else { throw CancellationError() }
-        let report = remote.merging(parentBudgetStatus)
-        if statisticsCache.count >= 6 { statisticsCache.removeAll() }
-        statisticsCache[key] = (Date(), report)
-        return report
-    }
-
     func dailyStats(for date: Date, steps: Int) -> DailyStats {
         let calendar = Calendar.current
         if let saved = try? DailyBudgetStore.shared.history(for: date) {
@@ -3530,16 +3497,6 @@ private final class ParentalRemoteSyncService {
     func parentPoll() async throws -> ParentPollDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "parent_poll", payload: Payload(installID: installID))
-    }
-
-    func fetchParentStatistics(days: Int, endDay: String?) async throws -> ParentStatisticsReport {
-        struct Payload: Encodable {
-            let installID: String
-            let days: Int
-            let endDay: String?
-        }
-        return try await call(action: "fetch_parent_statistics",
-                              payload: Payload(installID: installID, days: days, endDay: endDay))
     }
 
     /// Child → backend: один вызов вместо `upsert_child_day_stats` + `update_child_runtime`
