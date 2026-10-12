@@ -360,36 +360,16 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can poll", 403);
   const includeParentSettings = payload.includeParentSettings === true;
 
-  // desired focus state (зеркало fetchDesiredFocusState)
-  const { data: desiredRow, error: desiredErr } = await supabase
-    .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
-    .eq("family_id", device.family_id)
-    .maybeSingle();
-  if (desiredErr) return errorResponse(desiredErr.message, 400);
-
-  // pending commands (зеркало fetchPendingCommands)
   await expireStalePendingCommands(device.family_id);
-  const nowIso = new Date().toISOString();
-  const { data: pending, error: pendingErr } = await supabase
-    .from("focus_commands")
-    .select("id, family_id, command_type, duration_seconds, status, created_at, updated_at")
-    .eq("target_device_id", deviceId)
-    .in("status", ["queued", "sent", "delivered"])
-    .gt("expires_at", nowIso)
-    .order("created_at", { ascending: true })
-    .limit(20);
-  if (pendingErr) return errorResponse(pendingErr.message, 400);
+  const { data, error } = await supabase.rpc("pc_poll_snapshot", {
+    p_device: deviceId, p_role: "child", p_include_parent_settings: includeParentSettings,
+  });
+  if (error) return errorResponse(error.message, 400);
+  const { desiredRow, pendingRows: pending, fam, budget } = data;
 
   let parentPin: { hashBase64: string; saltBase64: string; updatedAtISO: string } | null = null;
   let parentPro: { isPro: boolean; updatedAtISO: string } | null = null;
   if (includeParentSettings) {
-    const { data: fam, error: famErr } = await supabase
-      .from("families")
-      .select("parent_pin_hash, parent_pin_salt, parent_pin_updated_at, parent_is_pro, parent_is_pro_updated_at")
-      .eq("id", device.family_id)
-      .maybeSingle();
-    if (famErr) return errorResponse(famErr.message, 400);
     if (fam && fam.parent_pin_hash && fam.parent_pin_salt) {
       parentPin = {
         hashBase64: fam.parent_pin_hash,
@@ -403,7 +383,6 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
     };
   }
 
-  const budget = await dailyBudgetSnapshot(deviceId);
   return okResponse({
     budget,
     desired: {
@@ -412,7 +391,7 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
       revision: desiredRow?.revision ?? 0,
     },
-    pendingCommands: (pending ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)),
+    pendingCommands: (pending ?? []).map((row: FocusCommandRow) => mapCommandForClient(row)),
     parentPin,
     parentPro,
   });
@@ -426,77 +405,28 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   const familyID = parent.family_id;
 
   await expireStalePendingCommands(familyID);
-  const now = Date.now();
-  const nowIso = new Date(now).toISOString();
-
-  const { data: childData } = await supabase
-    .from("devices")
-    .select("id")
-    .eq("family_id", familyID)
-    .eq("role", "child")
-    .maybeSingle();
-
-  const { data: desiredRow, error: desiredErr } = await supabase
-    .from("family_focus_desired_state")
-    .select("should_focus_active, desired_duration_seconds, updated_at, revision")
-    .eq("family_id", familyID)
-    .maybeSingle();
-  if (desiredErr) return errorResponse(desiredErr.message, 400);
-
-  // runtime + balance из одной строки child_runtime_state.
-  const { data: runtimeRow, error: runtimeErr } = await supabase
-    .from("child_runtime_state")
-    .select("is_focus_active, focus_ends_at, updated_at, available_seconds")
-    .eq("family_id", familyID)
-    .maybeSingle();
-  if (runtimeErr) return errorResponse(runtimeErr.message, 400);
-
-  // dailyStats (latest-by-day_start — как в fetchParentSnapshot v21).
+  const { data, error } = await supabase.rpc("pc_poll_snapshot", {
+    p_device: parent.id, p_role: "parent", p_include_parent_settings: false,
+  });
+  if (error) return errorResponse(error.message, 400);
+  const { desiredRow, runtimeRow, statsRow, pendingRows, recentFailures, budget } = data;
+  const now = Date.parse(data.nowISO);
   let dailyStats: Record<string, unknown> | null = null;
-  if (childData?.id) {
-    const { data: statsRow } = await supabase
-      .from("daily_stats_snapshots")
-      .select("day_start, earned_seconds, spent_seconds")
-      .eq("child_device_id", childData.id)
-      .order("day_start", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (statsRow) {
-      dailyStats = {
-        dayStartISO: statsRow.day_start,
-        steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
-        earnedSeconds: statsRow.earned_seconds ?? 0,
-        spentSeconds: statsRow.spent_seconds ?? 0,
-        pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
-        squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
-        focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
-      };
-    }
+  if (statsRow) {
+    dailyStats = {
+      dayStartISO: statsRow.day_start,
+      steps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+      earnedSeconds: statsRow.earned_seconds ?? 0,
+      spentSeconds: statsRow.spent_seconds ?? 0,
+      pushUps: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+      squats: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+      focusSessionTotalSeconds: 0, // Legacy DTO compatibility; fitness data is no longer stored.
+    };
   }
-
-  // link health (зеркало fetchLinkHealth)
-  const { data: pendingRows, error: pendingErr } = await supabase
-    .from("focus_commands")
-    .select("id, created_at")
-    .eq("family_id", familyID)
-    .in("status", ["queued", "sent", "delivered"])
-    .gt("expires_at", nowIso)
-    .order("created_at", { ascending: true })
-    .limit(50);
-  if (pendingErr) return errorResponse(pendingErr.message, 400);
-
-  const { count: recentFailures, error: failErr } = await supabase
-    .from("focus_commands")
-    .select("id", { count: "exact", head: true })
-    .eq("family_id", familyID)
-    .eq("status", "failed")
-    .gte("updated_at", new Date(now - 30 * 60 * 1000).toISOString());
-  if (failErr) return errorResponse(failErr.message, 400);
 
   const oldestPendingAt = pendingRows?.[0]?.created_at ? Date.parse(pendingRows[0].created_at) : null;
   const childLastSeenAt = runtimeRow?.updated_at ? Date.parse(runtimeRow.updated_at) : null;
 
-  const budget = await dailyBudgetSnapshot(parent.id);
   return okResponse({
     budget,
     desired: {
