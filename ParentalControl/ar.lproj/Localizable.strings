@@ -1,4 +1,6 @@
 /* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "ملخص اليوم";
+"statistics.local.budget_hint" = "الوقت المستخدم هو الوقت المخصوم من المدة اليومية المسموح بها. قد يتأخر تحديث تقرير استخدام التطبيقات في iOS.";
 "statistics.local.scope" = "استخدام التطبيقات والمواقع المحددة على هذا الجهاز.";
 "statistics.local.previous_day" = "اليوم السابق";
 "statistics.local.next_day" = "اليوم التالي";
@@ -75,6 +77,7 @@
 "statistics.squats" = "تمارين القرفصاء";
 "statistics.focus.total" = "تركيز";
 "statistics.app_usage.title" = "استخدام التطبيقات";
+"statistics.app_usage.loading_hint" = "جارٍ تحميل البيانات. قد يستغرق ذلك بعض الوقت.";
 "statistics.app_usage.empty_selection" = "أضف تطبيقات في قائمة الحظر أولاً لعرض إحصائيات الاستخدام.";
 "statistics.app_usage.unavailable" = "تقرير استخدام التطبيقات متاح فقط على إصدارات iOS المدعومة.";
 "statistics.app_usage.no_data" = "لا توجد بيانات استخدام لليوم المحدد.";

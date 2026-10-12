@@ -88,64 +88,101 @@ private struct ParentalControlDailyActivityReport<Content: View>: DeviceActivity
 private struct ParentalControlDailyActivityReportView: View {
     let configuration: ParentalControlDailyActivityConfiguration
 
+    @State private var hasMoreBelow = false
+
+    // Keep identical to AppTheme.usageReportBackground in the app target.
+    private let reportBackground = Color(red: 0.05, green: 0.08, blue: 0.17)
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                if configuration.items.isEmpty && configuration.websites.isEmpty {
-                    Text(tr("report.app_usage.empty"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
-                } else {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            ForEach(configuration.items) { item in
+            if configuration.items.isEmpty && configuration.websites.isEmpty {
+                Text(tr("report.app_usage.empty"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+            } else {
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(alignment: .leading, spacing: 10) {
+                        ForEach(configuration.items) { item in
+                            HStack(spacing: 10) {
+                                if let token = item.token {
+                                    appIdentityView(token: token, name: item.name)
+                                } else {
+                                    Text(item.name)
+                                        .font(.subheadline)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                Text(formatDuration(item.durationSeconds))
+                                    .font(.subheadline.weight(.semibold))
+                                    .monospacedDigit()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if !configuration.websites.isEmpty {
+                            Text(tr("report.websites.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, configuration.items.isEmpty ? 0 : 8)
+                            ForEach(configuration.websites) { item in
                                 HStack(spacing: 10) {
-                                    if let token = item.token {
-                                        appIdentityView(token: token, name: item.name)
+                                    if let token = item.domain.token {
+                                        Label(token).labelStyle(.titleOnly)
+                                            .font(.subheadline).lineLimit(1)
                                     } else {
-                                        Text(item.name)
-                                            .font(.subheadline)
-                                            .lineLimit(1)
+                                        Text(item.domain.domain ?? tr("report.app_usage.other"))
+                                            .font(.subheadline).lineLimit(1)
                                     }
                                     Spacer()
                                     Text(formatDuration(item.durationSeconds))
-                                        .font(.subheadline.weight(.semibold))
-                                        .monospacedDigit()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            if !configuration.websites.isEmpty {
-                                Text(tr("report.websites.title"))
-                                    .font(.subheadline.weight(.semibold))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.top, configuration.items.isEmpty ? 0 : 8)
-                                ForEach(configuration.websites) { item in
-                                    HStack(spacing: 10) {
-                                        if let token = item.domain.token {
-                                            Label(token).labelStyle(.titleOnly)
-                                                .font(.subheadline).lineLimit(1)
-                                        } else {
-                                            Text(item.domain.domain ?? tr("report.app_usage.other"))
-                                                .font(.subheadline).lineLimit(1)
-                                        }
-                                        Spacer()
-                                        Text(formatDuration(item.durationSeconds))
-                                            .font(.subheadline.weight(.semibold)).monospacedDigit()
-                                    }
+                                        .font(.subheadline.weight(.semibold)).monospacedDigit()
                                 }
                             }
                         }
                     }
-                    .frame(maxHeight: 300)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    // Render a continuous surface INSIDE the scroll content.
+                    // contentShape alone did not make transparent gaps respond
+                    // to drags in the remote DeviceActivityReport on device.
+                    // Do not replace this with Color.clear or opacity(0).
+                    .background(reportBackground)
+                    .contentShape(Rectangle())
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .scrollBounceBehavior(.basedOnSize)
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    // Observe only this flag, not every scroll offset. The hint
+                    // does not change the viewport or trigger report reloads.
+                    geometry.contentSize.height > geometry.containerSize.height + 1 &&
+                        geometry.visibleRect.maxY < geometry.contentSize.height - 1
+                } action: { _, moreBelow in
+                    hasMoreBelow = moreBelow
+                }
+                .overlay(alignment: .bottom) {
+                    if hasMoreBelow {
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.regularMaterial, in: Capsule())
+                            .padding(.bottom, 12)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Cover the WHOLE host placeholder, also for an empty or short result.
+        // Applying this only to rows would leave the hint visible below them.
+        .background(reportBackground)
     }
 
     private func formatDuration(_ seconds: Int) -> String {

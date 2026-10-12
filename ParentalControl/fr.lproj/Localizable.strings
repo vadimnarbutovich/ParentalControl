@@ -1,4 +1,6 @@
 /* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "Bilan du jour";
+"statistics.local.budget_hint" = "Le temps utilisé correspond au temps déduit du quota quotidien. Le rapport d’utilisation des apps d’iOS peut mettre du temps à se mettre à jour.";
 "statistics.local.scope" = "Applications et sites sélectionnés sur cet appareil.";
 "statistics.local.previous_day" = "Jour précédent";
 "statistics.local.next_day" = "Jour suivant";
@@ -75,6 +77,7 @@
 "statistics.squats" = "Squats";
 "statistics.focus.total" = "Focus";
 "statistics.app_usage.title" = "Utilisation des apps";
+"statistics.app_usage.loading_hint" = "Chargement des données. Cela peut prendre un moment.";
 "statistics.app_usage.empty_selection" = "Ajoute d'abord des apps dans la liste de blocage pour voir les statistiques d'utilisation.";
 "statistics.app_usage.unavailable" = "Le rapport d'utilisation n'est disponible que sur les versions iOS prises en charge.";
 "statistics.app_usage.no_data" = "Aucune donnée d'utilisation pour le jour sélectionné.";

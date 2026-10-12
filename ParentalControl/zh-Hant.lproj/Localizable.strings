@@ -1,4 +1,6 @@
 /* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "每日摘要";
+"statistics.local.budget_hint" = "已用時間是從每日可用時間中扣除的時長。iOS App 使用報告可能延遲更新。";
 "statistics.local.scope" = "此裝置上所選 App 和網站的使用情況。";
 "statistics.local.previous_day" = "前一天";
 "statistics.local.next_day" = "後一天";
@@ -75,6 +77,7 @@
 "statistics.squats" = "深蹲";
 "statistics.focus.total" = "專注";
 "statistics.app_usage.title" = "App 使用狀況";
+"statistics.app_usage.loading_hint" = "正在載入資料，可能需要一些時間。";
 "statistics.app_usage.empty_selection" = "請先在封鎖列表中加入 App，才能查看使用統計。";
 "statistics.app_usage.unavailable" = "App 使用報告僅在支援的 iOS 版本上可用。";
 "statistics.app_usage.no_data" = "所選日期沒有 App 使用資料。";

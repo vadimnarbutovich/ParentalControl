@@ -1,4 +1,6 @@
 /* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "하루 요약";
+"statistics.local.budget_hint" = "사용 시간은 하루 허용 시간에서 차감된 시간입니다. iOS 앱 사용 보고서는 업데이트가 늦어질 수 있습니다.";
 "statistics.local.scope" = "이 기기에서 선택한 앱과 웹사이트의 사용 내역입니다.";
 "statistics.local.previous_day" = "이전 날짜";
 "statistics.local.next_day" = "다음 날짜";
@@ -75,6 +77,7 @@
 "statistics.squats" = "스쿼트";
 "statistics.focus.total" = "집중";
 "statistics.app_usage.title" = "앱 사용 현황";
+"statistics.app_usage.loading_hint" = "데이터를 불러오는 중입니다. 잠시 시간이 걸릴 수 있습니다.";
 "statistics.app_usage.empty_selection" = "사용 통계를 보려면 먼저 차단 목록에 앱을 추가하세요.";
 "statistics.app_usage.unavailable" = "앱 사용 보고서는 지원되는 iOS 버전에서만 사용할 수 있어요.";
 "statistics.app_usage.no_data" = "선택한 날짜의 앱 사용 데이터가 없어요.";

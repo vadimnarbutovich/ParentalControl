@@ -8,7 +8,7 @@ struct StatisticsView: View {
     @EnvironmentObject private var screenTimeService: ScreenTimeService
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
-    @State private var calendarPresented = false
+    @State private var presentedSheet: StatisticsSheet?
     @State private var visible = false
     @State private var reportInterval: DateInterval?
     @State private var reportID = UUID()
@@ -32,18 +32,20 @@ struct StatisticsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            Group {
                 if canView {
                     VStack(alignment: .leading, spacing: 16) {
                         header
+                            .fixedSize(horizontal: false, vertical: true)
                         dateSelector
+                            .fixedSize(horizontal: false, vertical: true)
                         usageCard
-                        dayCard
+                        summaryButton
                     }
                     .padding()
                 }
             }
-            .scrollIndicators(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .appScreenBackground()
             .onAppear {
                 visible = true
@@ -52,7 +54,7 @@ struct StatisticsView: View {
             }
             .onDisappear {
                 visible = false
-                calendarPresented = false
+                presentedSheet = nil
                 reportInterval = nil
             }
             .onChange(of: selectedDate) { _, _ in
@@ -67,104 +69,111 @@ struct StatisticsView: View {
                     refreshReport()
                 }
             }
-            .onChange(of: appState.isParentModeActive) { _, active in
-                if !active { calendarPresented = false; reportInterval = nil }
+            .onChange(of: canView) { _, allowed in
+                if !allowed { presentedSheet = nil; reportInterval = nil }
             }
             .task(id: budgetRequestKey) { await loadLocalBudget() }
-            .sheet(isPresented: $calendarPresented) {
-                if canView { StatisticsCalendarSheet(selectedDate: $selectedDate) }
+            .sheet(item: $presentedSheet) { sheet in
+                if canView {
+                    switch sheet {
+                    case .calendar:
+                        StatisticsCalendarSheet(selectedDate: $selectedDate)
+                    case .summary:
+                        summarySheet
+                    }
+                }
             }
         }
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("statistics.title").font(.largeTitle.bold())
-                Text("statistics.local.scope")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            Button {
-                calendarPresented = true
-                AppAnalytics.report("statistics_calendar_open")
-            } label: {
-                Image(systemName: "calendar").font(.headline)
-                    .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.12), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("statistics.calendar.title"))
+        StatisticsDateHeader(title: "statistics.title", selectedDate: selectedDate) {
+            presentedSheet = .calendar
+            AppAnalytics.report("statistics_calendar_open")
         }
     }
 
     private var dateSelector: some View {
-        HStack(spacing: 8) {
-            Button { shiftDay(-1) } label: {
-                Image(systemName: "chevron.left").frame(width: 44, height: 44)
-            }
-            .accessibilityLabel(Text("statistics.local.previous_day"))
-            Spacer(minLength: 0)
-            Button { calendarPresented = true } label: {
-                Text(dateTitle(selectedDate)).font(.headline)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            Button { shiftDay(1) } label: {
-                Image(systemName: "chevron.right").frame(width: 44, height: 44)
-            }
-            .disabled(calendar.startOfDay(for: selectedDate) >= calendar.startOfDay(for: Date()))
-            .accessibilityLabel(Text("statistics.local.next_day"))
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 8)
-        .glassCard(cornerRadius: 18, glowColor: AppTheme.neonBlue)
+        StatisticsWeekStrip(selectedDate: $selectedDate, allowsFutureDates: false)
     }
 
     private var usageCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("statistics.app_usage.title").font(.headline)
-                Spacer(minLength: 8)
-                Button {
-                    screenTimeService.refreshAuthorizationStatus()
-                    refreshReport()
-                    AppAnalytics.report("statistics_local_refresh")
-                } label: {
-                    Image(systemName: "arrow.clockwise").frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("statistics.local.refresh"))
-            }
+            Text("statistics.app_usage.title").font(.headline)
             if !screenTimeService.isAuthorized {
                 Text("permission.banner.screentime.title").foregroundStyle(.secondary)
                 Text("permission.banner.screentime.body").font(.subheadline).foregroundStyle(.secondary)
             } else if !hasSelection {
                 Text("statistics.app_usage.empty_selection").font(.subheadline).foregroundStyle(.secondary)
+            } else if selectedDate > calendar.startOfDay(for: Date()) {
+                Text("statistics.app_usage.no_data").font(.subheadline).foregroundStyle(.secondary)
             } else if visible, let reportInterval {
-                DeviceActivityReport(
-                    .init("parentalcontrol.daily-activity"),
-                    filter: DeviceActivityFilter(
-                        segment: .daily(during: reportInterval),
-                        // No cross-device/family filter: the report is for this device.
-                        applications: screenTimeService.selection.applicationTokens,
-                        categories: screenTimeService.selection.categoryTokens,
-                        webDomains: screenTimeService.selection.webDomainTokens
+                // Give the remote report an explicit viewport using the space left
+                // below the title, within the navigation bar/tab bar safe area.
+                GeometryReader { geometry in
+                    DeviceActivityReport(
+                        .init("parentalcontrol.daily-activity"),
+                        filter: DeviceActivityFilter(
+                            segment: .daily(during: reportInterval),
+                            applications: screenTimeService.selection.applicationTokens,
+                            categories: screenTimeService.selection.categoryTokens,
+                            webDomains: screenTimeService.selection.webDomainTokens
+                        )
                     )
-                )
-                .id(reportID)
-                // Remote report views have no intrinsic height. Reserve a stable viewport;
-                // the extension scrolls its full list inside it, as in ScreenBlocker.
-                .frame(height: 360, alignment: .top)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .id(reportID)
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                    .background {
+                        // No readiness callback is available to the host. The
+                        // extension's opaque result covers this static hint.
+                        Text("statistics.app_usage.loading_hint")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(20)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .allowsHitTesting(false)
+                            // It remains mounted behind the result; don't leave
+                            // a stale loading announcement in VoiceOver's tree.
+                            .accessibilityHidden(true)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
             }
-            Text("statistics.local.report_hint").font(.footnote).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(16)
-        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+        .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue, backgroundColor: AppTheme.usageReportBackground)
+    }
+
+    private var summaryButton: some View {
+        Button {
+            guard canView else { return }
+            presentedSheet = .summary
+            AppAnalytics.report("statistics_summary_open", parameters: ["day": selectedDay])
+        } label: {
+            Label("statistics.local.summary", systemImage: "chart.bar.xaxis")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+    }
+
+    private var summarySheet: some View {
+        NavigationStack {
+            ScrollView {
+                // Also gate the presented content if the role or PIN mode changes.
+                if canView {
+                    dayCard
+                        .padding()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .scrollIndicators(.hidden)
+            .appScreenBackground()
+            .navigationTitle(L10n.tr("statistics.local.summary"))
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     private var dayCard: some View {
@@ -181,6 +190,7 @@ struct StatisticsView: View {
                 Text("reports.no_data").font(.subheadline).foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .glassCard(cornerRadius: 24, glowColor: AppTheme.neonPurple)
     }
@@ -189,7 +199,7 @@ struct StatisticsView: View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(L10n.tr(key)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            Text(seconds.map { L10n.duration(seconds: $0) } ?? "—")
+            Text(seconds.map { $0 == 0 ? L10n.f("unit.minutes.short", 0) : L10n.duration(seconds: $0) } ?? "—")
                 .fontWeight(.semibold).multilineTextAlignment(.trailing)
                 .fixedSize(horizontal: false, vertical: true)
         }.font(.subheadline)
@@ -202,17 +212,11 @@ struct StatisticsView: View {
         return formatter.string(from: date)
     }
 
-    private func shiftDay(_ offset: Int) {
-        if let date = calendar.date(byAdding: .day, value: offset, to: selectedDate) {
-            selectedDate = min(date, calendar.startOfDay(for: Date()))
-        }
-    }
-
     private func refreshReport() {
         guard visible, canView else { return }
         let start = calendar.startOfDay(for: selectedDate)
         guard let nextDay = calendar.date(byAdding: .day, value: 1, to: start) else { return }
-        // Snapshot only on entry, date change or explicit refresh, not every budget poll.
+        // Snapshot only on entry or relevant changes, not every budget poll.
         let end = min(nextDay, Date())
         reportInterval = DateInterval(start: start, end: max(start, end))
         reportID = UUID()
@@ -235,6 +239,120 @@ struct StatisticsView: View {
     }
 }
 
+private enum StatisticsSheet: String, Identifiable {
+    case calendar
+    case summary
+
+    var id: String { rawValue }
+}
+
+private struct StatisticsDateHeader: View {
+    let title: LocalizedStringKey
+    let selectedDate: Date
+    let openCalendar: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                Text(L10n.f("statistics.selected.day", selectedDate.formatted(.dateTime.day().month(.wide).year())))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                openCalendar()
+            } label: {
+                Image(systemName: "calendar")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("statistics.calendar.title"))
+            .glassCard(cornerRadius: 22, glowColor: AppTheme.neonBlue)
+        }
+    }
+}
+
+private struct StatisticsWeekStrip: View {
+    @Binding var selectedDate: Date
+    var allowsFutureDates = true
+    var onSelectDay: (Date) -> Void = { _ in }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(weekDatesAroundSelectedDay(), id: \.self) { date in
+                dayChip(for: date)
+            }
+        }
+        .padding(10)
+        .glassCard(cornerRadius: 22, glowColor: AppTheme.neonPurple)
+    }
+
+    private func dayChip(for date: Date) -> some View {
+        let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
+        let isUnavailable = !allowsFutureDates && date > Calendar.current.startOfDay(for: Date())
+        return Button {
+            onSelectDay(date)
+            selectedDate = date
+        } label: {
+            VStack(spacing: 5) {
+                Text(shortWeekday(for: date))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(isSelected ? Color.black.opacity(0.85) : .white.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .allowsTightening(true)
+                Text("\(Calendar.current.component(.day, from: date))")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(isSelected ? Color.black.opacity(0.9) : .white)
+            }
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? AppTheme.neonGreen : Color.white.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isUnavailable)
+        .opacity(isUnavailable ? 0.3 : 1)
+    }
+
+    private func weekDatesAroundSelectedDay() -> [Date] {
+        let calendar = Calendar.current
+        let monday = startOfWeekMonday(for: selectedDate)
+        return (0...6).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: monday)
+        }
+    }
+
+    private func shortWeekday(for date: Date) -> String {
+        return Self.weekdayFormatter.string(from: date).uppercased()
+    }
+
+    private func startOfWeekMonday(for date: Date) -> Date {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        components.weekday = 2
+        return calendar.date(from: components) ?? calendar.startOfDay(for: date)
+    }
+
+    private static let weekdayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = statisticsLocale
+        formatter.setLocalizedDateFormatFromTemplate("EE")
+        return formatter
+    }()
+}
+
 private var statisticsLocale: Locale {
     Locale(identifier: Bundle.main.preferredLocalizations.first ?? Locale.current.identifier)
 }
@@ -245,7 +363,12 @@ private struct StatisticsCalendarSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var visibleMonthStart: Date
     @State private var pickerExpanded = false
-    private let calendar = Calendar.current
+    // Match the Monday–Sunday week strip, regardless of the device region.
+    private let calendar: Calendar = {
+        var value = Calendar.current
+        value.firstWeekday = 2
+        return value
+    }()
 
     init(selectedDate: Binding<Date>) {
         _selectedDate = selectedDate
@@ -296,11 +419,12 @@ private struct StatisticsCalendarSheet: View {
                         ForEach(weekdays.indices, id: \.self) { index in
                             Text(weekdays[index]).font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
+                                .allowsTightening(true)
                                 .frame(maxWidth: .infinity)
                         }
                         ForEach(days.indices, id: \.self) { index in
                             if let date = days[index] { dayButton(date) }
-                            else { Color.clear.frame(height: 40) }
+                            else { Color.clear.frame(height: 38) }
                         }
                     }
                 }.padding()
@@ -325,7 +449,7 @@ private struct StatisticsCalendarSheet: View {
         return min(current - 5, visible)...current
     }
     private func monthArrow(_ symbol: String) -> some View {
-        Image(systemName: symbol).font(.headline.bold()).frame(width: 44, height: 44)
+        Image(systemName: symbol).font(.headline.bold()).frame(width: 40, height: 40)
             .background(Color.white.opacity(0.12), in: Circle())
     }
     private func dayButton(_ date: Date) -> some View {
@@ -338,7 +462,7 @@ private struct StatisticsCalendarSheet: View {
             Text(String(calendar.component(.day, from: date)))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(selected ? Color.black.opacity(0.88) : Color.white)
-                .frame(maxWidth: .infinity, minHeight: 40)
+                .frame(maxWidth: .infinity, minHeight: 38)
                 .background(selected ? AppTheme.neonGreen : Color.white.opacity(0.06),
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .opacity(future ? 0.3 : 1)
