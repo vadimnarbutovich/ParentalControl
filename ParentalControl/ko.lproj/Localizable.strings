@@ -1,3 +1,32 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "앱 삭제 방지";
+"protection.settings_description" = "자녀가 자신의 휴대전화에서 앱을 삭제하지 못하도록 설정합니다.";
+"parent.dashboard.not_linked" = "먼저 보호자의 휴대전화와 자녀의 휴대전화를 연결하세요.";
+"protection.intro" = "자녀가 앱을 삭제하지 못하게 하려면 Apple 가족 공유를 통한 자녀 계정 승인이 필요합니다.";
+"protection.parent_instructions" = "자녀의 휴대전화에서 ‘보호자’ 탭을 열고 PIN을 입력한 다음 설정 → 앱 삭제 방지로 이동하세요. 이 휴대전화에서는 원격으로 삭제 방지를 켤 수 없습니다.";
+"protection.guide.title" = "가족 공유 설정 방법";
+"protection.guide.family" = "1. 부모의 휴대전화에서 설정 → 내 이름 → 가족을 여세요. 가족 그룹을 만들거나 기존 그룹을 사용하세요.";
+"protection.guide.account" = "2. 자녀의 Apple 계정을 초대하거나 자녀 계정을 만드세요. 자녀의 휴대전화에는 자녀 본인의 계정으로 로그인해야 합니다.";
+"protection.guide.confirm" = "3. 초대를 수락한 다음 자녀의 휴대전화에서 앱을 부모 모드로 여세요. ‘삭제 방지 켜기’를 누르고 Apple 시스템 창에서 접근을 승인하세요.";
+"protection.guide.warning" = "자녀가 이미 다른 가족 그룹에 속해 있거나 성인 계정을 사용한다면 먼저 Apple 안내를 확인하세요. 로그아웃하기 전에 데이터가 안전하게 보관되어 있는지 확인하세요. 앱의 연결 코드는 Apple 가족 공유를 대신하지 않습니다.";
+"protection.guide.apple" = "Apple 설정 안내";
+"protection.enabled" = "삭제 방지 켜짐";
+"protection.needs_confirmation" = "다시 확인이 필요합니다";
+"protection.not_enabled" = "삭제 방지 꺼짐";
+"protection.enable" = "삭제 방지 켜기";
+"protection.disable.title" = "관리를 해제할까요?";
+"protection.disable.action" = "삭제 허용";
+"protection.disable.message" = "앱의 화면 시간 제한이 해제되고 앱을 삭제할 수 있게 됩니다. 기기 연결과 저장된 데이터는 유지됩니다. 계속할까요?";
+"protection.disabled" = "관리가 해제되었습니다. 이제 앱을 삭제할 수 있습니다. 관리를 다시 시작하려면 스크린 타임 접근을 다시 허용해야 합니다.";
+"protection.error.account" = "Apple에서 적합한 자녀 계정을 확인하지 못했습니다. 이 휴대전화가 가족 그룹에 속한 자녀의 계정으로 로그인되어 있는지 확인하세요.";
+"protection.error.cancelled" = "확인이 취소되었습니다. 이번 요청으로 삭제 방지가 켜지지 않았습니다.";
+"protection.error.network" = "Apple에 연결할 수 없습니다. 인터넷 연결을 확인하고 다시 시도하세요.";
+"protection.error.conflict" = "iOS가 승인 변경을 허용하지 않았습니다. 앱에서 기존 접근 권한을 해제하지는 않았습니다. 스크린 타임 설정을 확인하고 다시 시도하세요.";
+"protection.error.generic" = "작업을 완료하지 못했습니다. 스크린 타임 접근 권한을 확인하고 다시 시도하세요.";
+"protection.suggestion" = "자녀가 앱을 삭제하지 못하도록 Apple 가족 공유로 삭제 방지를 설정하세요. 나중에 설정해도 됩니다.";
+"protection.setup" = "설정하기";
+"protection.later" = "나중에";
+
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "하루 요약";
 "statistics.local.budget_hint" = "사용 시간은 하루 허용 시간에서 차감된 시간입니다. iOS 앱 사용 보고서는 업데이트가 늦어질 수 있습니다.";
@@ -346,8 +375,8 @@
 "parent_mode.entry.locked" = "입력이 잠겼습니다. %d초 후에 다시 시도하세요.";
 
 "settings.pin.section" = "보호자 PIN";
-"settings.pin.description" = "자녀 기기에서 보호자 모드를 여는 데 사용하는 4자리 PIN입니다.";
-"settings.pin.requires_link" = "PIN을 설정하려면 먼저 자녀 기기를 연결하세요.";
+"settings.pin.description" = "자녀 휴대전화에서 보호자 모드를 여는 데 사용하는 4자리 PIN입니다.";
+"settings.pin.requires_link" = "PIN을 설정하려면 먼저 자녀 휴대전화를 연결하세요.";
 "settings.pin.status.set" = "PIN 설정됨";
 "settings.pin.status.unset" = "PIN 미설정";
 "settings.pin.set" = "PIN 설정";
@@ -374,7 +403,7 @@
 "settings.pairing.linked.status" = "기기 연결됨";
 "settings.pairing.unlink" = "기기 연결 해제";
 "settings.pairing.unlink.confirm.title" = "기기 연결을 해제할까요?";
-"settings.pairing.unlink.confirm.message" = "부모와 자녀 기기 간의 연결이 초기화됩니다. 자녀 기기를 관리하려면 다시 페어링해야 합니다.";
+"settings.pairing.unlink.confirm.message" = "부모와 자녀 휴대전화 간의 연결이 초기화됩니다. 자녀 휴대전화를 관리하려면 다시 페어링해야 합니다.";
 "settings.pairing.unlink.confirm.button" = "연결 해제";
 
 "tab.tasks" = "과제";
@@ -437,13 +466,13 @@
 "budget.extra" = "오늘 추가 시간";
 "budget.not_set" = "설정 안 됨";
 "budget.every_day" = "매일";
-"budget.pending" = "자녀 기기의 확인을 기다리는 중";
+"budget.pending" = "자녀 휴대전화의 확인을 기다리는 중";
 "budget.explanation" = "자녀가 선택한 앱을 하루에 사용할 수 있는 시간입니다.";
 "budget.hours" = "시간";
 "budget.minutes" = "분";
 "budget.rules" = "한도는 매일 새로 시작됩니다. 남은 시간과 추가 시간은 다음 날로 이월되지 않습니다. 0분이면 기본 사용 시간이 주어지지 않습니다.";
 "budget.first_activation" = "이 한도가 기존 잔여 시간을 대체합니다. 오늘 이미 사용한 시간은 차감되며, 기존 잔여 시간은 더해지지 않습니다. 기록은 유지됩니다.";
-"budget.child_update" = "자녀 기기에서 업데이트된 앱을 열고 연결될 때까지 기다려 주세요.";
+"budget.child_update" = "자녀 휴대전화에서 업데이트된 앱을 열고 연결될 때까지 기다려 주세요.";
 "budget.save" = "저장";
 "budget.save_error" = "저장하지 못했습니다. 연결을 확인하고 다시 시도해 주세요. 설정이 변경되었다면 다시 열어 주세요.";
 "budget.apply_error" = "일일 한도를 활성화하지 못했습니다. 스크린 타임 접근 권한을 확인하고 앱을 다시 열어 주세요.";
@@ -452,7 +481,7 @@
 "budget.total" = "오늘 배정된 시간";
 "budget.onboarding_title" = "스크린 타임 관리";
 "budget.onboarding_body" = "보호자가 선택한 앱의 일일 한도를 설정합니다. 자녀는 할 일을 마치고 보호자의 승인을 받으면 추가 시간을 받을 수 있습니다.";
-"settings.section.child_connection" = "자녀 기기 연결";
+"settings.section.child_connection" = "자녀 휴대전화 연결";
 "settings.section.parent_connection" = "보호자 기기 연결";
 "settings.section.diagnostics" = "진단";
 "blocklist.manual_block.pending" = "이 기기에 변경 사항을 적용했어요. 보호자 기기와 동기화를 기다리고 있어요.";
@@ -471,12 +500,12 @@
 "reports.tasks" = "승인된 할 일";
 "reports.tasks_period" = "기간 내 할 일";
 "reports.updated" = "데이터 업데이트: %@";
-"reports.legacy" = "이전 데이터는 보관되어 있지만 정확한 날짜와 세부 내역은 확인할 수 없습니다. 자녀 기기가 동기화되면 자세한 통계가 표시됩니다.";
+"reports.legacy" = "이전 데이터는 보관되어 있지만 정확한 날짜와 세부 내역은 확인할 수 없습니다. 자녀 휴대전화가 동기화되면 자세한 통계가 표시됩니다.";
 "reports.retention" = "최근 90일 중 확인 가능한 기록입니다.";
 "reports.no_data" = "이 날짜의 데이터가 아직 없습니다.";
 "reports.error" = "통계를 새로 고치지 못했습니다. 연결을 확인해 주세요. 기존 데이터는 최신 정보가 아닐 수 있습니다.";
 "reports.retry" = "다시 시도";
-"reports.unlinked" = "자녀 기기를 연결하면 통계를 볼 수 있습니다.";
+"reports.unlinked" = "자녀 휴대전화를 연결하면 통계를 볼 수 있습니다.";
 "reports.previous" = "이전 기간";
 "reports.next" = "다음 기간";
 // Permissions requested for the selected device role.

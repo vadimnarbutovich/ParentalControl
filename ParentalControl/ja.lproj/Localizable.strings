@@ -1,3 +1,32 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "削除の防止";
+"protection.settings_description" = "お子様が自分の電話からアプリを削除できないようにします。";
+"parent.dashboard.not_linked" = "まず、ご自身の電話とお子様の電話を連携してください。";
+"protection.intro" = "お子様がアプリを削除できないようにするには、Appleのファミリー共有でお子様としての利用を承認する必要があります。";
+"protection.parent_instructions" = "お子様の電話で「保護者」タブを開き、PINを入力して「設定 → 削除の防止」に進んでください。この電話から遠隔で有効にすることはできません。";
+"protection.guide.title" = "ファミリー共有の設定方法";
+"protection.guide.family" = "1. 保護者の電話で「設定 → 自分の名前 → ファミリー」を開きます。ファミリー共有グループを作成するか、既存のグループを使います。";
+"protection.guide.account" = "2. お子様のApple Accountを招待するか、お子様用のアカウントを作成します。お子様の電話には、お子様自身のアカウントでサインインしてください。";
+"protection.guide.confirm" = "3. 招待を承認し、お子様の電話でこのアプリを保護者モードで開きます。「削除の防止を有効にする」をタップし、Appleの確認画面でアクセスを許可してください。";
+"protection.guide.warning" = "お子様が別のファミリーに参加している場合や大人のアカウントを使っている場合は、先にAppleの説明をご確認ください。サインアウトする前にデータが安全に保存されているか確認してください。このアプリの連携コードは、Appleのファミリー共有の代わりにはなりません。";
+"protection.guide.apple" = "Appleの設定ガイド";
+"protection.enabled" = "削除の防止は有効です";
+"protection.needs_confirmation" = "再確認が必要です";
+"protection.not_enabled" = "削除の防止は無効です";
+"protection.enable" = "削除の防止を有効にする";
+"protection.disable.title" = "管理を解除しますか？";
+"protection.disable.action" = "削除を許可";
+"protection.disable.message" = "このアプリによる利用時間の制限が解除され、アプリを削除できるようになります。端末の連携と保存済みデータは残ります。続けますか？";
+"protection.disabled" = "管理を解除しました。アプリを削除できます。管理を再開するには、スクリーンタイムへのアクセスをもう一度許可してください。";
+"protection.error.account" = "Appleがお子様用の対象アカウントを確認できませんでした。この電話に、ご自身のファミリーに参加しているお子様のアカウントでサインインしているか確認してください。";
+"protection.error.cancelled" = "確認がキャンセルされました。この操作では削除の防止は有効になっていません。";
+"protection.error.network" = "Appleに接続できませんでした。インターネット接続を確認して、もう一度お試しください。";
+"protection.error.conflict" = "iOSが認証の変更を許可しませんでした。このアプリから既存のアクセス権は解除していません。スクリーンタイムの設定を確認して、もう一度お試しください。";
+"protection.error.generic" = "操作を完了できませんでした。スクリーンタイムへのアクセスを確認して、もう一度お試しください。";
+"protection.suggestion" = "お子様がアプリを削除できないように、Appleのファミリー共有で保護を設定しましょう。後から設定することもできます。";
+"protection.setup" = "設定する";
+"protection.later" = "あとで";
+
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "1日のまとめ";
 "statistics.local.budget_hint" = "使用時間は、1日の利用可能時間から差し引かれた時間です。iOSのアプリ使用状況レポートは、更新に時間がかかることがあります。";
@@ -346,8 +375,8 @@
 "parent_mode.entry.locked" = "入力がロックされました。%d秒後に再試行してください。";
 
 "settings.pin.section" = "保護者PIN";
-"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。";
-"settings.pin.requires_link" = "PINを設定するには、まずお子様の端末を連携してください。";
+"settings.pin.description" = "お子様の電話で保護者モードを開くための4桁のPIN。";
+"settings.pin.requires_link" = "PINを設定するには、まずお子様の電話を連携してください。";
 "settings.pin.status.set" = "PINを設定済み";
 "settings.pin.status.unset" = "PINは未設定";
 "settings.pin.set" = "PINを設定";
@@ -437,13 +466,13 @@
 "budget.extra" = "今日の追加時間";
 "budget.not_set" = "未設定";
 "budget.every_day" = "毎日";
-"budget.pending" = "お子様の端末からの確認を待っています";
+"budget.pending" = "お子様の電話からの確認を待っています";
 "budget.explanation" = "お子様が選択したアプリを1日に使える時間です。";
 "budget.hours" = "時間";
 "budget.minutes" = "分";
 "budget.rules" = "上限は毎日リセットされます。残り時間や追加の時間は翌日に持ち越されません。0分にすると、通常の利用時間は付与されません。";
 "budget.first_activation" = "この上限が現在の残り時間に代わって適用されます。今日すでに使った時間は差し引かれ、以前の残り時間は加算されません。履歴は保持されます。";
-"budget.child_update" = "お子様の端末で更新後のアプリを開き、接続されるまでお待ちください。";
+"budget.child_update" = "お子様の電話で更新後のアプリを開き、接続されるまでお待ちください。";
 "budget.save" = "保存";
 "budget.save_error" = "保存できませんでした。接続を確認してやり直してください。設定が変更された場合は、もう一度開いてください。";
 "budget.apply_error" = "上限を有効にできませんでした。スクリーンタイムへのアクセスを確認し、アプリを開き直してください。";
@@ -452,7 +481,7 @@
 "budget.total" = "今日の利用可能時間";
 "budget.onboarding_title" = "利用時間を見守る";
 "budget.onboarding_body" = "保護者が選択したアプリの1日の上限を設定します。お子様がタスクを終えると、保護者の承認後に追加の時間を受け取れます。";
-"settings.section.child_connection" = "お子様の端末との接続";
+"settings.section.child_connection" = "お子様の電話との接続";
 "settings.section.parent_connection" = "保護者の端末との接続";
 "settings.section.diagnostics" = "診断";
 "blocklist.manual_block.pending" = "この端末に変更を適用しました。保護者の端末との同期を待っています。";
@@ -471,12 +500,12 @@
 "reports.tasks" = "承認済みのタスク";
 "reports.tasks_period" = "期間中のタスク";
 "reports.updated" = "データ更新：%@";
-"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の端末が同期されると、詳細な統計が表示されます。";
+"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の電話が同期されると、詳細な統計が表示されます。";
 "reports.retention" = "過去90日間の利用可能な履歴を表示します。";
 "reports.no_data" = "この日のデータはまだありません。";
 "reports.error" = "統計を更新できませんでした。接続を確認してください。読み込み済みのデータは最新ではない可能性があります。";
 "reports.retry" = "再試行";
-"reports.unlinked" = "お子様の端末を連携すると統計が表示されます。";
+"reports.unlinked" = "お子様の電話を連携すると統計が表示されます。";
 "reports.previous" = "前の期間";
 "reports.next" = "次の期間";
 // Permissions requested for the selected device role.

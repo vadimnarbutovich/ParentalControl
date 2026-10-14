@@ -18,6 +18,9 @@ enum StorageKey {
     static let lastBalanceResetDayStart = "parentalcontrol.lastBalanceResetDayStart"
     static let exerciseTotals = "parentalcontrol.exerciseTotals"
     static let familySelection = "parentalcontrol.familySelection"
+    // Device-local authorization intent, independent of our server-side pairing.
+    static let screenTimeAuthorizationMember = "parentalcontrol.screenTimeAuthorizationMember"
+    static let childAuthorizationConfirmed = "parentalcontrol.childAuthorizationConfirmed"
     static let deviceActivityThresholdSeconds = "parentalcontrol.deviceActivityThresholdSeconds"
     static let didRequestInitialPermissions = "parentalcontrol.didRequestInitialPermissions"
     static let hasCompletedOnboarding = "parentalcontrol.hasCompletedOnboarding"
@@ -236,6 +239,22 @@ final class AppGroupStore {
 
     func saveFamilySelectionData(_ data: Data?) {
         store.set(data, forKey: StorageKey.familySelection)
+    }
+
+    func loadScreenTimeAuthorizationMember() -> String? {
+        store.string(forKey: StorageKey.screenTimeAuthorizationMember)
+    }
+
+    func saveScreenTimeAuthorizationMember(_ member: String) {
+        store.set(member, forKey: StorageKey.screenTimeAuthorizationMember)
+    }
+
+    func loadChildAuthorizationConfirmed() -> Bool {
+        store.integer(forKey: StorageKey.childAuthorizationConfirmed) == 1
+    }
+
+    func saveChildAuthorizationConfirmed(_ confirmed: Bool) {
+        store.set(confirmed ? 1 : 0, forKey: StorageKey.childAuthorizationConfirmed)
     }
 
     func saveDeviceActivityThresholdSeconds(_ seconds: Int) {

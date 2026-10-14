@@ -48,6 +48,9 @@ struct SettingsView: View {
                         if appState.deviceRole == .parent {
                             parentPinSection
                         }
+                        if appState.deviceRole == .parent || appState.isParentModeActive {
+                            removalProtectionSection
+                        }
                         appSection
                         helpSection
 #if DEBUG && !HIDE_DEBUG_UI
@@ -70,6 +73,8 @@ struct SettingsView: View {
             .scrollIndicators(.hidden)
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
+                case .removalProtection:
+                    RemovalProtectionView()
                 case .conversion:
                     ConversionSettingsSheet()
                         .environmentObject(appState)
@@ -163,6 +168,40 @@ struct SettingsView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+    }
+
+    private var removalProtectionSection: some View {
+        Button {
+            activeSheet = .removalProtection
+            AppAnalytics.report("removal_protection_open", parameters: ["source": "settings"])
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("protection.title")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                    Text("protection.settings_description")
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
         .background(
             Color.clear
                 .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
@@ -668,6 +707,7 @@ private enum ConversionField: Hashable {
 }
 
 private enum SettingsSheet: Int, Identifiable {
+    case removalProtection
     case conversion
     case pinSetup
     #if DEBUG && !HIDE_DEBUG_UI

@@ -1,3 +1,32 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "الحماية من الحذف";
+"protection.settings_description" = "امنع طفلك من حذف التطبيق من هاتفه.";
+"parent.dashboard.not_linked" = "اربط هاتفك بهاتف طفلك أولًا.";
+"protection.intro" = "لمنع طفلك من حذف التطبيق، يلزم تفويض حساب طفل عبر المشاركة العائلية من Apple.";
+"protection.parent_instructions" = "على هاتف طفلك، افتح تبويب ولي الأمر وأدخل رمز PIN، ثم انتقل إلى الإعدادات ← الحماية من الحذف. لا يمكن تفعيل الحماية عن بُعد من هذا الهاتف.";
+"protection.guide.title" = "كيفية إعداد المشاركة العائلية";
+"protection.guide.family" = "1. على هاتف ولي الأمر، افتح الإعدادات ← اسمك ← العائلة. أنشئ مجموعة عائلية أو استخدم مجموعتك الحالية.";
+"protection.guide.account" = "2. أضف طفلك: ادعُ حساب Apple الخاص به أو أنشئ حساب طفل. يجب تسجيل الدخول على هاتفه باستخدام حسابه الخاص.";
+"protection.guide.confirm" = "3. اقبل الدعوة، ثم افتح تطبيقنا في وضع ولي الأمر على هاتف طفلك. اضغط على «تفعيل الحماية» ووافق على الوصول في نافذة Apple.";
+"protection.guide.warning" = "إذا كان طفلك عضوًا في مجموعة عائلية أخرى أو يستخدم حساب شخص بالغ، فاقرأ إرشادات Apple أولًا. تأكد من حفظ بياناته بأمان قبل تسجيل الخروج. رمز الربط في تطبيقنا لا يحل محل المشاركة العائلية من Apple.";
+"protection.guide.apple" = "إرشادات Apple";
+"protection.enabled" = "الحماية مفعّلة";
+"protection.needs_confirmation" = "يلزم التأكيد مجددًا";
+"protection.not_enabled" = "الحماية غير مفعّلة";
+"protection.enable" = "تفعيل الحماية";
+"protection.disable.title" = "إيقاف الرقابة؟";
+"protection.disable.action" = "السماح بالحذف";
+"protection.disable.message" = "سيتوقف التطبيق عن تقييد وقت الشاشة وسيصبح بالإمكان حذفه. سيبقى ربط الأجهزة والبيانات المحفوظة كما هما. هل تريد المتابعة؟";
+"protection.disabled" = "تم إيقاف الرقابة. يمكنك الآن حذف التطبيق. لاستئناف الرقابة، يجب السماح بالوصول إلى مدة استخدام الجهاز مجددًا.";
+"protection.error.account" = "لم تتمكن Apple من تأكيد حساب طفل مؤهل. تأكد من أن هذا الهاتف مسجل الدخول بحساب طفلك ضمن مجموعتك العائلية.";
+"protection.error.cancelled" = "تم إلغاء التأكيد. لم يتم تفعيل الحماية بهذا الطلب.";
+"protection.error.network" = "تعذر الاتصال بـ Apple. تحقق من اتصال الإنترنت وحاول مجددًا.";
+"protection.error.conflict" = "لم يسمح iOS بتغيير التفويض. لم نلغِ إذن الوصول الحالي. تحقق من إعدادات مدة استخدام الجهاز وحاول مجددًا.";
+"protection.error.generic" = "تعذر إكمال الإجراء. تحقق من إذن الوصول إلى مدة استخدام الجهاز وحاول مجددًا.";
+"protection.suggestion" = "لمنع طفلك من حذف التطبيق، فعّل الحماية عبر المشاركة العائلية من Apple. يمكنك فعل ذلك لاحقًا.";
+"protection.setup" = "إعداد";
+"protection.later" = "لاحقًا";
+
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "ملخص اليوم";
 "statistics.local.budget_hint" = "الوقت المستخدم هو الوقت المخصوم من المدة اليومية المسموح بها. قد يتأخر تحديث تقرير استخدام التطبيقات في iOS.";
@@ -346,8 +375,8 @@
 "parent_mode.entry.locked" = "تم قفل الإدخال. حاول مرة أخرى بعد %d ثانية.";
 
 "settings.pin.section" = "رمز PIN لولي الأمر";
-"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على جهاز الطفل.";
-"settings.pin.requires_link" = "اربط جهاز الطفل أولاً لتعيين رمز PIN.";
+"settings.pin.description" = "رمز PIN مكوّن من 4 أرقام لفتح وضع ولي الأمر على هاتف الطفل.";
+"settings.pin.requires_link" = "اربط هاتف الطفل أولاً لتعيين رمز PIN.";
 "settings.pin.status.set" = "تم تعيين رمز PIN";
 "settings.pin.status.unset" = "لم يتم تعيين رمز PIN";
 "settings.pin.set" = "تعيين رمز PIN";
@@ -374,7 +403,7 @@
 "settings.pairing.linked.status" = "الأجهزة مرتبطة";
 "settings.pairing.unlink" = "إلغاء ربط الأجهزة";
 "settings.pairing.unlink.confirm.title" = "إلغاء ربط الأجهزة؟";
-"settings.pairing.unlink.confirm.message" = "ستتم إعادة تعيين الربط بين جهازي الوالد والطفل. ستحتاج إلى الإقران مرة أخرى لإدارة جهاز الطفل.";
+"settings.pairing.unlink.confirm.message" = "ستتم إعادة تعيين الربط بين هاتفي ولي الأمر والطفل. ستحتاج إلى الإقران مرة أخرى لإدارة هاتف الطفل.";
 "settings.pairing.unlink.confirm.button" = "إلغاء الربط";
 
 "tab.tasks" = "المهام";
@@ -437,13 +466,13 @@
 "budget.extra" = "وقت إضافي اليوم";
 "budget.not_set" = "غير محدد";
 "budget.every_day" = "كل يوم";
-"budget.pending" = "بانتظار التأكيد من جهاز طفلك";
+"budget.pending" = "بانتظار التأكيد من هاتف طفلك";
 "budget.explanation" = "الوقت الذي يمكن لطفلك قضاؤه يوميًا في التطبيقات المحددة.";
 "budget.hours" = "ساعة";
 "budget.minutes" = "دقيقة";
 "budget.rules" = "يتجدد الحد كل يوم. لا يُرحّل الوقت المتبقي أو الدقائق الإضافية لليوم التالي. اختيار 0 دقيقة يعني عدم تخصيص وقت يومي أساسي.";
 "budget.first_activation" = "سيحل هذا الحد محل الرصيد السابق. سيُحتسب الوقت المستخدم اليوم، ولن يُضاف الرصيد المتبقي القديم. سيُحفظ السجل.";
-"budget.child_update" = "افتح التطبيق المحدّث على جهاز طفلك وانتظر اتصاله.";
+"budget.child_update" = "افتح التطبيق المحدّث على هاتف طفلك وانتظر اتصاله.";
 "budget.save" = "حفظ";
 "budget.save_error" = "تعذّر الحفظ. تحقق من الاتصال وحاول مجددًا. إذا تغيّر الإعداد، فأعد فتحه.";
 "budget.apply_error" = "تعذّر تفعيل الحد اليومي. تحقق من إذن مدة استخدام الجهاز وأعد فتح التطبيق.";
@@ -452,7 +481,7 @@
 "budget.total" = "الوقت المخصص اليوم";
 "budget.onboarding_title" = "إدارة وقت الشاشة";
 "budget.onboarding_body" = "يحدد ولي الأمر حدًا يوميًا للتطبيقات المختارة. يمكن للطفل الحصول على دقائق إضافية مقابل المهام المنجزة بعد موافقة ولي الأمر.";
-"settings.section.child_connection" = "الاتصال بجهاز الطفل";
+"settings.section.child_connection" = "الاتصال بهاتف الطفل";
 "settings.section.parent_connection" = "الاتصال بجهاز ولي الأمر";
 "settings.section.diagnostics" = "التشخيص";
 "blocklist.manual_block.pending" = "تم تطبيق التغيير على هذا الجهاز. في انتظار المزامنة مع جهاز ولي الأمر.";
@@ -471,12 +500,12 @@
 "reports.tasks" = "المهام المعتمدة";
 "reports.tasks_period" = "المهام خلال الفترة";
 "reports.updated" = "آخر تحديث للبيانات: %@";
-"reports.legacy" = "البيانات القديمة محفوظة، لكن تاريخها الدقيق وتفاصيلها غير متاحة. ستظهر الإحصاءات التفصيلية بعد مزامنة جهاز الطفل.";
+"reports.legacy" = "البيانات القديمة محفوظة، لكن تاريخها الدقيق وتفاصيلها غير متاحة. ستظهر الإحصاءات التفصيلية بعد مزامنة هاتف الطفل.";
 "reports.retention" = "السجل المتاح لآخر 90 يومًا.";
 "reports.no_data" = "لا توجد بيانات لهذا اليوم بعد.";
 "reports.error" = "تعذّر تحديث الإحصاءات. تحقّق من الاتصال. قد تكون البيانات المحمّلة سابقًا غير محدّثة.";
 "reports.retry" = "إعادة المحاولة";
-"reports.unlinked" = "اربط جهاز طفلك للاطلاع على الإحصاءات.";
+"reports.unlinked" = "اربط هاتف طفلك للاطلاع على الإحصاءات.";
 "reports.previous" = "الفترة السابقة";
 "reports.next" = "الفترة التالية";
 // Permissions requested for the selected device role.

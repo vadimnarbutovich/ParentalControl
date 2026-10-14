@@ -359,6 +359,35 @@ final class AppState: ObservableObject {
         syncScreenTimeEnforcement(notifyOnUnlock: false)
     }
 
+    func enableRemovalProtectionFromParentMode() async throws {
+        guard deviceRole == .child, isParentModeActive else {
+            throw RemovalProtectionError.parentRequired
+        }
+        do {
+            try await screenTimeService.enableRemovalProtection()
+            AppAnalytics.report("removal_protection_enable", parameters: ["result": "success"])
+        } catch {
+            AppAnalytics.report("removal_protection_enable", parameters: [
+                "result": "failed", "reason": RemovalProtectionError.messageKey(for: error)
+            ])
+            throw error
+        }
+        // Keep budget, pairing and selection intact; reapply existing restrictions.
+        if deviceRole == .child {
+            syncScreenTimeEnforcement(notifyOnUnlock: false)
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        }
+    }
+
+    func allowRemovalFromParentMode() async throws {
+        guard deviceRole == .child, isParentModeActive else {
+            throw RemovalProtectionError.parentRequired
+        }
+        try await screenTimeService.revokeForRemoval()
+        AppAnalytics.report("removal_protection_disable")
+        // Do not clear the family's data or silently request individual access.
+    }
+
     func refreshCameraAuthorizationFromSystem() {
         isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
     }

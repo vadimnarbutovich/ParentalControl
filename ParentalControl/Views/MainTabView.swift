@@ -679,6 +679,10 @@ private struct ParentDashboardView: View {
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
                             // поэтому не нужно дёргать AppState на каждом тике.
                             ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
+                            if let familyID = appState.pairingState?.familyID {
+                                RemovalProtectionSuggestion(familyID: familyID)
+                                    .id(familyID)
+                            }
                         } else {
                             // Пары ещё нет — это важная для пользователя информация, поэтому она
                             // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.

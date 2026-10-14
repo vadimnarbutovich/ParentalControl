@@ -1,3 +1,32 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "Protection contre la suppression";
+"protection.settings_description" = "Empêcher votre enfant de supprimer l’app de son téléphone.";
+"parent.dashboard.not_linked" = "Associez d’abord votre téléphone à celui de votre enfant.";
+"protection.intro" = "Pour empêcher votre enfant de supprimer l’app, une autorisation pour enfant via le partage familial Apple est nécessaire.";
+"protection.parent_instructions" = "Sur le téléphone de votre enfant, ouvrez l’onglet Parent, saisissez votre code PIN, puis allez dans Réglages → Protection contre la suppression. Cette protection ne peut pas être activée à distance depuis ce téléphone.";
+"protection.guide.title" = "Configurer le partage familial";
+"protection.guide.family" = "1. Sur le téléphone du parent, ouvrez Réglages → votre nom → Famille. Créez un groupe familial ou utilisez celui que vous avez déjà.";
+"protection.guide.account" = "2. Ajoutez votre enfant : invitez son compte Apple ou créez un compte enfant. Son téléphone doit être connecté à son propre compte.";
+"protection.guide.confirm" = "3. Acceptez l’invitation, puis ouvrez notre app en mode parent sur le téléphone de votre enfant. Touchez « Activer la protection » et autorisez l’accès dans la fenêtre système d’Apple.";
+"protection.guide.warning" = "Si votre enfant fait partie d’un autre groupe familial ou utilise un compte adulte, consultez d’abord les instructions d’Apple. Vérifiez que ses données sont en sécurité avant de déconnecter le compte. Notre code d’association ne remplace pas le partage familial.";
+"protection.guide.apple" = "Instructions d’Apple";
+"protection.enabled" = "Protection activée";
+"protection.needs_confirmation" = "Confirmation nécessaire";
+"protection.not_enabled" = "Protection non activée";
+"protection.enable" = "Activer la protection";
+"protection.disable.title" = "Désactiver le contrôle ?";
+"protection.disable.action" = "Autoriser la suppression";
+"protection.disable.message" = "L’app ne limitera plus le temps d’écran et pourra être supprimée. L’association des appareils et les données enregistrées seront conservées. Continuer ?";
+"protection.disabled" = "Le contrôle est désactivé. L’app peut maintenant être supprimée. Pour reprendre le contrôle, vous devrez autoriser à nouveau l’accès à Temps d’écran.";
+"protection.error.account" = "Apple n’a pas pu confirmer un compte enfant compatible. Vérifiez que ce téléphone est connecté au compte de votre enfant, membre de votre groupe familial.";
+"protection.error.cancelled" = "La confirmation a été annulée. Cette demande n’a pas activé la protection.";
+"protection.error.network" = "Connexion à Apple impossible. Vérifiez votre connexion Internet et réessayez.";
+"protection.error.conflict" = "iOS n’a pas autorisé le changement. Nous n’avons pas révoqué l’accès existant. Vérifiez les réglages de Temps d’écran et réessayez.";
+"protection.error.generic" = "L’action n’a pas pu être effectuée. Vérifiez l’accès à Temps d’écran et réessayez.";
+"protection.suggestion" = "Pour empêcher votre enfant de supprimer l’app, configurez la protection via le partage familial Apple. Vous pouvez le faire plus tard.";
+"protection.setup" = "Configurer";
+"protection.later" = "Plus tard";
+
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "Bilan du jour";
 "statistics.local.budget_hint" = "Le temps utilisé correspond au temps déduit du quota quotidien. Le rapport d’utilisation des apps d’iOS peut mettre du temps à se mettre à jour.";
@@ -346,8 +375,8 @@
 "parent_mode.entry.locked" = "Saisie verrouillée. Réessaie dans %d s.";
 
 "settings.pin.section" = "PIN parent";
-"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur l'appareil de l'enfant.";
-"settings.pin.requires_link" = "Liez d'abord un appareil enfant pour définir un code PIN.";
+"settings.pin.description" = "Code PIN à 4 chiffres pour ouvrir le mode parent sur le téléphone de l'enfant.";
+"settings.pin.requires_link" = "Liez d'abord le téléphone de votre enfant pour définir un code PIN.";
 "settings.pin.status.set" = "PIN défini";
 "settings.pin.status.unset" = "PIN non défini";
 "settings.pin.set" = "Définir le PIN";
@@ -374,7 +403,7 @@
 "settings.pairing.linked.status" = "Appareils liés";
 "settings.pairing.unlink" = "Dissocier les appareils";
 "settings.pairing.unlink.confirm.title" = "Dissocier les appareils ?";
-"settings.pairing.unlink.confirm.message" = "Le lien entre l'appareil du parent et celui de l'enfant sera réinitialisé. Vous devrez refaire l'association pour gérer l'appareil de l'enfant.";
+"settings.pairing.unlink.confirm.message" = "Le lien entre le téléphone du parent et celui de l'enfant sera réinitialisé. Vous devrez refaire l'association pour gérer le téléphone de l'enfant.";
 "settings.pairing.unlink.confirm.button" = "Dissocier";
 
 "tab.tasks" = "Tâches";
@@ -437,13 +466,13 @@
 "budget.extra" = "Temps ajouté aujourd’hui";
 "budget.not_set" = "Non définie";
 "budget.every_day" = "Tous les jours";
-"budget.pending" = "En attente de confirmation de l’appareil de votre enfant";
+"budget.pending" = "En attente de confirmation du téléphone de votre enfant";
 "budget.explanation" = "Le temps que votre enfant peut passer chaque jour dans les apps sélectionnées.";
 "budget.hours" = "h";
 "budget.minutes" = "min";
 "budget.rules" = "La limite est renouvelée chaque jour. Le temps restant et les minutes supplémentaires ne sont pas reportés. 0 minute signifie qu’aucun temps quotidien n’est accordé.";
 "budget.first_activation" = "Cette limite remplace le solde précédent. Le temps déjà utilisé aujourd’hui est déduit ; l’ancien temps restant n’est pas ajouté. L’historique est conservé.";
-"budget.child_update" = "Ouvrez l’app mise à jour sur l’appareil de votre enfant et attendez la connexion.";
+"budget.child_update" = "Ouvrez l’app mise à jour sur le téléphone de votre enfant et attendez la connexion.";
 "budget.save" = "Enregistrer";
 "budget.save_error" = "Impossible d’enregistrer. Vérifiez la connexion et réessayez. Si le réglage a changé, rouvrez-le.";
 "budget.apply_error" = "Impossible d’activer la limite. Vérifiez l’accès à Temps d’écran et rouvrez l’app.";
@@ -471,12 +500,12 @@
 "reports.tasks" = "Tâches validées";
 "reports.tasks_period" = "Tâches sur la période";
 "reports.updated" = "Données mises à jour : %@";
-"reports.legacy" = "Les anciennes données sont conservées, mais leur date exacte et leur détail ne sont pas disponibles. Les statistiques détaillées apparaîtront après la synchronisation de l’appareil de l’enfant.";
+"reports.legacy" = "Les anciennes données sont conservées, mais leur date exacte et leur détail ne sont pas disponibles. Les statistiques détaillées apparaîtront après la synchronisation du téléphone de l’enfant.";
 "reports.retention" = "Historique disponible sur les 90 derniers jours.";
 "reports.no_data" = "Pas encore de données pour ce jour.";
 "reports.error" = "Impossible d’actualiser les statistiques. Vérifiez la connexion. Les données déjà chargées peuvent être anciennes.";
 "reports.retry" = "Réessayer";
-"reports.unlinked" = "Associez l’appareil de votre enfant pour voir les statistiques.";
+"reports.unlinked" = "Associez le téléphone de votre enfant pour voir les statistiques.";
 "reports.previous" = "Période précédente";
 "reports.next" = "Période suivante";
 // Permissions requested for the selected device role.

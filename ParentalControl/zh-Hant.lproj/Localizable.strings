@@ -1,3 +1,32 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "防止刪除";
+"protection.settings_description" = "禁止孩子從自己的手機上刪除本 App。";
+"parent.dashboard.not_linked" = "請先將你的手機與孩子的手機配對。";
+"protection.intro" = "若要防止孩子刪除本 App，需要透過 Apple「家人共享」完成兒童帳號授權。";
+"protection.parent_instructions" = "請在孩子的手機上開啟「家長」分頁，輸入 PIN 碼，再前往「設定 → 防止刪除」。無法從這支手機遠端啟用保護。";
+"protection.guide.title" = "如何設定家人共享";
+"protection.guide.family" = "1. 在家長的手機上開啟「設定 → 你的姓名 → 家庭」。建立家庭群組，或使用現有群組。";
+"protection.guide.account" = "2. 加入孩子：邀請孩子的 Apple 帳號，或建立兒童帳號。孩子的手機必須登入孩子自己的帳號。";
+"protection.guide.confirm" = "3. 接受邀請後，在孩子的手機上以家長模式開啟本 App。點一下「啟用保護」，並在 Apple 系統提示中核准存取。";
+"protection.guide.warning" = "如果孩子已加入其他家庭群組或使用成人帳號，請先閱讀 Apple 的說明。登出帳號前，請確認資料已妥善保存。本 App 的配對碼不能取代 Apple 家人共享。";
+"protection.guide.apple" = "Apple 設定說明";
+"protection.enabled" = "保護已啟用";
+"protection.needs_confirmation" = "需要重新確認";
+"protection.not_enabled" = "保護未啟用";
+"protection.enable" = "啟用保護";
+"protection.disable.title" = "關閉管控？";
+"protection.disable.action" = "允許刪除";
+"protection.disable.message" = "本 App 將不再限制螢幕使用時間，並且可以被刪除。裝置配對和已儲存的資料會保留。要繼續嗎？";
+"protection.disabled" = "管控已關閉，現在可以刪除本 App。若要恢復管控，需要重新授予螢幕使用時間存取權限。";
+"protection.error.account" = "Apple 無法確認符合資格的兒童帳號。請檢查這支手機是否已登入你家庭群組中孩子的帳號。";
+"protection.error.cancelled" = "確認已取消。這次請求並未啟用保護。";
+"protection.error.network" = "無法連線至 Apple。請檢查網路連線後再試一次。";
+"protection.error.conflict" = "iOS 不允許變更授權。我們並未撤銷現有存取權限。請檢查螢幕使用時間設定後再試一次。";
+"protection.error.generic" = "無法完成操作。請檢查螢幕使用時間存取權限後再試一次。";
+"protection.suggestion" = "透過 Apple 家人共享設定保護，防止孩子刪除本 App。也可以稍後設定。";
+"protection.setup" = "設定";
+"protection.later" = "稍後";
+
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "每日摘要";
 "statistics.local.budget_hint" = "已用時間是從每日可用時間中扣除的時長。iOS App 使用報告可能延遲更新。";
@@ -346,8 +375,8 @@
 "parent_mode.entry.locked" = "輸入已鎖定,請於 %d 秒後再試。";
 
 "settings.pin.section" = "家長 PIN";
-"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。";
-"settings.pin.requires_link" = "請先連接孩子裝置，才能設定 PIN 碼。";
+"settings.pin.description" = "用於在孩子的手機上開啟家長模式的 4 位 PIN 碼。";
+"settings.pin.requires_link" = "請先連接孩子的手機，才能設定 PIN 碼。";
 "settings.pin.status.set" = "已設定 PIN";
 "settings.pin.status.unset" = "尚未設定 PIN";
 "settings.pin.set" = "設定 PIN";
@@ -374,7 +403,7 @@
 "settings.pairing.linked.status" = "裝置已連結";
 "settings.pairing.unlink" = "解除裝置連結";
 "settings.pairing.unlink.confirm.title" = "解除裝置連結？";
-"settings.pairing.unlink.confirm.message" = "家長裝置與孩子裝置之間的連結將被重設。若要管理孩子的裝置，需要重新配對。";
+"settings.pairing.unlink.confirm.message" = "家長的手機與孩子的手機之間的連結將被重設。若要管理孩子的手機，需要重新配對。";
 "settings.pairing.unlink.confirm.button" = "解除連結";
 
 "tab.tasks" = "任務";
@@ -437,13 +466,13 @@
 "budget.extra" = "今日額外時間";
 "budget.not_set" = "尚未設定";
 "budget.every_day" = "每天";
-"budget.pending" = "正在等待孩子裝置的確認";
+"budget.pending" = "正在等待孩子的手機的確認";
 "budget.explanation" = "孩子每天可以使用所選 App 的時間。";
 "budget.hours" = "小時";
 "budget.minutes" = "分鐘";
 "budget.rules" = "限額每天重設。剩餘時間和額外時間不會累積到隔天。設為 0 分鐘表示不提供一般每日使用時間。";
 "budget.first_activation" = "此限額將取代原有餘額。今天已使用的時間仍會扣除，原有剩餘時間不會疊加。歷史記錄會保留。";
-"budget.child_update" = "請在孩子的裝置上開啟更新後的 App，並等待連線。";
+"budget.child_update" = "請在孩子的手機上開啟更新後的 App，並等待連線。";
 "budget.save" = "儲存";
 "budget.save_error" = "無法儲存。請檢查連線後再試一次。如果設定已變更，請重新開啟。";
 "budget.apply_error" = "無法啟用每日限額。請檢查「螢幕使用時間」存取權限，再重新開啟 App。";
@@ -452,10 +481,10 @@
 "budget.total" = "今日分配時間";
 "budget.onboarding_title" = "管理螢幕使用時間";
 "budget.onboarding_body" = "家長為所選 App 設定每日限額。孩子完成任務並經家長確認後，可以獲得額外時間。";
-"settings.section.child_connection" = "連接孩子的裝置";
+"settings.section.child_connection" = "連接孩子的手機";
 "settings.section.parent_connection" = "連接家長的裝置";
 "settings.section.diagnostics" = "診斷";
-"blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長裝置同步。";
+"blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長的手機同步。";
 "blocklist.manual_block.changed" = "設定已在其他裝置上變更，現已套用最新的鎖定狀態。請檢查開關。";
 "dashboard.blocking.schedule_active" = "已依排程鎖定";
 // Parent usage and task reports.
@@ -471,12 +500,12 @@
 "reports.tasks" = "已確認的任務";
 "reports.tasks_period" = "此期間的任務";
 "reports.updated" = "資料更新於：%@";
-"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的裝置同步後，將顯示詳細統計。";
+"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的手機同步後，將顯示詳細統計。";
 "reports.retention" = "顯示最近90天內可用的紀錄。";
 "reports.no_data" = "尚無當天的資料。";
 "reports.error" = "無法更新統計。請檢查網路連線。已載入的資料可能不是最新的。";
 "reports.retry" = "重試";
-"reports.unlinked" = "連結孩子的裝置後即可查看統計。";
+"reports.unlinked" = "連結孩子的手機後即可查看統計。";
 "reports.previous" = "上一期間";
 "reports.next" = "下一期間";
 // Permissions requested for the selected device role.
