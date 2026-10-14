@@ -27,6 +27,14 @@
 "protection.setup" = "設定";
 "protection.later" = "稍後";
 
+"location.settings.description" = "若要讓家長知道孩子的位置，請在這支手機的 App 設定中選擇「位置」→「永遠」。只有在家長提出要求時才會取得位置。";
+"location.settings.ready" = "已允許「永遠」取用位置。只有在家長提出要求時才會取得位置。";
+"location.setup.allow" = "允許取用位置";
+"location.setup.later" = "稍後";
+"map.refresh.always_required" = "孩子的手機尚未允許「永遠」取用位置。請在孩子的手機上開啟本 App 的設定→「位置」→「永遠」。";
+"map.refresh.services_disabled" = "孩子手機上的定位服務已關閉。請前往「設定」→「隱私權與安全性」→「定位服務」將其開啟。";
+"map.refresh.unavailable" = "孩子的手機未傳送新的位置。請確認孩子手機上本 App 的位置權限已設為「永遠」，然後再試一次。";
+"map.refresh.connection_error" = "連線發生錯誤，無法更新位置。請檢查兩支手機的網路連線後再試一次。";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "每日摘要";
 "statistics.local.budget_hint" = "已用時間是從每日可用時間中扣除的時長。iOS App 使用報告可能延遲更新。";

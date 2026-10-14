@@ -27,6 +27,14 @@
 "protection.setup" = "设置";
 "protection.later" = "稍后";
 
+"location.settings.description" = "为了让家长了解孩子的位置，请在这部手机的 App 设置中选择“位置”→“始终”。仅在家长发出请求时获取位置。";
+"location.settings.ready" = "已允许“始终”访问位置。仅在家长发出请求时获取位置。";
+"location.setup.allow" = "允许访问位置";
+"location.setup.later" = "稍后";
+"map.refresh.always_required" = "孩子的手机尚未允许“始终”访问位置。请在孩子的手机上打开本 App 的设置→“位置”→“始终”。";
+"map.refresh.services_disabled" = "孩子手机上的定位服务已关闭。请前往“设置”→“隐私与安全性”→“定位服务”将其打开。";
+"map.refresh.unavailable" = "孩子的手机未发送新的位置。请确认孩子手机上本 App 的位置权限已设为“始终”，然后重试。";
+"map.refresh.connection_error" = "连接出错，无法更新位置。请检查两部手机的网络连接后重试。";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "每日汇总";
 "statistics.local.budget_hint" = "已用时间是从每日可用时间中扣除的时长。iOS 应用使用报告可能会延迟更新。";

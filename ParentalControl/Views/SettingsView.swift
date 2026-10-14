@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreLocation
 
 private enum SupportEmail {
     static let address = "vadim.narb@yandex.com"
@@ -50,6 +51,9 @@ struct SettingsView: View {
                         }
                         if appState.deviceRole == .parent || appState.isParentModeActive {
                             removalProtectionSection
+                        }
+                        if appState.deviceRole == .child && appState.isParentModeActive {
+                            locationPermissionSection
                         }
                         appSection
                         helpSection
@@ -209,6 +213,41 @@ struct SettingsView: View {
                 .drawingGroup()
                 .padding(-36)
         )
+    }
+
+    private var locationPermissionSection: some View {
+        Button {
+            appState.openAppSettingsURL()
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("onboarding.location.title")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                    Text(L10n.tr(appState.childLocationAuthorizationStatus == .authorizedAlways
+                         ? "location.settings.ready" : "location.settings.description"))
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+        .onAppear { appState.refreshChildLocationAuthorizationStatus() }
     }
 
     private var appSection: some View {

@@ -27,6 +27,14 @@
 "protection.setup" = "設定する";
 "protection.later" = "あとで";
 
+"location.settings.description" = "保護者がお子様の居場所を確認できるよう、このスマートフォンのアプリ設定で「位置情報」→「常に」を選んでください。位置情報を取得するのは、保護者からリクエストがあったときだけです。";
+"location.settings.ready" = "位置情報へのアクセスは「常に」許可されています。保護者からリクエストがあったときだけ位置情報を取得します。";
+"location.setup.allow" = "位置情報を許可";
+"location.setup.later" = "あとで";
+"map.refresh.always_required" = "お子様のスマートフォンで、位置情報へのアクセスが「常に」許可されていません。そのスマートフォンでこのアプリの設定を開き、「位置情報」→「常に」を選んでください。";
+"map.refresh.services_disabled" = "お子様のスマートフォンで位置情報サービスがオフになっています。「設定」→「プライバシーとセキュリティ」→「位置情報サービス」でオンにしてください。";
+"map.refresh.unavailable" = "お子様のスマートフォンから新しい位置情報が届きませんでした。そのスマートフォンのアプリ設定で、位置情報へのアクセスが「常に」になっているか確認してから、もう一度お試しください。";
+"map.refresh.connection_error" = "通信エラーのため位置情報を更新できませんでした。両方のスマートフォンのインターネット接続を確認してから、もう一度お試しください。";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "1日のまとめ";
 "statistics.local.budget_hint" = "使用時間は、1日の利用可能時間から差し引かれた時間です。iOSのアプリ使用状況レポートは、更新に時間がかかることがあります。";

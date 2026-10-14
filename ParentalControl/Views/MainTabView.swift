@@ -1,4 +1,5 @@
 import Combine
+import CoreLocation
 import SwiftUI
 
 private enum MainTab: String, CaseIterable {
@@ -20,6 +21,8 @@ struct MainTabView: View {
     @State private var selectedTab: MainTab = .home
     /// Презентация экрана ввода PIN на ребёнке (тап по табу «Родитель»).
     @State private var isPinEntryPresented = false
+    @State private var showLocationPermissionReminder = false
+    @State private var didShowLocationReminderInParentMode = false
 
     var body: some View {
         // Reserve actual layout space above the tab container. An inset on
@@ -37,6 +40,12 @@ struct MainTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
+        .alert("onboarding.location.title", isPresented: $showLocationPermissionReminder) {
+            Button("permission.banner.open_settings") { appState.openAppSettingsURL() }
+            Button("location.setup.later", role: .cancel) {}
+        } message: {
+            Text("location.settings.description")
+        }
     }
 
     private var tabs: some View {
@@ -138,14 +147,28 @@ struct MainTabView: View {
             // не существовать в новом наборе вкладок (например, был `.parentEntry`).
             selectedTab = .home
             if !newValue {
+                showLocationPermissionReminder = false
+                didShowLocationReminderInParentMode = false
                 // На выходе из режима тоже закроем cover, если он почему-то остался открыт.
                 isPinEntryPresented = false
             }
         }
-        .fullScreenCover(isPresented: $isPinEntryPresented) {
+        .fullScreenCover(isPresented: $isPinEntryPresented, onDismiss: presentLocationReminderIfNeeded) {
             ParentModeEntryView(isPresented: $isPinEntryPresented)
                 .environmentObject(appState)
         }
+    }
+
+    private func presentLocationReminderIfNeeded() {
+        // Wait for the PIN cover to finish dismissing before presenting an alert.
+        // Cancelled/failed PIN entry and the parent's own phone must never show it.
+        guard appState.deviceRole == .child, appState.isParentModeActive,
+              appState.hasCompletedOnboarding, !isPinEntryPresented,
+              !didShowLocationReminderInParentMode else { return }
+        appState.refreshChildLocationAuthorizationStatus()
+        guard appState.childLocationAuthorizationStatus != .authorizedAlways else { return }
+        didShowLocationReminderInParentMode = true
+        showLocationPermissionReminder = true
     }
 }
 

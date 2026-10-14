@@ -371,6 +371,14 @@
 "map.last_seen" = "Updated: %@";
 "map.accuracy" = "Accuracy: ±%d m";
 "map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure your child's phone is online and that location access is granted.";
+"location.settings.description" = "To let the parent see their child’s location, choose Location → Always in this app’s settings on this phone. Location is checked only when the parent requests it.";
+"location.settings.ready" = "Always access is enabled. Location is checked only when the parent requests it.";
+"location.setup.allow" = "Allow location access";
+"location.setup.later" = "Later";
+"map.refresh.always_required" = "Always location access hasn’t been granted on your child’s phone. On their phone, open this app’s settings → Location → Always.";
+"map.refresh.services_disabled" = "Location Services are off on your child’s phone. Turn them on in Settings → Privacy & Security → Location Services.";
+"map.refresh.unavailable" = "Your child’s phone didn’t send a fresh location. Check that Location is set to Always in this app’s settings on their phone, then try again.";
+"map.refresh.connection_error" = "A connection error prevented the location update. Check the internet connection on both phones and try again.";
 "map.unpaired.title" = "Device is not paired";
 "map.unpaired.subtitle" = "Pair your child’s phone in Settings to see its location.";
 

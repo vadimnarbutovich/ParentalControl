@@ -27,6 +27,14 @@
 "protection.setup" = "설정하기";
 "protection.later" = "나중에";
 
+"location.settings.description" = "부모님이 자녀의 위치를 확인할 수 있도록 이 휴대폰의 앱 설정에서 위치 → 항상을 선택해 주세요. 위치는 부모님이 요청할 때만 확인합니다.";
+"location.settings.ready" = "위치 접근이 ‘항상’으로 설정되어 있습니다. 위치는 부모님이 요청할 때만 확인합니다.";
+"location.setup.allow" = "위치 접근 허용";
+"location.setup.later" = "나중에";
+"map.refresh.always_required" = "자녀의 휴대폰에서 위치 접근이 ‘항상’으로 허용되어 있지 않습니다. 자녀의 휴대폰에서 이 앱의 설정 → 위치 → 항상을 선택해 주세요.";
+"map.refresh.services_disabled" = "자녀의 휴대폰에서 위치 서비스가 꺼져 있습니다. 설정 → 개인정보 보호 및 보안 → 위치 서비스에서 켜 주세요.";
+"map.refresh.unavailable" = "자녀의 휴대폰에서 최신 위치를 보내지 못했습니다. 자녀의 휴대폰 앱 설정에서 위치 접근이 ‘항상’으로 설정되어 있는지 확인한 후 다시 시도해 주세요.";
+"map.refresh.connection_error" = "연결 오류로 위치를 업데이트하지 못했습니다. 두 휴대폰의 인터넷 연결을 확인한 후 다시 시도해 주세요.";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "하루 요약";
 "statistics.local.budget_hint" = "사용 시간은 하루 허용 시간에서 차감된 시간입니다. iOS 앱 사용 보고서는 업데이트가 늦어질 수 있습니다.";

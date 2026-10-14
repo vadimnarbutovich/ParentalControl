@@ -27,6 +27,14 @@
 "protection.setup" = "Configurer";
 "protection.later" = "Plus tard";
 
+"location.settings.description" = "Pour que le parent puisse savoir où se trouve son enfant, choisissez Position → Toujours dans les réglages de cette app sur ce téléphone. La position est recherchée uniquement à la demande du parent.";
+"location.settings.ready" = "L’accès à la position est réglé sur Toujours. La position est recherchée uniquement à la demande du parent.";
+"location.setup.allow" = "Autoriser la localisation";
+"location.setup.later" = "Plus tard";
+"map.refresh.always_required" = "L’accès permanent à la position n’est pas autorisé sur le téléphone de votre enfant. Ouvrez les réglages de notre app sur son téléphone → Position → Toujours.";
+"map.refresh.services_disabled" = "Le service de localisation est désactivé sur le téléphone de votre enfant. Activez-le dans Réglages → Confidentialité et sécurité → Service de localisation.";
+"map.refresh.unavailable" = "Le téléphone de votre enfant n’a pas envoyé de position récente. Vérifiez que l’accès à la position est réglé sur Toujours dans les réglages de notre app sur son téléphone, puis réessayez.";
+"map.refresh.connection_error" = "Une erreur de connexion a empêché l’actualisation de la position. Vérifiez la connexion internet des deux téléphones, puis réessayez.";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "Bilan du jour";
 "statistics.local.budget_hint" = "Le temps utilisé correspond au temps déduit du quota quotidien. Le rapport d’utilisation des apps d’iOS peut mettre du temps à se mettre à jour.";

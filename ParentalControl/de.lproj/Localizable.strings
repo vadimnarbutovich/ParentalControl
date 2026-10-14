@@ -27,6 +27,14 @@
 "protection.setup" = "Einrichten";
 "protection.later" = "Später";
 
+"location.settings.description" = "Damit Eltern den Standort ihres Kindes sehen können, wähle auf diesem Telefon in den App-Einstellungen „Standort“ → „Immer“. Der Standort wird nur auf Anfrage der Eltern ermittelt.";
+"location.settings.ready" = "Standortzugriff „Immer“ ist aktiviert. Der Standort wird nur auf Anfrage der Eltern ermittelt.";
+"location.setup.allow" = "Standortzugriff erlauben";
+"location.setup.later" = "Später";
+"map.refresh.always_required" = "Auf dem Telefon deines Kindes fehlt der Standortzugriff „Immer“. Öffne dort die Einstellungen unserer App → „Standort“ → „Immer“.";
+"map.refresh.services_disabled" = "Auf dem Telefon deines Kindes sind die Ortungsdienste deaktiviert. Aktiviere sie unter Einstellungen → Datenschutz & Sicherheit → Ortungsdienste.";
+"map.refresh.unavailable" = "Das Telefon deines Kindes hat keinen aktuellen Standort gesendet. Prüfe dort in den App-Einstellungen, ob der Standortzugriff auf „Immer“ steht, und versuche es erneut.";
+"map.refresh.connection_error" = "Der Standort konnte wegen eines Verbindungsfehlers nicht aktualisiert werden. Prüfe die Internetverbindung auf beiden Telefonen und versuche es erneut.";
 /* Local statistics, shown only in parent mode on the child's device. */
 "statistics.local.summary" = "Tagesübersicht";
 "statistics.local.budget_hint" = "„Verbraucht“ ist die vom Tagesbudget abgezogene Zeit. Der iOS-Bericht zur App-Nutzung kann sich verzögert aktualisieren.";

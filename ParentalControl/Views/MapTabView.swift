@@ -7,6 +7,8 @@ import SwiftUI
 struct MapTabView: View {
     @EnvironmentObject private var appState: AppState
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var refreshTask: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -24,6 +26,10 @@ struct MapTabView: View {
         }
         .onChange(of: appState.childLocationSnapshot) { _, _ in
             recenterCameraIfPossible(animated: true)
+        }
+        .onDisappear { refreshTask?.cancel() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { refreshTask?.cancel() }
         }
     }
 
@@ -77,7 +83,11 @@ struct MapTabView: View {
 
     private var refreshButton: some View {
         Button {
-            Task { await appState.refreshChildLocationFromParent() }
+            guard refreshTask == nil, !appState.isParentRefreshingChildLocation else { return }
+            refreshTask = Task {
+                await appState.refreshChildLocationFromParent()
+                refreshTask = nil
+            }
         } label: {
             HStack(spacing: 8) {
                 if appState.isParentRefreshingChildLocation {

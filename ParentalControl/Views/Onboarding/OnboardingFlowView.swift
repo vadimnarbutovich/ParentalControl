@@ -11,6 +11,8 @@ struct OnboardingFlowView: View {
     @State private var step = 0
     @State private var isAdvancing = false
     @State private var confettiTrigger = 0
+    @State private var didRequestLocationAccess = false
+    @State private var showLocationSettingsHint = false
 
     /// Горизонтальный отступ контента онбординга — совпадает с кнопкой «Далее» / «Начать».
     private enum OnboardingLayout {
@@ -61,9 +63,18 @@ struct OnboardingFlowView: View {
         .task {
             await appState.refreshPermissionStatuses()
         }
+        .alert("onboarding.location.title", isPresented: $showLocationSettingsHint) {
+            Button("permission.banner.open_settings") { appState.openAppSettingsURL() }
+            Button("location.setup.later", role: .cancel) { step = 7 }
+        } message: {
+            Text("location.settings.description")
+        }
     }
 
     private var primaryButtonTitleKey: LocalizedStringKey {
+        if step == 6 && !didRequestLocationAccess {
+            return "location.setup.allow"
+        }
         if step == 8 {
             return "onboarding.cta.start"
         }
@@ -339,12 +350,24 @@ struct OnboardingFlowView: View {
                 await appState.refreshPermissionStatuses()
                 step = appState.deviceRole == .parent ? 8 : 6
             case 6:
-                // Location belongs only to the child device. iOS controls the Always prompt.
-                let whenInUse = await appState.requestChildLocationPermissionIfNeeded()
-                if whenInUse == .authorizedWhenInUse || whenInUse == .authorizedAlways {
-                    _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()
+                appState.refreshChildLocationAuthorizationStatus()
+                if appState.childLocationAuthorizationStatus == .authorizedAlways {
+                    step = 7
+                    return
                 }
-                step = 7
+                // Do not advance behind an outstanding system prompt or repeatedly request it.
+                // The next tap checks the user's actual choice; Settings is the fallback.
+                if didRequestLocationAccess {
+                    showLocationSettingsHint = true
+                    return
+                }
+                didRequestLocationAccess = true
+                let whenInUse = await appState.requestChildLocationPermissionIfNeeded()
+                if whenInUse == .authorizedWhenInUse {
+                    _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()
+                } else if whenInUse == .denied || whenInUse == .restricted {
+                    showLocationSettingsHint = true
+                }
             case 7:
                 step = 8
             case 8:
