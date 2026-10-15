@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "Verbinden";
 "role.select.title" = "Wähle die Rolle des Telefons";
 "role.select.subtitle" = "Gehört dieses Telefon einem Elternteil oder einem Kind?";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Limitmodus";
+"budget.weekly.by_days" = "Nach Wochentag";
+"budget.weekly.today" = "Heute: %@ · Nach Wochentag";
+"budget.weekly.update_child" = "Für unterschiedliche Tageslimits aktualisiere die App auf dem Telefon deines Kindes und öffne sie mit einer Internetverbindung.";
+"budget.weekly.replace.title" = "Gleiches Limit für die ganze Woche?";
+"budget.weekly.replace.action" = "Für alle Tage übernehmen";
+"budget.weekly.replace.message" = "Die gewählte Zeit ersetzt die individuellen Limits aller Wochentage.";
+"budget.weekly.apply_days" = "Für diese Tage übernehmen";
+"budget.weekly.draft_hint" = "Tippe danach auf dem Bildschirm für das Tageslimit auf Speichern.";
+"budget.weekly.apply" = "Übernehmen";

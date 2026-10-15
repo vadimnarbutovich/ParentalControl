@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "연결";
 "role.select.title" = "휴대폰 역할 선택";
 "role.select.subtitle" = "부모님 휴대폰인가요, 자녀 휴대폰인가요?";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "한도 설정 방식";
+"budget.weekly.by_days" = "요일별";
+"budget.weekly.today" = "오늘: %@ · 요일별";
+"budget.weekly.update_child" = "요일마다 다른 한도를 설정하려면 자녀 휴대폰에서 앱을 업데이트한 뒤 인터넷에 연결된 상태로 열어 주세요.";
+"budget.weekly.replace.title" = "매일 같은 한도를 적용할까요?";
+"budget.weekly.replace.action" = "모든 요일에 적용";
+"budget.weekly.replace.message" = "선택한 시간으로 각 요일에 설정된 한도를 모두 바꿔요.";
+"budget.weekly.apply_days" = "적용할 요일";
+"budget.weekly.draft_hint" = "적용한 뒤 일일 한도 화면에서 저장을 눌러 주세요.";
+"budget.weekly.apply" = "적용";

@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "连接";
 "role.select.title" = "选择手机角色";
 "role.select.subtitle" = "这是家长的手机还是孩子的手机？";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "限额模式";
+"budget.weekly.by_days" = "按星期设置";
+"budget.weekly.today" = "今天：%@ · 按星期设置";
+"budget.weekly.update_child" = "要设置不同星期的限额，请在孩子的手机上更新 App，并在联网状态下打开。";
+"budget.weekly.replace.title" = "整周使用相同限额？";
+"budget.weekly.replace.action" = "应用到所有天";
+"budget.weekly.replace.message" = "所选时间将替换一周中每天的单独限额。";
+"budget.weekly.apply_days" = "应用到以下日期";
+"budget.weekly.draft_hint" = "应用后，请在每日限额页面点击“保存”。";
+"budget.weekly.apply" = "应用";

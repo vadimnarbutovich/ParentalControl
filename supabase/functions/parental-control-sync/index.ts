@@ -341,13 +341,23 @@ async function changeDailyBudget(device: DeviceContext, payload: Json): Promise<
   const revision = asNumber(payload.expectedRevision);
   const intent = asUUIDString(payload.intentID);
   const kind = asString(payload.kind);
+  const weekly = payload.weeklyLimitsSeconds ?? null;
+  if (weekly !== null && (kind !== "limit" || !Array.isArray(weekly) || weekly.length !== 7 ||
+      !weekly.every(value => typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 86400))) {
+    return errorResponse("Invalid weekly limits", 400);
+  }
   if (!intent || seconds === null || !Number.isInteger(seconds) || revision === null ||
       !Number.isSafeInteger(revision) || revision < 0 || (kind !== "limit" && kind !== "adjustment")) {
     return errorResponse("Invalid budget request", 400);
   }
-  const { data, error } = await supabase.rpc("pc_change_daily_budget", {
+  const supportsWeekly = payload.weeklyBudgetProtocol === 1;
+  if (weekly !== null && !supportsWeekly) return errorResponse("weekly_parent_update_required", 400);
+  const args: Json = {
     p_device: device.id, p_kind: kind, p_seconds: seconds, p_intent: intent, p_expected_revision: revision,
-  });
+  };
+  if (supportsWeekly) args.p_weekly_limits = weekly;
+  const { data, error } = await supabase.rpc(
+    supportsWeekly ? "pc_change_weekly_daily_budget" : "pc_change_daily_budget", args);
   if (error) return errorResponse(error.message, 400);
   // Reuse an already-supported wake signal; old clients never receive an unknown command enum.
   await notifyChildTasksUpdated(device.family_id, device.id);
@@ -500,6 +510,8 @@ async function upsertChildRuntimeBundle(deviceId: string, payload: Json): Promis
     try { new Intl.DateTimeFormat("en", { timeZone: timezone ?? "" }).format(); }
     catch { return errorResponse("Invalid budget timezone", 400); }
     budgetFields.budget_protocol = 1;
+    // Explicitly false for older foreground builds; do not infer capability from a saved policy.
+    budgetFields.weekly_budget_ready = payload.weeklyBudgetProtocol === 1;
     budgetFields.budget_timezone = timezone;
     if (payload.budgetState && typeof payload.budgetState === "object") {
       budgetFields.budget_snapshot = payload.budgetState;

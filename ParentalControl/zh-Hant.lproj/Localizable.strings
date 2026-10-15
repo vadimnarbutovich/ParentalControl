@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "連接";
 "role.select.title" = "選擇手機角色";
 "role.select.subtitle" = "這是家長的手機還是孩子的手機？";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "上限模式";
+"budget.weekly.by_days" = "依星期設定";
+"budget.weekly.today" = "今天：%@ · 依星期設定";
+"budget.weekly.update_child" = "若要設定不同星期的上限，請在孩子的手機上更新 App，並在連網狀態下開啟。";
+"budget.weekly.replace.title" = "整週使用相同上限？";
+"budget.weekly.replace.action" = "套用至所有天";
+"budget.weekly.replace.message" = "所選時間將取代一週中每天的個別上限。";
+"budget.weekly.apply_days" = "套用至以下日期";
+"budget.weekly.draft_hint" = "套用後，請在每日上限頁面點選「儲存」。";
+"budget.weekly.apply" = "套用";

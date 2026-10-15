@@ -640,3 +640,15 @@
 "setup.status.pending" = "Не настроено";
 "setup.refresh" = "Проверить подключение";
 "setup.pin.enter" = "Ввести PIN";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Режим лимита";
+"budget.weekly.by_days" = "По дням недели";
+"budget.weekly.today" = "Сегодня: %@ · По дням недели";
+"budget.weekly.update_child" = "Чтобы настроить разные лимиты по дням, обновите и откройте приложение на телефоне ребёнка с доступом к интернету.";
+"budget.weekly.replace.title" = "Одинаковый лимит на всю неделю?";
+"budget.weekly.replace.action" = "Применить ко всем дням";
+"budget.weekly.replace.message" = "Выбранное время заменит индивидуальные лимиты всех дней недели.";
+"budget.weekly.apply_days" = "Применить к дням";
+"budget.weekly.draft_hint" = "После применения нажмите «Сохранить» на экране дневного лимита.";
+"budget.weekly.apply" = "Применить";

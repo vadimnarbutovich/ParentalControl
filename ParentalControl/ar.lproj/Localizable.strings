@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "ربط";
 "role.select.title" = "اختر دور الهاتف";
 "role.select.subtitle" = "هل هذا هاتف ولي الأمر أم هاتف الطفل؟";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "طريقة تحديد الوقت";
+"budget.weekly.by_days" = "حسب اليوم";
+"budget.weekly.today" = "اليوم: %@ · حسب اليوم";
+"budget.weekly.update_child" = "لتحديد وقت مختلف لكل يوم، حدّث التطبيق وافتحه على هاتف طفلك مع الاتصال بالإنترنت.";
+"budget.weekly.replace.title" = "نفس الحد طوال الأسبوع؟";
+"budget.weekly.replace.action" = "تطبيق على جميع الأيام";
+"budget.weekly.replace.message" = "سيحل الوقت المحدد محل الحدود الفردية لجميع أيام الأسبوع.";
+"budget.weekly.apply_days" = "تطبيق على الأيام";
+"budget.weekly.draft_hint" = "بعد التطبيق، اضغط «حفظ» في شاشة الحد اليومي.";
+"budget.weekly.apply" = "تطبيق";

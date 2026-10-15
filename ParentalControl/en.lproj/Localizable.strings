@@ -640,3 +640,15 @@
 "setup.status.pending" = "Not configured";
 "setup.refresh" = "Check connection";
 "setup.pin.enter" = "Enter PIN";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Limit mode";
+"budget.weekly.by_days" = "By weekday";
+"budget.weekly.today" = "Today: %@ · By weekday";
+"budget.weekly.update_child" = "To set different limits by weekday, update and open the app on your child’s phone with an internet connection.";
+"budget.weekly.replace.title" = "Same limit for the whole week?";
+"budget.weekly.replace.action" = "Apply to all days";
+"budget.weekly.replace.message" = "The selected time will replace the individual limits for every day of the week.";
+"budget.weekly.apply_days" = "Apply to days";
+"budget.weekly.draft_hint" = "After applying, tap Save on the daily limit screen.";
+"budget.weekly.apply" = "Apply";

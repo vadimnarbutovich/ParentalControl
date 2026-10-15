@@ -27,7 +27,7 @@ final class AppState: ObservableObject {
     @Published private(set) var isBudgetSaving = false
     @Published var budgetError: String?
     private var budgetMonitorReady = false
-    private var budgetChangeIntent: (kind: String, seconds: Int, day: String, revision: Int, id: UUID)?
+    private var budgetChangeIntent: (kind: String, seconds: Int, weekly: [Int]?, day: String, revision: Int, id: UUID)?
     @Published private(set) var todaySteps: Int = 0
     @Published private(set) var exerciseTotals: [String: Int]
     @Published private(set) var isHealthAuthorized = false
@@ -671,8 +671,16 @@ final class AppState: ObservableObject {
         _ = await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
     }
 
-    func saveParentDailyLimit(minutes: Int) async -> Bool {
-        await saveDailyBudgetChange(kind: "limit", seconds: minutes * 60)
+    func saveParentDailyLimit(minutes: Int, weeklyMinutes: [Int]? = nil) async -> Bool {
+        guard (0...1440).contains(minutes), weeklyMinutes.map({
+            $0.count == 7 && $0.allSatisfy { (0...1440).contains($0) }
+        }) ?? true else { return false }
+        if weeklyMinutes != nil, parentBudgetStatus?.weeklyChildReady != true {
+            budgetError = L10n.tr("budget.weekly.update_child")
+            return false
+        }
+        return await saveDailyBudgetChange(kind: "limit", seconds: minutes * 60,
+                                          weekly: weeklyMinutes?.map { $0 * 60 })
     }
 
     private func parentBudgetCacheKey(_ family: UUID) -> String {
@@ -688,7 +696,8 @@ final class AppState: ObservableObject {
               cached.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
         // Never present yesterday's cached usage as today's live balance.
         parentBudgetStatus = DailyBudgetStatus(policy: cached.policy, childReady: cached.childReady,
-            appliedRevision: cached.appliedRevision, state: nil)
+            appliedRevision: cached.appliedRevision, state: nil,
+            weeklyChildReady: cached.weeklyChildReady, childTimeZone: cached.childTimeZone)
     }
 
     private func receiveParentBudget(_ status: DailyBudgetStatus) {
@@ -698,7 +707,8 @@ final class AppState: ObservableObject {
         parentBudgetStatus = status
         hasLoadedParentBudget = true
         let cached = DailyBudgetStatus(policy: status.policy, childReady: status.childReady,
-            appliedRevision: status.appliedRevision, state: nil)
+            appliedRevision: status.appliedRevision, state: nil,
+            weeklyChildReady: status.weeklyChildReady, childTimeZone: status.childTimeZone)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         if let data = try? encoder.encode(cached) {
@@ -709,28 +719,32 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func saveDailyBudgetChange(kind: String, seconds: Int) async -> Bool {
+    private func saveDailyBudgetChange(kind: String, seconds: Int, weekly: [Int]? = nil) async -> Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true, !isBudgetSaving else { return false }
         let requestedFamily = pairingState?.familyID
         isBudgetSaving = true
         budgetError = nil
         defer { isBudgetSaving = false }
-        let day = parentBudgetStatus?.policy?.extraDay ?? DailyBudgetState.dayKey()
-        if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds || budgetChangeIntent?.day != day {
-            budgetChangeIntent = (kind, seconds, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
+        let day = parentBudgetStatus?.currentDay ?? DailyBudgetState.dayKey()
+        if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds
+            || budgetChangeIntent?.weekly != weekly || budgetChangeIntent?.day != day {
+            budgetChangeIntent = (kind, seconds, weekly, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
         }
         guard let intent = budgetChangeIntent else { return false }
         do {
             let saved = try await remoteSyncService.changeDailyBudget(
-                kind: kind, seconds: seconds, expectedRevision: intent.revision, intentID: intent.id)
+                kind: kind, seconds: seconds, expectedRevision: intent.revision, intentID: intent.id,
+                weeklyLimitsSeconds: weekly)
             guard pairingState?.familyID == requestedFamily else { return false }
             receiveParentBudget(saved)
             budgetChangeIntent = nil
-            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds])
+            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds,
+                "limit_mode": saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"])
             return true
         } catch {
             if error.localizedDescription.contains("budget_changed_refresh") { budgetChangeIntent = nil }
-            budgetError = L10n.tr("budget.save_error")
+            budgetError = L10n.tr(error.localizedDescription.contains("weekly_child_update_required")
+                                 ? "budget.weekly.update_child" : "budget.save_error")
             await refreshParentChildState()
             return false
         }
@@ -3587,15 +3601,19 @@ private final class ParentalRemoteSyncService {
 
     /// Child → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_pending_commands`
     /// (+ `fetch_parent_pin` + `fetch_parent_pro`, если `includeParentSettings == true`).
-    func changeDailyBudget(kind: String, seconds: Int, expectedRevision: Int, intentID: UUID) async throws -> DailyBudgetStatus {
+    func changeDailyBudget(kind: String, seconds: Int, expectedRevision: Int, intentID: UUID,
+                           weeklyLimitsSeconds: [Int]? = nil) async throws -> DailyBudgetStatus {
         struct Payload: Encodable {
             let kind: String
             let seconds: Int
             let expectedRevision: Int
             let intentID: UUID
+            let weeklyLimitsSeconds: [Int]?
+            let weeklyBudgetProtocol = 1
         }
         return try await call(action: "change_daily_budget", payload: Payload(
-            kind: kind, seconds: seconds, expectedRevision: expectedRevision, intentID: intentID))
+            kind: kind, seconds: seconds, expectedRevision: expectedRevision, intentID: intentID,
+            weeklyLimitsSeconds: weeklyLimitsSeconds))
     }
 
     func childPoll(includeParentSettings: Bool) async throws -> ChildPollDTO {
@@ -3639,6 +3657,7 @@ private final class ParentalRemoteSyncService {
             let budgetState: DailyBudgetState?
             let budgetHistory: [DailyBudgetState]
             let budgetProtocol = 1
+            let weeklyBudgetProtocol = 1
             let budgetTimezone = TimeZone.current.identifier
         }
         let dayStart = Calendar.current.startOfDay(for: stats.date)

@@ -651,7 +651,7 @@ private struct ParentDashboardView: View {
                             DailyBudgetBalanceCard(
                                 availableSeconds: appState.parentBudgetStatus?.state?.availableSeconds ?? appState.parentChildAvailableSeconds ?? 0,
                                 usedSeconds: appState.parentBudgetStatus?.state?.usedSeconds ?? appState.parentChildSpentSecondsToday ?? 0,
-                                limitSeconds: appState.parentBudgetStatus?.policy?.limitSeconds,
+                                limitSeconds: appState.parentBudgetStatus?.currentLimitSeconds,
                                 earnedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.earnedSeconds) : nil,
                                 grantedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.grantedSeconds) : nil,
                                 isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
@@ -669,7 +669,10 @@ private struct ParentDashboardView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("budget.title").font(.headline)
                                         if let policy = appState.parentBudgetStatus?.policy {
-                                            Text(L10n.duration(seconds: policy.limitSeconds) + " · " + L10n.tr("budget.every_day"))
+                                            let duration = L10n.duration(seconds: appState.parentBudgetStatus?.currentLimitSeconds ?? policy.limitSeconds)
+                                            Text(policy.weeklyLimitsSeconds == nil
+                                                 ? duration + " · " + L10n.tr("budget.every_day")
+                                                 : L10n.f("budget.weekly.today", duration))
                                         } else if appState.hasLoadedParentBudget {
                                             Text("budget.not_set")
                                         } else {
@@ -769,7 +772,7 @@ private struct ParentDashboardView: View {
                 }
             }
             .sheet(isPresented: $isDailyLimitPresented) {
-                DailyLimitSheet(seconds: appState.parentBudgetStatus?.policy?.limitSeconds)
+                DailyLimitSheet(policy: appState.parentBudgetStatus?.policy)
                     .environmentObject(appState)
             }
             .sheet(isPresented: $isAdjustTimePresented) {

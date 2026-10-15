@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "連携する";
 "role.select.title" = "スマートフォンの役割を選択";
 "role.select.subtitle" = "保護者とお子様、どちらのスマートフォンですか？";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "上限の設定方法";
+"budget.weekly.by_days" = "曜日ごと";
+"budget.weekly.today" = "今日：%@ · 曜日ごと";
+"budget.weekly.update_child" = "曜日ごとに上限を設定するには、お子様のスマートフォンでアプリを更新し、インターネットに接続した状態で開いてください。";
+"budget.weekly.replace.title" = "毎日同じ上限にしますか？";
+"budget.weekly.replace.action" = "すべての曜日に適用";
+"budget.weekly.replace.message" = "選択した時間で、各曜日に設定した上限を置き換えます。";
+"budget.weekly.apply_days" = "適用する曜日";
+"budget.weekly.draft_hint" = "適用後、1日の上限画面で「保存」をタップしてください。";
+"budget.weekly.apply" = "適用";

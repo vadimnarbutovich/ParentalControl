@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "Vincular";
 "role.select.title" = "Elige la función del teléfono";
 "role.select.subtitle" = "¿Es el teléfono del padre o la madre, o el del niño?";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Modo del límite";
+"budget.weekly.by_days" = "Por día";
+"budget.weekly.today" = "Hoy: %@ · Por día";
+"budget.weekly.update_child" = "Para establecer límites distintos según el día, actualiza y abre la app en el teléfono de tu hijo con conexión a internet.";
+"budget.weekly.replace.title" = "¿El mismo límite toda la semana?";
+"budget.weekly.replace.action" = "Aplicar a todos los días";
+"budget.weekly.replace.message" = "El tiempo elegido sustituirá los límites individuales de todos los días de la semana.";
+"budget.weekly.apply_days" = "Aplicar a estos días";
+"budget.weekly.draft_hint" = "Después de aplicar, pulsa Guardar en la pantalla del límite diario.";
+"budget.weekly.apply" = "Aplicar";

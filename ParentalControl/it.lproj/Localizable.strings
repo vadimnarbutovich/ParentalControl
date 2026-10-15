@@ -569,3 +569,15 @@
 "settings.child.link.connect" = "Collega";
 "role.select.title" = "Scegli il ruolo del telefono";
 "role.select.subtitle" = "È il telefono del genitore o del figlio?";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Modalità limite";
+"budget.weekly.by_days" = "Per giorno";
+"budget.weekly.today" = "Oggi: %@ · Per giorno";
+"budget.weekly.update_child" = "Per impostare limiti diversi per ogni giorno, aggiorna e apri l’app sul telefono di tuo figlio con una connessione a internet.";
+"budget.weekly.replace.title" = "Stesso limite per tutta la settimana?";
+"budget.weekly.replace.action" = "Applica a tutti i giorni";
+"budget.weekly.replace.message" = "Il tempo scelto sostituirà i limiti individuali di tutti i giorni della settimana.";
+"budget.weekly.apply_days" = "Applica ai giorni";
+"budget.weekly.draft_hint" = "Dopo aver applicato, tocca Salva nella schermata del limite giornaliero.";
+"budget.weekly.apply" = "Applica";

@@ -47,7 +47,7 @@ struct OnboardingFlowView: View {
             || !screenTimeService.selection.webDomainTokens.isEmpty
     }
     private var limitSeconds: Int? {
-        isParent ? appState.parentBudgetStatus?.policy?.limitSeconds : appState.dailyBudget?.policy.limitSeconds
+        isParent ? appState.parentBudgetStatus?.currentLimitSeconds : appState.dailyBudget?.policy.limitSeconds
     }
     private var isPermissionStep: Bool { [.screenTime, .notifications, .location].contains(step) }
     private var permissionGranted: Bool {
@@ -171,7 +171,7 @@ struct OnboardingFlowView: View {
                     .environmentObject(appState)
                     .environmentObject(screenTimeService)
             case .limit:
-                DailyLimitSheet(seconds: limitSeconds).environmentObject(appState)
+                DailyLimitSheet(policy: appState.parentBudgetStatus?.policy).environmentObject(appState)
             }
         }
         .fullScreenCover(isPresented: $showsPinEntry) {
