@@ -1,380 +1,449 @@
 import CoreLocation
+import FamilyControls
 import SwiftUI
 
+/// Each role completes setup here using the same operations and editors as Settings.
 struct OnboardingFlowView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var screenTimeService: ScreenTimeService
+    @EnvironmentObject private var subscriptionService: SubscriptionService
+    @Environment(\.scenePhase) private var scenePhase
 
-    /// Если задан — просмотр из настроек: на последнем шаге вызывается колбэк вместо `completeOnboarding()`.
+    /// Replay preserves existing pairing, permissions, limits and PIN.
     var onReplayFinished: (() -> Void)? = nil
 
-    @State private var step = 0
-    @State private var isAdvancing = false
-    @State private var confettiTrigger = 0
-    @State private var didRequestLocationAccess = false
-    @State private var showLocationSettingsHint = false
+    private enum Step: String {
+        case parentIntro, childIntro, install, notifications, screenTime, location
+        case pairing, pin, apps, protection, limit, finish
+    }
+    private enum Sheet: String, Identifiable {
+        case share, pin, apps, protection, limit
+        var id: String { rawValue }
+    }
 
-    /// Горизонтальный отступ контента онбординга — совпадает с кнопкой «Далее» / «Начать».
-    private enum OnboardingLayout {
-        /// Зазор между заголовком и текстом под ним на всех шагах онбординга.
-        static let onboardingTitleToBodySpacing: CGFloat = 16
-        static let horizontalInset: CGFloat = 20
-        /// Здоровье, экранное время, уведомления, приложения (база 132 pt, +⅓).
-        static let onboardingStepIconSize: CGFloat = 176
-        /// Иллюстрация ButtonGo на финале (+⅓ к прежним 300×(132×1.35)).
-        static let finalGoIllustrationMaxWidth: CGFloat = 300 * 4 / 3
-        static let finalGoIllustrationMaxHeight: CGFloat = 132 * 1.35 * 4 / 3
+    @State private var stepIndex = 0
+    @State private var isRequesting = false
+    @State private var didRequestLocation = false
+    @State private var didRequestScreenTime = false
+    @State private var activeSheet: Sheet?
+    @State private var showsPinEntry = false
+    @State private var enteredParentModeForSetup = false
+
+    private var isParent: Bool { appState.deviceRole == .parent }
+    private var isLinked: Bool { appState.pairingState?.isLinked == true }
+    private var steps: [Step] {
+        isParent
+            ? [.parentIntro, .notifications, .install, .pairing, .pin, .limit, .finish]
+            : [.childIntro, .pairing, .screenTime, .notifications, .location, .pin, .apps, .protection, .limit, .finish]
+    }
+    private var step: Step { steps[min(stepIndex, steps.count - 1)] }
+    private var busy: Bool {
+        isRequesting || appState.isRefreshingSetup || screenTimeService.isAuthorizationRequestInProgress
+    }
+    private var pairingCode: String? { appState.parentPairingCode ?? appState.pairingState?.pairingCode }
+    private var hasSelectedApps: Bool {
+        !screenTimeService.selection.applicationTokens.isEmpty
+            || !screenTimeService.selection.categoryTokens.isEmpty
+            || !screenTimeService.selection.webDomainTokens.isEmpty
+    }
+    private var limitSeconds: Int? {
+        isParent ? appState.parentBudgetStatus?.policy?.limitSeconds : appState.dailyBudget?.policy.limitSeconds
+    }
+    private var isPermissionStep: Bool { [.screenTime, .notifications, .location].contains(step) }
+    private var permissionGranted: Bool {
+        switch step {
+        case .screenTime: return screenTimeService.isAuthorized
+        case .notifications: return appState.isNotificationAuthorized
+        case .location: return appState.childLocationAuthorizationStatus == .authorizedAlways
+        default: return true
+        }
+    }
+    private var needsSettings: Bool {
+        switch step {
+        case .notifications: return appState.isNotificationAuthorizationDenied
+        case .location:
+            return didRequestLocation || appState.childLocationAuthorizationStatus == .denied
+                || appState.childLocationAuthorizationStatus == .restricted
+        default: return false
+        }
+    }
+    private var canAdvance: Bool {
+        if isPermissionStep { return permissionGranted }
+        switch step {
+        case .pairing: return isLinked
+        case .pin: return isLinked && (isParent ? appState.parentPinIsSet : appState.isParentModeActive)
+        case .apps: return isLinked && hasSelectedApps && screenTimeService.isAuthorized
+        case .protection: return screenTimeService.isRemovalProtectionEnabled
+        case .limit: return isLinked && limitSeconds != nil
+        default: return true
+        }
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            AppBackgroundView()
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(L10n.tr(isParent ? "role.select.parent" : "role.select.child"))
+                Spacer()
+                Text("\(stepIndex + 1) / \(steps.count)").monospacedDigit()
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(24)
 
-            VStack(spacing: 0) {
-                GeometryReader { geo in
-                    onboardingStepContent(size: geo.size)
-                        .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(L10n.tr(titleKey))
+                        .font(.largeTitle.bold())
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.tr(bodyKey))
+                        .font(.title3)
+                        .fixedSize(horizontal: false, vertical: true)
+                    stepControls
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            .id(step)
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
 
-                pageIndicator
-                    .padding(.bottom, 12)
-
-                Button(action: handleBottomBarPrimaryTap) {
-                    Text(primaryButtonTitleKey)
-                        .frame(maxWidth: .infinity)
+            VStack(spacing: 12) {
+                Button { performPrimaryAction() } label: {
+                    HStack {
+                        if busy { ProgressView().controlSize(.small) }
+                        Text(L10n.tr(primaryActionKey))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
                 }
-                .buttonStyle(NeonPrimaryButtonStyle(tint: step == 8 ? AppTheme.neonBlue : AppTheme.neonGreen))
-                .disabled(isAdvancing)
-                .opacity(isAdvancing ? 0.55 : 1)
-                .padding(.horizontal, OnboardingLayout.horizontalInset)
-                .padding(.bottom, 28)
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.neonBlue)
+                .disabled(busy || (step == .pairing && isParent && !isLinked && pairingCode != nil)
+                          || (step == .pairing && !isParent && !isLinked
+                              && appState.pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+
+                if !canAdvance {
+                    Button("location.setup.later") { advance() }.disabled(busy)
+                }
+                if stepIndex > 0 {
+                    Button("setup.back") { stepIndex -= 1 }.disabled(busy)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.05, green: 0.08, blue: 0.12).ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .interactiveDismissDisabled(busy)
+        .task { await appState.refreshPermissionStatuses() }
+        .task(id: step) {
+            // Only one explicit refresh on entry. No extra timers on either phone.
+            if step == .pin || step == .limit { await appState.refreshSetupStatus() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await appState.refreshPermissionStatuses() }
             }
         }
-        .onChange(of: step) { _, newValue in
-            if newValue == 8 {
-                confettiTrigger += 1
+        .onChange(of: appState.isParentModeActive) { _, active in
+            if active { enteredParentModeForSetup = true }
+            else if activeSheet == .apps || activeSheet == .protection { activeSheet = nil }
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .share:
+                ActivityShareSheet(items: [AppStoreLinks.shareURL])
+            case .pin:
+                ParentPinSetupSheet()
+                    .environmentObject(appState)
+                    .presentationDragIndicator(.visible)
+            case .apps:
+                BlockListView(selectionOnly: true)
+                    .environmentObject(appState)
+                    .environmentObject(screenTimeService)
+                    .environmentObject(subscriptionService)
+                    .presentationDragIndicator(.visible)
+            case .protection:
+                RemovalProtectionView()
+                    .environmentObject(appState)
+                    .environmentObject(screenTimeService)
+            case .limit:
+                DailyLimitSheet(seconds: limitSeconds).environmentObject(appState)
             }
+        }
+        .fullScreenCover(isPresented: $showsPinEntry) {
+            ParentModeEntryView(isPresented: $showsPinEntry).environmentObject(appState)
         }
         .onAppear {
-            let mode = onReplayFinished == nil ? "first_launch" : "replay"
-            AppAnalytics.report("onboarding_flow_shown", parameters: ["mode": mode])
+            AppAnalytics.report("onboarding_flow_shown", parameters: [
+                "mode": onReplayFinished == nil ? "first_launch" : "replay",
+                "role": isParent ? "parent" : "child"
+            ])
         }
-        .task {
-            await appState.refreshPermissionStatuses()
-        }
-        .alert("onboarding.location.title", isPresented: $showLocationSettingsHint) {
-            Button("permission.banner.open_settings") { appState.openAppSettingsURL() }
-            Button("location.setup.later", role: .cancel) { step = 7 }
-        } message: {
-            Text("location.settings.description")
-        }
-    }
-
-    private var primaryButtonTitleKey: LocalizedStringKey {
-        if step == 6 && !didRequestLocationAccess {
-            return "location.setup.allow"
-        }
-        if step == 8 {
-            return "onboarding.cta.start"
-        }
-        return "onboarding.cta.next"
     }
 
     @ViewBuilder
-    private func onboardingStepContent(size: CGSize) -> some View {
-        Group {
-            switch step {
-            case 0:
-                heroTextPage(titleKey: "budget.onboarding_title", bodyKey: "budget.onboarding_body", assetName: "timer", iconGlowColor: AppTheme.neonBlue, contentSize: size)
-            case 4:
-                heroTextPage(
-                    titleKey: "onboarding.screentime.title",
-                    bodyKey: "onboarding.screentime.body",
-                    assetName: "timer",
-                    iconGlowColor: AppTheme.neonBlue,
-                    contentSize: size
-                )
-            case 5:
-                heroTextPage(
-                    titleKey: "onboarding.notifications.title",
-                    bodyKey: appState.deviceRole == .parent ? "permission.notifications.parent.body" : "permission.notifications.child.body",
-                    assetName: "notification",
-                    iconGlowColor: AppTheme.neonGreen,
-                    contentSize: size
-                )
-            case 6:
-                heroTextPage(
-                    titleKey: "onboarding.location.title",
-                    bodyKey: "onboarding.location.body",
-                    assetName: "location",
-                    iconGlowColor: AppTheme.neonBlue,
-                    contentSize: size
-                )
-            case 7:
-                appsPage(contentSize: size)
-            case 8:
-                finalPage(contentSize: size)
-            default:
-                welcomePage(contentSize: size)
+    private var stepControls: some View {
+        if isPermissionStep {
+            status(permissionGranted)
+            if step == .screenTime && didRequestScreenTime && !permissionGranted {
+                Text("permission.banner.screentime.body").foregroundStyle(.secondary)
+            }
+            if step == .location && needsSettings && !permissionGranted {
+                Text("location.settings.description").foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.22), value: step)
-    }
-
-    private func welcomePage(contentSize: CGSize) -> some View {
-        let maxHero = min(380, contentSize.height * 0.5)
-        return VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            VStack(spacing: OnboardingLayout.onboardingTitleToBodySpacing) {
-                Text("onboarding.welcome.title")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(3)
-
-                Text("onboarding.welcome.subtitle")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(5)
-            }
-            .padding(.horizontal, OnboardingLayout.horizontalInset)
-
-            Image("onboardingHero")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .frame(maxHeight: maxHero)
-                .shadow(color: AppTheme.neonBlue.opacity(0.25), radius: 28, y: 8)
-                .padding(.horizontal, OnboardingLayout.horizontalInset)
-                .padding(.top, 8)
-
-            Spacer(minLength: 0)
-        }
-        .frame(width: contentSize.width, height: contentSize.height)
-    }
-
-    private func heroTextPage(
-        titleKey: String,
-        bodyKey: String,
-        assetName: String,
-        iconGlowColor: Color,
-        contentSize: CGSize
-    ) -> some View {
-        let iconSide = min(
-            OnboardingLayout.onboardingStepIconSize,
-            contentSize.width * 0.46,
-            contentSize.height * 0.34
-        )
-        return VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            Text(LocalizedStringKey(titleKey))
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
-                .minimumScaleFactor(0.7)
-                .lineLimit(3)
-                .padding(.horizontal, 12)
-
-            Text(LocalizedStringKey(bodyKey))
-                .font(.system(size: 19, weight: .medium, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.92))
-                .lineSpacing(3)
-                .minimumScaleFactor(0.7)
-                .lineLimit(7)
-                .padding(.horizontal, 16)
-                .padding(.top, OnboardingLayout.onboardingTitleToBodySpacing)
-
-            Image(assetName)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: iconSide, height: iconSide)
-                .shadow(color: iconGlowColor.opacity(0.45), radius: 28, y: 0)
-                .padding(.top, 10)
-
-            Spacer(minLength: 0)
-        }
-        .frame(width: contentSize.width, height: contentSize.height)
-    }
-
-    private func appsPage(contentSize: CGSize) -> some View {
-        let iconSide = min(
-            OnboardingLayout.onboardingStepIconSize,
-            contentSize.width * 0.46,
-            contentSize.height * 0.32
-        )
-        return VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            Text("onboarding.apps.title")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
-                .minimumScaleFactor(0.72)
-                .lineLimit(3)
-                .padding(.horizontal, 12)
-
-            Text("onboarding.apps.body.hint")
-                .font(.system(size: 19, weight: .medium, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.9))
-                .lineSpacing(3)
-                .minimumScaleFactor(0.72)
-                .lineLimit(6)
-                .padding(.horizontal, 14)
-                .padding(.top, OnboardingLayout.onboardingTitleToBodySpacing)
-
-            Image("apps")
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: iconSide, height: iconSide)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .shadow(color: AppTheme.neonGreen.opacity(0.4), radius: 24, y: 0)
-                .padding(.top, 8)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 22)
-        .frame(width: contentSize.width, height: contentSize.height)
-    }
-
-    private func finalPage(contentSize: CGSize) -> some View {
-        let maxGoW = min(OnboardingLayout.finalGoIllustrationMaxWidth, contentSize.width - 24)
-        let maxGoH = min(OnboardingLayout.finalGoIllustrationMaxHeight, contentSize.height * 0.34)
-        return ZStack {
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                Text("onboarding.done.title")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
-                    .minimumScaleFactor(0.75)
-                    .lineLimit(2)
-                    .padding(.horizontal, 12)
-
-                Text("budget.onboarding_body")
-                    .font(.system(size: 19, weight: .medium, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.92))
-                    .lineSpacing(3)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(5)
-                    .padding(.horizontal, 14)
-                    .padding(.top, OnboardingLayout.onboardingTitleToBodySpacing)
-
-                Button(action: handleButtonGoTap) {
-                    Image("ButtonGo")
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .frame(maxWidth: maxGoW)
-                        .frame(maxHeight: maxGoH)
-                        .shadow(color: AppTheme.neonGreen.opacity(0.4), radius: 24, y: 4)
+        switch step {
+        case .install:
+            Button("settings.item.share_app") {
+                AppAnalytics.report("onboarding_share_app")
+                activeSheet = .share
+            }.buttonStyle(.bordered)
+        case .pairing:
+            if isLinked {
+                Text("settings.pairing.linked.status").foregroundStyle(AppTheme.neonGreen)
+            } else {
+                if isParent, let pairingCode {
+                    Text(pairingCode).font(.largeTitle.monospaced().bold()).textSelection(.enabled)
+                    Text("setup.link.wait").foregroundStyle(.secondary)
+                    Button("settings.parent.link.generate") {
+                        runOperation { await appState.createPairingCodeForParent() }
+                    }.disabled(busy)
+                } else if !isParent {
+                    TextField(L10n.tr("settings.child.link.placeholder"), text: $appState.pairingCodeInput)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(busy)
                 }
-                .buttonStyle(.plain)
-                .disabled(isAdvancing)
-                .opacity(isAdvancing ? 0.55 : 1)
-                .accessibilityLabel(Text("onboarding.cta.start"))
-                .padding(.top, 10)
-
-                Spacer(minLength: 0)
+                if let message = appState.remoteStatusMessage {
+                    Text(message).font(.subheadline).foregroundStyle(AppTheme.neonOrange)
+                }
             }
-            .frame(width: contentSize.width, height: contentSize.height)
-
-            CelebrationConfettiView(trigger: confettiTrigger)
-                .allowsHitTesting(false)
+        case .pin:
+            status(isLinked && appState.parentPinIsSet)
+            if !isLinked { linkRequired }
+            if !isParent && appState.parentPinIsSet {
+                Text("setup.pin.verify").foregroundStyle(.secondary)
+            }
+        case .apps:
+            status(canAdvance)
+            if !isLinked { linkRequired }
+            else if !screenTimeService.isAuthorized {
+                Button("onboarding.screentime.title") { go(to: .screenTime) }
+            }
+            if hasSelectedApps && isLinked {
+                Button("blocklist.pick.apps") { openProtectedSheet(.apps) }.disabled(busy)
+            }
+        case .protection:
+            status(screenTimeService.isRemovalProtectionEnabled)
+            if !isLinked { linkRequired }
+        case .limit:
+            if let limitSeconds {
+                Text(L10n.f("unit.minutes.short", limitSeconds / 60)).font(.title2.bold())
+                if isParent {
+                    if appState.parentBudgetStatus?.isPending == true {
+                        Text("budget.pending").foregroundStyle(.secondary)
+                    }
+                    Button("budget.title") { activeSheet = .limit }.disabled(busy || !isLinked)
+                }
+            } else {
+                Text("budget.not_set").foregroundStyle(.secondary)
+            }
+            if !isLinked { linkRequired }
+        case .finish:
+            summary
+        default: EmptyView()
         }
     }
 
-    private var pageIndicator: some View {
-        HStack(spacing: 7) {
-            ForEach(appState.deviceRole == .parent ? [0, 5, 8] : [0, 4, 5, 6, 7, 8], id: \.self) { index in
-                Circle()
-                    .fill(index == step ? AppTheme.neonGreen : Color.white.opacity(0.22))
-                    .frame(width: index == step ? 8 : 6, height: index == step ? 8 : 6)
+    private var linkRequired: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("setup.link.required").foregroundStyle(.secondary)
+            Button("setup.pairing.title") { go(to: .pairing) }.disabled(busy)
+        }
+    }
+
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            summaryRow("setup.pairing.title", ready: isLinked, target: .pairing)
+            summaryRow("settings.pin.section", ready: isLinked && appState.parentPinIsSet, target: .pin)
+            summaryRow("onboarding.notifications.title", ready: appState.isNotificationAuthorized, target: .notifications)
+            if !isParent {
+                summaryRow("onboarding.screentime.title", ready: screenTimeService.isAuthorized, target: .screenTime)
+                summaryRow("onboarding.location.title",
+                           ready: appState.childLocationAuthorizationStatus == .authorizedAlways, target: .location)
+                summaryRow("blocklist.pick.apps", ready: isLinked && hasSelectedApps && screenTimeService.isAuthorized, target: .apps)
+                summaryRow("protection.title", ready: screenTimeService.isRemovalProtectionEnabled, target: .protection)
+            }
+            summaryRow("budget.title", ready: isLinked && limitSeconds != nil, target: .limit)
+            if isParent && appState.parentBudgetStatus?.isPending == true {
+                Text("budget.pending").foregroundStyle(.secondary)
             }
         }
     }
 
-    private func completeOnboardingExit() {
-        let mode = onReplayFinished == nil ? "first_launch" : "replay"
-        AppAnalytics.report("onboarding_closed", parameters: ["mode": mode])
-        if let onReplayFinished {
-            onReplayFinished()
-        } else {
-            appState.completeOnboarding()
+    private func status(_ ready: Bool) -> some View {
+        Text(L10n.tr(ready ? "setup.status.ready" : "setup.status.pending"))
+            .font(.headline)
+            .foregroundStyle(ready ? AppTheme.neonGreen : AppTheme.neonOrange)
+    }
+
+    private func summaryRow(_ title: String, ready: Bool, target: Step) -> some View {
+        Button { go(to: target) } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.tr(title)).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                Text(L10n.tr(ready ? "setup.status.ready" : "setup.status.pending"))
+                    .font(.subheadline)
+                    .foregroundStyle(ready ? AppTheme.neonGreen : AppTheme.neonOrange)
+            }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+
+    private var titleKey: String {
+        switch step {
+        case .parentIntro: return "setup.parent.title"
+        case .childIntro: return "setup.child.title"
+        case .install: return "setup.install.title"
+        case .screenTime: return "onboarding.screentime.title"
+        case .notifications: return "onboarding.notifications.title"
+        case .location: return "onboarding.location.title"
+        case .pairing: return "setup.pairing.title"
+        case .pin: return "settings.pin.section"
+        case .apps: return "blocklist.pick.apps"
+        case .protection: return "protection.title"
+        case .limit: return "budget.title"
+        case .finish: return "setup.check.title"
         }
     }
 
-    private func handleButtonGoTap() {
-        guard step == 8 else { return }
-        Task {
-            isAdvancing = true
-            defer { isAdvancing = false }
-            completeOnboardingExit()
+    private var bodyKey: String {
+        switch step {
+        case .parentIntro: return "setup.parent.body"
+        case .childIntro: return "setup.child.body"
+        case .install: return "setup.install.body"
+        case .screenTime: return "setup.screen_time.body"
+        case .notifications:
+            return isParent ? "permission.notifications.parent.body" : "setup.notifications.child.body"
+        case .location: return "setup.location.body"
+        case .pairing: return isParent ? "setup.link.parent" : "setup.link.child"
+        case .pin: return isParent ? "setup.pin.parent" : "setup.pin.child"
+        case .apps: return "setup.apps.body"
+        case .protection: return "setup.protection.action_body"
+        case .limit: return isParent ? "budget.explanation" : "setup.limit.child"
+        case .finish: return isParent ? "setup.check.parent" : "setup.check.child"
         }
     }
 
-    private func handleBottomBarPrimaryTap() {
-        performPrimaryAdvance()
+    private var primaryActionKey: String {
+        if step == .finish { return "setup.finish.action" }
+        if canAdvance { return "onboarding.cta.next" }
+        if isPermissionStep {
+            if needsSettings { return "permission.banner.open_settings" }
+            return step == .location ? "location.setup.allow" : "permission.banner.allow"
+        }
+        switch step {
+        case .pairing:
+            return isParent ? (pairingCode == nil ? "settings.parent.link.generate" : "setup.link.wait")
+                : "settings.child.link.connect"
+        case .pin:
+            if !isLinked { return "setup.pairing.title" }
+            return isParent ? "settings.pin.set" : (appState.parentPinIsSet ? "setup.pin.enter" : "setup.refresh")
+        case .apps:
+            if !isLinked { return "setup.pairing.title" }
+            return screenTimeService.isAuthorized ? "blocklist.pick.apps" : "onboarding.screentime.title"
+        case .protection: return "protection.enable"
+        case .limit:
+            if !isLinked { return "setup.pairing.title" }
+            return isParent ? "budget.title" : "setup.refresh"
+        default: return "onboarding.cta.next"
+        }
     }
 
-    private func performPrimaryAdvance() {
-        Task {
-            isAdvancing = true
-            defer { isAdvancing = false }
-            switch step {
-            case 0:
-                step = appState.deviceRole == .parent ? 5 : 4
-            case 4:
-                if !screenTimeService.isAuthorized {
+    private func performPrimaryAction() {
+        guard !busy else { return }
+        if canAdvance { advance(); return }
+        if isPermissionStep {
+            if needsSettings { appState.openAppSettingsURL(); return }
+            let requestedStep = step
+            runOperation {
+                AppAnalytics.report("onboarding_permission_request", parameters: [
+                    "permission": requestedStep.rawValue, "role": isParent ? "parent" : "child"
+                ])
+                switch requestedStep {
+                case .screenTime:
+                    didRequestScreenTime = true
                     await appState.requestScreenTimeAccessOnly()
-                } else {
-                    screenTimeService.refreshAuthorizationStatus()
-                }
-                step = 5
-            case 5:
-                if !appState.isNotificationAuthorized {
-                    await appState.requestNotificationAccessOnly()
+                case .notifications: await appState.requestNotificationAccessOnly()
+                case .location:
+                    didRequestLocation = true
+                    let result = await appState.requestChildLocationPermissionIfNeeded()
+                    if result == .authorizedWhenInUse {
+                        _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()
+                    }
+                default: break
                 }
                 await appState.refreshPermissionStatuses()
-                step = appState.deviceRole == .parent ? 8 : 6
-            case 6:
-                appState.refreshChildLocationAuthorizationStatus()
-                if appState.childLocationAuthorizationStatus == .authorizedAlways {
-                    step = 7
-                    return
-                }
-                // Do not advance behind an outstanding system prompt or repeatedly request it.
-                // The next tap checks the user's actual choice; Settings is the fallback.
-                if didRequestLocationAccess {
-                    showLocationSettingsHint = true
-                    return
-                }
-                didRequestLocationAccess = true
-                let whenInUse = await appState.requestChildLocationPermissionIfNeeded()
-                if whenInUse == .authorizedWhenInUse {
-                    _ = await appState.requestChildLocationAlwaysAuthorizationIfNeeded()
-                } else if whenInUse == .denied || whenInUse == .restricted {
-                    showLocationSettingsHint = true
-                }
-            case 7:
-                step = 8
-            case 8:
-                completeOnboardingExit()
-            default:
-                break
             }
+            return
+        }
+        switch step {
+        case .pairing:
+            runOperation {
+                if isParent { await appState.createPairingCodeForParent() }
+                else { await appState.connectChildWithPairingCode() }
+            }
+        case .pin:
+            guard isLinked else { go(to: .pairing); return }
+            if isParent { activeSheet = .pin }
+            else if appState.parentPinIsSet { showsPinEntry = true }
+            else { runOperation { await appState.refreshSetupStatus() } }
+        case .apps:
+            guard isLinked else { go(to: .pairing); return }
+            guard screenTimeService.isAuthorized else { go(to: .screenTime); return }
+            openProtectedSheet(.apps)
+        case .protection: openProtectedSheet(.protection)
+        case .limit:
+            guard isLinked else { go(to: .pairing); return }
+            if isParent { activeSheet = .limit }
+            else { runOperation { await appState.refreshSetupStatus() } }
+        default: break
+        }
+    }
+
+    private func openProtectedSheet(_ sheet: Sheet) {
+        guard isLinked else { go(to: .pairing); return }
+        guard appState.parentPinIsSet else { go(to: .pin); return }
+        guard appState.isParentModeActive else { showsPinEntry = true; return }
+        activeSheet = sheet
+    }
+
+    private func runOperation(_ operation: @escaping @MainActor () async -> Void) {
+        guard !busy else { return }
+        isRequesting = true
+        Task { @MainActor in
+            defer { isRequesting = false }
+            await operation()
+        }
+    }
+
+    private func go(to target: Step) {
+        if let index = steps.firstIndex(of: target) { stepIndex = index }
+    }
+
+    private func advance() {
+        if stepIndex + 1 < steps.count { stepIndex += 1 }
+        else {
+            AppAnalytics.report("onboarding_closed", parameters: [
+                "mode": onReplayFinished == nil ? "first_launch" : "replay",
+                "role": isParent ? "parent" : "child"
+            ])
+            // Do not leave the child's phone unlocked for changing parent settings.
+            if enteredParentModeForSetup { appState.exitParentMode() }
+            if let onReplayFinished { onReplayFinished() } else { appState.completeOnboarding() }
         }
     }
 }

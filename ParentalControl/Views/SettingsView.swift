@@ -6,8 +6,8 @@ private enum SupportEmail {
     static let address = "vadim.narb@yandex.com"
 }
 
-private enum AppStoreLinks {
-    static let appID = "6761118244"
+enum AppStoreLinks {
+    static let appID = "6820971713"
 
     static var writeReviewURL: URL? {
         URL(string: "itms-apps://itunes.apple.com/app/id\(appID)?action=write-review")
@@ -756,7 +756,7 @@ private enum SettingsSheet: Int, Identifiable {
     var id: Int { rawValue }
 }
 
-private struct ActivityShareSheet: UIViewControllerRepresentable {
+struct ActivityShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
@@ -858,7 +858,7 @@ private struct PermissionsSettingsSheet: View {
 /// Лист установки/смены родительского PIN. Два поля по 4 цифры (новый PIN и повторение),
 /// валидация в реальном времени, кнопка «Сохранить» активна только при совпадении и валидности.
 /// При успехе закрывает себя и обновляет `appState.parentPinIsSet`.
-private struct ParentPinSetupSheet: View {
+struct ParentPinSetupSheet: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
@@ -936,6 +936,7 @@ private struct ParentPinSetupSheet: View {
             .padding(.bottom, 18)
         }
         .appScreenBackground()
+        .interactiveDismissDisabled(isSaving)
         .onAppear {
             focused = .newPin
         }

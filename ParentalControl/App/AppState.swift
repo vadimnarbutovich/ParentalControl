@@ -124,6 +124,7 @@ final class AppState: ObservableObject {
     /// при каждом успешном `refreshChildParentPinIfNeeded`. У родителя — после `setParentPinFromUI`.
     /// UI ориентируется на этот флаг, чтобы знать, можно ли вообще пытаться вводить PIN.
     @Published private(set) var parentPinIsSet = false
+    @Published private(set) var isRefreshingSetup = false
     /// Конец активного lockout-таймера, если он сейчас идёт (после 5 неверных попыток PIN).
     /// `nil` — lockout не активен. UI на экране ввода показывает обратный отсчёт по этому полю.
     @Published private(set) var parentPinLockoutEnd: Date?
@@ -340,16 +341,6 @@ final class AppState: ObservableObject {
         permissionStatusesReady = true
     }
 
-    /// Parent onboarding is skipped; request only the alerts used for submitted tasks.
-    /// Automatic entry must never open Settings after a denial.
-    func requestParentNotificationsIfNeeded() async {
-        guard deviceRole == .parent else { return }
-        let status = await notificationService.currentAuthorizationStatus()
-        guard deviceRole == .parent else { return }
-        if status == .notDetermined { _ = await notificationService.requestAccess() }
-        await refreshPermissionStatuses()
-    }
-
     func requestNotificationAccessOnly() async {
         guard deviceRole != nil else { return }
         await notificationService.resolveNotificationAccess { [weak self] in
@@ -405,8 +396,10 @@ final class AppState: ObservableObject {
         hasCompletedOnboarding = true
         Task {
             await refreshPermissionStatuses()
-            await refreshStepsAndRewards()
-            await syncChildStatsSnapshotIfNeeded()
+            if deviceRole == .child {
+                await refreshStepsAndRewards()
+                await syncChildStatsSnapshotIfNeeded()
+            }
         }
     }
 
@@ -434,16 +427,12 @@ final class AppState: ObservableObject {
         subscriptionService?.applyParentProStatus(false)
         lastPushedParentIsPro = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
-        if role == .parent {
-            storage.saveHasCompletedOnboarding(true)
-            hasCompletedOnboarding = true
-            seedDefaultBlockSchedulesIfNeeded()
-        } else {
-            // A former parent device has never completed child permission setup.
-            // This only runs on an explicit role change, not on ordinary launches.
-            storage.saveHasCompletedOnboarding(false)
-            hasCompletedOnboarding = false
-        }
+        // Only a deliberate role choice starts setup. Existing installations keep
+        // their completion flag and do not repeat onboarding after an update.
+        storage.saveHasCompletedOnboarding(false)
+        storage.saveDidRequestInitialPermissions(false)
+        hasCompletedOnboarding = false
+        if role == .parent { seedDefaultBlockSchedulesIfNeeded() }
         Task {
             await bootstrapRemoteIfNeeded()
         }
@@ -801,24 +790,26 @@ final class AppState: ObservableObject {
     /// Родитель задаёт/меняет PIN из своих настроек. Локально считается хэш с новой солью,
     /// сохраняется в Keychain, и `set_parent_pin` отправляется на backend (edge function v22+).
     /// При успехе backend разошлёт child'у silent push для синка кэша.
-    /// Возвращает `true` при успешной отправке на backend, `false` при сетевой ошибке
-    /// (локальный кэш всё равно обновляется — родитель сможет проверить PIN на child вручную позже).
+    /// Publish/cache only after the server accepts the PIN, so failed setup is never shown as complete.
     @discardableResult
     func setParentPinFromUI(_ pin: String) async -> Bool {
-        guard deviceRole == .parent else { return false }
+        guard deviceRole == .parent, pairingState?.isLinked == true,
+              let familyID = pairingState?.familyID else { return false }
         guard pin.count == 4, pin.allSatisfy({ $0.isNumber }) else { return false }
         let salt = parentPinService.generateSalt()
         let hash = parentPinService.hashPin(pin, salt: salt)
         let updatedAt = Date()
         let metadata = ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)
-        parentPinService.saveMetadata(metadata)
-        parentPinIsSet = true
         do {
             try await remoteSyncService.setParentPin(
                 hashBase64: metadata.hashBase64,
                 saltBase64: metadata.saltBase64,
                 updatedAt: updatedAt
             )
+            guard deviceRole == .parent, pairingState?.familyID == familyID else { return false }
+            parentPinService.saveMetadata(metadata)
+            parentPinIsSet = true
+            remoteStatusMessage = nil
             return true
         } catch {
             remoteStatusMessage = error.localizedDescription
@@ -900,6 +891,18 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - Pro subscription (привязка к устройству родителя)
+
+    /// Explicit setup refresh, not another polling loop. Normal push/polling remains the source of updates.
+    func refreshSetupStatus() async {
+        guard pairingState?.isLinked == true, !isRefreshingSetup else { return }
+        isRefreshingSetup = true
+        defer { isRefreshingSetup = false }
+        if deviceRole == .child {
+            await pollChildAndApply(includeParentSettings: true)
+        } else if deviceRole == .parent {
+            await refreshParentChildState()
+        }
+    }
 
     /// Связывает `AppState` с `SubscriptionService` (вызывается один раз при старте приложения).
     /// Подписывается на изменение entitlement родителя (→ отправка на backend) и инициализирует

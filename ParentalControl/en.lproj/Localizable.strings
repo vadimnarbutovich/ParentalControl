@@ -601,3 +601,42 @@
 "permission.notifications.child.body" = "Get notified about changes to available time and app blocking.";
 "permission.camera.title" = "Camera unavailable";
 "permission.camera.body" = "Allow camera access in Settings to photograph a task. You can also choose an existing photo.";
+// Role-specific text onboarding.
+"setup.parent.title" = "Manage your child’s screen time";
+"setup.parent.body" = "Set a daily limit, schedules and tasks with minute rewards. Check remaining time and request your child’s location.\n\nYour phone only needs notification permission. Other permissions are set up on your child’s phone.";
+"setup.child.title" = "Set up your child’s phone";
+"setup.child.body" = "Complete these steps with a parent. Permissions let the app track time in selected apps, apply restrictions and share the child’s location with their parent.\n\nCamera access is requested only when taking a task photo. Health access isn’t needed.";
+"setup.screen_time.body" = "Allow Screen Time access to track selected apps and block them when the limit is reached, during schedules or at the parent’s request.\n\nRestrictions won’t work without this permission.";
+"setup.notifications.child.body" = "Allow notifications so your child can see changes to available time, blocking updates and task messages.\n\nWith notifications off, important messages may be missed.";
+"setup.location.body" = "To let the parent see their child’s location, allow location access: first While Using the App, then Always.\n\nLocation is checked only at the parent’s request. Always access is needed for background requests.";
+"setup.pairing.title" = "Connect the two phones";
+"setup.parent.pairing_body" = "On your phone, open Settings → Connection to child and create a pairing code.\n\nInstall this same app on your child’s phone and choose Child phone. After setup, enter the code on its home screen.";
+"setup.protection.body" = "To prevent your child from deleting the app, their child account must belong to an Apple Family Sharing group.\n\nAfter pairing, the parent can enable protection on the child’s phone: Parent → PIN → Settings → Removal protection.\n\nThe app also works without this protection, but the child can delete it.";
+"setup.finish.title" = "Next steps";
+"setup.parent.finish_body" = "After pairing the phones, set a parent PIN in Settings. It protects the settings on your child’s phone.\n\nSet a daily limit on the home screen. It applies only to apps selected on your child’s phone.";
+"setup.child.finish_body" = "On the home screen, enter the pairing code from the parent’s phone.\n\nAfter pairing, the parent should set a PIN on their own phone. Then, on this phone: Parent → PIN → Block List — choose the apps to manage.\n\nThe daily limit is set on the parent’s phone.";
+"setup.permission.enabled" = "Allowed";
+"setup.permission.missing" = "Not enabled";
+"setup.finish.action" = "Open app";
+"setup.back" = "Back";
+
+// Guided pairing and setup.
+"setup.install.title" = "Install the app on your child’s phone";
+"setup.install.body" = "Your child’s phone needs this same app. Tap Share, send the link, then open it on their phone and install the app.\n\nChoose “Child phone” when you first open it. Keep both phones nearby — we’ll connect them next.";
+"setup.link.parent" = "Create a pairing code and enter it in this app on your child’s phone. A confirmation will appear here once they’re connected.\n\nThen continue setup on both phones.";
+"setup.link.child" = "On the parent’s phone, create a pairing code during setup and enter it below. If setup is already finished, create a code in Settings → Connection to child.";
+"setup.link.wait" = "Waiting for the child’s phone";
+"setup.link.required" = "Connect the parent’s phone to the child’s phone first. You can do this later.";
+"setup.pin.parent" = "Set a four-digit PIN to protect access to parent settings on your child’s phone.\n\nAfter saving it, enter this PIN on your child’s phone to continue setup.";
+"setup.pin.child" = "Set a PIN on the parent’s phone, at the Parent PIN step or in Settings. A PIN can only be set from the parent’s phone.\n\nThen enter it here to choose apps and configure protection. If it hasn’t arrived yet, tap Check connection.";
+"setup.pin.verify" = "PIN received. Enter it on this phone to access parent settings.";
+"setup.apps.body" = "Choose the apps, categories or websites that limits and blocks will apply to. Other apps will remain available.\n\nChanging this selection requires the parent PIN.";
+"setup.protection.action_body" = "You can also prevent your child from deleting the app through Apple Family Sharing. This requires a child account in your family group.\n\nThe button below opens protection settings and instructions. The app works without this protection, but your child will be able to delete it.";
+"setup.limit.child" = "Set a daily limit on the parent’s phone. Once received, it will appear here and apply to the selected apps.\n\nYou can keep this screen open while the parent saves the limit.";
+"setup.check.title" = "Review your setup";
+"setup.check.parent" = "Below is the setup status on this phone. Tap an item to return to it.\n\nAlso finish setup on your child’s phone: enable permissions and choose apps. Skipped steps can be completed later in Settings.";
+"setup.check.child" = "Review the current settings below. Tap an item to return to it. Removal protection is optional.\n\nYou can complete skipped steps later. Parent mode will close when you finish setup.";
+"setup.status.ready" = "Configured";
+"setup.status.pending" = "Not configured";
+"setup.refresh" = "Check connection";
+"setup.pin.enter" = "Enter PIN";

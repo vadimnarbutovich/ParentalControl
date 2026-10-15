@@ -209,7 +209,7 @@ private struct ParentModeExitBanner: View {
 /// Полноэкранный лист ввода 4-значного PIN на ребёнке. Если PIN ещё не задан родителем — показывает
 /// заглушку с пояснением. Lockout-таймер визуализирован обратным отсчётом. Сам ввод PIN никогда
 /// не уходит в сеть — он хэшируется локально и сверяется с кэшированным в Keychain хэшем.
-private struct ParentModeEntryView: View {
+struct ParentModeEntryView: View {
     @EnvironmentObject private var appState: AppState
     @Binding var isPresented: Bool
 
