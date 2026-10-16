@@ -62,6 +62,9 @@ struct OnboardingFlowView: View {
         switch step {
         case .notifications: return appState.isNotificationAuthorizationDenied
         case .location:
+            // A skipped/reset first permission must still show the system prompt,
+            // even if this onboarding instance previously attempted a request.
+            if appState.childLocationAuthorizationStatus == .notDetermined { return false }
             return didRequestLocation || appState.childLocationAuthorizationStatus == .denied
                 || appState.childLocationAuthorizationStatus == .restricted
         default: return false

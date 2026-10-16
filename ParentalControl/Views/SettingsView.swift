@@ -217,15 +217,14 @@ struct SettingsView: View {
 
     private var locationPermissionSection: some View {
         Button {
-            appState.openAppSettingsURL()
+            Task { await appState.configureChildLocationAccessFromParentMode() }
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("onboarding.location.title")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.95))
-                    Text(L10n.tr(appState.childLocationAuthorizationStatus == .authorizedAlways
-                         ? "location.settings.ready" : "location.settings.description"))
+                    Text(L10n.tr(locationPermissionDescriptionKey))
                         .font(.footnote)
                         .foregroundStyle(.white.opacity(0.7))
                         .fixedSize(horizontal: false, vertical: true)
@@ -240,6 +239,7 @@ struct SettingsView: View {
             .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
         .buttonStyle(.plain)
+        .disabled(appState.isConfiguringChildLocationAccess)
         .background(
             Color.clear
                 .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
@@ -248,6 +248,14 @@ struct SettingsView: View {
                 .padding(-36)
         )
         .onAppear { appState.refreshChildLocationAuthorizationStatus() }
+    }
+
+    private var locationPermissionDescriptionKey: String {
+        switch appState.childLocationAuthorizationStatus {
+        case .notDetermined: return "setup.location.body"
+        case .authorizedAlways: return "location.settings.ready"
+        default: return "location.settings.description"
+        }
     }
 
     private var appSection: some View {

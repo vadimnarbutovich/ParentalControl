@@ -41,10 +41,14 @@ struct MainTabView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
         .alert("onboarding.location.title", isPresented: $showLocationPermissionReminder) {
-            Button("permission.banner.open_settings") { appState.openAppSettingsURL() }
+            Button(L10n.tr(appState.childLocationAuthorizationStatus == .notDetermined
+                          ? "location.setup.allow" : "permission.banner.open_settings")) {
+                Task { await appState.configureChildLocationAccessFromParentMode() }
+            }
             Button("location.setup.later", role: .cancel) {}
         } message: {
-            Text("location.settings.description")
+            Text(L10n.tr(appState.childLocationAuthorizationStatus == .notDetermined
+                        ? "setup.location.body" : "location.settings.description"))
         }
     }
 
@@ -164,6 +168,7 @@ struct MainTabView: View {
         // Cancelled/failed PIN entry and the parent's own phone must never show it.
         guard appState.deviceRole == .child, appState.isParentModeActive,
               appState.hasCompletedOnboarding, !isPinEntryPresented,
+              !appState.isConfiguringChildLocationAccess,
               !didShowLocationReminderInParentMode else { return }
         appState.refreshChildLocationAuthorizationStatus()
         guard appState.childLocationAuthorizationStatus != .authorizedAlways else { return }

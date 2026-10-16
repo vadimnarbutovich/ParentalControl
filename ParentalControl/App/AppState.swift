@@ -112,6 +112,7 @@ final class AppState: ObservableObject {
     @Published private(set) var parentLocationStatusMessage: String?
     /// Локально на ребёнке — статус разрешения геолокации (для онбординга/настроек).
     @Published private(set) var childLocationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published private(set) var isConfiguringChildLocationAccess = false
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Do not show permission reminders before the system statuses have loaded.
@@ -1700,6 +1701,32 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - Child location
+
+    /// Shared entry point for the post-PIN reminder and the child's Settings screen.
+    /// An app-specific Location row may not exist in Settings before the first request.
+    func configureChildLocationAccessFromParentMode() async {
+        guard deviceRole == .child, isParentModeActive,
+              !isConfiguringChildLocationAccess else { return }
+        isConfiguringChildLocationAccess = true
+        defer { isConfiguringChildLocationAccess = false }
+
+        refreshChildLocationAuthorizationStatus()
+        guard childLocationAuthorizationStatus == .notDetermined else {
+            // A choice already exists: Settings is the reliable way to change it,
+            // including an Always upgrade that iOS has previously suppressed.
+            openAppSettingsURL()
+            return
+        }
+
+        let status = await requestChildLocationPermissionIfNeeded()
+        guard !Task.isCancelled, deviceRole == .child, isParentModeActive else { return }
+        if status == .authorizedWhenInUse {
+            _ = await requestChildLocationAlwaysAuthorizationIfNeeded()
+        }
+        // Do not immediately open Settings: iOS may still be presenting the upgrade
+        // prompt. A subsequent explicit tap can open Settings if Always is missing.
+        refreshChildLocationAuthorizationStatus()
+    }
 
     /// Запросить у пользователя‑ребёнка разрешение When-in-Use. Вызывается из онбординга.
     /// Возвращает финальный статус. UI на онбординге может на его основе решать показывать ли алерт.
