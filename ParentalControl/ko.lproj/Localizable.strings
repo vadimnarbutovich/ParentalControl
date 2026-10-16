@@ -1,3 +1,17 @@
+/* Map and last location update. */
+"tab.map" = "지도";
+"map.title" = "자녀 위치";
+"map.refresh" = "위치 새로 고침";
+"map.refreshing" = "위치 요청 중…";
+"map.empty.title" = "아직 위치 정보가 없습니다";
+"map.empty.subtitle" = "‘위치 새로 고침’을 눌러 자녀의 휴대폰에 현재 위치를 요청하세요.";
+"map.last_seen" = "업데이트: %@";
+"map.just_now" = "방금";
+"map.accuracy" = "정확도: ±%d m";
+"map.refresh.timeout" = "15초 안에 위치를 확인하지 못했습니다. 자녀의 휴대폰이 인터넷에 연결되어 있고 위치 접근이 허용되어 있는지 확인해 주세요.";
+"map.unpaired.title" = "휴대폰이 연결되지 않았습니다";
+"map.unpaired.subtitle" = "설정에서 자녀의 휴대폰을 연결하면 위치를 확인할 수 있습니다.";
+
 /* Optional child authorization through Apple Family Sharing. */
 "protection.title" = "앱 삭제 방지";
 "protection.settings_description" = "자녀가 자신의 휴대전화에서 앱을 삭제하지 못하도록 설정합니다.";

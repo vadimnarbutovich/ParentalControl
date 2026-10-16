@@ -369,6 +369,7 @@
 "map.empty.title" = "Location not available yet";
 "map.empty.subtitle" = "Tap “Refresh location” to ask your child’s phone to share its current coordinates.";
 "map.last_seen" = "Updated: %@";
+"map.just_now" = "just now";
 "map.accuracy" = "Accuracy: ±%d m";
 "map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure your child's phone is online and that location access is granted.";
 "location.settings.description" = "To let the parent see their child’s location, choose Location → Always in this app’s settings on this phone. Location is checked only when the parent requests it.";

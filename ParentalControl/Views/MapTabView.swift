@@ -112,9 +112,11 @@ struct MapTabView: View {
 
     private func locationStatusCard(snapshot: ChildLocationSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(L10n.f("map.last_seen", relativeString(from: snapshot.capturedAt)))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                Text(L10n.f("map.last_seen", relativeString(from: snapshot.capturedAt, relativeTo: context.date)))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+            }
             if let accuracy = snapshot.horizontalAccuracy, accuracy > 0 {
                 Text(L10n.f("map.accuracy", Int(accuracy.rounded())))
                     .font(.footnote)
@@ -200,10 +202,26 @@ struct MapTabView: View {
         }
     }
 
-    private func relativeString(from date: Date) -> String {
+    private func relativeString(from date: Date, relativeTo now: Date) -> String {
+        // Child and parent clocks can differ. A future timestamp must not
+        // turn the last update into a prediction ("in 11 seconds").
+        let elapsed = max(0, now.timeIntervalSince(date))
+        guard elapsed >= 60 else { return L10n.tr("map.just_now") }
+
+        // Explicit whole units prevent seconds and rounding up to the next minute.
+        let components: DateComponents
+        if elapsed >= 86_400 {
+            components = DateComponents(day: -Int(elapsed / 86_400))
+        } else if elapsed >= 3_600 {
+            components = DateComponents(hour: -Int(elapsed / 3_600))
+        } else {
+            components = DateComponents(minute: -Int(elapsed / 60))
+        }
         let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? Locale.current.identifier)
         formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: Date())
+        formatter.dateTimeStyle = .numeric
+        return formatter.localizedString(from: components)
     }
 }
 

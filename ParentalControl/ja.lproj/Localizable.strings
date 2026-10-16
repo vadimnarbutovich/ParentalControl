@@ -1,3 +1,17 @@
+/* Map and last location update. */
+"tab.map" = "マップ";
+"map.title" = "お子様の位置情報";
+"map.refresh" = "位置情報を更新";
+"map.refreshing" = "位置情報を取得中…";
+"map.empty.title" = "位置情報はまだありません";
+"map.empty.subtitle" = "「位置情報を更新」をタップすると、お子様のスマートフォンに現在地をリクエストします。";
+"map.last_seen" = "更新：%@";
+"map.just_now" = "たった今";
+"map.accuracy" = "精度：±%d m";
+"map.refresh.timeout" = "15秒以内に位置情報を取得できませんでした。お子様のスマートフォンがインターネットに接続され、位置情報へのアクセスが許可されているか確認してください。";
+"map.unpaired.title" = "スマートフォンが未連携です";
+"map.unpaired.subtitle" = "設定でお子様のスマートフォンを連携すると、位置情報を確認できます。";
+
 /* Optional child authorization through Apple Family Sharing. */
 "protection.title" = "削除の防止";
 "protection.settings_description" = "お子様が自分の電話からアプリを削除できないようにします。";

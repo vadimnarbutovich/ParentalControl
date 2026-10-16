@@ -1,3 +1,17 @@
+/* Map and last location update. */
+"tab.map" = "Mapa";
+"map.title" = "Ubicación de tu hijo";
+"map.refresh" = "Actualizar ubicación";
+"map.refreshing" = "Solicitando ubicación…";
+"map.empty.title" = "Ubicación aún no disponible";
+"map.empty.subtitle" = "Toca «Actualizar ubicación» para solicitar la ubicación actual al teléfono de tu hijo.";
+"map.last_seen" = "Actualizado: %@";
+"map.just_now" = "ahora mismo";
+"map.accuracy" = "Precisión: ±%d m";
+"map.refresh.timeout" = "No se ha podido obtener la ubicación en 15 segundos. Comprueba que el teléfono de tu hijo tenga conexión a internet y permita el acceso a la ubicación.";
+"map.unpaired.title" = "Teléfono no vinculado";
+"map.unpaired.subtitle" = "Vincula el teléfono de tu hijo en Ajustes para ver su ubicación.";
+
 /* Optional child authorization through Apple Family Sharing. */
 "protection.title" = "Protección contra eliminación";
 "protection.settings_description" = "Impide que tu hijo elimine la app de su teléfono.";

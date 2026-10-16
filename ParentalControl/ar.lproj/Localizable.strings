@@ -1,3 +1,17 @@
+/* Map and last location update. */
+"tab.map" = "الخريطة";
+"map.title" = "موقع طفلك";
+"map.refresh" = "تحديث الموقع";
+"map.refreshing" = "جارٍ طلب الموقع…";
+"map.empty.title" = "الموقع غير متاح بعد";
+"map.empty.subtitle" = "اضغط على «تحديث الموقع» لطلب الموقع الحالي من هاتف طفلك.";
+"map.last_seen" = "آخر تحديث: %@";
+"map.just_now" = "الآن";
+"map.accuracy" = "الدقة: ±%d م";
+"map.refresh.timeout" = "تعذّر الحصول على الموقع خلال 15 ثانية. تأكد من اتصال هاتف طفلك بالإنترنت والسماح بالوصول إلى الموقع.";
+"map.unpaired.title" = "الهاتف غير مرتبط";
+"map.unpaired.subtitle" = "اربط هاتف طفلك من الإعدادات لتتمكن من رؤية موقعه.";
+
 /* Optional child authorization through Apple Family Sharing. */
 "protection.title" = "الحماية من الحذف";
 "protection.settings_description" = "امنع طفلك من حذف التطبيق من هاتفه.";

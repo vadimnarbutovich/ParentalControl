@@ -1,3 +1,17 @@
+/* Map and last location update. */
+"tab.map" = "地圖";
+"map.title" = "孩子的位置";
+"map.refresh" = "更新位置";
+"map.refreshing" = "正在取得位置…";
+"map.empty.title" = "尚無位置資訊";
+"map.empty.subtitle" = "點一下「更新位置」，向孩子的手機要求目前位置。";
+"map.last_seen" = "更新時間：%@";
+"map.just_now" = "剛剛";
+"map.accuracy" = "精確度：±%d 公尺";
+"map.refresh.timeout" = "未能在15秒內取得位置。請確認孩子的手機已連上網路，並已允許取用位置。";
+"map.unpaired.title" = "手機尚未配對";
+"map.unpaired.subtitle" = "在設定中配對孩子的手機，即可查看其位置。";
+
 /* Optional child authorization through Apple Family Sharing. */
 "protection.title" = "防止刪除";
 "protection.settings_description" = "禁止孩子從自己的手機上刪除本 App。";
