@@ -1,0 +1,12 @@
+Use case: precise-object-edit.
+Input image is the edit target: approved English App Store promotional screenshot, portrait aspect 1206:2622.
+Make ONLY these two targeted layout changes:
+1. Replace the TWO-line smaller subtitle below the large headline with ONE single centered line reading EXACTLY:
+"More balance. Less screen time"
+Keep the internal period after balance, NO final period. Use the existing muted blue-gray medium-weight font style, natural uncompressed letter proportions, sized to fit on ONE line within 5% side margins. No line break.
+2. Use the freed line of vertical space to translate the ENTIRE iPhone upward by approximately 2.3% of canvas height (about 42 pixels in the supplied 1848px-high image), together with its screen UI, tilted Limits badge and grounding shadow. Do NOT resize or stretch phone. Keep its horizontal center and exact scale. This must leave a clearly visible soft background margin below the bottom of the phone instead of phone touching the canvas bottom. Retain a comfortable small gap below the subtitle.
+Keep the main large three-line headline EXACTLY as it is, same position, size, colors and wording:
+"Help your child" (teal)
+"use their phone" (navy)
+"mindfully" (navy)
+Preserve all phone UI, English labels, digits, times, ring, cards, tabs, status bar, button text and icon shapes exactly, just translate as one intact unit. Preserve badge wording "Limits that fit your family", its tilt, clock icon, rounded corners and relative position to phone. Preserve full pale mint/cyan background with ribbons, fill exposed bottom seamlessly. Do not add or remove any content. No new typography or decoration. One opaque portrait final image.

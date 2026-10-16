@@ -1,5 +1,14 @@
 Материалы App Store — утверждённый набор
 
+Актуальный заголовок главной: Help your child use their phone mindfully
+Описание в одну строку: More balance. Less screen time
+Последний промпт: screenshots-features/02-dashboard-headline-size-prompt.txt
+Первая строка Help your child увеличена; остальная композиция сохранена
+Промпт 02-dashboard в общем JSON сохранён как история предыдущей версии
+
+Русская локализация: ru/ (перечень готовых файлов — ru/ASSETS.txt)
+Английские материалы остаются в перечисленных ниже папках
+
 Назначение папок:
 header — шапка страницы приложения.
 search — баннер для поиска.

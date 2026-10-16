@@ -1,0 +1,7 @@
+Use case: text-localization.
+Input image is the EDIT TARGET: approved Russian App Store dashboard poster, portrait aspect 1206:2622.
+Make ONLY ONE targeted change to the FIRST TEAL HEADLINE LINE:
+Replace "Помогайте ребёнку" with EXACTLY "Помогите ребенку" (use е as written, no final period).
+Increase the font size of this first line so the new shorter phrase is clearly more prominent and fills about 88-90% of the canvas width, centered. Use the SAME normal-width heavy rounded font and rich teal. Do not horizontally stretch the glyphs.
+Anchor the bottom edge of the first line at its CURRENT vertical position. Grow letters UPWARD into the available top whitespace and OUTWARD into the side whitespace. Keep a small top safety margin and about 5% side margins. Do not collide with the next line.
+Everything else is LOCKED in place: preserve second navy line "пользоваться телефоном", third navy line "осознанно", smaller two-line description "Больше баланса" / "Меньше экранного времени", all fonts/sizes/positions below first line, phone and its UI, tilted badge with exact words "Лимиты, которые подходят для вашей семьи", background ribbons, shadows and colors. Do not move, shrink, enlarge, reflow or redesign any other element. Keep phone at exact same location and size. Preserve all numbers 67, 60, 8, 10, 5, times, labels and tabs. Do not change description to one line. No new content or extra punctuation. Single opaque finished portrait image.
