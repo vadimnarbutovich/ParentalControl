@@ -1,0 +1,36 @@
+Материалы App Store — утверждённый набор
+
+Назначение папок:
+header — шапка страницы приложения.
+search — баннер для поиска.
+screenshots-cover — первый рекламный скриншот с мамой и ребёнком.
+screenshots-features — скриншоты главной страницы, расписания, заданий и карты.
+source-screenshots — исходные снимки экранов приложения.
+
+Для загрузки в App Store Connect:
+Шапка: header/family-header-3840x1646.png
+Поиск: search/family-header-search-5244x2950.png
+Скриншот 1: screenshots-cover/03-protected-child-soft-background-1206x2622.png
+Скриншот 2: screenshots-features/02-dashboard-1206x2622.png
+Скриншот 3: screenshots-features/03-schedule-1206x2622.png
+Скриншот 4: screenshots-features/04-tasks-1206x2622.png
+Скриншот 5: screenshots-features/05-location-1206x2622.png
+
+Файлы *-original.png — оригиналы генерации для будущих правок, не экспорты
+под требования App Store. Промпты сохранены рядом с изображениями.
+В prompts.json пути current_artwork указаны относительно папки самого JSON.
+
+Важно о промптах:
+Промпты описывают исторические шаги редактирования.
+Промежуточные референсы для header, screenshots-cover и screenshots-features
+удалены пользователем. Не применяйте старые изменения размеров повторно
+к финальным изображениям. Для локализации и новых правок используйте
+сохранённые финальные оригиналы с новыми инструкциями.
+Референс для search/prompt.txt по-прежнему доступен:
+screenshots-cover/03-protected-child-soft-background-original.png
+
+Исходные скриншоты:
+source-screenshots/photo_2026-10-16 09.54.46.jpeg — главная
+source-screenshots/photo_2026-10-16 09.54.47.jpeg — расписание
+source-screenshots/photo_2026-10-16 09.54.48.jpeg — задания
+source-screenshots/photo_2026-10-16 09.54.50.jpeg — карта
