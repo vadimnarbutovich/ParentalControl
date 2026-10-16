@@ -531,19 +531,19 @@
 "reports.previous" = "上一时段";
 "reports.next" = "下一时段";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "孩子提交任务等待检查时，您会收到通知。";
+"permission.notifications.parent.body" = "孩子提交已完成的任务供您检查时，您会收到通知。";
 "permission.notifications.child.body" = "可用时间或 App 屏蔽状态发生变化时，您会收到通知。";
 "permission.camera.title" = "无法使用相机";
 "permission.camera.body" = "请在设置中允许访问相机，以拍摄任务照片。您也可以选择已有照片。";
 "onboarding.location.body" = "请允许访问位置，让家长能在地图上找到此设备。响应后台请求需要“始终”允许。我们仅在家长请求时获取位置，不会持续跟踪。";
 // Role-specific text onboarding.
 "setup.parent.title" = "管理孩子的使用时间";
-"setup.parent.body" = "设置每日限额、时间安排，以及完成后可获得分钟奖励的任务。查看剩余时间，也可以请求孩子的位置。\n\n您的手机只需要通知权限。其他权限将在孩子的手机上设置。";
+"setup.parent.body" = "设置每日限额、时间安排，以及完成后可获得额外 App 使用时间的任务。查看剩余时间，也可以请求孩子的位置。\n\n您的手机只需要通知权限。其他权限将在孩子的手机上设置。";
 "setup.child.title" = "设置孩子的手机";
-"setup.child.body" = "请和家长一起完成以下步骤。相关权限用于记录所选 App 的使用时间、执行限制，并向家长提供孩子的位置。\n\n仅在拍摄任务照片时请求相机权限。不需要访问“健康”。";
+"setup.child.body" = "请和家长一起完成以下步骤。相关权限用于记录所选 App 的使用时间、执行限制，并向家长提供孩子的位置。";
 "setup.screen_time.body" = "允许访问“屏幕使用时间”，以记录所选 App 的使用情况，并根据时间限额、时间安排或家长指令进行阻止。\n\n没有此权限，限制功能将无法使用。";
 "setup.notifications.child.body" = "允许通知，让孩子及时看到可用时间的变化、阻止状态和任务消息。\n\n关闭通知可能会错过重要消息。";
-"setup.location.body" = "为了让家长了解孩子的位置，请先允许“使用 App 期间”访问位置，再选择“始终允许”。\n\n仅在家长发出请求时获取位置。后台请求需要“始终”访问权限。";
+"setup.location.body" = "为了让家长了解孩子的位置，请先允许“使用 App 期间”访问位置，再选择“始终允许”。\n\n仅在家长发出请求时获取位置。获取位置需要“始终”访问权限。";
 "setup.pairing.title" = "连接两部手机";
 "setup.parent.pairing_body" = "在家长的手机上打开“设置”→“连接孩子的手机”，创建配对码。\n\n在孩子的手机上安装同一个 App，选择“孩子的手机”。完成设置后，在主屏幕输入配对码。";
 "setup.protection.body" = "要防止孩子删除 App，孩子的儿童账户需要加入 Apple“家人共享”群组。\n\n配对后，家长可以在孩子的手机上通过“家长”→PIN→“设置”→“防止删除”启用此功能。\n\n不开启此保护也能使用 App，但孩子可以删除它。";
@@ -559,7 +559,8 @@
 
 // Guided pairing and setup.
 "setup.install.title" = "在孩子的手机上安装";
-"setup.install.body" = "孩子的手机也需要安装同一个 App。点击分享发送链接，在孩子的手机上打开并安装。\n\n首次打开时选择“孩子的手机”。请把两部手机放在手边，接下来进行配对。";
+"setup.install.body" = "孩子的手机也需要安装同一个 App。[把链接发送给孩子](%@)，或用孩子手机的相机扫描二维码，安装这个 App。\n\n首次打开时选择“孩子的手机”，接下来我们会将两部手机配对。";
+"setup.install.qr.accessibility" = "用于从 App Store 安装此 App 的二维码";
 "setup.link.parent" = "创建配对码，然后在孩子手机上的这个 App 中输入。连接成功后，这里会显示确认信息。\n\n接着在两部手机上继续设置。";
 "setup.link.child" = "在家长手机的初始设置中创建配对码，然后在下方输入。如果已经完成初始设置，可以前往“设置”→“连接孩子的手机”创建。";
 "setup.link.wait" = "等待孩子的手机连接";
@@ -569,9 +570,9 @@
 "setup.pin.verify" = "已收到 PIN。请在这部手机上输入，以打开家长设置。";
 "setup.apps.body" = "选择要应用时间限制和屏蔽的应用、类别或网站。其他应用仍可使用。\n\n更改选择需要输入家长 PIN。";
 "setup.protection.action_body" = "还可以通过 Apple“家人共享”防止孩子删除 App。这需要孩子的儿童账户已加入家庭群组。\n\n下方按钮可打开保护设置和操作说明。不启用此保护也能使用 App，但孩子可以删除它。";
-"setup.limit.child" = "请在家长的手机上设置每日限额。收到后会显示在这里，并应用于所选应用。\n\n家长保存限额时，可以保持此页面打开。";
+"setup.limit.child" = "请在家长的手机上设置每日限额。";
 "setup.check.title" = "检查设置";
-"setup.check.parent" = "下方显示这部手机的设置状态。点击任一项目可返回对应步骤。\n\n也请完成孩子手机上的设置：允许所需权限并选择应用。跳过的步骤可以稍后在“设置”中完成。";
+"setup.check.parent" = "下方显示这部手机的设置状态。点击任一项目可返回对应步骤。\n\n也请完成孩子手机上的设置：允许所需权限并选择要限制访问的 App。跳过的步骤可以稍后在“设置”中完成。";
 "setup.check.child" = "请检查下方的当前设置。点击项目可返回对应步骤。防止删除功能为可选项。\n\n跳过的步骤可以稍后完成。完成设置时将退出家长模式。";
 "setup.status.ready" = "已设置";
 "setup.status.pending" = "未设置";

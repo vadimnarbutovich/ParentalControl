@@ -96,7 +96,7 @@ struct OnboardingFlowView: View {
                         .font(.largeTitle.bold())
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
-                    Text(L10n.tr(bodyKey))
+                    stepDescription
                         .font(.title3)
                         .fixedSize(horizontal: false, vertical: true)
                     stepControls
@@ -198,10 +198,9 @@ struct OnboardingFlowView: View {
         }
         switch step {
         case .install:
-            Button("settings.item.share_app") {
-                AppAnalytics.report("onboarding_share_app")
-                activeSheet = .share
-            }.buttonStyle(.bordered)
+            AppInstallQRCodeView()
+            Button("settings.item.share_app", action: shareApp)
+                .buttonStyle(.bordered)
         case .pairing:
             if isLinked {
                 Text("settings.pairing.linked.status").foregroundStyle(AppTheme.neonGreen)
@@ -258,6 +257,34 @@ struct OnboardingFlowView: View {
             summary
         default: EmptyView()
         }
+    }
+
+    @ViewBuilder
+    private var stepDescription: some View {
+        if step == .install {
+            Text(installDescription)
+                .tint(AppTheme.neonBlue)
+                .environment(\.openURL, OpenURLAction { url in
+                    guard url == AppStoreLinks.shareURL else { return .systemAction }
+                    shareApp()
+                    return .handled
+                })
+        } else {
+            Text(L10n.tr(bodyKey))
+        }
+    }
+
+    private var installDescription: AttributedString {
+        let text = L10n.f("setup.install.body", AppStoreLinks.shareURL.absoluteString)
+        return (try? AttributedString(
+            markdown: text,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(text)
+    }
+
+    private func shareApp() {
+        AppAnalytics.report("onboarding_share_app")
+        activeSheet = .share
     }
 
     private var linkRequired: some View {

@@ -531,19 +531,19 @@
 "reports.previous" = "Periodo precedente";
 "reports.next" = "Periodo successivo";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "Ricevi una notifica quando tuo figlio invia un’attività da verificare.";
+"permission.notifications.parent.body" = "Ricevi una notifica quando tuo figlio invia un’attività completata da verificare.";
 "permission.notifications.child.body" = "Ricevi notifiche sulle modifiche al tempo disponibile e al blocco delle app.";
 "permission.camera.title" = "Fotocamera non disponibile";
 "permission.camera.body" = "Consenti l’accesso alla fotocamera nelle Impostazioni per fotografare un’attività. Puoi anche scegliere una foto esistente.";
 "onboarding.location.body" = "Consenti l’accesso alla posizione per permettere al tuo genitore di trovare questo dispositivo sulla mappa. Per le richieste in background serve l’autorizzazione «Sempre». Rileviamo la posizione solo su richiesta, senza monitoraggio continuo.";
 // Role-specific text onboarding.
 "setup.parent.title" = "Gestisci il tempo di tuo figlio";
-"setup.parent.body" = "Imposta un limite giornaliero, orari e attività con minuti come ricompensa. Controlla il tempo rimasto e richiedi la posizione di tuo figlio.\n\nSul tuo telefono servono solo le notifiche. Gli altri permessi si configurano sul telefono di tuo figlio.";
+"setup.parent.body" = "Imposta un limite giornaliero, orari e attività che offrono tempo aggiuntivo nelle app come ricompensa. Controlla il tempo rimasto e richiedi la posizione di tuo figlio.\n\nSul tuo telefono servono solo le notifiche. Gli altri permessi si configurano sul telefono di tuo figlio.";
 "setup.child.title" = "Configura il telefono di tuo figlio";
-"setup.child.body" = "Seguite questi passaggi insieme a un genitore. I permessi servono a registrare il tempo nelle app selezionate, applicare le restrizioni e mostrare la posizione al genitore.\n\nLa fotocamera verrà richiesta solo per fotografare un’attività. Non serve l’accesso a Salute.";
+"setup.child.body" = "Seguite questi passaggi insieme a un genitore. I permessi servono a registrare il tempo nelle app selezionate, applicare le restrizioni e mostrare la posizione al genitore.";
 "setup.screen_time.body" = "Consenti l’accesso a Tempo di utilizzo per registrare l’uso delle app selezionate e bloccarle in base al limite, agli orari o alla richiesta del genitore.\n\nSenza questo permesso, le restrizioni non funzioneranno.";
 "setup.notifications.child.body" = "Consenti le notifiche affinché tuo figlio veda le modifiche al tempo disponibile, i blocchi e i messaggi sulle attività.\n\nSe le disattivi, potrebbe perdere messaggi importanti.";
-"setup.location.body" = "Per consentire al genitore di sapere dove si trova suo figlio, autorizza la posizione: prima Mentre usi l’app, poi Sempre.\n\nLa posizione viene rilevata solo su richiesta del genitore. L’accesso Sempre è necessario per le richieste in background.";
+"setup.location.body" = "Per consentire al genitore di sapere dove si trova suo figlio, autorizza la posizione: prima Mentre usi l’app, poi Sempre.\n\nLa posizione viene rilevata solo su richiesta del genitore. Per rilevare la posizione è necessario consentire l’accesso Sempre.";
 "setup.pairing.title" = "Collega i due telefoni";
 "setup.parent.pairing_body" = "Sul tuo telefono, apri Impostazioni → Collegamento al figlio e crea un codice di abbinamento.\n\nInstalla questa stessa app sul telefono di tuo figlio e scegli Telefono del figlio. Dopo la configurazione, inserisci il codice nella sua schermata principale.";
 "setup.protection.body" = "Per impedire a tuo figlio di eliminare l’app, il suo account per minori deve appartenere a un gruppo In famiglia di Apple.\n\nDopo l’abbinamento, il genitore può attivare la protezione sul telefono del figlio: Genitore → PIN → Impostazioni → Protezione dalla rimozione.\n\nL’app funziona anche senza questa protezione, ma il figlio potrà eliminarla.";
@@ -559,7 +559,8 @@
 
 // Guided pairing and setup.
 "setup.install.title" = "Installa l’app sul telefono di tuo figlio";
-"setup.install.body" = "Sul telefono di tuo figlio serve questa stessa app. Condividi il link, aprilo sul suo telefono e installa l’app.\n\nAl primo avvio, scegli «Telefono del figlio». Tieni vicini entrambi i telefoni: ora li collegheremo.";
+"setup.install.body" = "Sul telefono di tuo figlio serve questa stessa app. [Invia il link a tuo figlio](%@) oppure scansiona il codice QR con la fotocamera del suo telefono per installarla.\n\nAl primo avvio, scegli «Telefono del figlio»: poi collegheremo i telefoni.";
+"setup.install.qr.accessibility" = "Codice QR per installare l’app dall’App Store";
 "setup.link.parent" = "Crea un codice di abbinamento e inseriscilo in questa app sul telefono di tuo figlio. Qui apparirà una conferma quando i telefoni saranno collegati.\n\nPoi prosegui la configurazione su entrambi i telefoni.";
 "setup.link.child" = "Sul telefono del genitore, crea un codice durante la configurazione e inseriscilo qui sotto. Se la configurazione è già terminata, puoi crearlo in Impostazioni → Collegamento al figlio.";
 "setup.link.wait" = "In attesa del telefono del figlio";
@@ -569,9 +570,9 @@
 "setup.pin.verify" = "PIN ricevuto. Inseriscilo su questo telefono per accedere alle impostazioni del genitore.";
 "setup.apps.body" = "Scegli le app, le categorie o i siti web a cui applicare limiti e blocchi. Le altre app resteranno disponibili.\n\nPer modificare la selezione serve il PIN del genitore.";
 "setup.protection.action_body" = "Con In famiglia di Apple puoi anche impedire a tuo figlio di eliminare l’app. Serve un account per minori nel gruppo familiare.\n\nIl pulsante qui sotto apre le impostazioni di protezione e le istruzioni. L’app funziona anche senza questa protezione, ma tuo figlio potrà eliminarla.";
-"setup.limit.child" = "Imposta un limite giornaliero sul telefono del genitore. Una volta ricevuto, apparirà qui e si applicherà alle app selezionate.\n\nPuoi lasciare aperta questa schermata mentre viene salvato il limite.";
+"setup.limit.child" = "Imposta un limite giornaliero sul telefono del genitore.";
 "setup.check.title" = "Controlla la configurazione";
-"setup.check.parent" = "Qui trovi lo stato della configurazione su questo telefono. Tocca una voce per tornarci.\n\nCompleta anche la configurazione sul telefono di tuo figlio: concedi i permessi e scegli le app. I passaggi saltati possono essere completati più tardi nelle Impostazioni.";
+"setup.check.parent" = "Qui trovi lo stato della configurazione su questo telefono. Tocca una voce per tornarci.\n\nCompleta anche la configurazione sul telefono di tuo figlio: concedi i permessi e scegli le app da bloccare. I passaggi saltati possono essere completati più tardi nelle Impostazioni.";
 "setup.check.child" = "Controlla le impostazioni qui sotto. Tocca una voce per tornarci. La protezione dalla rimozione è facoltativa.\n\nPuoi completare i passaggi saltati più tardi. La modalità genitore si chiuderà al termine della configurazione.";
 "setup.status.ready" = "Configurato";
 "setup.status.pending" = "Non configurato";

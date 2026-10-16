@@ -531,19 +531,19 @@
 "reports.previous" = "Période précédente";
 "reports.next" = "Période suivante";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "Recevez une notification lorsque votre enfant envoie une tâche à vérifier.";
+"permission.notifications.parent.body" = "Recevez une notification lorsque votre enfant envoie une tâche terminée à vérifier.";
 "permission.notifications.child.body" = "Recevez des notifications lorsque le temps disponible ou le blocage des apps change.";
 "permission.camera.title" = "Appareil photo indisponible";
 "permission.camera.body" = "Autorisez l’appareil photo dans Réglages pour photographier une tâche. Vous pouvez aussi choisir une photo existante.";
 "onboarding.location.body" = "Autorisez la localisation pour que votre parent puisse retrouver cet appareil sur la carte. L’autorisation « Toujours » est nécessaire pour les demandes en arrière-plan. La position est recherchée uniquement sur demande, sans suivi continu.";
 // Role-specific text onboarding.
 "setup.parent.title" = "Gérez le temps d’écran de votre enfant";
-"setup.parent.body" = "Définissez une limite quotidienne, des horaires et des tâches récompensées en minutes. Consultez le temps restant et demandez la position de votre enfant.\n\nSur votre téléphone, seules les notifications sont nécessaires. Les autres autorisations se règlent sur le téléphone de votre enfant.";
+"setup.parent.body" = "Définissez une limite quotidienne, des horaires et des tâches récompensées par du temps supplémentaire dans les apps. Consultez le temps restant et demandez la position de votre enfant.\n\nSur votre téléphone, seules les notifications sont nécessaires. Les autres autorisations se règlent sur le téléphone de votre enfant.";
 "setup.child.title" = "Configurez le téléphone de votre enfant";
-"setup.child.body" = "Suivez ces étapes avec un parent. Les autorisations permettent de mesurer le temps dans les apps choisies, d’appliquer les restrictions et de communiquer la position au parent.\n\nL’appareil photo ne sera demandé que pour photographier une tâche. L’accès à Santé n’est pas nécessaire.";
+"setup.child.body" = "Suivez ces étapes avec un parent. Les autorisations permettent de mesurer le temps dans les apps choisies, d’appliquer les restrictions et de communiquer la position au parent.";
 "setup.screen_time.body" = "Autorisez l’accès à Temps d’écran pour mesurer l’utilisation des apps choisies et les bloquer selon la limite, les horaires ou la demande du parent.\n\nSans cette autorisation, les restrictions ne fonctionneront pas.";
 "setup.notifications.child.body" = "Autorisez les notifications pour que votre enfant voie les changements de temps disponible, les blocages et les messages concernant les tâches.\n\nSans notifications, il risque de manquer des messages importants.";
-"setup.location.body" = "Pour que le parent puisse savoir où se trouve son enfant, autorisez la position : d’abord Lorsque l’app est active, puis Toujours.\n\nLa position est recherchée uniquement à la demande du parent. L’accès Toujours est nécessaire en arrière-plan.";
+"setup.location.body" = "Pour que le parent puisse savoir où se trouve son enfant, autorisez la position : d’abord Lorsque l’app est active, puis Toujours.\n\nLa position est recherchée uniquement à la demande du parent. L’accès à la position « Toujours » est nécessaire pour localiser l’enfant.";
 "setup.pairing.title" = "Reliez les deux téléphones";
 "setup.parent.pairing_body" = "Sur votre téléphone, ouvrez Réglages → Connexion avec l’enfant et créez un code d’association.\n\nInstallez cette même app sur le téléphone de votre enfant et choisissez Téléphone de l’enfant. Après la configuration, saisissez le code sur son écran d’accueil.";
 "setup.protection.body" = "Pour empêcher votre enfant de supprimer l’app, son compte enfant doit appartenir à un groupe de Partage familial Apple.\n\nAprès l’association, le parent peut activer la protection sur le téléphone de l’enfant : Parent → PIN → Réglages → Protection contre la suppression.\n\nL’app fonctionne aussi sans cette protection, mais l’enfant pourra la supprimer.";
@@ -559,7 +559,8 @@
 
 // Guided pairing and setup.
 "setup.install.title" = "Installez l’app sur le téléphone de l’enfant";
-"setup.install.body" = "Le téléphone de votre enfant doit disposer de la même app. Partagez le lien, ouvrez-le sur son téléphone et installez l’app.\n\nAu premier lancement, choisissez «Téléphone de l’enfant». Gardez les deux téléphones à portée de main pour les associer.";
+"setup.install.body" = "Le téléphone de votre enfant doit disposer de la même app. [Envoyez le lien à votre enfant](%@) ou scannez le QR code avec l’appareil photo de son téléphone pour l’installer.\n\nAu premier lancement, choisissez « Téléphone de l’enfant » — nous associerons ensuite les téléphones.";
+"setup.install.qr.accessibility" = "QR code pour installer l’app depuis l’App Store";
 "setup.link.parent" = "Créez un code d’association et saisissez-le dans cette app sur le téléphone de votre enfant. Une confirmation apparaîtra ici une fois les téléphones associés.\n\nPoursuivez ensuite la configuration sur les deux téléphones.";
 "setup.link.child" = "Sur le téléphone du parent, créez un code pendant la configuration et saisissez-le ci-dessous. Si la configuration est déjà terminée, créez le code dans Réglages → Connexion avec l’enfant.";
 "setup.link.wait" = "En attente du téléphone de l’enfant";
@@ -569,9 +570,9 @@
 "setup.pin.verify" = "PIN reçu. Saisissez-le sur ce téléphone pour accéder aux réglages parentaux.";
 "setup.apps.body" = "Choisissez les apps, catégories ou sites web auxquels appliquer les limites et les blocages. Les autres apps resteront accessibles.\n\nLe PIN parental est nécessaire pour modifier la sélection.";
 "setup.protection.action_body" = "Le Partage familial Apple permet aussi d’empêcher votre enfant de supprimer l’app. Il faut un compte enfant dans votre groupe familial.\n\nLe bouton ci-dessous ouvre les réglages de protection et les instructions. L’app fonctionne sans cette protection, mais l’enfant pourra la supprimer.";
-"setup.limit.child" = "Définissez une limite quotidienne sur le téléphone du parent. Une fois reçue, elle apparaîtra ici et s’appliquera aux apps sélectionnées.\n\nVous pouvez garder cet écran ouvert pendant l’enregistrement de la limite.";
+"setup.limit.child" = "Définissez une limite quotidienne sur le téléphone du parent.";
 "setup.check.title" = "Vérifiez la configuration";
-"setup.check.parent" = "Voici l’état de la configuration sur ce téléphone. Touchez un élément pour y revenir.\n\nTerminez aussi la configuration sur le téléphone de l’enfant : activez les autorisations et choisissez les apps. Les étapes ignorées peuvent être effectuées plus tard dans les Réglages.";
+"setup.check.parent" = "Voici l’état de la configuration sur ce téléphone. Touchez un élément pour y revenir.\n\nTerminez aussi la configuration sur le téléphone de l’enfant : activez les autorisations et choisissez les apps à bloquer. Les étapes ignorées peuvent être effectuées plus tard dans les Réglages.";
 "setup.check.child" = "Vérifiez les réglages ci-dessous. Touchez un élément pour y revenir. La protection contre la suppression est facultative.\n\nVous pourrez effectuer les étapes ignorées plus tard. Le mode parental se fermera à la fin de la configuration.";
 "setup.status.ready" = "Configuré";
 "setup.status.pending" = "Non configuré";
