@@ -51,17 +51,21 @@ struct MapTabView: View {
         ZStack {
             Map(position: $cameraPosition) {
                 if let snapshot = appState.childLocationSnapshot {
-                    Annotation(L10n.tr("tab.dashboard"), coordinate: snapshot.coordinate) {
-                        ZStack {
-                            Circle()
-                                .fill(AppTheme.neonBlue.opacity(0.25))
-                                .frame(width: 44, height: 44)
-                            Circle()
-                                .fill(AppTheme.neonBlue)
-                                .frame(width: 18, height: 18)
-                                .shadow(color: AppTheme.neonBlue.opacity(0.6), radius: 8)
-                        }
+                    Annotation(
+                        L10n.tr("map.title"),
+                        coordinate: snapshot.coordinate,
+                        // The PNG has transparent margins. Anchor the visible pin tip,
+                        // measured at pixel (117, 232) in the 240 x 240 asset.
+                        anchor: UnitPoint(x: 117.0 / 240.0, y: 232.0 / 240.0)
+                    ) {
+                        Image("childLocationMarker")
+                            .renderingMode(.original)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80, height: 80)
+                            .accessibilityLabel(Text("map.title"))
                     }
+                    .annotationTitles(.hidden)
                 }
             }
             .mapStyle(.standard)
