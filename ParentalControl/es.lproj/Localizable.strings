@@ -571,6 +571,7 @@
 "setup.apps.body" = "Elige las apps, categorías o sitios web a los que se aplicarán los límites y bloqueos. Las demás apps seguirán disponibles.\n\nPara cambiar la selección se necesita el PIN parental.";
 "setup.protection.action_body" = "También puedes impedir que tu hijo elimine la app mediante En familia de Apple. Necesitas una cuenta infantil dentro del grupo familiar.\n\nEl botón de abajo abre los ajustes de protección y las instrucciones. La app funciona sin esta protección, pero el niño podrá eliminarla.";
 "setup.limit.child" = "Establece un límite diario en el teléfono del padre o la madre.";
+"setup.limit.initial" = "Empieza con 60 minutos al día. Pulsa «Siguiente» para aplicar este límite o elige otra duración.";
 "setup.check.title" = "Revisa la configuración";
 "setup.check.parent" = "Este es el estado de la configuración en este teléfono. Toca un apartado para volver a él.\n\nCompleta también la configuración en el teléfono del niño: activa los permisos y elige las apps que quieres bloquear. Los pasos omitidos se pueden completar más tarde en Ajustes.";
 "setup.check.child" = "Revisa los ajustes de abajo. Toca un apartado para volver a él. La protección contra eliminación es opcional.\n\nPuedes completar los pasos omitidos más tarde. Al terminar, se cerrará el modo parental.";

@@ -34,11 +34,12 @@ struct OnboardingFlowView: View {
     private var steps: [Step] {
         isParent
             ? [.parentIntro, .notifications, .install, .pairing, .pin, .limit, .finish]
-            : [.childIntro, .pairing, .screenTime, .notifications, .location, .pin, .apps, .protection, .limit, .finish]
+            : [.childIntro, .pairing, .screenTime, .notifications, .location, .pin, .apps, .protection, .finish]
     }
     private var step: Step { steps[min(stepIndex, steps.count - 1)] }
     private var busy: Bool {
-        isRequesting || appState.isRefreshingSetup || screenTimeService.isAuthorizationRequestInProgress
+        isRequesting || appState.isRefreshingSetup || appState.isBudgetSaving
+            || screenTimeService.isAuthorizationRequestInProgress
     }
     private var pairingCode: String? { appState.parentPairingCode ?? appState.pairingState?.pairingCode }
     private var hasSelectedApps: Bool {
@@ -48,6 +49,13 @@ struct OnboardingFlowView: View {
     }
     private var limitSeconds: Int? {
         isParent ? appState.parentBudgetStatus?.currentLimitSeconds : appState.dailyBudget?.policy.limitSeconds
+    }
+    // A draft until the parent taps Next. Never invent an applied policy on the child's phone.
+    private var offersInitialLimit: Bool {
+        isParent && onReplayFinished == nil && limitSeconds == nil
+    }
+    private var displayedLimitSeconds: Int? {
+        limitSeconds ?? (offersInitialLimit ? DailyBudgetPolicy.initialLimitSeconds : nil)
     }
     private var isPermissionStep: Bool { [.screenTime, .notifications, .location].contains(step) }
     private var permissionGranted: Bool {
@@ -82,64 +90,68 @@ struct OnboardingFlowView: View {
         }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(L10n.tr(isParent ? "role.select.parent" : "role.select.child"))
-                Spacer()
-                Text("\(stepIndex + 1) / \(steps.count)").monospacedDigit()
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(24)
+    private var accent: Color { isParent ? AppTheme.neonBlue : AppTheme.neonGreen }
+    private var showsControlsCard: Bool {
+        if step == .parentIntro || step == .childIntro { return false }
+        // Before generating a parent's pairing code, the explanation and CTA are sufficient.
+        if step == .pairing && isParent && !isLinked && pairingCode == nil {
+            return appState.remoteStatusMessage != nil
+        }
+        return true
+    }
+    private var primaryDisabled: Bool {
+        busy || (step == .pairing && isParent && !isLinked && pairingCode != nil)
+            || (step == .pairing && !isParent && !isLinked
+                && appState.pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text(L10n.tr(titleKey))
-                        .font(.largeTitle.bold())
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.isHeader)
+    var body: some View {
+        OnboardingPageLayout(
+            roleKey: isParent ? "role.select.parent" : "role.select.child",
+            roleSymbol: isParent ? "person.crop.circle" : "iphone",
+            stepIndex: stepIndex, stepCount: steps.count,
+            titleKey: titleKey, tint: accent
+        ) {
+            OnboardingCard(tint: accent) {
                     stepDescription
-                        .font(.title3)
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.85))
                         .fixedSize(horizontal: false, vertical: true)
+            }
+            if showsControlsCard {
+                OnboardingCard(tint: accent) {
                     stepControls
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .font(.subheadline)
+                .buttonStyle(OnboardingSecondaryButtonStyle(tint: accent))
             }
-            .id(step)
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
-
-            VStack(spacing: 12) {
+        } footer: {
+            VStack(spacing: 6) {
                 Button { performPrimaryAction() } label: {
-                    HStack {
-                        if busy { ProgressView().controlSize(.small) }
+                    HStack(spacing: 10) {
+                        if busy { ProgressView().controlSize(.small).tint(.black) }
                         Text(L10n.tr(primaryActionKey))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(AppTheme.neonBlue)
-                .disabled(busy || (step == .pairing && isParent && !isLinked && pairingCode != nil)
-                          || (step == .pairing && !isParent && !isLinked
-                              && appState.pairingCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                .buttonStyle(NeonPrimaryButtonStyle(tint: accent))
+                .disabled(primaryDisabled)
+                .opacity(primaryDisabled ? 0.5 : 1)
 
-                if !canAdvance {
-                    Button("location.setup.later") { advance() }.disabled(busy)
+                HStack(spacing: 12) {
+                    if stepIndex > 0 {
+                        Button("setup.back") { stepIndex -= 1 }.disabled(busy)
+                    }
+                    if !canAdvance {
+                        Button("location.setup.later") { advance() }.disabled(busy)
+                    }
                 }
-                if stepIndex > 0 {
-                    Button("setup.back") { stepIndex -= 1 }.disabled(busy)
-                }
+                .buttonStyle(OnboardingQuietButtonStyle())
             }
-            .frame(maxWidth: .infinity)
-            .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.05, green: 0.08, blue: 0.12).ignoresSafeArea())
-        .preferredColorScheme(.dark)
         .interactiveDismissDisabled(busy)
         .task { await appState.refreshPermissionStatuses() }
         .task(id: step) {
@@ -203,13 +215,21 @@ struct OnboardingFlowView: View {
         case .install:
             AppInstallQRCodeView()
             Button("settings.item.share_app", action: shareApp)
-                .buttonStyle(.bordered)
         case .pairing:
             if isLinked {
-                Text("settings.pairing.linked.status").foregroundStyle(AppTheme.neonGreen)
+                Label("settings.pairing.linked.status", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(AppTheme.neonGreen)
             } else {
                 if isParent, let pairingCode {
-                    Text(pairingCode).font(.largeTitle.monospaced().bold()).textSelection(.enabled)
+                    Text(pairingCode)
+                        .font(.system(.largeTitle, design: .monospaced, weight: .bold))
+                        .foregroundStyle(accent)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
                     Text("setup.link.wait").foregroundStyle(.secondary)
                     Button("settings.parent.link.generate") {
                         runOperation { await appState.createPairingCodeForParent() }
@@ -218,7 +238,12 @@ struct OnboardingFlowView: View {
                     TextField(L10n.tr("settings.child.link.placeholder"), text: $appState.pairingCodeInput)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                        .textFieldStyle(.roundedBorder)
+                        .font(.title3.monospaced().weight(.semibold))
+                        .foregroundStyle(.white)
+                        .tint(accent)
+                        .padding(16)
+                        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(accent.opacity(0.3), lineWidth: 1) }
                         .disabled(busy)
                 }
                 if let message = appState.remoteStatusMessage {
@@ -244,9 +269,16 @@ struct OnboardingFlowView: View {
             status(screenTimeService.isRemovalProtectionEnabled)
             if !isLinked { linkRequired }
         case .limit:
-            if let limitSeconds {
-                Text(L10n.f("unit.minutes.short", limitSeconds / 60)).font(.title2.bold())
+            if let limitSeconds = displayedLimitSeconds {
+                Label(L10n.f("unit.minutes.short", limitSeconds / 60), systemImage: "clock")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .foregroundStyle(accent)
+                    .fixedSize(horizontal: false, vertical: true)
                 if isParent {
+                    if offersInitialLimit {
+                        Text("setup.limit.initial").foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if appState.parentBudgetStatus?.isPending == true {
                         Text("budget.pending").foregroundStyle(.secondary)
                     }
@@ -254,6 +286,10 @@ struct OnboardingFlowView: View {
                 }
             } else {
                 Text("budget.not_set").foregroundStyle(.secondary)
+            }
+            if isParent, let error = appState.budgetError {
+                Text(error).foregroundStyle(AppTheme.neonOrange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if !isLinked { linkRequired }
         case .finish:
@@ -273,7 +309,12 @@ struct OnboardingFlowView: View {
                     return .handled
                 })
         } else {
-            Text(L10n.tr(bodyKey))
+            let paragraphs = L10n.tr(bodyKey).components(separatedBy: "\n\n")
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, paragraph in
+                    Text(paragraph).fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 
@@ -309,7 +350,7 @@ struct OnboardingFlowView: View {
                 summaryRow("blocklist.pick.apps", ready: isLinked && hasSelectedApps && screenTimeService.isAuthorized, target: .apps)
                 summaryRow("protection.title", ready: screenTimeService.isRemovalProtectionEnabled, target: .protection)
             }
-            summaryRow("budget.title", ready: isLinked && limitSeconds != nil, target: .limit)
+            summaryRow("budget.title", ready: isLinked && limitSeconds != nil, target: isParent ? .limit : nil)
             if isParent && appState.parentBudgetStatus?.isPending == true {
                 Text("budget.pending").foregroundStyle(.secondary)
             }
@@ -317,20 +358,45 @@ struct OnboardingFlowView: View {
     }
 
     private func status(_ ready: Bool) -> some View {
-        Text(L10n.tr(ready ? "setup.status.ready" : "setup.status.pending"))
-            .font(.headline)
-            .foregroundStyle(ready ? AppTheme.neonGreen : AppTheme.neonOrange)
+        OnboardingStatusLabel(ready: ready)
     }
 
-    private func summaryRow(_ title: String, ready: Bool, target: Step) -> some View {
-        Button { go(to: target) } label: {
+    @ViewBuilder
+    private func summaryRow(_ title: String, ready: Bool, target: Step?) -> some View {
+        if let target {
+            Button { go(to: target) } label: {
+                summaryRowContent(title, ready: ready, navigates: true)
+            }.buttonStyle(.plain)
+        } else {
+            // The child only confirms receipt; limit editing belongs to the parent.
+            summaryRowContent(title, ready: ready, navigates: false)
+                .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func summaryRowContent(_ title: String, ready: Bool, navigates: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: ready ? "checkmark.circle.fill" : "circle.dashed")
+                .font(.title3)
+                .foregroundStyle(ready ? AppTheme.neonGreen : AppTheme.neonOrange)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(L10n.tr(title)).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
                 Text(L10n.tr(ready ? "setup.status.ready" : "setup.status.pending"))
                     .font(.subheadline)
-                    .foregroundStyle(ready ? AppTheme.neonGreen : AppTheme.neonOrange)
-            }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+                    .foregroundStyle(ready ? AppTheme.neonGreen : .white.opacity(0.65))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if navigates {
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     private var titleKey: String {
@@ -388,6 +454,7 @@ struct OnboardingFlowView: View {
         case .protection: return "protection.enable"
         case .limit:
             if !isLinked { return "setup.pairing.title" }
+            if offersInitialLimit { return "onboarding.cta.next" }
             return isParent ? "budget.title" : "setup.refresh"
         default: return "onboarding.cta.next"
         }
@@ -395,6 +462,12 @@ struct OnboardingFlowView: View {
 
     private func performPrimaryAction() {
         guard !busy else { return }
+        if step == .limit && offersInitialLimit && isLinked {
+            runOperation {
+                if await appState.applyInitialParentDailyLimit() { advance() }
+            }
+            return
+        }
         if canAdvance { advance(); return }
         if isPermissionStep {
             if needsSettings { appState.openAppSettingsURL(); return }

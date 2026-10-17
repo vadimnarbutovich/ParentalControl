@@ -635,6 +635,7 @@
 "setup.apps.body" = "Choose the apps, categories or websites that limits and blocks will apply to. Other apps will remain available.\n\nChanging this selection requires the parent PIN.";
 "setup.protection.action_body" = "You can also prevent your child from deleting the app through Apple Family Sharing. This requires a child account in your family group.\n\nThe button below opens protection settings and instructions. The app works without this protection, but your child will be able to delete it.";
 "setup.limit.child" = "Set a daily limit on the parent’s phone.";
+"setup.limit.initial" = "Start with 60 minutes a day. Tap Next to apply this limit, or choose a different amount.";
 "setup.check.title" = "Review your setup";
 "setup.check.parent" = "Below is the setup status on this phone. Tap an item to return to it.\n\nAlso finish setup on your child’s phone: enable permissions and choose the apps to block. Skipped steps can be completed later in Settings.";
 "setup.check.child" = "Review the current settings below. Tap an item to return to it. Removal protection is optional.\n\nYou can complete skipped steps later. Parent mode will close when you finish setup.";

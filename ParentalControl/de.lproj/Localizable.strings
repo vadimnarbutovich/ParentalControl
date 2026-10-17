@@ -571,6 +571,7 @@
 "setup.apps.body" = "Wähle Apps, Kategorien oder Websites, für die Limits und Sperren gelten sollen. Andere Apps bleiben verfügbar.\n\nZum Ändern der Auswahl ist die Eltern-PIN erforderlich.";
 "setup.protection.action_body" = "Über die Apple-Familienfreigabe kannst du verhindern, dass dein Kind die App löscht. Dafür ist ein Kinderaccount in deiner Familiengruppe nötig.\n\nDie Taste unten öffnet die Schutzeinstellungen und eine Anleitung. Die App funktioniert auch ohne diesen Schutz, kann dann aber vom Kind gelöscht werden.";
 "setup.limit.child" = "Lege auf dem Telefon des Elternteils ein Tageslimit fest.";
+"setup.limit.initial" = "Starte mit 60 Minuten pro Tag. Tippe auf „Weiter“, um dieses Limit zu übernehmen, oder passe die Zeit an.";
 "setup.check.title" = "Einrichtung prüfen";
 "setup.check.parent" = "Hier siehst du den Einrichtungsstand auf diesem Telefon. Tippe auf einen Punkt, um dorthin zurückzukehren.\n\nSchließe auch die Einrichtung auf dem Telefon deines Kindes ab: Berechtigungen erteilen und die zu sperrenden Apps auswählen. Übersprungene Schritte kannst du später in den Einstellungen nachholen.";
 "setup.check.child" = "Prüfe die Einstellungen unten. Tippe auf einen Punkt, um dorthin zurückzukehren. Der Schutz vor dem Löschen ist optional.\n\nÜbersprungene Schritte kannst du später nachholen. Beim Abschluss wird der Elternmodus beendet.";

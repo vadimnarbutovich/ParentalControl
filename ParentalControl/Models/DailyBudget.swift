@@ -21,6 +21,8 @@ nonisolated struct DailyBudgetStatus: Codable {
 
 /// Shared by the app and DeviceActivity extension. No UI / MainActor dependency.
 nonisolated struct DailyBudgetPolicy: Codable, Equatable {
+    /// First-setup draft only. Existing policies (including zero) are never replaced by this default.
+    static let initialLimitSeconds = 60 * 60
     let familyID: String
     var limitSeconds: Int
     let revision: Int

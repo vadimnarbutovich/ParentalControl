@@ -571,6 +571,7 @@
 "setup.apps.body" = "Scegli le app, le categorie o i siti web a cui applicare limiti e blocchi. Le altre app resteranno disponibili.\n\nPer modificare la selezione serve il PIN del genitore.";
 "setup.protection.action_body" = "Con In famiglia di Apple puoi anche impedire a tuo figlio di eliminare l’app. Serve un account per minori nel gruppo familiare.\n\nIl pulsante qui sotto apre le impostazioni di protezione e le istruzioni. L’app funziona anche senza questa protezione, ma tuo figlio potrà eliminarla.";
 "setup.limit.child" = "Imposta un limite giornaliero sul telefono del genitore.";
+"setup.limit.initial" = "Inizia con 60 minuti al giorno. Tocca «Avanti» per applicare questo limite oppure scegli una durata diversa.";
 "setup.check.title" = "Controlla la configurazione";
 "setup.check.parent" = "Qui trovi lo stato della configurazione su questo telefono. Tocca una voce per tornarci.\n\nCompleta anche la configurazione sul telefono di tuo figlio: concedi i permessi e scegli le app da bloccare. I passaggi saltati possono essere completati più tardi nelle Impostazioni.";
 "setup.check.child" = "Controlla le impostazioni qui sotto. Tocca una voce per tornarci. La protezione dalla rimozione è facoltativa.\n\nPuoi completare i passaggi saltati più tardi. La modalità genitore si chiuderà al termine della configurazione.";

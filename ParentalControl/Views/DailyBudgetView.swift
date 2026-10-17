@@ -116,7 +116,7 @@ struct DailyLimitSheet: View {
     private struct DayChoice: Identifiable { let id: Int }
 
     init(policy: DailyBudgetPolicy?) {
-        let total = max(0, min(1440, (policy?.limitSeconds ?? 0) / 60))
+        let total = max(0, min(1440, (policy?.limitSeconds ?? DailyBudgetPolicy.initialLimitSeconds) / 60))
         let week = policy?.weeklyLimitsSeconds
         _hours = State(initialValue: total / 60)
         _minutes = State(initialValue: total % 60)

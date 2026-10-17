@@ -720,17 +720,39 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func saveDailyBudgetChange(kind: String, seconds: Int, weekly: [Int]? = nil) async -> Bool {
+    /// Confirm the first-setup draft with Next, using the same delivery path as an edited limit.
+    func applyInitialParentDailyLimit() async -> Bool {
+        await saveDailyBudgetChange(kind: "limit", seconds: DailyBudgetPolicy.initialLimitSeconds,
+                                    onlyIfUnset: true)
+    }
+
+    private func saveDailyBudgetChange(kind: String, seconds: Int, weekly: [Int]? = nil,
+                                      onlyIfUnset: Bool = false) async -> Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true, !isBudgetSaving else { return false }
+        if onlyIfUnset {
+            // A poll may have delivered the parent's edited policy since the button was tapped.
+            if parentBudgetStatus?.policy != nil { return true }
+            guard hasLoadedParentBudget else {
+                budgetError = L10n.tr("budget.save_error")
+                return false
+            }
+            guard parentBudgetStatus?.childReady == true else {
+                budgetError = L10n.tr("budget.child_update")
+                return false
+            }
+        }
         let requestedFamily = pairingState?.familyID
         isBudgetSaving = true
         budgetError = nil
         defer { isBudgetSaving = false }
         let day = parentBudgetStatus?.currentDay ?? DailyBudgetState.dayKey()
         if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds
-            || budgetChangeIntent?.weekly != weekly || budgetChangeIntent?.day != day {
+            || budgetChangeIntent?.weekly != weekly || budgetChangeIntent?.day != day
+            || (onlyIfUnset && budgetChangeIntent?.revision != 0) {
             budgetChangeIntent = (kind, seconds, weekly, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
         }
+        // First setup always sends revision zero. The existing server-side compare-and-swap
+        // rejects this write if another device has already created any policy, including zero.
         guard let intent = budgetChangeIntent else { return false }
         do {
             let saved = try await remoteSyncService.changeDailyBudget(
