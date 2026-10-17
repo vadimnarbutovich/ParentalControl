@@ -1,0 +1,13 @@
+Use case: text-localization.
+Input image is the EDIT TARGET: approved App Store dashboard poster. Make only a top marketing text hierarchy change. Preserve the entire phone, all app UI, values, card layouts, screen labels, the tilted white Limits badge, background ribbons, shadows, phone scale and position exactly. Do not redesign or redraw the app. Portrait aspect 1206:2622.
+ONLY replace marketing text ABOVE the phone. Former subtitle becomes the main large headline and former headline becomes smaller supporting description.
+Use the same premium heavy rounded geometric font, natural normal-width letter proportions, not condensed or squeezed. Center the text, keep 4% horizontal safe margins, no cropping. Fit in the current top area (roughly first 18% of canvas), keep phone top in place and a small clear gap above it. Use compact line spacing and appropriate font sizes. Headline must be visually dominant; supporting text in smaller medium-weight muted blue-gray font. No final periods, no quotes, no extra text. All badge wording and phone text MUST remain unchanged. No new decorations or objects. Single opaque finished portrait image.
+
+Exact large headline, THREE lines:
+"Помогайте ребёнку" — teal
+"пользоваться телефоном" — navy
+"осознанно" — navy
+Below it, exact smaller description, TWO lines:
+"Больше баланса"
+"Меньше экранного времени"
+Natural Cyrillic glyphs, no Latin substitute letters. Phone UI stays in Russian; badge remains the full exact phrase "Лимиты, которые подходят для вашей семьи". Preserve all existing values, tabs, labels, phone details and colors.

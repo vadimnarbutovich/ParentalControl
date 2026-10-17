@@ -3,12 +3,16 @@ import SwiftUI
 import UIKit
 
 struct BlockListView: View {
+    /// Onboarding reuses the same picker, persistence and subscription limits.
+    var selectionOnly = false
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var screenTimeService: ScreenTimeService
     @EnvironmentObject private var subscriptionService: SubscriptionService
     @State private var showingPicker = false
     @State private var showPaywall = false
     @State private var selectionBeforePicker = FamilyActivitySelection()
+    @State private var setupSelection = FamilyActivitySelection()
 
     var body: some View {
         NavigationStack {
@@ -22,21 +26,36 @@ struct BlockListView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        selectedAppsSection
-                        manualBlockSliderSection
+                        if !selectionOnly || appState.isParentModeActive {
+                            selectedAppsSection
+                        } else {
+                            Text("parent_mode.entry.title")
+                        }
+                        if !selectionOnly { manualBlockSliderSection }
                         #if DEBUG && !HIDE_DEBUG_UI
-                        debugSection
+                        if !selectionOnly { debugSection }
                         #endif
                     }
                     .padding()
                 }
             }
             .scrollIndicators(.hidden)
+            .toolbar {
+                if selectionOnly {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("exercise.done") { dismiss() }
+                            .tint(.white)
+                    }
+                }
+            }
             .familyActivityPicker(
                 isPresented: $showingPicker,
                 selection: Binding(
-                    get: { screenTimeService.selection },
-                    set: { screenTimeService.selection = $0 }
+                    get: { selectionOnly ? setupSelection : screenTimeService.selection },
+                    set: {
+                        if selectionOnly { setupSelection = $0 }
+                        else { screenTimeService.selection = $0 }
+                    }
                 )
             )
             .onChange(of: showingPicker) { _, isPresented in
@@ -44,7 +63,10 @@ struct BlockListView: View {
                     selectionBeforePicker = screenTimeService.selection
                     return
                 }
-                let sel = screenTimeService.selection
+                guard !selectionOnly || appState.isParentModeActive else {
+                    return
+                }
+                let sel = selectionOnly ? setupSelection : screenTimeService.selection
                 let hasCategories = !sel.categoryTokens.isEmpty
                 let hasDomains = !sel.webDomainTokens.isEmpty
                 let tooManyApps = sel.applicationTokens.count > 1
@@ -67,16 +89,24 @@ struct BlockListView: View {
                         "domains_count": sel.webDomainTokens.count,
                     ]
                 )
+                if selectionOnly { screenTimeService.selection = sel }
                 appState.saveScreenSelection()
             }
             #if DEBUG && !HIDE_DEBUG_UI
             .task {
+                guard !selectionOnly else { return }
                 while !Task.isCancelled {
                     appState.refreshDeviceActivityDebug()
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                 }
             }
             #endif
+            .onChange(of: appState.isParentModeActive) { _, active in
+                if selectionOnly && !active {
+                    showingPicker = false
+                    showPaywall = false
+                }
+            }
             .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView(isPresented: $showPaywall, openSource: .limitedFeature)
                     .environmentObject(subscriptionService)
@@ -144,6 +174,7 @@ struct BlockListView: View {
 
             Button("blocklist.pick.apps") {
                 AppAnalytics.report("blocklist_pick_apps_tap")
+                if selectionOnly { setupSelection = screenTimeService.selection }
                 showingPicker = true
             }
             .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))

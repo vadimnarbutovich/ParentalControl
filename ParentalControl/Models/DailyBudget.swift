@@ -6,14 +6,25 @@ nonisolated struct DailyBudgetStatus: Codable {
     let childReady: Bool
     let appliedRevision: Int
     let state: DailyBudgetState?
+    var weeklyChildReady: Bool? = nil
+    var childTimeZone: String? = nil
     var isPending: Bool { policy.map { appliedRevision < $0.revision } ?? false }
-    var hasCurrentDayState: Bool { policy == nil || state?.day == policy?.extraDay }
+    var currentDay: String {
+        guard let childTimeZone, let zone = TimeZone(identifier: childTimeZone) else {
+            return policy?.extraDay ?? DailyBudgetState.dayKey()
+        }
+        return DailyBudgetState.dayKey(timeZone: zone)
+    }
+    var currentLimitSeconds: Int? { policy?.limit(for: currentDay) }
+    var hasCurrentDayState: Bool { policy == nil || state?.day == currentDay }
 }
 
 /// Shared by the app and DeviceActivity extension. No UI / MainActor dependency.
 nonisolated struct DailyBudgetPolicy: Codable, Equatable {
+    /// First-setup draft only. Existing policies (including zero) are never replaced by this default.
+    static let initialLimitSeconds = 60 * 60
     let familyID: String
-    let limitSeconds: Int
+    var limitSeconds: Int
     let revision: Int
     let extraDay: String
     let extraSeconds: Int
@@ -24,6 +35,40 @@ nonisolated struct DailyBudgetPolicy: Codable, Equatable {
     let grantedSeconds: Int?
     let dayStartLimitSeconds: Int?
     let operations: [DailyBudgetOperation]?
+    /// Monday...Sunday. Absent in existing policies: their uniform limit is unchanged.
+    var weeklyLimitsSeconds: [Int]? = nil
+
+    var hasValidLimits: Bool {
+        (0...86400).contains(limitSeconds) && (weeklyLimitsSeconds.map {
+            $0.count == 7 && $0.allSatisfy { (0...86400).contains($0) }
+        } ?? true)
+    }
+
+    func limit(for day: String) -> Int {
+        guard let weeklyLimitsSeconds, weeklyLimitsSeconds.count == 7,
+              let index = Self.weekdayIndex(for: day) else { return limitSeconds }
+        return weeklyLimitsSeconds[index]
+    }
+
+    /// Keep the legacy scalar resolved to the state's own day, including offline rollovers.
+    /// History uploads and older presentation code can continue reading that scalar.
+    func resolved(for day: String) -> Self {
+        var copy = self
+        copy.limitSeconds = limit(for: day)
+        return copy
+    }
+
+    static func weekdayIndex(for day: String) -> Int? {
+        let parts = day.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = DateComponents(year: parts[0], month: parts[1], day: parts[2])
+        guard let date = calendar.date(from: components) else { return nil }
+        let checked = calendar.dateComponents([.year, .month, .day], from: date)
+        guard checked.year == parts[0], checked.month == parts[1], checked.day == parts[2] else { return nil }
+        return (calendar.component(.weekday, from: date) + 5) % 7
+    }
 }
 
 nonisolated struct DailyBudgetOperation: Codable, Equatable {
@@ -48,11 +93,11 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
     var earnedSeconds: Int? { policy.extraDay == day ? policy.earnedSeconds : 0 }
     var grantedSeconds: Int? { policy.extraDay == day ? policy.grantedSeconds : 0 }
 
-    static func dayKey(_ date: Date = Date()) -> String {
+    static func dayKey(_ date: Date = Date(), timeZone: TimeZone = .current) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = .current
+        f.timeZone = timeZone
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: date)
     }
@@ -61,6 +106,7 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
         // Moving the clock backwards must not grant another daily allowance.
         guard today > day else { return }
         day = today
+        policy = policy.resolved(for: today)
         dayStartISO = ISO8601DateFormatter().string(from: Calendar.current.startOfDay(for: Date()))
         usedSeconds = 0
         extraSeconds = 0
@@ -84,7 +130,7 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
             // Compatibility with a server response from before operation delivery.
             extraSeconds = next.extraSeconds
         }
-        policy = next
+        policy = next.resolved(for: day)
     }
 
     mutating func initializeOperations() {
@@ -150,7 +196,7 @@ nonisolated final class DailyBudgetStore {
         }
         let state = try JSONDecoder().decode(DailyBudgetState.self, from: Data(contentsOf: url))
         guard UUID(uuidString: state.policy.familyID) != nil,
-              (0...86400).contains(state.policy.limitSeconds),
+              state.policy.hasValidLimits,
               (-604800...604800).contains(state.extraSeconds),
               (0...691200).contains(state.usedSeconds),
               (0...30).contains(state.monitorThreshold) else { throw StoreError.corrupt }
@@ -189,7 +235,7 @@ nonisolated final class DailyBudgetStore {
     @discardableResult
     func apply(_ policy: DailyBudgetPolicy, legacyUsedToday: Int) throws -> DailyBudgetState {
         guard UUID(uuidString: policy.familyID) != nil,
-              (0...86400).contains(policy.limitSeconds), policy.revision > 0,
+              policy.hasValidLimits, policy.revision > 0,
               (-604800...604800).contains(policy.extraSeconds) else { throw StoreError.corrupt }
         return try locked { dir in
             let today = DailyBudgetState.dayKey()
@@ -205,7 +251,7 @@ nonisolated final class DailyBudgetStore {
                 if let data = defaults?.data(forKey: "parentalcontrol.balance") {
                     try data.write(to: dir.appendingPathComponent(policy.familyID + "-legacy-balance.json"), options: .atomic)
                 }
-                state = DailyBudgetState(policy: policy, day: today, usedSeconds: max(0, legacyUsedToday),
+                state = DailyBudgetState(policy: policy.resolved(for: today), day: today, usedSeconds: max(0, legacyUsedToday),
                     extraSeconds: policy.extraDay == today ? policy.extraSeconds : 0)
                 state.initializeOperations()
             }

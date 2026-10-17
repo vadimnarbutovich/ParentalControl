@@ -14,15 +14,12 @@ struct ContentView: View {
     var body: some View {
         Group {
             if let role = appState.deviceRole {
-                if role == .child {
-                    if appState.hasCompletedOnboarding {
-                        MainTabView()
-                            .environmentObject(subscriptionService)
-                    } else {
-                        OnboardingFlowView()
-                    }
-                } else {
+                if appState.hasCompletedOnboarding {
                     MainTabView()
+                        .environmentObject(subscriptionService)
+                } else {
+                    OnboardingFlowView()
+                        .id(role)
                 }
             } else {
                 RoleSelectionView()
@@ -30,9 +27,6 @@ struct ContentView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             PermissionReminderBannerView()
-        }
-        .task(id: appState.deviceRole) {
-            await appState.requestParentNotificationsIfNeeded()
         }
         .onChange(of: subscriptionService.isPro) { _, isPro in
             appState.enforcePremiumFeatures(isPro: isPro, isStatusKnown: subscriptionService.isSubscriptionStatusKnown)
@@ -47,33 +41,67 @@ private struct RoleSelectionView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
-        ZStack {
-            AppBackgroundView()
-            VStack(spacing: 18) {
-                Spacer()
-                Text("role.select.title")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 24) {
+                    OnboardingFamilyIllustration(tint: AppTheme.neonBlue,
+                                                 compact: geometry.size.height < 700)
+                    VStack(spacing: 14) {
+                        Text("role.select.title")
+                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .foregroundStyle(.white)
+                            .accessibilityAddTraits(.isHeader)
+                        Text("role.select.subtitle")
+                            .font(.body)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                Text("role.select.subtitle")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                Spacer()
-                Button("role.select.parent") {
-                    appState.chooseDeviceRole(.parent)
+                    .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 14) {
+                        roleCard("role.select.parent", image: "onboardingParents", tint: AppTheme.neonBlue) {
+                            appState.chooseDeviceRole(.parent)
+                        }
+                        roleCard("role.select.child", image: "onboardingChildren", tint: AppTheme.neonGreen) {
+                            appState.chooseDeviceRole(.child)
+                        }
+                    }
                 }
-                .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
-                Button("role.select.child") {
-                    appState.chooseDeviceRole(.child)
-                }
-                .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
-                Spacer(minLength: 28)
+                .frame(maxWidth: 560)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 32)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
-            .padding(.horizontal, 20)
+            .scrollIndicators(.hidden)
         }
+        .background(AppBackgroundView())
+        .preferredColorScheme(.dark)
+    }
+
+    private func roleCard(_ title: String, image: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .accessibilityHidden(true)
+                Text(L10n.tr(title))
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassCard(cornerRadius: 24, glowColor: tint, drawsOuterShadows: false)
+            .contentShape(RoundedRectangle(cornerRadius: 24))
+        }
+        .buttonStyle(.plain)
     }
 }
 

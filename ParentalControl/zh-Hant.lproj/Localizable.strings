@@ -1,3 +1,63 @@
+/* Map and last location update. */
+"tab.map" = "地圖";
+"map.title" = "孩子的位置";
+"map.refresh" = "更新位置";
+"map.refreshing" = "正在取得位置…";
+"map.empty.title" = "尚無位置資訊";
+"map.empty.subtitle" = "點一下「更新位置」，向孩子的手機要求目前位置。";
+"map.last_seen" = "更新時間：%@";
+"map.just_now" = "剛剛";
+"map.accuracy" = "精確度：±%d 公尺";
+"map.refresh.timeout" = "未能在15秒內取得位置。請確認孩子的手機已連上網路，並已允許取用位置。";
+"map.unpaired.title" = "手機尚未配對";
+"map.unpaired.subtitle" = "在設定中配對孩子的手機，即可查看其位置。";
+
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "防止刪除";
+"protection.settings_description" = "禁止孩子從自己的手機上刪除本 App。";
+"parent.dashboard.not_linked" = "請先將你的手機與孩子的手機配對。";
+"protection.intro" = "若要防止孩子刪除本 App，需要透過 Apple「家人共享」完成兒童帳號授權。";
+"protection.parent_instructions" = "請在孩子的手機上開啟「家長」分頁，輸入 PIN 碼，再前往「設定 → 防止刪除」。無法從這支手機遠端啟用保護。";
+"protection.guide.title" = "如何設定家人共享";
+"protection.guide.family" = "1. 在家長的手機上開啟「設定 → 你的姓名 → 家庭」。建立家庭群組，或使用現有群組。";
+"protection.guide.account" = "2. 加入孩子：邀請孩子的 Apple 帳號，或建立兒童帳號。孩子的手機必須登入孩子自己的帳號。";
+"protection.guide.confirm" = "3. 接受邀請後，在孩子的手機上以家長模式開啟本 App。點一下「啟用保護」，並在 Apple 系統提示中核准存取。";
+"protection.guide.warning" = "如果孩子已加入其他家庭群組或使用成人帳號，請先閱讀 Apple 的說明。登出帳號前，請確認資料已妥善保存。本 App 的配對碼不能取代 Apple 家人共享。";
+"protection.guide.apple" = "Apple 設定說明";
+"protection.enabled" = "保護已啟用";
+"protection.needs_confirmation" = "需要重新確認";
+"protection.not_enabled" = "保護未啟用";
+"protection.enable" = "啟用保護";
+"protection.disable.title" = "關閉管控？";
+"protection.disable.action" = "允許刪除";
+"protection.disable.message" = "本 App 將不再限制螢幕使用時間，並且可以被刪除。裝置配對和已儲存的資料會保留。要繼續嗎？";
+"protection.disabled" = "管控已關閉，現在可以刪除本 App。若要恢復管控，需要重新授予螢幕使用時間存取權限。";
+"protection.error.account" = "Apple 無法確認符合資格的兒童帳號。請檢查這支手機是否已登入你家庭群組中孩子的帳號。";
+"protection.error.cancelled" = "確認已取消。這次請求並未啟用保護。";
+"protection.error.network" = "無法連線至 Apple。請檢查網路連線後再試一次。";
+"protection.error.conflict" = "iOS 不允許變更授權。我們並未撤銷現有存取權限。請檢查螢幕使用時間設定後再試一次。";
+"protection.error.generic" = "無法完成操作。請檢查螢幕使用時間存取權限後再試一次。";
+"protection.suggestion" = "透過 Apple 家人共享設定保護，防止孩子刪除本 App。也可以稍後設定。";
+"protection.setup" = "設定";
+"protection.later" = "稍後";
+
+"location.settings.description" = "若要讓家長知道孩子的位置，請在這支手機的 App 設定中選擇「位置」→「永遠」。只有在家長提出要求時才會取得位置。";
+"location.settings.ready" = "已允許「永遠」取用位置。只有在家長提出要求時才會取得位置。";
+"location.setup.allow" = "允許取用位置";
+"location.setup.later" = "稍後";
+"map.refresh.always_required" = "孩子的手機尚未允許「永遠」取用位置。請在孩子的手機上開啟本 App 的設定→「位置」→「永遠」。";
+"map.refresh.services_disabled" = "孩子手機上的定位服務已關閉。請前往「設定」→「隱私權與安全性」→「定位服務」將其開啟。";
+"map.refresh.unavailable" = "孩子的手機未傳送新的位置。請確認孩子手機上本 App 的位置權限已設為「永遠」，然後再試一次。";
+"map.refresh.connection_error" = "連線發生錯誤，無法更新位置。請檢查兩支手機的網路連線後再試一次。";
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "每日摘要";
+"statistics.local.budget_hint" = "已用時間是從每日可用時間中扣除的時長。iOS App 使用報告可能延遲更新。";
+"statistics.local.scope" = "此裝置上所選 App 和網站的使用情況。";
+"statistics.local.previous_day" = "前一天";
+"statistics.local.next_day" = "後一天";
+"statistics.local.refresh" = "重新整理報告";
+"statistics.local.report_hint" = "iOS 報告可能延遲更新。下方的已用時間是從每日可用時間中扣除的時長。";
+
 "tab.dashboard" = "首頁";
 "tab.statistics" = "統計";
 "tab.block" = "封鎖列表";
@@ -68,6 +128,7 @@
 "statistics.squats" = "深蹲";
 "statistics.focus.total" = "專注";
 "statistics.app_usage.title" = "App 使用狀況";
+"statistics.app_usage.loading_hint" = "正在載入資料，可能需要一些時間。";
 "statistics.app_usage.empty_selection" = "請先在封鎖列表中加入 App，才能查看使用統計。";
 "statistics.app_usage.unavailable" = "App 使用報告僅在支援的 iOS 版本上可用。";
 "statistics.app_usage.no_data" = "所選日期沒有 App 使用資料。";
@@ -336,8 +397,8 @@
 "parent_mode.entry.locked" = "輸入已鎖定,請於 %d 秒後再試。";
 
 "settings.pin.section" = "家長 PIN";
-"settings.pin.description" = "用於在孩子裝置上開啟家長模式的 4 位 PIN 碼。";
-"settings.pin.requires_link" = "請先連接孩子裝置，才能設定 PIN 碼。";
+"settings.pin.description" = "用於在孩子的手機上開啟家長模式的 4 位 PIN 碼。";
+"settings.pin.requires_link" = "請先連接孩子的手機，才能設定 PIN 碼。";
 "settings.pin.status.set" = "已設定 PIN";
 "settings.pin.status.unset" = "尚未設定 PIN";
 "settings.pin.set" = "設定 PIN";
@@ -364,7 +425,7 @@
 "settings.pairing.linked.status" = "裝置已連結";
 "settings.pairing.unlink" = "解除裝置連結";
 "settings.pairing.unlink.confirm.title" = "解除裝置連結？";
-"settings.pairing.unlink.confirm.message" = "家長裝置與孩子裝置之間的連結將被重設。若要管理孩子的裝置，需要重新配對。";
+"settings.pairing.unlink.confirm.message" = "家長的手機與孩子的手機之間的連結將被重設。若要管理孩子的手機，需要重新配對。";
 "settings.pairing.unlink.confirm.button" = "解除連結";
 
 "tab.tasks" = "任務";
@@ -427,13 +488,13 @@
 "budget.extra" = "今日額外時間";
 "budget.not_set" = "尚未設定";
 "budget.every_day" = "每天";
-"budget.pending" = "正在等待孩子裝置的確認";
+"budget.pending" = "正在等待孩子的手機的確認";
 "budget.explanation" = "孩子每天可以使用所選 App 的時間。";
 "budget.hours" = "小時";
 "budget.minutes" = "分鐘";
 "budget.rules" = "限額每天重設。剩餘時間和額外時間不會累積到隔天。設為 0 分鐘表示不提供一般每日使用時間。";
 "budget.first_activation" = "此限額將取代原有餘額。今天已使用的時間仍會扣除，原有剩餘時間不會疊加。歷史記錄會保留。";
-"budget.child_update" = "請在孩子的裝置上開啟更新後的 App，並等待連線。";
+"budget.child_update" = "請在孩子的手機上開啟更新後的 App，並等待連線。";
 "budget.save" = "儲存";
 "budget.save_error" = "無法儲存。請檢查連線後再試一次。如果設定已變更，請重新開啟。";
 "budget.apply_error" = "無法啟用每日限額。請檢查「螢幕使用時間」存取權限，再重新開啟 App。";
@@ -442,10 +503,10 @@
 "budget.total" = "今日分配時間";
 "budget.onboarding_title" = "管理螢幕使用時間";
 "budget.onboarding_body" = "家長為所選 App 設定每日限額。孩子完成任務並經家長確認後，可以獲得額外時間。";
-"settings.section.child_connection" = "連接孩子的裝置";
+"settings.section.child_connection" = "連接孩子的手機";
 "settings.section.parent_connection" = "連接家長的裝置";
 "settings.section.diagnostics" = "診斷";
-"blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長裝置同步。";
+"blocklist.manual_block.pending" = "變更已在此裝置上生效，等待與家長的手機同步。";
 "blocklist.manual_block.changed" = "設定已在其他裝置上變更，現已套用最新的鎖定狀態。請檢查開關。";
 "dashboard.blocking.schedule_active" = "已依排程鎖定";
 // Parent usage and task reports.
@@ -461,17 +522,79 @@
 "reports.tasks" = "已確認的任務";
 "reports.tasks_period" = "此期間的任務";
 "reports.updated" = "資料更新於：%@";
-"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的裝置同步後，將顯示詳細統計。";
+"reports.legacy" = "舊資料仍已保留，但無法確定正確日期與詳細分類。孩子的手機同步後，將顯示詳細統計。";
 "reports.retention" = "顯示最近90天內可用的紀錄。";
 "reports.no_data" = "尚無當天的資料。";
 "reports.error" = "無法更新統計。請檢查網路連線。已載入的資料可能不是最新的。";
 "reports.retry" = "重試";
-"reports.unlinked" = "連結孩子的裝置後即可查看統計。";
+"reports.unlinked" = "連結孩子的手機後即可查看統計。";
 "reports.previous" = "上一期間";
 "reports.next" = "下一期間";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "孩子提交任務等待檢查時，您會收到通知。";
+"permission.notifications.parent.body" = "孩子提交已完成的任務供您檢查時，您會收到通知。";
 "permission.notifications.child.body" = "可用時間或 App 封鎖狀態改變時，您會收到通知。";
 "permission.camera.title" = "無法使用相機";
 "permission.camera.body" = "請在設定中允許取用相機，以拍攝任務照片。您也可以選擇現有照片。";
 "onboarding.location.body" = "請允許取用位置，讓家長能在地圖上找到此裝置。回應背景要求需要「永遠」允許。我們僅在家長提出要求時取得位置，不會持續追蹤。";
+// Role-specific text onboarding.
+"setup.parent.title" = "管理孩子的使用時間";
+"setup.parent.body" = "設定每日上限、時間安排，以及完成後可獲得額外 App 使用時間的任務。查看剩餘時間，也可以要求取得孩子的位置。\n\n您的手機只需要通知權限。其他權限會在孩子的手機上設定。";
+"setup.child.title" = "設定孩子的手機";
+"setup.child.body" = "請和家長一起完成以下步驟。相關權限用於記錄所選 App 的使用時間、執行限制，並向家長提供孩子的位置。";
+"setup.screen_time.body" = "允許存取「螢幕使用時間」，以記錄所選 App 的使用情況，並根據時間上限、時間安排或家長指令進行封鎖。\n\n沒有此權限，限制功能將無法使用。";
+"setup.notifications.child.body" = "允許通知，讓孩子及時看到可用時間的變更、封鎖狀態和任務訊息。\n\n關閉通知可能會錯過重要訊息。";
+"setup.location.body" = "若要讓家長知道孩子的位置，請先允許「使用 App 期間」取用位置，再選擇「永遠允許」。\n\n只有在家長提出要求時才會取得位置。取得位置需要「永遠」取用權限。";
+"setup.pairing.title" = "連結兩支手機";
+"setup.parent.pairing_body" = "在家長的手機上開啟「設定」→「連接孩子的手機」，建立配對碼。\n\n在孩子的手機上安裝同一個 App，選擇「孩子的手機」。完成設定後，在主畫面輸入配對碼。";
+"setup.protection.body" = "若要防止孩子刪除 App，孩子的兒童帳號需要加入 Apple「家人共享」群組。\n\n配對後，家長可以在孩子的手機上透過「家長」→PIN→「設定」→「防止刪除」啟用此功能。\n\n不開啟此保護也能使用 App，但孩子可以刪除它。";
+"setup.finish.title" = "接下來";
+"setup.parent.finish_body" = "兩支手機配對後，在「設定」中設定家長 PIN，以保護孩子手機上的設定。\n\n在主畫面設定每日上限。上限只適用於在孩子手機上選取的 App。";
+"setup.child.finish_body" = "在主畫面輸入家長手機上的配對碼。\n\n配對後，家長需要在自己的手機上設定 PIN。然後在這支手機上透過「家長」→PIN→「封鎖列表」，選取要管理的 App。\n\n每日上限在家長的手機上設定。";
+"setup.permission.enabled" = "已允許";
+"setup.permission.missing" = "未開啟";
+"setup.finish.action" = "開啟 App";
+"setup.back" = "返回";
+"role.select.parent" = "家長的手機";
+"role.select.child" = "孩子的手機";
+
+// Guided pairing and setup.
+"setup.install.title" = "在孩子的手機上安裝";
+"setup.install.body" = "孩子的手機也需要安裝同一個 App。[將連結傳給孩子](%@)，或用孩子手機的相機掃描 QR 碼，安裝這個 App。\n\n首次開啟時選擇「孩子的手機」，接下來我們會將兩支手機配對。";
+"setup.install.qr.accessibility" = "用於從 App Store 安裝此 App 的 QR 碼";
+"setup.link.parent" = "建立配對碼，然後在孩子手機上輸入。連線成功後，這裡會顯示確認訊息。\n\n接著在兩支手機上繼續設定。";
+"setup.link.child" = "在家長手機的初始設定中建立配對碼，然後在下方輸入。如果已經完成初始設定，可以前往「設定」→「連接孩子的手機」建立。";
+"setup.link.wait" = "等待孩子的手機連線";
+"setup.link.required" = "請先將家長的手機與孩子的手機配對。也可以稍後再設定。";
+"setup.pin.parent" = "設定一組4位數 PIN，用來保護孩子手機上的家長設定。\n\n儲存後，在孩子的手機上輸入這組 PIN，繼續設定。";
+"setup.pin.child" = "請在家長手機的 PIN 設定步驟或「設定」中設定 PIN。只能從家長的手機設定。\n\n然後在這裡輸入，選擇 App 並設定保護功能。如果尚未收到，請點選「檢查連線」。";
+"setup.pin.verify" = "已收到 PIN。請在這支手機上輸入，以開啟家長設定。";
+"setup.apps.body" = "選擇要套用時間限制和封鎖的 App、類別或網站。其他 App 仍可使用。\n\n更改選擇需要輸入家長 PIN。";
+"setup.protection.action_body" = "也可以透過 Apple「家人共享」防止孩子刪除 App。這需要孩子的兒童帳號已加入家庭群組。\n\n你可以稍後在設定中啟用保護。不啟用此保護也能使用 App，但孩子可以刪除它。";
+"setup.protection.later" = "稍後設定";
+"setup.limit.child" = "請在家長的手機上設定每日上限。";
+"setup.limit.initial" = "初始上限為每天60分鐘。點一下「下一步」即可套用，也可以調整時間。";
+"setup.check.title" = "檢查設定";
+"setup.check.parent" = "下方顯示這支手機的設定狀態。點選任一項目可返回對應步驟。\n\n也請完成孩子手機上的設定：允許所需權限並選擇要限制存取的 App。略過的步驟可以稍後在「設定」中完成。";
+"setup.check.child" = "請檢查下方的目前設定。點選項目可返回對應步驟。防止刪除功能為選用項目。\n\n略過的步驟可以稍後完成。完成設定時將退出家長模式。";
+"setup.status.ready" = "已設定";
+"setup.status.pending" = "未設定";
+"setup.refresh" = "檢查連線";
+"setup.pin.enter" = "輸入 PIN";
+"settings.parent.link.generate" = "建立配對碼";
+"settings.child.link.placeholder" = "輸入配對碼";
+"onboarding.location.title" = "位置";
+"settings.child.link.connect" = "連接";
+"role.select.title" = "選擇手機角色";
+"role.select.subtitle" = "這是家長的手機還是孩子的手機？";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "上限模式";
+"budget.weekly.by_days" = "依星期設定";
+"budget.weekly.today" = "今天：%@ · 依星期設定";
+"budget.weekly.update_child" = "若要設定不同星期的上限，請在孩子的手機上更新 App，並在連網狀態下開啟。";
+"budget.weekly.replace.title" = "整週使用相同上限？";
+"budget.weekly.replace.action" = "套用至所有天";
+"budget.weekly.replace.message" = "所選時間將取代一週中每天的個別上限。";
+"budget.weekly.apply_days" = "套用至以下日期";
+"budget.weekly.draft_hint" = "套用後，請在每日上限頁面點選「儲存」。";
+"budget.weekly.apply" = "套用";

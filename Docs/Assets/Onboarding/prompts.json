@@ -1,0 +1,11 @@
+{
+  "tool": "built-in imagegen",
+  "date": "2026-10-16",
+  "jobs": [
+    {
+      "name": "onboardingFamily",
+      "prompt": "Use case: stylized-concept. Asset type: isolated premium 3D illustration for an iOS parental-control onboarding on a dark navy background. Output true transparent alpha background, no painted checkerboard, no background rectangle. Square composition, entire subject visible with 5% margins, clean silhouette, no expansive halo or floor shadow. Soft dimensional highlights, mint/cyan translucent glass and warm natural materials. No text, numbers, logos, badges, stars, laurels or watermark. Designed to remain clear at 200pt tall. Reference image is STYLE/CHARACTER REFERENCE ONLY, not the output layout. Recreate the caring mother with brown bun and cream knit sweater gently embracing her young brown-haired boy in a mint hoodie holding a lavender phone, within a clean transparent turquoise protection shield. Friendly warm 3D character style matching the reference. Waist-up compact centered group. Small simple shield outline encircles them. No pedestal. Mother and boy looking warmly toward viewer. Extract only this subject, remove all reference poster writing, foliage and background.",
+      "ref": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/en/cover-1206x2622.png"
+    }
+  ]
+}

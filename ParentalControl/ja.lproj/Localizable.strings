@@ -1,3 +1,63 @@
+/* Map and last location update. */
+"tab.map" = "マップ";
+"map.title" = "お子様の位置情報";
+"map.refresh" = "位置情報を更新";
+"map.refreshing" = "位置情報を取得中…";
+"map.empty.title" = "位置情報はまだありません";
+"map.empty.subtitle" = "「位置情報を更新」をタップすると、お子様のスマートフォンに現在地をリクエストします。";
+"map.last_seen" = "更新：%@";
+"map.just_now" = "たった今";
+"map.accuracy" = "精度：±%d m";
+"map.refresh.timeout" = "15秒以内に位置情報を取得できませんでした。お子様のスマートフォンがインターネットに接続され、位置情報へのアクセスが許可されているか確認してください。";
+"map.unpaired.title" = "スマートフォンが未連携です";
+"map.unpaired.subtitle" = "設定でお子様のスマートフォンを連携すると、位置情報を確認できます。";
+
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "削除の防止";
+"protection.settings_description" = "お子様が自分の電話からアプリを削除できないようにします。";
+"parent.dashboard.not_linked" = "まず、ご自身の電話とお子様の電話を連携してください。";
+"protection.intro" = "お子様がアプリを削除できないようにするには、Appleのファミリー共有でお子様としての利用を承認する必要があります。";
+"protection.parent_instructions" = "お子様の電話で「保護者」タブを開き、PINを入力して「設定 → 削除の防止」に進んでください。この電話から遠隔で有効にすることはできません。";
+"protection.guide.title" = "ファミリー共有の設定方法";
+"protection.guide.family" = "1. 保護者の電話で「設定 → 自分の名前 → ファミリー」を開きます。ファミリー共有グループを作成するか、既存のグループを使います。";
+"protection.guide.account" = "2. お子様のApple Accountを招待するか、お子様用のアカウントを作成します。お子様の電話には、お子様自身のアカウントでサインインしてください。";
+"protection.guide.confirm" = "3. 招待を承認し、お子様の電話でこのアプリを保護者モードで開きます。「削除の防止を有効にする」をタップし、Appleの確認画面でアクセスを許可してください。";
+"protection.guide.warning" = "お子様が別のファミリーに参加している場合や大人のアカウントを使っている場合は、先にAppleの説明をご確認ください。サインアウトする前にデータが安全に保存されているか確認してください。このアプリの連携コードは、Appleのファミリー共有の代わりにはなりません。";
+"protection.guide.apple" = "Appleの設定ガイド";
+"protection.enabled" = "削除の防止は有効です";
+"protection.needs_confirmation" = "再確認が必要です";
+"protection.not_enabled" = "削除の防止は無効です";
+"protection.enable" = "削除の防止を有効にする";
+"protection.disable.title" = "管理を解除しますか？";
+"protection.disable.action" = "削除を許可";
+"protection.disable.message" = "このアプリによる利用時間の制限が解除され、アプリを削除できるようになります。端末の連携と保存済みデータは残ります。続けますか？";
+"protection.disabled" = "管理を解除しました。アプリを削除できます。管理を再開するには、スクリーンタイムへのアクセスをもう一度許可してください。";
+"protection.error.account" = "Appleがお子様用の対象アカウントを確認できませんでした。この電話に、ご自身のファミリーに参加しているお子様のアカウントでサインインしているか確認してください。";
+"protection.error.cancelled" = "確認がキャンセルされました。この操作では削除の防止は有効になっていません。";
+"protection.error.network" = "Appleに接続できませんでした。インターネット接続を確認して、もう一度お試しください。";
+"protection.error.conflict" = "iOSが認証の変更を許可しませんでした。このアプリから既存のアクセス権は解除していません。スクリーンタイムの設定を確認して、もう一度お試しください。";
+"protection.error.generic" = "操作を完了できませんでした。スクリーンタイムへのアクセスを確認して、もう一度お試しください。";
+"protection.suggestion" = "お子様がアプリを削除できないように、Appleのファミリー共有で保護を設定しましょう。後から設定することもできます。";
+"protection.setup" = "設定する";
+"protection.later" = "あとで";
+
+"location.settings.description" = "保護者がお子様の居場所を確認できるよう、このスマートフォンのアプリ設定で「位置情報」→「常に」を選んでください。位置情報を取得するのは、保護者からリクエストがあったときだけです。";
+"location.settings.ready" = "位置情報へのアクセスは「常に」許可されています。保護者からリクエストがあったときだけ位置情報を取得します。";
+"location.setup.allow" = "位置情報を許可";
+"location.setup.later" = "あとで";
+"map.refresh.always_required" = "お子様のスマートフォンで、位置情報へのアクセスが「常に」許可されていません。そのスマートフォンでこのアプリの設定を開き、「位置情報」→「常に」を選んでください。";
+"map.refresh.services_disabled" = "お子様のスマートフォンで位置情報サービスがオフになっています。「設定」→「プライバシーとセキュリティ」→「位置情報サービス」でオンにしてください。";
+"map.refresh.unavailable" = "お子様のスマートフォンから新しい位置情報が届きませんでした。そのスマートフォンのアプリ設定で、位置情報へのアクセスが「常に」になっているか確認してから、もう一度お試しください。";
+"map.refresh.connection_error" = "通信エラーのため位置情報を更新できませんでした。両方のスマートフォンのインターネット接続を確認してから、もう一度お試しください。";
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "1日のまとめ";
+"statistics.local.budget_hint" = "使用時間は、1日の利用可能時間から差し引かれた時間です。iOSのアプリ使用状況レポートは、更新に時間がかかることがあります。";
+"statistics.local.scope" = "このデバイスで選択したアプリとWebサイトの利用状況。";
+"statistics.local.previous_day" = "前の日";
+"statistics.local.next_day" = "次の日";
+"statistics.local.refresh" = "レポートを更新";
+"statistics.local.report_hint" = "iOSのレポートは更新に時間がかかることがあります。下の使用時間は、1日の利用可能時間から差し引かれた時間です。";
+
 "tab.dashboard" = "ホーム";
 "tab.statistics" = "統計";
 "tab.block" = "ブロックリスト";
@@ -68,6 +128,7 @@
 "statistics.squats" = "スクワット";
 "statistics.focus.total" = "集中";
 "statistics.app_usage.title" = "アプリ使用状況";
+"statistics.app_usage.loading_hint" = "データを読み込んでいます。時間がかかる場合があります。";
 "statistics.app_usage.empty_selection" = "使用統計を表示するには、まずブロックリストにアプリを追加してください。";
 "statistics.app_usage.unavailable" = "アプリ使用レポートは対応するiOSバージョンでのみ利用可能です。";
 "statistics.app_usage.no_data" = "選択した日のアプリ使用データはありません。";
@@ -336,8 +397,8 @@
 "parent_mode.entry.locked" = "入力がロックされました。%d秒後に再試行してください。";
 
 "settings.pin.section" = "保護者PIN";
-"settings.pin.description" = "お子様の端末で保護者モードを開くための4桁のPIN。";
-"settings.pin.requires_link" = "PINを設定するには、まずお子様の端末を連携してください。";
+"settings.pin.description" = "お子様の電話で保護者モードを開くための4桁のPIN。";
+"settings.pin.requires_link" = "PINを設定するには、まずお子様の電話を連携してください。";
 "settings.pin.status.set" = "PINを設定済み";
 "settings.pin.status.unset" = "PINは未設定";
 "settings.pin.set" = "PINを設定";
@@ -427,13 +488,13 @@
 "budget.extra" = "今日の追加時間";
 "budget.not_set" = "未設定";
 "budget.every_day" = "毎日";
-"budget.pending" = "お子様の端末からの確認を待っています";
+"budget.pending" = "お子様の電話からの確認を待っています";
 "budget.explanation" = "お子様が選択したアプリを1日に使える時間です。";
 "budget.hours" = "時間";
 "budget.minutes" = "分";
 "budget.rules" = "上限は毎日リセットされます。残り時間や追加の時間は翌日に持ち越されません。0分にすると、通常の利用時間は付与されません。";
 "budget.first_activation" = "この上限が現在の残り時間に代わって適用されます。今日すでに使った時間は差し引かれ、以前の残り時間は加算されません。履歴は保持されます。";
-"budget.child_update" = "お子様の端末で更新後のアプリを開き、接続されるまでお待ちください。";
+"budget.child_update" = "お子様の電話で更新後のアプリを開き、接続されるまでお待ちください。";
 "budget.save" = "保存";
 "budget.save_error" = "保存できませんでした。接続を確認してやり直してください。設定が変更された場合は、もう一度開いてください。";
 "budget.apply_error" = "上限を有効にできませんでした。スクリーンタイムへのアクセスを確認し、アプリを開き直してください。";
@@ -442,7 +503,7 @@
 "budget.total" = "今日の利用可能時間";
 "budget.onboarding_title" = "利用時間を見守る";
 "budget.onboarding_body" = "保護者が選択したアプリの1日の上限を設定します。お子様がタスクを終えると、保護者の承認後に追加の時間を受け取れます。";
-"settings.section.child_connection" = "お子様の端末との接続";
+"settings.section.child_connection" = "お子様の電話との接続";
 "settings.section.parent_connection" = "保護者の端末との接続";
 "settings.section.diagnostics" = "診断";
 "blocklist.manual_block.pending" = "この端末に変更を適用しました。保護者の端末との同期を待っています。";
@@ -461,17 +522,79 @@
 "reports.tasks" = "承認済みのタスク";
 "reports.tasks_period" = "期間中のタスク";
 "reports.updated" = "データ更新：%@";
-"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の端末が同期されると、詳細な統計が表示されます。";
+"reports.legacy" = "以前のデータは保存されていますが、正確な日付や内訳は表示できません。お子様の電話が同期されると、詳細な統計が表示されます。";
 "reports.retention" = "過去90日間の利用可能な履歴を表示します。";
 "reports.no_data" = "この日のデータはまだありません。";
 "reports.error" = "統計を更新できませんでした。接続を確認してください。読み込み済みのデータは最新ではない可能性があります。";
 "reports.retry" = "再試行";
-"reports.unlinked" = "お子様の端末を連携すると統計が表示されます。";
+"reports.unlinked" = "お子様の電話を連携すると統計が表示されます。";
 "reports.previous" = "前の期間";
 "reports.next" = "次の期間";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "お子様がタスクの確認を依頼したときに通知を受け取れます。";
+"permission.notifications.parent.body" = "お子様が完了したタスクの確認を依頼したときに通知を受け取れます。";
 "permission.notifications.child.body" = "利用可能な時間やアプリのブロック状態が変わると通知します。";
 "permission.camera.title" = "カメラを利用できません";
 "permission.camera.body" = "タスクの写真を撮るには、設定でカメラへのアクセスを許可してください。既存の写真を選ぶこともできます。";
 "onboarding.location.body" = "保護者が地図でこの端末を見つけられるよう、位置情報へのアクセスを許可してください。バックグラウンドでの位置確認には「常に」の許可が必要です。保護者からのリクエスト時のみ取得し、常時追跡は行いません。";
+// Role-specific text onboarding.
+"setup.parent.title" = "お子様の利用時間を管理";
+"setup.parent.body" = "1日の上限、スケジュール、達成するとアプリの利用時間を追加でもらえるタスクを設定できます。残り時間の確認や、お子様の位置情報のリクエストもできます。\n\n保護者のスマートフォンで必要なのは通知の許可だけです。その他の権限はお子様のスマートフォンで設定します。";
+"setup.child.title" = "お子様のスマートフォンを設定";
+"setup.child.body" = "保護者と一緒に設定を進めてください。選んだアプリの利用時間を記録し、制限を適用し、保護者に位置情報を知らせるために権限が必要です。";
+"setup.screen_time.body" = "スクリーンタイムへのアクセスを許可すると、選んだアプリの利用時間を記録し、時間の上限やスケジュール、保護者の操作に応じてブロックできます。\n\n許可しない場合、利用制限は機能しません。";
+"setup.notifications.child.body" = "通知を許可すると、利用できる時間の変更、ブロックの変更、タスクに関するメッセージをお子様が確認できます。\n\n通知をオフにすると、大切なお知らせを見逃すことがあります。";
+"setup.location.body" = "保護者がお子様の居場所を確認できるよう、位置情報を最初は「アプリの使用中は許可」、次に「常に許可」に設定してください。\n\n位置情報を取得するのは保護者からリクエストがあったときだけです。位置情報の取得には「常に」の許可が必要です。";
+"setup.pairing.title" = "2台のスマートフォンを連携";
+"setup.parent.pairing_body" = "保護者のスマートフォンで「設定」→「お子様の電話との接続」を開き、連携コードを作成してください。\n\nお子様のスマートフォンにも同じアプリを入れ、「お子様のスマートフォン」を選びます。設定後、ホーム画面にコードを入力してください。";
+"setup.protection.body" = "お子様がアプリを削除できないようにするには、お子様のアカウントがAppleのファミリー共有グループに登録されている必要があります。\n\n連携後、お子様のスマートフォンで保護者が「保護者」→PIN→「設定」→「削除の防止」から有効にできます。\n\nこの保護がなくてもアプリは使えますが、お子様が削除できる状態になります。";
+"setup.finish.title" = "次に行うこと";
+"setup.parent.finish_body" = "2台の連携後、「設定」で保護者用PINを設定してください。お子様のスマートフォンの設定を保護します。\n\nホーム画面で1日の上限を設定してください。上限はお子様のスマートフォンで選んだアプリにだけ適用されます。";
+"setup.child.finish_body" = "ホーム画面に保護者のスマートフォンで発行した連携コードを入力してください。\n\n連携後、保護者が自分のスマートフォンでPINを設定します。その後、このスマートフォンの「保護者」→PIN→「ブロックリスト」から、管理するアプリを選んでください。\n\n1日の上限は保護者のスマートフォンで設定します。";
+"setup.permission.enabled" = "許可済み";
+"setup.permission.missing" = "未設定";
+"setup.finish.action" = "アプリを開く";
+"setup.back" = "戻る";
+"role.select.parent" = "保護者のスマートフォン";
+"role.select.child" = "お子様のスマートフォン";
+
+// Guided pairing and setup.
+"setup.install.title" = "お子様のスマートフォンにもインストール";
+"setup.install.body" = "お子様のスマートフォンにも同じアプリが必要です。[お子様にリンクを送る](%@)か、お子様のスマートフォンのカメラでQRコードを読み取って、このアプリをインストールしてください。\n\n初回起動時に「お子様のスマートフォン」を選んでください。次に2台のスマートフォンを連携します。";
+"setup.install.qr.accessibility" = "App StoreからアプリをインストールするためのQRコード";
+"setup.link.parent" = "連携コードを作成し、お子様のスマートフォンで入力してください。連携できると、ここに確認が表示されます。\n\nその後、両方のスマートフォンで設定を続けてください。";
+"setup.link.child" = "保護者のスマートフォンの初期設定で連携コードを作成し、下に入力してください。初期設定が終わっている場合は「設定」→「お子様の電話との接続」で作成できます。";
+"setup.link.wait" = "お子様のスマートフォンの接続待ち";
+"setup.link.required" = "まず保護者とお子様のスマートフォンを連携してください。後で設定することもできます。";
+"setup.pin.parent" = "4桁のPINを設定してください。お子様のスマートフォンで保護者用の設定を開くときに使います。\n\n保存したら、お子様のスマートフォンにこのPINを入力して設定を続けてください。";
+"setup.pin.child" = "保護者のスマートフォンで、PINの設定手順または「設定」からPINを登録してください。PINを設定できるのは保護者のスマートフォンだけです。\n\nその後ここに入力して、アプリの選択や保護機能の設定を行います。まだ反映されていない場合は「接続を確認」をタップしてください。";
+"setup.pin.verify" = "PINを受信しました。このスマートフォンに入力すると保護者用の設定を開けます。";
+"setup.apps.body" = "時間制限やブロックの対象にするアプリ、カテゴリ、Webサイトを選んでください。それ以外のアプリは引き続き使えます。\n\n選択の変更には保護者のPINが必要です。";
+"setup.protection.action_body" = "Appleのファミリー共有を使うと、お子様によるアプリの削除も防げます。ファミリーグループに登録された子ども用アカウントが必要です。\n\n保護はあとで設定から有効にできます。この保護がなくてもアプリは使えますが、お子様が削除できる状態になります。";
+"setup.protection.later" = "あとで設定";
+"setup.limit.child" = "保護者のスマートフォンで1日の上限を設定してください。";
+"setup.limit.initial" = "初期設定は1日60分です。「次へ」をタップすると適用されます。時間は変更できます。";
+"setup.check.title" = "設定を確認";
+"setup.check.parent" = "このスマートフォンの設定状況です。項目をタップすると、その手順に戻れます。\n\nお子様のスマートフォンでも、権限の許可とブロックするアプリの選択を完了してください。スキップした手順は後から「設定」で行えます。";
+"setup.check.child" = "現在の設定を確認してください。項目をタップすると、その手順に戻れます。削除の防止は任意です。\n\nスキップした手順は後から設定できます。設定を終了すると保護者モードは閉じます。";
+"setup.status.ready" = "設定済み";
+"setup.status.pending" = "未設定";
+"setup.refresh" = "接続を確認";
+"setup.pin.enter" = "PINを入力";
+"settings.parent.link.generate" = "連携コードを作成";
+"settings.child.link.placeholder" = "連携コードを入力";
+"onboarding.location.title" = "位置情報";
+"settings.child.link.connect" = "連携する";
+"role.select.title" = "スマートフォンの役割を選択";
+"role.select.subtitle" = "保護者とお子様、どちらのスマートフォンですか？";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "上限の設定方法";
+"budget.weekly.by_days" = "曜日ごと";
+"budget.weekly.today" = "今日：%@ · 曜日ごと";
+"budget.weekly.update_child" = "曜日ごとに上限を設定するには、お子様のスマートフォンでアプリを更新し、インターネットに接続した状態で開いてください。";
+"budget.weekly.replace.title" = "毎日同じ上限にしますか？";
+"budget.weekly.replace.action" = "すべての曜日に適用";
+"budget.weekly.replace.message" = "選択した時間で、各曜日に設定した上限を置き換えます。";
+"budget.weekly.apply_days" = "適用する曜日";
+"budget.weekly.draft_hint" = "適用後、1日の上限画面で「保存」をタップしてください。";
+"budget.weekly.apply" = "適用";

@@ -1,4 +1,5 @@
 import Combine
+import CoreLocation
 import SwiftUI
 
 private enum MainTab: String, CaseIterable {
@@ -20,6 +21,8 @@ struct MainTabView: View {
     @State private var selectedTab: MainTab = .home
     /// Презентация экрана ввода PIN на ребёнке (тап по табу «Родитель»).
     @State private var isPinEntryPresented = false
+    @State private var showLocationPermissionReminder = false
+    @State private var didShowLocationReminderInParentMode = false
 
     var body: some View {
         // Reserve actual layout space above the tab container. An inset on
@@ -37,6 +40,16 @@ struct MainTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
+        .alert("onboarding.location.title", isPresented: $showLocationPermissionReminder) {
+            Button(L10n.tr(appState.childLocationAuthorizationStatus == .notDetermined
+                          ? "location.setup.allow" : "permission.banner.open_settings")) {
+                Task { await appState.configureChildLocationAccessFromParentMode() }
+            }
+            Button("location.setup.later", role: .cancel) {}
+        } message: {
+            Text(L10n.tr(appState.childLocationAuthorizationStatus == .notDetermined
+                        ? "setup.location.body" : "location.settings.description"))
+        }
     }
 
     private var tabs: some View {
@@ -69,22 +82,14 @@ struct MainTabView: View {
                     }
                     .tag(MainTab.map)
 
-                // On iPhone, the remaining tabs appear in the native More menu.
                 SettingsView()
                     .tabItem {
                         Label("tab.settings", systemImage: "gearshape.fill")
                     }
                     .tag(MainTab.settings)
 
-                StatisticsView()
-                    .tabItem {
-                        Label("tab.statistics", systemImage: "chart.bar.fill")
-                    }
-                    .tag(MainTab.statistics)
             } else if appState.isParentModeActive {
-                // Parent-режим на ребёнке: показываем те же экраны, что и в прошлой версии
-                // «обычного» ребёнка (Главная / Блокировка / Настройки) — то есть полный набор
-                // управления, доступный родителю физически на устройстве ребёнка.
+                // Local usage reports stay on the child's device, behind the parent PIN.
                 DashboardView()
                     .tabItem {
                         Label("tab.dashboard", systemImage: "square.grid.2x2.fill")
@@ -96,6 +101,12 @@ struct MainTabView: View {
                         Label("tab.block", systemImage: "checklist")
                     }
                     .tag(MainTab.blocklist)
+
+                StatisticsView()
+                    .tabItem {
+                        Label("tab.statistics", systemImage: "chart.bar.fill")
+                    }
+                    .tag(MainTab.statistics)
 
                 SettingsView()
                     .tabItem {
@@ -140,14 +151,29 @@ struct MainTabView: View {
             // не существовать в новом наборе вкладок (например, был `.parentEntry`).
             selectedTab = .home
             if !newValue {
+                showLocationPermissionReminder = false
+                didShowLocationReminderInParentMode = false
                 // На выходе из режима тоже закроем cover, если он почему-то остался открыт.
                 isPinEntryPresented = false
             }
         }
-        .fullScreenCover(isPresented: $isPinEntryPresented) {
+        .fullScreenCover(isPresented: $isPinEntryPresented, onDismiss: presentLocationReminderIfNeeded) {
             ParentModeEntryView(isPresented: $isPinEntryPresented)
                 .environmentObject(appState)
         }
+    }
+
+    private func presentLocationReminderIfNeeded() {
+        // Wait for the PIN cover to finish dismissing before presenting an alert.
+        // Cancelled/failed PIN entry and the parent's own phone must never show it.
+        guard appState.deviceRole == .child, appState.isParentModeActive,
+              appState.hasCompletedOnboarding, !isPinEntryPresented,
+              !appState.isConfiguringChildLocationAccess,
+              !didShowLocationReminderInParentMode else { return }
+        appState.refreshChildLocationAuthorizationStatus()
+        guard appState.childLocationAuthorizationStatus != .authorizedAlways else { return }
+        didShowLocationReminderInParentMode = true
+        showLocationPermissionReminder = true
     }
 }
 
@@ -188,7 +214,7 @@ private struct ParentModeExitBanner: View {
 /// Полноэкранный лист ввода 4-значного PIN на ребёнке. Если PIN ещё не задан родителем — показывает
 /// заглушку с пояснением. Lockout-таймер визуализирован обратным отсчётом. Сам ввод PIN никогда
 /// не уходит в сеть — он хэшируется локально и сверяется с кэшированным в Keychain хэшем.
-private struct ParentModeEntryView: View {
+struct ParentModeEntryView: View {
     @EnvironmentObject private var appState: AppState
     @Binding var isPresented: Bool
 
@@ -630,7 +656,7 @@ private struct ParentDashboardView: View {
                             DailyBudgetBalanceCard(
                                 availableSeconds: appState.parentBudgetStatus?.state?.availableSeconds ?? appState.parentChildAvailableSeconds ?? 0,
                                 usedSeconds: appState.parentBudgetStatus?.state?.usedSeconds ?? appState.parentChildSpentSecondsToday ?? 0,
-                                limitSeconds: appState.parentBudgetStatus?.policy?.limitSeconds,
+                                limitSeconds: appState.parentBudgetStatus?.currentLimitSeconds,
                                 earnedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.earnedSeconds) : nil,
                                 grantedSeconds: appState.hasLoadedParentBudget ? (appState.parentBudgetStatus?.policy == nil ? 0 : appState.parentBudgetStatus?.policy?.grantedSeconds) : nil,
                                 isLoading: (appState.parentBudgetStatus?.state == nil && appState.parentChildAvailableSeconds == nil) || appState.parentBudgetStatus?.hasCurrentDayState == false,
@@ -648,7 +674,10 @@ private struct ParentDashboardView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("budget.title").font(.headline)
                                         if let policy = appState.parentBudgetStatus?.policy {
-                                            Text(L10n.duration(seconds: policy.limitSeconds) + " · " + L10n.tr("budget.every_day"))
+                                            let duration = L10n.duration(seconds: appState.parentBudgetStatus?.currentLimitSeconds ?? policy.limitSeconds)
+                                            Text(policy.weeklyLimitsSeconds == nil
+                                                 ? duration + " · " + L10n.tr("budget.every_day")
+                                                 : L10n.f("budget.weekly.today", duration))
                                         } else if appState.hasLoadedParentBudget {
                                             Text("budget.not_set")
                                         } else {
@@ -744,16 +773,15 @@ private struct ParentDashboardView: View {
                 }
             }
             .sheet(isPresented: $isDailyLimitPresented) {
-                DailyLimitSheet(seconds: appState.parentBudgetStatus?.policy?.limitSeconds)
+                DailyLimitSheet(policy: appState.parentBudgetStatus?.policy)
                     .environmentObject(appState)
             }
             .sheet(isPresented: $isAdjustTimePresented) {
                 AdjustTimeSheet { deltaMinutes in
                     Task { await appState.sendParentAdjustTimeCommand(deltaMinutes: deltaMinutes) }
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(.thinMaterial)
             }
         }
     }
@@ -860,7 +888,7 @@ private struct ChildBalanceCard: View {
     }
 }
 
-/// Шторка «Изменить доступное время» (открывается на половину экрана через `.presentationDetents([.medium])`).
+/// Шторка «Изменить время на сегодня» (открывается на половину экрана, можно развернуть).
 /// Содержит вертикальный wheel-Picker со значениями −60…+60 мин с шагом 5 (отрицательные — забрать,
 /// положительные — добавить, 0 — без изменений в центре). Кнопка «Готово» внизу применяет дельту,
 /// свайп вниз / drag indicator закрывает без сохранения. Логика выбора server-команды — в
@@ -876,33 +904,48 @@ private struct AdjustTimeSheet: View {
     private static let allowedDeltas: [Int] = stride(from: -60, through: 60, by: 5).map { $0 }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("budget.adjust_today")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
-                .padding(.top, 16)
+        ZStack {
+            AppBackgroundView()
 
-            Picker("budget.adjust_today", selection: $selectedDelta) {
-                ForEach(Self.allowedDeltas, id: \.self) { delta in
-                    Text(label(for: delta))
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("budget.adjust_today")
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .tag(delta)
-                }
-            }
-            .pickerStyle(.wheel)
-            .labelsHidden()
-            .tint(AppTheme.neonPurple)
-            .frame(maxHeight: 180)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
 
+                    Picker("budget.adjust_today", selection: $selectedDelta) {
+                        ForEach(Self.allowedDeltas, id: \.self) { delta in
+                            Text(label(for: delta))
+                                .foregroundStyle(.white)
+                                .tag(delta)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(AppTheme.neonBlue)
+                    .frame(height: 180)
+                    .padding(12)
+                    .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("parent.dashboard.adjust_time.done") {
                 onApply(selectedDelta)
                 dismiss()
             }
-            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
+            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
             .padding(.horizontal, 16)
+            .padding(.top, 8)
             .padding(.bottom, 16)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
     }
 

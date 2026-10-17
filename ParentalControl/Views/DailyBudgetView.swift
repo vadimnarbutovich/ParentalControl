@@ -106,11 +106,30 @@ struct DailyLimitSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var hours: Int
     @State private var minutes: Int
+    @State private var isWeekly: Bool
+    @State private var weeklyMinutes: [Int]
+    @State private var initializedWeeklyDraft: Bool
+    @State private var editingDay: DayChoice?
+    @State private var confirmsUniform = false
+    private let originallyWeekly: Bool
 
-    init(seconds: Int?) {
-        let total = max(0, min(1440, (seconds ?? 0) / 60))
+    private struct DayChoice: Identifiable { let id: Int }
+
+    init(policy: DailyBudgetPolicy?) {
+        let total = max(0, min(1440, (policy?.limitSeconds ?? DailyBudgetPolicy.initialLimitSeconds) / 60))
+        let week = policy?.weeklyLimitsSeconds
         _hours = State(initialValue: total / 60)
         _minutes = State(initialValue: total % 60)
+        _isWeekly = State(initialValue: week != nil)
+        _initializedWeeklyDraft = State(initialValue: week != nil)
+        _weeklyMinutes = State(initialValue: week?.map { $0 / 60 } ?? Array(repeating: total, count: 7))
+        originallyWeekly = week != nil
+    }
+
+    private var canSave: Bool {
+        appState.pairingState?.isLinked == true && appState.parentBudgetStatus?.childReady == true
+            && (!isWeekly || appState.parentBudgetStatus?.weeklyChildReady == true)
+            && !appState.isBudgetSaving
     }
 
     var body: some View {
@@ -120,14 +139,33 @@ struct DailyLimitSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("budget.explanation").fixedSize(horizontal: false, vertical: true)
-                        HStack {
-                            Picker("budget.hours", selection: $hours) {
-                                ForEach(0...24, id: \.self) { Text("\($0) " + L10n.tr("budget.hours")).tag($0) }
+                        Picker("budget.weekly.mode", selection: $isWeekly) {
+                            Text("budget.every_day").tag(false)
+                            Text("budget.weekly.by_days").tag(true)
+                        }.pickerStyle(.segmented)
+                        if isWeekly {
+                            VStack(spacing: 0) {
+                                ForEach(0..<7) { index in
+                                    Button { editingDay = DayChoice(id: index) } label: {
+                                        HStack(spacing: 12) {
+                                            Text(DailyLimitWeekdays.names[index])
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                            Text(L10n.f("unit.minutes.short", weeklyMinutes[index]))
+                                            Image(systemName: "chevron.right").font(.caption)
+                                        }
+                                        .foregroundStyle(.white)
+                                        .padding(.vertical, 14)
+                                        .contentShape(Rectangle())
+                                    }.buttonStyle(.plain)
+                                    if index < 6 { Divider() }
+                                }
                             }
-                            Picker("budget.minutes", selection: $minutes) {
-                                ForEach(0...(hours == 24 ? 0 : 59), id: \.self) { Text("\($0) " + L10n.tr("budget.minutes")).tag($0) }
+                            if appState.parentBudgetStatus?.weeklyChildReady != true {
+                                Text("budget.weekly.update_child").foregroundStyle(AppTheme.neonOrange)
                             }
-                        }.pickerStyle(.wheel)
+                        } else {
+                            DailyLimitTimePicker(hours: $hours, minutes: $minutes)
+                        }
                         Text("budget.rules").font(.subheadline).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         if appState.parentBudgetStatus?.policy == nil {
@@ -140,22 +178,130 @@ struct DailyLimitSheet: View {
                         if let error = appState.budgetError {
                             Text(error).foregroundStyle(AppTheme.neonOrange).fixedSize(horizontal: false, vertical: true)
                         }
-                        Button("budget.save") {
-                            Task {
-                                if await appState.saveParentDailyLimit(minutes: hours * 60 + minutes) { dismiss() }
+                        Button {
+                            if !isWeekly && (originallyWeekly || Set(weeklyMinutes).count > 1) {
+                                confirmsUniform = true
+                            } else { save() }
+                        } label: {
+                            HStack {
+                                if appState.isBudgetSaving { ProgressView().tint(.white) }
+                                Text("budget.save")
                             }
                         }
                         .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
-                        .disabled(appState.isBudgetSaving || appState.parentBudgetStatus?.childReady != true)
-                    }.padding()
+                        .disabled(!canSave)
+                    }
+                    .padding()
+                    .disabled(appState.isBudgetSaving)
                 }.scrollIndicators(.hidden)
             }
             .navigationTitle(Text("budget.title"))
             .navigationBarTitleDisplayMode(.inline)
-            .onChange(of: hours) { _, value in if value == 24 { minutes = 0 } }
+            .onChange(of: isWeekly) { _, enabled in
+                if enabled && !initializedWeeklyDraft {
+                    weeklyMinutes = Array(repeating: hours * 60 + minutes, count: 7)
+                    initializedWeeklyDraft = true
+                }
+                appState.budgetError = nil
+            }
+            .confirmationDialog("budget.weekly.replace.title", isPresented: $confirmsUniform, titleVisibility: .visible) {
+                Button("budget.weekly.replace.action") { save() }
+                Button("common.cancel", role: .cancel) {}
+            } message: {
+                Text("budget.weekly.replace.message")
+            }
+            .sheet(item: $editingDay) { day in
+                DailyLimitDayEditor(day: day.id, minutes: weeklyMinutes[day.id]) { days, value in
+                    for index in days { weeklyMinutes[index] = value }
+                }
+            }
         }
         .preferredColorScheme(.dark)
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(appState.isBudgetSaving)
+    }
+
+    private func save() {
+        guard canSave else { return }
+        let total = hours * 60 + minutes
+        let week = isWeekly ? weeklyMinutes : nil
+        Task {
+            if await appState.saveParentDailyLimit(minutes: total, weeklyMinutes: week) { dismiss() }
+        }
+    }
+}
+
+private enum DailyLimitWeekdays {
+    static let names: [String] = {
+        let locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? Locale.current.identifier)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        let symbols = calendar.standaloneWeekdaySymbols
+        return (0..<7).map { symbols[($0 + 1) % 7].capitalized(with: locale) }
+    }()
+}
+
+private struct DailyLimitTimePicker: View {
+    @Binding var hours: Int
+    @Binding var minutes: Int
+
+    var body: some View {
+        HStack {
+            Picker("budget.hours", selection: $hours) {
+                ForEach(0...24, id: \.self) { Text("\($0) " + L10n.tr("budget.hours")).tag($0) }
+            }
+            Picker("budget.minutes", selection: $minutes) {
+                ForEach(0...(hours == 24 ? 0 : 59), id: \.self) { Text("\($0) " + L10n.tr("budget.minutes")).tag($0) }
+            }
+        }
+        .pickerStyle(.wheel)
+        .onChange(of: hours) { _, value in if value == 24 { minutes = 0 } }
+    }
+}
+
+private struct DailyLimitDayEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var hours: Int
+    @State private var minutes: Int
+    @State private var selectedDays: Set<Int>
+    let onApply: (Set<Int>, Int) -> Void
+
+    init(day: Int, minutes: Int, onApply: @escaping (Set<Int>, Int) -> Void) {
+        _hours = State(initialValue: minutes / 60)
+        _minutes = State(initialValue: minutes % 60)
+        _selectedDays = State(initialValue: [day])
+        self.onApply = onApply
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    DailyLimitTimePicker(hours: $hours, minutes: $minutes)
+                    Text("budget.weekly.apply_days").font(.headline)
+                    ForEach(0..<7) { index in
+                        Toggle(DailyLimitWeekdays.names[index], isOn: Binding(
+                            get: { selectedDays.contains(index) },
+                            set: { selected in
+                                if selected { selectedDays.insert(index) }
+                                else { selectedDays.remove(index) }
+                            }))
+                    }
+                    Text("budget.weekly.draft_hint").font(.footnote).foregroundStyle(.secondary)
+                    Button("budget.weekly.apply") {
+                        onApply(selectedDays, hours * 60 + minutes)
+                        dismiss()
+                    }
+                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+                    .disabled(selectedDays.isEmpty)
+                }.padding()
+            }
+            .scrollIndicators(.hidden)
+            .appScreenBackground()
+            .navigationTitle(Text("budget.title"))
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .preferredColorScheme(.dark)
+        .presentationDragIndicator(.visible)
     }
 }

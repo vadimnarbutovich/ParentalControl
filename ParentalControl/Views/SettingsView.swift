@@ -1,12 +1,13 @@
 import SwiftUI
 import UIKit
+import CoreLocation
 
 private enum SupportEmail {
     static let address = "vadim.narb@yandex.com"
 }
 
-private enum AppStoreLinks {
-    static let appID = "6761118244"
+enum AppStoreLinks {
+    static let appID = "6820971713"
 
     static var writeReviewURL: URL? {
         URL(string: "itms-apps://itunes.apple.com/app/id\(appID)?action=write-review")
@@ -48,6 +49,12 @@ struct SettingsView: View {
                         if appState.deviceRole == .parent {
                             parentPinSection
                         }
+                        if appState.deviceRole == .parent || appState.isParentModeActive {
+                            removalProtectionSection
+                        }
+                        if appState.deviceRole == .child && appState.isParentModeActive {
+                            locationPermissionSection
+                        }
                         appSection
                         helpSection
 #if DEBUG && !HIDE_DEBUG_UI
@@ -70,6 +77,8 @@ struct SettingsView: View {
             .scrollIndicators(.hidden)
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
+                case .removalProtection:
+                    RemovalProtectionView()
                 case .conversion:
                     ConversionSettingsSheet()
                         .environmentObject(appState)
@@ -170,6 +179,83 @@ struct SettingsView: View {
                 .drawingGroup()
                 .padding(-36)
         )
+    }
+
+    private var removalProtectionSection: some View {
+        Button {
+            activeSheet = .removalProtection
+            AppAnalytics.report("removal_protection_open", parameters: ["source": "settings"])
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("protection.title")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                    Text("protection.settings_description")
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+    }
+
+    private var locationPermissionSection: some View {
+        Button {
+            Task { await appState.configureChildLocationAccessFromParentMode() }
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("onboarding.location.title")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.95))
+                    Text(L10n.tr(locationPermissionDescriptionKey))
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(appState.isConfiguringChildLocationAccess)
+        .background(
+            Color.clear
+                .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                .padding(36)
+                .drawingGroup()
+                .padding(-36)
+        )
+        .onAppear { appState.refreshChildLocationAuthorizationStatus() }
+    }
+
+    private var locationPermissionDescriptionKey: String {
+        switch appState.childLocationAuthorizationStatus {
+        case .notDetermined: return "setup.location.body"
+        case .authorizedAlways: return "location.settings.ready"
+        default: return "location.settings.description"
+        }
     }
 
     private var appSection: some View {
@@ -668,6 +754,7 @@ private enum ConversionField: Hashable {
 }
 
 private enum SettingsSheet: Int, Identifiable {
+    case removalProtection
     case conversion
     case pinSetup
     #if DEBUG && !HIDE_DEBUG_UI
@@ -677,7 +764,7 @@ private enum SettingsSheet: Int, Identifiable {
     var id: Int { rawValue }
 }
 
-private struct ActivityShareSheet: UIViewControllerRepresentable {
+struct ActivityShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
@@ -779,7 +866,7 @@ private struct PermissionsSettingsSheet: View {
 /// Лист установки/смены родительского PIN. Два поля по 4 цифры (новый PIN и повторение),
 /// валидация в реальном времени, кнопка «Сохранить» активна только при совпадении и валидности.
 /// При успехе закрывает себя и обновляет `appState.parentPinIsSet`.
-private struct ParentPinSetupSheet: View {
+struct ParentPinSetupSheet: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
@@ -857,6 +944,7 @@ private struct ParentPinSetupSheet: View {
             .padding(.bottom, 18)
         }
         .appScreenBackground()
+        .interactiveDismissDisabled(isSaving)
         .onAppear {
             focused = .newPin
         }

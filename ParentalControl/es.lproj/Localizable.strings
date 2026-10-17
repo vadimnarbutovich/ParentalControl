@@ -1,3 +1,63 @@
+/* Map and last location update. */
+"tab.map" = "Mapa";
+"map.title" = "Ubicación de tu hijo";
+"map.refresh" = "Actualizar ubicación";
+"map.refreshing" = "Solicitando ubicación…";
+"map.empty.title" = "Ubicación aún no disponible";
+"map.empty.subtitle" = "Toca «Actualizar ubicación» para solicitar la ubicación actual al teléfono de tu hijo.";
+"map.last_seen" = "Actualizado: %@";
+"map.just_now" = "ahora mismo";
+"map.accuracy" = "Precisión: ±%d m";
+"map.refresh.timeout" = "No se ha podido obtener la ubicación en 15 segundos. Comprueba que el teléfono de tu hijo tenga conexión a internet y permita el acceso a la ubicación.";
+"map.unpaired.title" = "Teléfono no vinculado";
+"map.unpaired.subtitle" = "Vincula el teléfono de tu hijo en Ajustes para ver su ubicación.";
+
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "Protección contra eliminación";
+"protection.settings_description" = "Impide que tu hijo elimine la app de su teléfono.";
+"parent.dashboard.not_linked" = "Primero vincula tu teléfono con el de tu hijo.";
+"protection.intro" = "Para impedir que tu hijo elimine la app, se necesita autorización infantil mediante En familia de Apple.";
+"protection.parent_instructions" = "En el teléfono de tu hijo, abre la pestaña «Padre», introduce tu PIN y ve a Ajustes → Protección contra eliminación. No se puede activar la protección a distancia desde este teléfono.";
+"protection.guide.title" = "Cómo configurar En familia";
+"protection.guide.family" = "1. En el teléfono del progenitor, abre Ajustes → tu nombre → Familia. Crea un grupo familiar o utiliza el que ya tienes.";
+"protection.guide.account" = "2. Añade a tu hijo: invita a su cuenta de Apple o crea una cuenta infantil. En su teléfono debe haber iniciado sesión con su propia cuenta.";
+"protection.guide.confirm" = "3. Acepta la invitación y abre nuestra app en modo progenitor en el teléfono de tu hijo. Pulsa «Activar protección» y autoriza el acceso en la ventana del sistema de Apple.";
+"protection.guide.warning" = "Si tu hijo ya pertenece a otro grupo familiar o usa la cuenta de un adulto, consulta primero las instrucciones de Apple. Comprueba que los datos estén a salvo antes de cerrar sesión. Nuestro código de vinculación no sustituye a En familia.";
+"protection.guide.apple" = "Instrucciones de Apple";
+"protection.enabled" = "Protección activada";
+"protection.needs_confirmation" = "Se necesita confirmación";
+"protection.not_enabled" = "Protección no activada";
+"protection.enable" = "Activar protección";
+"protection.disable.title" = "¿Desactivar el control?";
+"protection.disable.action" = "Permitir eliminación";
+"protection.disable.message" = "La app dejará de limitar el tiempo de pantalla y se podrá eliminar. Se conservarán la vinculación de dispositivos y los datos guardados. ¿Continuar?";
+"protection.disabled" = "El control está desactivado. Ya puedes eliminar la app. Para volver a usar el control, tendrás que autorizar de nuevo el acceso a Tiempo de uso.";
+"protection.error.account" = "Apple no ha podido confirmar una cuenta infantil válida. Comprueba que este teléfono use la cuenta de tu hijo dentro de tu grupo familiar.";
+"protection.error.cancelled" = "Se ha cancelado la confirmación. Esta solicitud no ha activado la protección.";
+"protection.error.network" = "No se ha podido conectar con Apple. Comprueba tu conexión a Internet e inténtalo de nuevo.";
+"protection.error.conflict" = "iOS no ha permitido cambiar la autorización. No hemos revocado el acceso existente. Revisa los ajustes de Tiempo de uso e inténtalo de nuevo.";
+"protection.error.generic" = "No se ha podido completar la acción. Comprueba el acceso a Tiempo de uso e inténtalo de nuevo.";
+"protection.suggestion" = "Para impedir que tu hijo elimine la app, configura la protección mediante En familia de Apple. Puedes hacerlo más tarde.";
+"protection.setup" = "Configurar";
+"protection.later" = "Más tarde";
+
+"location.settings.description" = "Para que el padre o la madre pueda saber dónde está su hijo, selecciona Ubicación → Siempre en los ajustes de esta app en este teléfono. La ubicación solo se consulta cuando se solicita.";
+"location.settings.ready" = "El acceso a la ubicación está configurado en Siempre. Solo se consulta cuando lo solicita el padre o la madre.";
+"location.setup.allow" = "Permitir ubicación";
+"location.setup.later" = "Más tarde";
+"map.refresh.always_required" = "En el teléfono de tu hijo no se ha concedido acceso permanente a la ubicación. Abre los ajustes de nuestra app en su teléfono → Ubicación → Siempre.";
+"map.refresh.services_disabled" = "La localización está desactivada en el teléfono de tu hijo. Actívala en Ajustes → Privacidad y seguridad → Localización.";
+"map.refresh.unavailable" = "El teléfono de tu hijo no ha enviado una ubicación reciente. Comprueba que el acceso a la ubicación esté en Siempre en los ajustes de nuestra app y vuelve a intentarlo.";
+"map.refresh.connection_error" = "No se ha podido actualizar la ubicación por un error de conexión. Comprueba la conexión a internet en ambos teléfonos y vuelve a intentarlo.";
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "Resumen del día";
+"statistics.local.budget_hint" = "El tiempo usado es el que se ha descontado del límite diario. El informe de uso de apps de iOS puede tardar en actualizarse.";
+"statistics.local.scope" = "Apps y sitios web seleccionados en este dispositivo.";
+"statistics.local.previous_day" = "Día anterior";
+"statistics.local.next_day" = "Día siguiente";
+"statistics.local.refresh" = "Actualizar informe";
+"statistics.local.report_hint" = "El informe de iOS puede tardar en actualizarse. El tiempo usado que aparece abajo es el que se ha descontado del límite diario.";
+
 "tab.dashboard" = "Inicio";
 "tab.statistics" = "Estadísticas";
 "tab.block" = "Lista de bloqueo";
@@ -68,6 +128,7 @@
 "statistics.squats" = "Sentadillas";
 "statistics.focus.total" = "Enfoque";
 "statistics.app_usage.title" = "Uso de apps";
+"statistics.app_usage.loading_hint" = "Cargando datos. Esto puede tardar un poco.";
 "statistics.app_usage.empty_selection" = "Añade apps en la lista de bloqueo para ver estadísticas de uso.";
 "statistics.app_usage.unavailable" = "El informe de uso de apps solo está disponible en versiones compatibles de iOS.";
 "statistics.app_usage.no_data" = "No hay datos de uso para el día seleccionado.";
@@ -336,8 +397,8 @@
 "parent_mode.entry.locked" = "Entrada bloqueada. Inténtalo de nuevo en %d s.";
 
 "settings.pin.section" = "PIN de padre";
-"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el dispositivo del niño.";
-"settings.pin.requires_link" = "Primero vincula un dispositivo del niño para establecer un PIN.";
+"settings.pin.description" = "PIN de 4 dígitos para abrir el modo padre en el teléfono del niño.";
+"settings.pin.requires_link" = "Primero vincula tu teléfono con el de tu hijo para establecer un PIN.";
 "settings.pin.status.set" = "PIN establecido";
 "settings.pin.status.unset" = "PIN no establecido";
 "settings.pin.set" = "Establecer PIN";
@@ -364,7 +425,7 @@
 "settings.pairing.linked.status" = "Dispositivos vinculados";
 "settings.pairing.unlink" = "Desvincular dispositivos";
 "settings.pairing.unlink.confirm.title" = "¿Desvincular dispositivos?";
-"settings.pairing.unlink.confirm.message" = "Se restablecerá el vínculo entre los dispositivos de los padres y del niño. Tendrás que volver a vincularlos para gestionar el dispositivo del niño.";
+"settings.pairing.unlink.confirm.message" = "Se restablecerá el vínculo entre los teléfonos de los padres y del niño. Tendrás que volver a vincularlos para gestionar el teléfono del niño.";
 "settings.pairing.unlink.confirm.button" = "Desvincular";
 
 "tab.tasks" = "Tareas";
@@ -427,13 +488,13 @@
 "budget.extra" = "Tiempo extra hoy";
 "budget.not_set" = "Sin establecer";
 "budget.every_day" = "Todos los días";
-"budget.pending" = "Esperando la confirmación del dispositivo de tu hijo";
+"budget.pending" = "Esperando la confirmación del teléfono de tu hijo";
 "budget.explanation" = "Cuánto tiempo puede pasar tu hijo cada día en las apps seleccionadas.";
 "budget.hours" = "h";
 "budget.minutes" = "min";
 "budget.rules" = "El límite se renueva cada día. El tiempo restante y los minutos extra no se acumulan. 0 minutos significa que no se concede tiempo diario habitual.";
 "budget.first_activation" = "Este límite sustituye al saldo anterior. Se cuenta el tiempo ya usado hoy; el saldo restante anterior no se suma. El historial se conserva.";
-"budget.child_update" = "Abre la app actualizada en el dispositivo de tu hijo y espera a que se conecte.";
+"budget.child_update" = "Abre la app actualizada en el teléfono de tu hijo y espera a que se conecte.";
 "budget.save" = "Guardar";
 "budget.save_error" = "No se ha podido guardar. Comprueba la conexión e inténtalo de nuevo. Si el ajuste ha cambiado, vuelve a abrirlo.";
 "budget.apply_error" = "No se ha podido activar el límite. Comprueba el acceso a Tiempo de uso y vuelve a abrir la app.";
@@ -466,12 +527,74 @@
 "reports.no_data" = "Aún no hay datos de este día.";
 "reports.error" = "No se pudieron actualizar las estadísticas. Comprueba la conexión. Los datos cargados pueden estar desactualizados.";
 "reports.retry" = "Reintentar";
-"reports.unlinked" = "Vincula el dispositivo de tu hijo para ver las estadísticas.";
+"reports.unlinked" = "Vincula el teléfono de tu hijo para ver las estadísticas.";
 "reports.previous" = "Período anterior";
 "reports.next" = "Período siguiente";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "Recibe una notificación cuando tu hijo envíe una tarea para que la revises.";
+"permission.notifications.parent.body" = "Recibe una notificación cuando tu hijo envíe una tarea completada para que la revises.";
 "permission.notifications.child.body" = "Recibe avisos sobre cambios en el tiempo disponible y el bloqueo de apps.";
 "permission.camera.title" = "Cámara no disponible";
 "permission.camera.body" = "Permite el acceso a la cámara en Ajustes para fotografiar la tarea. También puedes elegir una foto existente.";
 "onboarding.location.body" = "Permite el acceso a la ubicación para que tu padre o madre encuentre este dispositivo en el mapa. Las solicitudes en segundo plano necesitan el permiso «Siempre». Solo consultamos la ubicación cuando se solicita, sin seguimiento continuo.";
+// Role-specific text onboarding.
+"setup.parent.title" = "Gestiona el tiempo de tu hijo";
+"setup.parent.body" = "Configura un límite diario, horarios y tareas que dan tiempo adicional en las apps como recompensa. Consulta el tiempo restante y solicita la ubicación de tu hijo.\n\nEn tu teléfono solo necesitamos permiso para las notificaciones. Los demás permisos se configuran en el teléfono de tu hijo.";
+"setup.child.title" = "Configura el teléfono de tu hijo";
+"setup.child.body" = "Completad estos pasos con el padre o la madre. Los permisos permiten registrar el tiempo en las apps elegidas, aplicar restricciones y mostrar la ubicación al progenitor.";
+"setup.screen_time.body" = "Permite el acceso a Tiempo de uso para registrar el uso de las apps elegidas y bloquearlas según el límite, el horario o la indicación del padre o la madre.\n\nSin este permiso, las restricciones no funcionarán.";
+"setup.notifications.child.body" = "Permite las notificaciones para que tu hijo vea los cambios de tiempo disponible, los bloqueos y los mensajes sobre tareas.\n\nSi las desactivas, puede perderse mensajes importantes.";
+"setup.location.body" = "Para que el padre o la madre pueda saber dónde está su hijo, permite el acceso a la ubicación: primero Al usar la app y después Siempre.\n\nLa ubicación solo se consulta cuando se solicita. Para determinar la ubicación, se necesita el permiso Siempre.";
+"setup.pairing.title" = "Conecta los dos teléfonos";
+"setup.parent.pairing_body" = "En tu teléfono, abre Ajustes → Conexión con el hijo y crea un código de vinculación.\n\nInstala esta misma app en el teléfono de tu hijo y elige Teléfono del niño. Tras la configuración, introduce el código en su pantalla principal.";
+"setup.protection.body" = "Para impedir que tu hijo elimine la app, su cuenta infantil debe formar parte de un grupo de En familia de Apple.\n\nTras vincular los teléfonos, activa la protección en el teléfono del niño: Padre → PIN → Ajustes → Protección contra eliminación.\n\nLa app también funciona sin esta protección, pero el niño podrá eliminarla.";
+"setup.finish.title" = "Siguientes pasos";
+"setup.parent.finish_body" = "Tras vincular los teléfonos, establece un PIN parental en Ajustes. Protege los ajustes del teléfono de tu hijo.\n\nConfigura el límite diario en la pantalla principal. Solo se aplica a las apps elegidas en el teléfono de tu hijo.";
+"setup.child.finish_body" = "En la pantalla principal, introduce el código del teléfono del padre o la madre.\n\nTras la vinculación, el progenitor debe establecer un PIN en su propio teléfono. Después, en este teléfono: Padre → PIN → Lista de bloqueo, elegid las apps que se controlarán.\n\nEl límite diario se establece desde el teléfono del progenitor.";
+"setup.permission.enabled" = "Permitido";
+"setup.permission.missing" = "Sin activar";
+"setup.finish.action" = "Abrir la app";
+"setup.back" = "Atrás";
+"role.select.parent" = "Teléfono del padre o la madre";
+"role.select.child" = "Teléfono del niño";
+
+// Guided pairing and setup.
+"setup.install.title" = "Instala la app en el teléfono del niño";
+"setup.install.body" = "El teléfono de tu hijo necesita esta misma app. [Envía el enlace a tu hijo](%@) o escanea el código QR con la cámara de su teléfono para instalarla.\n\nAl abrirla por primera vez, elige «Teléfono del niño»; después vincularemos los teléfonos.";
+"setup.install.qr.accessibility" = "Código QR para instalar la app desde el App Store";
+"setup.link.parent" = "Crea un código de vinculación e introdúcelo en el teléfono de tu hijo. Aquí aparecerá la confirmación cuando estén vinculados.\n\nDespués, continúa la configuración en ambos teléfonos.";
+"setup.link.child" = "En el teléfono del padre o la madre, crea un código durante la configuración e introdúcelo abajo. Si ya se ha completado la configuración, puedes crearlo en Ajustes → Conexión con el hijo.";
+"setup.link.wait" = "Esperando al teléfono del niño";
+"setup.link.required" = "Primero vincula el teléfono del padre o la madre con el del niño. Puedes hacerlo más tarde.";
+"setup.pin.parent" = "Crea un PIN de cuatro dígitos para proteger el acceso a los ajustes parentales en el teléfono de tu hijo.\n\nUna vez guardado, introduce ese PIN en su teléfono para continuar la configuración.";
+"setup.pin.child" = "Crea un PIN en el teléfono del padre o la madre, durante la configuración del PIN o en Ajustes. Solo se puede establecer desde ese teléfono.\n\nDespués, introdúcelo aquí para elegir apps y configurar la protección. Si aún no se ha recibido, pulsa «Comprobar conexión».";
+"setup.pin.verify" = "PIN recibido. Introdúcelo en este teléfono para acceder a los ajustes parentales.";
+"setup.apps.body" = "Elige las apps, categorías o sitios web a los que se aplicarán los límites y bloqueos. Las demás apps seguirán disponibles.\n\nPara cambiar la selección se necesita el PIN parental.";
+"setup.protection.action_body" = "También puedes impedir que tu hijo elimine la app mediante En familia de Apple. Necesitas una cuenta infantil dentro del grupo familiar.\n\nPuedes activar la protección más tarde en Ajustes. La app funciona sin esta protección, pero tu hijo podrá eliminarla.";
+"setup.protection.later" = "Configurar más tarde";
+"setup.limit.child" = "Establece un límite diario en el teléfono del padre o la madre.";
+"setup.limit.initial" = "Empieza con 60 minutos al día. Pulsa «Siguiente» para aplicar este límite o elige otra duración.";
+"setup.check.title" = "Revisa la configuración";
+"setup.check.parent" = "Este es el estado de la configuración en este teléfono. Toca un apartado para volver a él.\n\nCompleta también la configuración en el teléfono del niño: activa los permisos y elige las apps que quieres bloquear. Los pasos omitidos se pueden completar más tarde en Ajustes.";
+"setup.check.child" = "Revisa los ajustes de abajo. Toca un apartado para volver a él. La protección contra eliminación es opcional.\n\nPuedes completar los pasos omitidos más tarde. Al terminar, se cerrará el modo parental.";
+"setup.status.ready" = "Configurado";
+"setup.status.pending" = "Sin configurar";
+"setup.refresh" = "Comprobar conexión";
+"setup.pin.enter" = "Introducir PIN";
+"settings.parent.link.generate" = "Crear código de vinculación";
+"settings.child.link.placeholder" = "Introduce el código";
+"onboarding.location.title" = "Ubicación";
+"settings.child.link.connect" = "Vincular";
+"role.select.title" = "Elige la función del teléfono";
+"role.select.subtitle" = "¿Es el teléfono del padre o la madre, o el del niño?";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Modo del límite";
+"budget.weekly.by_days" = "Por día";
+"budget.weekly.today" = "Hoy: %@ · Por día";
+"budget.weekly.update_child" = "Para establecer límites distintos según el día, actualiza y abre la app en el teléfono de tu hijo con conexión a internet.";
+"budget.weekly.replace.title" = "¿El mismo límite toda la semana?";
+"budget.weekly.replace.action" = "Aplicar a todos los días";
+"budget.weekly.replace.message" = "El tiempo elegido sustituirá los límites individuales de todos los días de la semana.";
+"budget.weekly.apply_days" = "Aplicar a estos días";
+"budget.weekly.draft_hint" = "Después de aplicar, pulsa Guardar en la pantalla del límite diario.";
+"budget.weekly.apply" = "Aplicar";

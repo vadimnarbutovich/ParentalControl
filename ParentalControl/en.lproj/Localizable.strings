@@ -1,3 +1,40 @@
+/* Optional child authorization through Apple Family Sharing. */
+"protection.title" = "Removal protection";
+"protection.settings_description" = "Prevent your child from deleting the app from their phone.";
+"protection.intro" = "Preventing your child from deleting the app requires child authorization through Apple Family Sharing.";
+"protection.parent_instructions" = "On your child’s phone, open the Parent tab, enter your PIN, then go to Settings → Removal protection. Protection cannot be enabled remotely from this phone.";
+"protection.guide.title" = "How to set up Family Sharing";
+"protection.guide.family" = "1. On the parent’s phone, open Settings → your name → Family. Create a family group or use your existing one.";
+"protection.guide.account" = "2. Add your child: invite their Apple Account or create a child account. Their phone must be signed in to their own account.";
+"protection.guide.confirm" = "3. Accept the invitation, then open our app in parent mode on your child’s phone. Tap Enable protection and approve access in Apple’s system prompt.";
+"protection.guide.warning" = "If your child belongs to another family group or uses an adult’s account, read Apple’s instructions first. Check that their data is safe before signing out. Our pairing code does not replace Apple Family Sharing.";
+"protection.guide.apple" = "Apple’s instructions";
+"protection.enabled" = "Protection enabled";
+"protection.needs_confirmation" = "Confirmation needed";
+"protection.not_enabled" = "Protection not enabled";
+"protection.enable" = "Enable protection";
+"protection.disable.title" = "Turn off controls?";
+"protection.disable.action" = "Allow removal";
+"protection.disable.message" = "The app will stop restricting screen time and can be deleted. Device pairing and saved data will be kept. Continue?";
+"protection.disabled" = "Controls are off. You can now delete the app. To resume controls, you’ll need to grant Screen Time access again.";
+"protection.error.account" = "Apple could not confirm an eligible child account. Check that this phone is signed in to your child’s account in your family group.";
+"protection.error.cancelled" = "Confirmation was cancelled. This request did not enable protection.";
+"protection.error.network" = "Could not connect to Apple. Check your internet connection and try again.";
+"protection.error.conflict" = "iOS did not allow the authorization change. We have not revoked your existing access. Check Screen Time settings and try again.";
+"protection.error.generic" = "The action could not be completed. Check Screen Time access and try again.";
+"protection.suggestion" = "To prevent your child from deleting the app, set up protection through Apple Family Sharing. You can do this later.";
+"protection.setup" = "Set up";
+"protection.later" = "Later";
+
+/* Local statistics, shown only in parent mode on the child's device. */
+"statistics.local.summary" = "Daily summary";
+"statistics.local.budget_hint" = "“Used” is time deducted from the daily allowance. The iOS app usage report may take time to update.";
+"statistics.local.scope" = "Selected apps and websites on this device.";
+"statistics.local.previous_day" = "Previous day";
+"statistics.local.next_day" = "Next day";
+"statistics.local.refresh" = "Refresh report";
+"statistics.local.report_hint" = "The iOS report may take time to update. “Used” below shows time deducted from the daily allowance.";
+
 "tab.dashboard" = "Dashboard";
 "tab.statistics" = "Statistics";
 "tab.block" = "Block List";
@@ -68,6 +105,7 @@
 "statistics.squats" = "Squats";
 "statistics.focus.total" = "Focus";
 "statistics.app_usage.title" = "App Usage";
+"statistics.app_usage.loading_hint" = "Loading data. This may take a little while.";
 "statistics.app_usage.empty_selection" = "Add apps in Block List first to see usage stats.";
 "statistics.app_usage.unavailable" = "App Usage report is available only on supported iOS versions.";
 "statistics.app_usage.no_data" = "No app usage data for selected day.";
@@ -269,11 +307,11 @@
 
 "parent.dashboard.title" = "Child control";
 "parent.dashboard.linked" = "Devices are linked";
-"parent.dashboard.not_linked" = "Link devices in Settings first";
+"parent.dashboard.not_linked" = "First, link your phone to your child’s phone.";
 "parent.dashboard.focus_until" = "Focus active until %@";
 "parent.dashboard.focus_active_no_deadline" = "Focus is active";
 "parent.dashboard.focus_inactive" = "Child focus session is inactive";
-"parent.dashboard.state_syncing" = "Resolving current child device state…";
+"parent.dashboard.state_syncing" = "Checking the current status of your child’s phone…";
 "parent.dashboard.child_available" = "Child available time: %@";
 "parent.dashboard.child_available_syncing" = "Resolving child balance…";
 "parent.dashboard.syncing_button" = "Syncing...";
@@ -288,10 +326,10 @@
 "parent.dashboard.command_id" = "Command: %@";
 "parent.dashboard.command_status" = "Status: %@";
 "parent.dashboard.command_latency" = "Apply latency: %d sec";
-"parent.dashboard.child_offline_hint" = "Child device has not checked in recently. Status may update with delay.";
+"parent.dashboard.child_offline_hint" = "Your child’s phone has not checked in recently. Status may update with delay.";
 "parent.dashboard.pending_commands" = "Commands waiting to apply: %d";
 
-"settings.parent.link.title" = "Link child device";
+"settings.parent.link.title" = "Link your child’s phone";
 "settings.parent.link.empty" = "No pairing code yet";
 "settings.parent.link.generate" = "Generate pairing code";
 "settings.parent.link.code" = "Code: %@";
@@ -303,14 +341,14 @@
 
 "parent.command.sent.start" = "Block command sent";
 "parent.command.sent.stop" = "Unblock command sent";
-"parent.command.applied" = "Command applied on child device";
+"parent.command.applied" = "Command applied on your child’s phone";
 "parent.command.applied.latency" = "Command applied in %d sec";
-"parent.command.pending" = "Waiting for child device confirmation";
+"parent.command.pending" = "Waiting for confirmation from your child’s phone";
 "parent.command.failed" = "Command failed";
 "parent.command.retrying" = "Retrying command delivery…";
 "parent.command.retrying_batch" = "Retrying stuck commands: %d";
 "parent.command.processing" = "Executing command, waiting up to 10 seconds for confirmation…";
-"parent.command.timeout" = "No confirmation within 10 seconds. Check child device internet connection and try again.";
+"parent.command.timeout" = "No confirmation within 10 seconds. Check the internet connection on your child’s phone and try again.";
 
 "remote.error.role_required" = "Select a device role first.";
 "remote.error.register_required" = "Device is not registered yet. Reopen the app.";
@@ -329,12 +367,21 @@
 "map.refresh" = "Refresh location";
 "map.refreshing" = "Requesting coordinates…";
 "map.empty.title" = "Location not available yet";
-"map.empty.subtitle" = "Tap “Refresh location” to ask the child device to share its current coordinates.";
+"map.empty.subtitle" = "Tap “Refresh location” to ask your child’s phone to share its current coordinates.";
 "map.last_seen" = "Updated: %@";
+"map.just_now" = "just now";
 "map.accuracy" = "Accuracy: ±%d m";
-"map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure the child's device is online and that location access is granted.";
+"map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure your child's phone is online and that location access is granted.";
+"location.settings.description" = "To let the parent see their child’s location, choose Location → Always in this app’s settings on this phone. Location is checked only when the parent requests it.";
+"location.settings.ready" = "Always access is enabled. Location is checked only when the parent requests it.";
+"location.setup.allow" = "Allow location access";
+"location.setup.later" = "Later";
+"map.refresh.always_required" = "Always location access hasn’t been granted on your child’s phone. On their phone, open this app’s settings → Location → Always.";
+"map.refresh.services_disabled" = "Location Services are off on your child’s phone. Turn them on in Settings → Privacy & Security → Location Services.";
+"map.refresh.unavailable" = "Your child’s phone didn’t send a fresh location. Check that Location is set to Always in this app’s settings on their phone, then try again.";
+"map.refresh.connection_error" = "A connection error prevented the location update. Check the internet connection on both phones and try again.";
 "map.unpaired.title" = "Device is not paired";
-"map.unpaired.subtitle" = "Pair the child device in Settings to see its location.";
+"map.unpaired.subtitle" = "Pair your child’s phone in Settings to see its location.";
 
 "tab.schedule" = "Schedule";
 "schedule.title" = "Schedule";
@@ -368,7 +415,7 @@
 
 "dashboard.active_schedule.title" = "Schedule active now";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
-"dashboard.active_schedule.hint" = "Apps are blocked on the child's device by this schedule.";
+"dashboard.active_schedule.hint" = "Apps are blocked on your child's phone by this schedule.";
 
 "dashboard.next_schedule.title" = "Next schedule";
 
@@ -418,8 +465,8 @@
 "parent_mode.entry.locked" = "Input locked. Try again in %d sec.";
 
 "settings.pin.section" = "Parent PIN";
-"settings.pin.description" = "4-digit PIN to open parent mode on the child device.";
-"settings.pin.requires_link" = "Link a child device first to set a PIN.";
+"settings.pin.description" = "4-digit PIN to open parent mode on your child’s phone.";
+"settings.pin.requires_link" = "Link your child’s phone first to set a PIN.";
 "settings.pin.status.set" = "PIN is set";
 "settings.pin.status.unset" = "PIN is not set";
 "settings.pin.set" = "Set PIN";
@@ -446,7 +493,7 @@
 "settings.pairing.linked.status" = "Devices linked";
 "settings.pairing.unlink" = "Unlink devices";
 "settings.pairing.unlink.confirm.title" = "Unlink devices?";
-"settings.pairing.unlink.confirm.message" = "The link between the parent and child devices will be reset. You'll need to pair again to manage the child device.";
+"settings.pairing.unlink.confirm.message" = "The link between the parent’s and child’s phones will be reset. You'll need to pair again to manage your child’s phone.";
 "settings.pairing.unlink.confirm.button" = "Unlink";
 
 "tab.tasks" = "Tasks";
@@ -509,13 +556,13 @@
 "budget.extra" = "Extra today";
 "budget.not_set" = "Not set";
 "budget.every_day" = "Every day";
-"budget.pending" = "Waiting for confirmation from your child's device";
+"budget.pending" = "Waiting for confirmation from your child's phone";
 "budget.explanation" = "How much time your child can spend in the selected apps each day.";
 "budget.hours" = "hr";
 "budget.minutes" = "min";
 "budget.rules" = "The limit renews every day. Unused time and extra minutes do not carry over. A limit of 0 means no regular daily time.";
 "budget.first_activation" = "This limit replaces the previous balance. Time already used today still counts; the old remaining balance is not added. History is kept.";
-"budget.child_update" = "Open the updated app on your child's device and wait for it to connect.";
+"budget.child_update" = "Open the updated app on your child's phone and wait for it to connect.";
 "budget.save" = "Save";
 "budget.save_error" = "Couldn't save. Check your connection and try again. If the setting has changed, reopen it first.";
 "budget.apply_error" = "Couldn't enable the daily limit. Check Screen Time access and reopen the app.";
@@ -542,16 +589,70 @@
 "reports.tasks" = "Tasks approved";
 "reports.tasks_period" = "Tasks this period";
 "reports.updated" = "Figures updated: %@";
-"reports.legacy" = "Older data is preserved, but its exact day and breakdown are unavailable. Detailed statistics will appear after the child’s device syncs.";
+"reports.legacy" = "Older data is preserved, but its exact day and breakdown are unavailable. Detailed statistics will appear after your child’s phone syncs.";
 "reports.retention" = "Available history from the last 90 days.";
 "reports.no_data" = "No data for this day yet.";
 "reports.error" = "Couldn’t refresh statistics. Check your connection. Previously loaded data may be out of date.";
 "reports.retry" = "Try again";
-"reports.unlinked" = "Link your child’s device to see statistics.";
+"reports.unlinked" = "Link your child’s phone to see statistics.";
 "reports.previous" = "Previous period";
 "reports.next" = "Next period";
 // Permissions requested for the selected device role.
-"permission.notifications.parent.body" = "Get notified when your child submits a task for review.";
+"permission.notifications.parent.body" = "Get notified when your child submits a completed task for review.";
 "permission.notifications.child.body" = "Get notified about changes to available time and app blocking.";
 "permission.camera.title" = "Camera unavailable";
 "permission.camera.body" = "Allow camera access in Settings to photograph a task. You can also choose an existing photo.";
+// Role-specific text onboarding.
+"setup.parent.title" = "Manage your child’s screen time";
+"setup.parent.body" = "Set a daily limit, schedules and tasks that reward your child with extra time in apps. Check remaining time and request your child’s location.\n\nYour phone only needs notification permission. Other permissions are set up on your child’s phone.";
+"setup.child.title" = "Set up your child’s phone";
+"setup.child.body" = "Complete these steps with a parent. Permissions let the app track time in selected apps, apply restrictions and share the child’s location with their parent.";
+"setup.screen_time.body" = "Allow Screen Time access to track selected apps and block them when the limit is reached, during schedules or at the parent’s request.\n\nRestrictions won’t work without this permission.";
+"setup.notifications.child.body" = "Allow notifications so your child can see changes to available time, blocking updates and task messages.\n\nWith notifications off, important messages may be missed.";
+"setup.location.body" = "To let the parent see their child’s location, allow location access: first While Using the App, then Always.\n\nLocation is checked only at the parent’s request. Always location access is needed to determine the child’s location.";
+"setup.pairing.title" = "Connect the two phones";
+"setup.parent.pairing_body" = "On your phone, open Settings → Connection to child and create a pairing code.\n\nInstall this same app on your child’s phone and choose Child phone. After setup, enter the code on its home screen.";
+"setup.protection.body" = "To prevent your child from deleting the app, their child account must belong to an Apple Family Sharing group.\n\nAfter pairing, the parent can enable protection on the child’s phone: Parent → PIN → Settings → Removal protection.\n\nThe app also works without this protection, but the child can delete it.";
+"setup.finish.title" = "Next steps";
+"setup.parent.finish_body" = "After pairing the phones, set a parent PIN in Settings. It protects the settings on your child’s phone.\n\nSet a daily limit on the home screen. It applies only to apps selected on your child’s phone.";
+"setup.child.finish_body" = "On the home screen, enter the pairing code from the parent’s phone.\n\nAfter pairing, the parent should set a PIN on their own phone. Then, on this phone: Parent → PIN → Block List — choose the apps to manage.\n\nThe daily limit is set on the parent’s phone.";
+"setup.permission.enabled" = "Allowed";
+"setup.permission.missing" = "Not enabled";
+"setup.finish.action" = "Open app";
+"setup.back" = "Back";
+
+// Guided pairing and setup.
+"setup.install.title" = "Install the app on your child’s phone";
+"setup.install.body" = "Your child’s phone needs this same app. [Send your child the link](%@) or scan the QR code with their phone’s camera to install it.\n\nChoose “Child phone” when you first open it — we’ll connect the phones next.";
+"setup.install.qr.accessibility" = "QR code to install the app from the App Store";
+"setup.link.parent" = "Create a pairing code and enter it on your child’s phone. A confirmation will appear here once they’re connected.\n\nThen continue setup on both phones.";
+"setup.link.child" = "On the parent’s phone, create a pairing code during setup and enter it below. If setup is already finished, create a code in Settings → Connection to child.";
+"setup.link.wait" = "Waiting for the child’s phone";
+"setup.link.required" = "Connect the parent’s phone to the child’s phone first. You can do this later.";
+"setup.pin.parent" = "Set a four-digit PIN to protect access to parent settings on your child’s phone.\n\nAfter saving it, enter this PIN on your child’s phone to continue setup.";
+"setup.pin.child" = "Set a PIN on the parent’s phone, at the Parent PIN step or in Settings. A PIN can only be set from the parent’s phone.\n\nThen enter it here to choose apps and configure protection. If it hasn’t arrived yet, tap Check connection.";
+"setup.pin.verify" = "PIN received. Enter it on this phone to access parent settings.";
+"setup.apps.body" = "Choose the apps, categories or websites that limits and blocks will apply to. Other apps will remain available.\n\nChanging this selection requires the parent PIN.";
+"setup.protection.action_body" = "You can also prevent your child from deleting the app through Apple Family Sharing. This requires a child account in your family group.\n\nYou can enable protection later in Settings. The app still works without it, but your child will be able to delete it.";
+"setup.protection.later" = "Set up later";
+"setup.limit.child" = "Set a daily limit on the parent’s phone.";
+"setup.limit.initial" = "Start with 60 minutes a day. Tap Next to apply this limit, or choose a different amount.";
+"setup.check.title" = "Review your setup";
+"setup.check.parent" = "Below is the setup status on this phone. Tap an item to return to it.\n\nAlso finish setup on your child’s phone: enable permissions and choose the apps to block. Skipped steps can be completed later in Settings.";
+"setup.check.child" = "Review the current settings below. Tap an item to return to it. Removal protection is optional.\n\nYou can complete skipped steps later. Parent mode will close when you finish setup.";
+"setup.status.ready" = "Configured";
+"setup.status.pending" = "Not configured";
+"setup.refresh" = "Check connection";
+"setup.pin.enter" = "Enter PIN";
+
+// Weekly daily limits.
+"budget.weekly.mode" = "Limit mode";
+"budget.weekly.by_days" = "By weekday";
+"budget.weekly.today" = "Today: %@ · By weekday";
+"budget.weekly.update_child" = "To set different limits by weekday, update and open the app on your child’s phone with an internet connection.";
+"budget.weekly.replace.title" = "Same limit for the whole week?";
+"budget.weekly.replace.action" = "Apply to all days";
+"budget.weekly.replace.message" = "The selected time will replace the individual limits for every day of the week.";
+"budget.weekly.apply_days" = "Apply to days";
+"budget.weekly.draft_hint" = "After applying, tap Save on the daily limit screen.";
+"budget.weekly.apply" = "Apply";

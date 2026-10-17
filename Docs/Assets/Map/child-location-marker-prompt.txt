@@ -1,0 +1,12 @@
+Generated with built-in imagegen, 2026-10-16.
+Reference: ../AppStore/screenshots-features/05-location-1206x2622.png
+Original: child-location-marker-original.png
+Runtime: ParentalControl/Assets.xcassets/childLocationMarker.imageset/child-location-marker.png
+
+Use case: background-extraction / stylized-concept.
+Asset type: transparent PNG map annotation for an iOS parental-control app, NOT a screenshot.
+Input reference: the supplied App Store screenshot is STYLE REFERENCE ONLY. Recreate ONLY the small waving boy location pin visible inside its map as a standalone high-quality 3D illustrated UI asset.
+Subject: cheerful young boy with wavy brown hair, large warm brown eyes, mint-green hoodie, smiling and waving one open hand. Bust portrait, friendly premium dimensional cartoon style closely matching the reference boy. His head and waving hand emerge above a glossy bright turquoise circular pin rim. The turquoise pin tapers below the portrait to a crisp downward-pointing tip, centered horizontally.
+Composition: ONE front-facing upright marker, square 1024x1024 canvas, isolated, fills about 90% of canvas height. Entire hair, fingers, ring and pointed tip visible, no clipping. Tip centered at x=50%, y=96%. Small margins elsewhere. Recognizable at 60–80pt on a map. Clear silhouette and good contrast on dark maps.
+Background: true alpha transparency, no opaque rectangle, no checkerboard painted into image. Outside the child and pin must be fully transparent. No ground, no oval floor, no glow halo spreading around the asset, no cast shadow below tip.
+No map, phone, screenshot, roads, text, labels, badges, extra people or other objects. Keep all coloring inside the marker silhouette. Soft polished 3D highlights and subtle internal shading only.

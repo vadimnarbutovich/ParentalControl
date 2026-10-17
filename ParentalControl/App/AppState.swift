@@ -27,7 +27,7 @@ final class AppState: ObservableObject {
     @Published private(set) var isBudgetSaving = false
     @Published var budgetError: String?
     private var budgetMonitorReady = false
-    private var budgetChangeIntent: (kind: String, seconds: Int, day: String, revision: Int, id: UUID)?
+    private var budgetChangeIntent: (kind: String, seconds: Int, weekly: [Int]?, day: String, revision: Int, id: UUID)?
     @Published private(set) var todaySteps: Int = 0
     @Published private(set) var exerciseTotals: [String: Int]
     @Published private(set) var isHealthAuthorized = false
@@ -112,18 +112,20 @@ final class AppState: ObservableObject {
     @Published private(set) var parentLocationStatusMessage: String?
     /// Локально на ребёнке — статус разрешения геолокации (для онбординга/настроек).
     @Published private(set) var childLocationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published private(set) var isConfiguringChildLocationAccess = false
     /// Скрывает баннер после тапа «Разрешить» до следующего `appDidBecomeActive`.
     @Published private(set) var permissionBannerSuppressedAfterCTA = false
     /// Do not show permission reminders before the system statuses have loaded.
     @Published private(set) var permissionStatusesReady = false
     /// `true`, когда ребёнок успешно ввёл родительский PIN и сейчас доступны «скрытые» табы
-    /// `Блокировка` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
+    /// `Блокировка` / `Статистика` / `Настройки`. Сбрасывается в `false` при `appDidEnterBackground`, смене роли,
     /// разрыве пейринга и тапе по красной плашке «Выход».
     @Published private(set) var isParentModeActive = false
     /// `true`, если в Keychain есть кэшированный родительский PIN (хэш+соль). У ребёнка обновляется
     /// при каждом успешном `refreshChildParentPinIfNeeded`. У родителя — после `setParentPinFromUI`.
     /// UI ориентируется на этот флаг, чтобы знать, можно ли вообще пытаться вводить PIN.
     @Published private(set) var parentPinIsSet = false
+    @Published private(set) var isRefreshingSetup = false
     /// Конец активного lockout-таймера, если он сейчас идёт (после 5 неверных попыток PIN).
     /// `nil` — lockout не активен. UI на экране ввода показывает обратный отсчёт по этому полю.
     @Published private(set) var parentPinLockoutEnd: Date?
@@ -182,8 +184,14 @@ final class AppState: ObservableObject {
     private let focusLiveActivityService = FocusLiveActivityService()
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
-    private var statisticsCache: [String: (loadedAt: Date, report: ParentStatisticsReport)] = [:]
     private let locationService: LocationProviding
+    private var childLocationUploadTask: Task<String?, Never>?
+    private var childLocationUploadID: UUID?
+    private var locationCommandTasks: [UUID: Task<Void, Never>] = [:]
+    // A bounded cache prevents repeated delivery from restarting GPS or changing a failed ACK to success.
+    private var locationCommandResults: [(id: UUID, errorCode: String?, acknowledged: Bool)] = []
+    private var isLoadingChildLocation = false
+    private var parentLocationRevision = 0
     /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
     /// Используется обеими ролями: parent — для `setParentPinFromUI/clearParentPinFromUI`,
     /// child — для `applyParentPinFromBackend/verifyPin`. Сам PIN никогда не покидает устройства,
@@ -334,16 +342,6 @@ final class AppState: ObservableObject {
         permissionStatusesReady = true
     }
 
-    /// Parent onboarding is skipped; request only the alerts used for submitted tasks.
-    /// Automatic entry must never open Settings after a denial.
-    func requestParentNotificationsIfNeeded() async {
-        guard deviceRole == .parent else { return }
-        let status = await notificationService.currentAuthorizationStatus()
-        guard deviceRole == .parent else { return }
-        if status == .notDetermined { _ = await notificationService.requestAccess() }
-        await refreshPermissionStatuses()
-    }
-
     func requestNotificationAccessOnly() async {
         guard deviceRole != nil else { return }
         await notificationService.resolveNotificationAccess { [weak self] in
@@ -360,6 +358,35 @@ final class AppState: ObservableObject {
         syncScreenTimeEnforcement(notifyOnUnlock: false)
     }
 
+    func enableRemovalProtectionFromParentMode() async throws {
+        guard deviceRole == .child, isParentModeActive else {
+            throw RemovalProtectionError.parentRequired
+        }
+        do {
+            try await screenTimeService.enableRemovalProtection()
+            AppAnalytics.report("removal_protection_enable", parameters: ["result": "success"])
+        } catch {
+            AppAnalytics.report("removal_protection_enable", parameters: [
+                "result": "failed", "reason": RemovalProtectionError.messageKey(for: error)
+            ])
+            throw error
+        }
+        // Keep budget, pairing and selection intact; reapply existing restrictions.
+        if deviceRole == .child {
+            syncScreenTimeEnforcement(notifyOnUnlock: false)
+            blockScheduleEnforcement.refreshFromStoredSchedules()
+        }
+    }
+
+    func allowRemovalFromParentMode() async throws {
+        guard deviceRole == .child, isParentModeActive else {
+            throw RemovalProtectionError.parentRequired
+        }
+        try await screenTimeService.revokeForRemoval()
+        AppAnalytics.report("removal_protection_disable")
+        // Do not clear the family's data or silently request individual access.
+    }
+
     func refreshCameraAuthorizationFromSystem() {
         isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
     }
@@ -370,8 +397,10 @@ final class AppState: ObservableObject {
         hasCompletedOnboarding = true
         Task {
             await refreshPermissionStatuses()
-            await refreshStepsAndRewards()
-            await syncChildStatsSnapshotIfNeeded()
+            if deviceRole == .child {
+                await refreshStepsAndRewards()
+                await syncChildStatsSnapshotIfNeeded()
+            }
         }
     }
 
@@ -399,22 +428,24 @@ final class AppState: ObservableObject {
         subscriptionService?.applyParentProStatus(false)
         lastPushedParentIsPro = nil
         if role != .parent { lastNormalizedParentChildRuntime = nil }
-        if role == .parent {
-            storage.saveHasCompletedOnboarding(true)
-            hasCompletedOnboarding = true
-            seedDefaultBlockSchedulesIfNeeded()
-        } else {
-            // A former parent device has never completed child permission setup.
-            // This only runs on an explicit role change, not on ordinary launches.
-            storage.saveHasCompletedOnboarding(false)
-            hasCompletedOnboarding = false
-        }
+        // Only a deliberate role choice starts setup. Existing installations keep
+        // their completion flag and do not repeat onboarding after an update.
+        storage.saveHasCompletedOnboarding(false)
+        storage.saveDidRequestInitialPermissions(false)
+        hasCompletedOnboarding = false
+        if role == .parent { seedDefaultBlockSchedulesIfNeeded() }
         Task {
             await bootstrapRemoteIfNeeded()
         }
     }
 
     func clearPairing() {
+        childLocationUploadTask?.cancel()
+        childLocationUploadTask = nil
+        childLocationUploadID = nil
+        for task in locationCommandTasks.values { task.cancel() }
+        locationCommandTasks.removeAll()
+        locationCommandResults.removeAll()
         pendingParentManualBlock = nil
         clearLocalManualBlockIntent()
         if let family = pairingState?.familyID {
@@ -641,8 +672,16 @@ final class AppState: ObservableObject {
         _ = await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
     }
 
-    func saveParentDailyLimit(minutes: Int) async -> Bool {
-        await saveDailyBudgetChange(kind: "limit", seconds: minutes * 60)
+    func saveParentDailyLimit(minutes: Int, weeklyMinutes: [Int]? = nil) async -> Bool {
+        guard (0...1440).contains(minutes), weeklyMinutes.map({
+            $0.count == 7 && $0.allSatisfy { (0...1440).contains($0) }
+        }) ?? true else { return false }
+        if weeklyMinutes != nil, parentBudgetStatus?.weeklyChildReady != true {
+            budgetError = L10n.tr("budget.weekly.update_child")
+            return false
+        }
+        return await saveDailyBudgetChange(kind: "limit", seconds: minutes * 60,
+                                          weekly: weeklyMinutes?.map { $0 * 60 })
     }
 
     private func parentBudgetCacheKey(_ family: UUID) -> String {
@@ -658,7 +697,8 @@ final class AppState: ObservableObject {
               cached.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
         // Never present yesterday's cached usage as today's live balance.
         parentBudgetStatus = DailyBudgetStatus(policy: cached.policy, childReady: cached.childReady,
-            appliedRevision: cached.appliedRevision, state: nil)
+            appliedRevision: cached.appliedRevision, state: nil,
+            weeklyChildReady: cached.weeklyChildReady, childTimeZone: cached.childTimeZone)
     }
 
     private func receiveParentBudget(_ status: DailyBudgetStatus) {
@@ -666,14 +706,10 @@ final class AppState: ObservableObject {
               status.policy == nil || status.policy?.familyID.lowercased() == family.uuidString.lowercased() else { return }
         guard (status.policy?.revision ?? 0) >= (parentBudgetStatus?.policy?.revision ?? 0) else { return }
         parentBudgetStatus = status
-        for key in Array(statisticsCache.keys) where key.hasPrefix(family.uuidString + ":") {
-            if let cached = statisticsCache[key] {
-                statisticsCache[key] = (cached.loadedAt, cached.report.merging(status))
-            }
-        }
         hasLoadedParentBudget = true
         let cached = DailyBudgetStatus(policy: status.policy, childReady: status.childReady,
-            appliedRevision: status.appliedRevision, state: nil)
+            appliedRevision: status.appliedRevision, state: nil,
+            weeklyChildReady: status.weeklyChildReady, childTimeZone: status.childTimeZone)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         if let data = try? encoder.encode(cached) {
@@ -684,28 +720,54 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func saveDailyBudgetChange(kind: String, seconds: Int) async -> Bool {
+    /// Confirm the first-setup draft with Next, using the same delivery path as an edited limit.
+    func applyInitialParentDailyLimit() async -> Bool {
+        await saveDailyBudgetChange(kind: "limit", seconds: DailyBudgetPolicy.initialLimitSeconds,
+                                    onlyIfUnset: true)
+    }
+
+    private func saveDailyBudgetChange(kind: String, seconds: Int, weekly: [Int]? = nil,
+                                      onlyIfUnset: Bool = false) async -> Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true, !isBudgetSaving else { return false }
+        if onlyIfUnset {
+            // A poll may have delivered the parent's edited policy since the button was tapped.
+            if parentBudgetStatus?.policy != nil { return true }
+            guard hasLoadedParentBudget else {
+                budgetError = L10n.tr("budget.save_error")
+                return false
+            }
+            guard parentBudgetStatus?.childReady == true else {
+                budgetError = L10n.tr("budget.child_update")
+                return false
+            }
+        }
         let requestedFamily = pairingState?.familyID
         isBudgetSaving = true
         budgetError = nil
         defer { isBudgetSaving = false }
-        let day = parentBudgetStatus?.policy?.extraDay ?? DailyBudgetState.dayKey()
-        if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds || budgetChangeIntent?.day != day {
-            budgetChangeIntent = (kind, seconds, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
+        let day = parentBudgetStatus?.currentDay ?? DailyBudgetState.dayKey()
+        if budgetChangeIntent?.kind != kind || budgetChangeIntent?.seconds != seconds
+            || budgetChangeIntent?.weekly != weekly || budgetChangeIntent?.day != day
+            || (onlyIfUnset && budgetChangeIntent?.revision != 0) {
+            budgetChangeIntent = (kind, seconds, weekly, day, parentBudgetStatus?.policy?.revision ?? 0, UUID())
         }
+        // First setup always sends revision zero. The existing server-side compare-and-swap
+        // rejects this write if another device has already created any policy, including zero.
         guard let intent = budgetChangeIntent else { return false }
         do {
             let saved = try await remoteSyncService.changeDailyBudget(
-                kind: kind, seconds: seconds, expectedRevision: intent.revision, intentID: intent.id)
+                kind: kind, seconds: seconds, expectedRevision: intent.revision, intentID: intent.id,
+                weeklyLimitsSeconds: weekly)
             guard pairingState?.familyID == requestedFamily else { return false }
             receiveParentBudget(saved)
             budgetChangeIntent = nil
-            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds])
+            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds,
+                "limit_mode": saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"])
             return true
         } catch {
             if error.localizedDescription.contains("budget_changed_refresh") { budgetChangeIntent = nil }
-            budgetError = L10n.tr("budget.save_error")
+            budgetError = L10n.tr(error.localizedDescription.contains("weekly_child_update_required")
+                                 ? "budget.weekly.update_child" : "budget.save_error")
             await refreshParentChildState()
             return false
         }
@@ -765,24 +827,26 @@ final class AppState: ObservableObject {
     /// Родитель задаёт/меняет PIN из своих настроек. Локально считается хэш с новой солью,
     /// сохраняется в Keychain, и `set_parent_pin` отправляется на backend (edge function v22+).
     /// При успехе backend разошлёт child'у silent push для синка кэша.
-    /// Возвращает `true` при успешной отправке на backend, `false` при сетевой ошибке
-    /// (локальный кэш всё равно обновляется — родитель сможет проверить PIN на child вручную позже).
+    /// Publish/cache only after the server accepts the PIN, so failed setup is never shown as complete.
     @discardableResult
     func setParentPinFromUI(_ pin: String) async -> Bool {
-        guard deviceRole == .parent else { return false }
+        guard deviceRole == .parent, pairingState?.isLinked == true,
+              let familyID = pairingState?.familyID else { return false }
         guard pin.count == 4, pin.allSatisfy({ $0.isNumber }) else { return false }
         let salt = parentPinService.generateSalt()
         let hash = parentPinService.hashPin(pin, salt: salt)
         let updatedAt = Date()
         let metadata = ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)
-        parentPinService.saveMetadata(metadata)
-        parentPinIsSet = true
         do {
             try await remoteSyncService.setParentPin(
                 hashBase64: metadata.hashBase64,
                 saltBase64: metadata.saltBase64,
                 updatedAt: updatedAt
             )
+            guard deviceRole == .parent, pairingState?.familyID == familyID else { return false }
+            parentPinService.saveMetadata(metadata)
+            parentPinIsSet = true
+            remoteStatusMessage = nil
             return true
         } catch {
             remoteStatusMessage = error.localizedDescription
@@ -864,6 +928,18 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - Pro subscription (привязка к устройству родителя)
+
+    /// Explicit setup refresh, not another polling loop. Normal push/polling remains the source of updates.
+    func refreshSetupStatus() async {
+        guard pairingState?.isLinked == true, !isRefreshingSetup else { return }
+        isRefreshingSetup = true
+        defer { isRefreshingSetup = false }
+        if deviceRole == .child {
+            await pollChildAndApply(includeParentSettings: true)
+        } else if deviceRole == .parent {
+            await refreshParentChildState()
+        }
+    }
 
     /// Связывает `AppState` с `SubscriptionService` (вызывается один раз при старте приложения).
     /// Подписывается на изменение entitlement родителя (→ отправка на backend) и инициализирует
@@ -1476,10 +1552,15 @@ final class AppState: ObservableObject {
         }
         // Only the backend supersedes focus commands. Location/budget work must
         // not disappear just because a manual block arrived in the same poll.
-        for command in nonSchedule {
+        // GPS can take seconds. Apply control commands before waiting for location.
+        for command in nonSchedule where command.commandType != .requestLocation {
             await applyRemoteCommandIfNeeded(id: command.id, type: command.commandType,
                 durationSeconds: command.durationSeconds)
         }
+        let locationTasks = nonSchedule.filter { $0.commandType == .requestLocation }.map { command in
+            Task { await self.applyRemoteCommandIfNeeded(id: command.id, type: .requestLocation, durationSeconds: nil) }
+        }
+        for task in locationTasks { await task.value }
     }
 
     private func syncChildWithDesiredStateIfNeeded() async {
@@ -1643,6 +1724,32 @@ final class AppState: ObservableObject {
 
     // MARK: - Child location
 
+    /// Shared entry point for the post-PIN reminder and the child's Settings screen.
+    /// An app-specific Location row may not exist in Settings before the first request.
+    func configureChildLocationAccessFromParentMode() async {
+        guard deviceRole == .child, isParentModeActive,
+              !isConfiguringChildLocationAccess else { return }
+        isConfiguringChildLocationAccess = true
+        defer { isConfiguringChildLocationAccess = false }
+
+        refreshChildLocationAuthorizationStatus()
+        guard childLocationAuthorizationStatus == .notDetermined else {
+            // A choice already exists: Settings is the reliable way to change it,
+            // including an Always upgrade that iOS has previously suppressed.
+            openAppSettingsURL()
+            return
+        }
+
+        let status = await requestChildLocationPermissionIfNeeded()
+        guard !Task.isCancelled, deviceRole == .child, isParentModeActive else { return }
+        if status == .authorizedWhenInUse {
+            _ = await requestChildLocationAlwaysAuthorizationIfNeeded()
+        }
+        // Do not immediately open Settings: iOS may still be presenting the upgrade
+        // prompt. A subsequent explicit tap can open Settings if Always is missing.
+        refreshChildLocationAuthorizationStatus()
+    }
+
     /// Запросить у пользователя‑ребёнка разрешение When-in-Use. Вызывается из онбординга.
     /// Возвращает финальный статус. UI на онбординге может на его основе решать показывать ли алерт.
     @discardableResult
@@ -1669,108 +1776,178 @@ final class AppState: ObservableObject {
         childLocationAuthorizationStatus = locationService.authorizationStatus
     }
 
-    /// Пользователь‑родитель нажал «Обновить местоположение» на вкладке Карта.
-    /// Шлёт ребёнку команду `request_location` (alert push) и пуллит свежую координату из БД.
+    /// One command per refresh; poll its outcome rather than repeatedly fetching an old location.
     func refreshChildLocationFromParent() async {
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        guard !Task.isCancelled, !isParentRefreshingChildLocation,
+              deviceRole == .parent, let familyID = pairingState?.familyID,
+              pairingState?.isLinked == true else { return }
         isParentRefreshingChildLocation = true
+        parentLocationRevision += 1
         parentLocationStatusMessage = nil
         defer { isParentRefreshingChildLocation = false }
 
-        // Запоминаем «базовый» момент — фиксацию ДО отправки команды считаем устаревшей даже
-        // если её timestamp совпадает с уже сохранённым (на случай повторного нажатия в ту же секунду).
-        let requestSentAt = Date()
-        let baselineCapturedAt = childLocationSnapshot?.capturedAt
-
         do {
-            try await remoteSyncService.requestChildLocation()
-        } catch {
-            parentLocationStatusMessage = error.localizedDescription
-            return
-        }
-
-        // Пуллим до 30 секунд — за это время push должен дойти (alert priority=10),
-        // ребёнок при When-in-Use получит до ~30с фонового времени, снимет первый GPS fix и зальёт его.
-        let pollInterval: UInt64 = 1_500_000_000
-        let deadline = Date().addingTimeInterval(30)
-        while Date() < deadline {
-            try? await Task.sleep(nanoseconds: pollInterval)
-            if Task.isCancelled { return }
-            do {
-                if let snapshot = try await remoteSyncService.fetchChildLocation() {
-                    let isNewer = snapshot.capturedAt > (baselineCapturedAt ?? .distantPast)
-                    let isFreshAfterRequest = snapshot.updatedAt >= requestSentAt
-                    if isNewer || isFreshAfterRequest {
-                        childLocationSnapshot = snapshot
-                        storage.saveChildLocationSnapshot(snapshot)
+            let command = try await remoteSyncService.requestChildLocation()
+            let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+            while ContinuousClock.now < deadline {
+                try await Task.sleep(nanoseconds: 2_000_000_000)
+                guard deviceRole == .parent, pairingState?.familyID == familyID else { return }
+                guard let result = try await remoteSyncService.fetchCommandStatus(commandID: command.id, timeout: 8) else { continue }
+                try Task.checkCancellation()
+                guard pairingState?.familyID == familyID else { return }
+                if result.status == .failed {
+                    parentLocationStatusMessage = locationFailureMessage(code: result.errorMessage)
+                    return
+                }
+                if result.status == .applied {
+                    // The child now acknowledges only after upload. Older builds may falsely ACK:
+                    // read once, but never present their previous point as a successful refresh.
+                    let snapshot = try await remoteSyncService.fetchChildLocation()
+                    try Task.checkCancellation()
+                    guard pairingState?.familyID == familyID else { return }
+                    guard let snapshot, snapshot.updatedAt >= command.createdAt,
+                          snapshot.capturedAt >= command.createdAt.addingTimeInterval(-30) else {
+                        parentLocationStatusMessage = L10n.tr("map.refresh.unavailable")
                         return
                     }
+                    childLocationSnapshot = snapshot
+                    storage.saveChildLocationSnapshot(snapshot)
+                    return
                 }
-            } catch {
-                parentLocationStatusMessage = error.localizedDescription
             }
+            parentLocationStatusMessage = L10n.tr("map.refresh.timeout")
+        } catch {
+            guard !Task.isCancelled, pairingState?.familyID == familyID else { return }
+            parentLocationStatusMessage = L10n.tr("map.refresh.connection_error")
         }
-        parentLocationStatusMessage = L10n.tr("map.refresh.timeout")
     }
 
-    /// Подгрузить кэш и при возможности свежую точку с бэкенда.
-    /// Вызывается при открытии вкладки и при `appDidBecomeActive` для роли parent.
+    private func locationFailureMessage(code: String?) -> String {
+        switch code {
+        case "location_always_required":
+            return L10n.tr("map.refresh.always_required")
+        case "location_services_disabled":
+            return L10n.tr("map.refresh.services_disabled")
+        case "location_timeout", "max_retry_exceeded", "expired_ttl":
+            return L10n.tr("map.refresh.timeout")
+        case "location_upload_failed":
+            return L10n.tr("map.refresh.connection_error")
+        default:
+            return L10n.tr("map.refresh.unavailable")
+        }
+    }
+
     func loadChildLocationIfNeeded() async {
+        guard !Task.isCancelled, deviceRole == .parent, pairingState?.isLinked == true,
+              !isLoadingChildLocation, !isParentRefreshingChildLocation else { return }
         if childLocationSnapshot == nil, let cached = storage.loadChildLocationSnapshot() {
             childLocationSnapshot = cached
         }
-        guard deviceRole == .parent, pairingState?.isLinked == true else { return }
+        let familyID = pairingState?.familyID
+        let revision = parentLocationRevision
+        isLoadingChildLocation = true
+        defer { isLoadingChildLocation = false }
         do {
-            if let snapshot = try await remoteSyncService.fetchChildLocation() {
+            let snapshot = try await remoteSyncService.fetchChildLocation()
+            try Task.checkCancellation()
+            guard pairingState?.familyID == familyID, revision == parentLocationRevision,
+                  !isParentRefreshingChildLocation else { return }
+            if let snapshot, snapshot.updatedAt >= (childLocationSnapshot?.updatedAt ?? .distantPast) {
                 childLocationSnapshot = snapshot
                 storage.saveChildLocationSnapshot(snapshot)
             }
         } catch {
-            parentLocationStatusMessage = error.localizedDescription
+            guard !Task.isCancelled, pairingState?.familyID == familyID, revision == parentLocationRevision,
+                  !isParentRefreshingChildLocation else { return }
+            parentLocationStatusMessage = L10n.tr("map.refresh.connection_error")
         }
     }
 
-    /// Снять одну координату на ребёнке и отправить на бэкенд.
-    /// Вызывается из `applyRemoteCommandIfNeeded` после получения push'а `request_location`.
-    private func captureAndUploadChildLocationIfNeeded() async {
-        // Намеренно НЕ требуем pairingState?.isLinked == true: при холодном пуске из push'а
-        // pairingState может быть ещё не подгружен из бэкенда, но device_secret и family-binding
-        // уже есть в storage — remoteSyncService.updateChildLocation отработает корректно.
-        guard deviceRole == .child else {
-            os_log("captureAndUpload: skipped (role != child)", log: appStateLog, type: .info)
+    /// Duplicate push/foreground-poll handlers await the same operation, including its ACK.
+    /// A failed ACK is retried on redelivery, without performing another capture/upload.
+    private func applyLocationCommand(id: UUID) async {
+        if let task = locationCommandTasks[id] {
+            await task.value
             return
         }
-        let status = locationService.authorizationStatus
-        guard status == .authorizedWhenInUse || status == .authorizedAlways else {
-            os_log("captureAndUpload: skipped (auth status=%{public}d)",
-                   log: appStateLog, type: .error, status.rawValue)
-            return
+        guard let familyID = pairingState?.familyID else { return }
+        let task = Task { @MainActor in
+            let errorCode: String?
+            if let previous = self.locationCommandResults.first(where: { $0.id == id }) {
+                if previous.acknowledged { return }
+                errorCode = previous.errorCode
+            } else {
+                errorCode = await self.captureAndUploadChildLocation()
+                guard self.pairingState?.familyID == familyID, self.deviceRole == .child else { return }
+                self.locationCommandResults.append((id, errorCode, false))
+                if self.locationCommandResults.count > 20 { self.locationCommandResults.removeFirst() }
+            }
+            guard !Task.isCancelled, self.pairingState?.familyID == familyID, self.deviceRole == .child else { return }
+            do {
+                try await self.remoteSyncService.ackCommand(
+                    id: id, status: errorCode == nil ? .applied : .failed, errorMessage: errorCode, timeout: 5)
+                if let index = self.locationCommandResults.firstIndex(where: { $0.id == id }) {
+                    self.locationCommandResults[index].acknowledged = true
+                }
+            } catch {
+                os_log("Location command acknowledgement failed", log: appStateLog, type: .error)
+            }
         }
-        os_log("captureAndUpload: starting capture (auth=%{public}d)",
-               log: appStateLog, type: .info, status.rawValue)
-        do {
-            let location = try await locationService.captureCurrentLocation(timeout: 25)
-            let snapshot = ChildLocationSnapshot(
-                latitude: location.coordinate.latitude,
-                longitude: location.coordinate.longitude,
-                horizontalAccuracy: location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil,
-                capturedAt: location.timestamp,
-                updatedAt: Date()
-            )
-            try await remoteSyncService.updateChildLocation(snapshot)
-            storage.saveChildLocationSnapshot(snapshot)
-            os_log("captureAndUpload: success (lat=%.5f lon=%.5f acc=%.1f)",
-                   log: appStateLog, type: .info,
-                   snapshot.latitude, snapshot.longitude, snapshot.horizontalAccuracy ?? -1)
-        } catch {
-            os_log("captureAndUpload: FAILED — %{public}@",
-                   log: appStateLog, type: .error, error.localizedDescription)
-            remoteStatusMessage = error.localizedDescription
+        locationCommandTasks[id] = task
+        await task.value
+        locationCommandTasks[id] = nil
+    }
+
+    /// Concurrent distinct location commands share one GPS capture and one upload.
+    /// Errors are returned as stable codes, not swallowed and acknowledged as success.
+    private func captureAndUploadChildLocation() async -> String? {
+        if let task = childLocationUploadTask { return await task.value }
+        let familyID = pairingState?.familyID
+        let uploadID = UUID()
+        let task = Task<String?, Never> { @MainActor in
+            do {
+                let location = try await self.locationService.captureCurrentLocation(timeout: 18)
+                try Task.checkCancellation()
+                guard self.deviceRole == .child, self.pairingState?.familyID == familyID else {
+                    return "location_cancelled"
+                }
+                let snapshot = ChildLocationSnapshot(
+                    latitude: location.coordinate.latitude,
+                    longitude: location.coordinate.longitude,
+                    horizontalAccuracy: location.horizontalAccuracy,
+                    capturedAt: location.timestamp,
+                    updatedAt: Date())
+                do {
+                    try await self.remoteSyncService.updateChildLocation(snapshot)
+                    try Task.checkCancellation()
+                } catch {
+                    return "location_upload_failed"
+                }
+                guard self.pairingState?.familyID == familyID else { return "location_cancelled" }
+                self.storage.saveChildLocationSnapshot(snapshot)
+                return nil
+            } catch let error as LocationServiceError {
+                return error.commandErrorCode
+            } catch {
+                return "location_unavailable"
+            }
         }
+        childLocationUploadTask = task
+        childLocationUploadID = uploadID
+        let result = await task.value
+        if childLocationUploadID == uploadID {
+            childLocationUploadTask = nil
+            childLocationUploadID = nil
+        }
+        return result
     }
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        if type == .requestLocation {
+            await applyLocationCommand(id: id)
+            return
+        }
         if type == .startFocus || type == .endFocus {
             guard await flushLocalManualBlockIntent() else { return }
             let requestedFamily = pairingState?.familyID
@@ -1829,12 +2006,7 @@ final class AppState: ObservableObject {
                 applyParentSubtractEarnedSeconds(secondsToSubtract)
             }
         case .requestLocation:
-            // Parent asked for a fresh GPS fix. Capture once via LocationService and
-            // push the snapshot back to the backend. We ack the command as `applied`
-            // even before the upload completes — backend will treat next location row
-            // as the actual delivery confirmation. This avoids blocking the alert push
-            // background time budget if the GPS fix is slow.
-            await captureAndUploadChildLocationIfNeeded()
+            return // Handled separately, including failed capture/upload and duplicate delivery.
         case .schedulesUpdated:
             await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
         case .scheduleStarted, .scheduleEnded:
@@ -2284,33 +2456,6 @@ final class AppState: ObservableObject {
 
     func dailyStats() -> DailyStats {
         dailyStats(for: Date(), steps: todaySteps)
-    }
-
-    /// One bounded range request, only when the statistics screen is visible.
-    /// Never replace missing remote observations with this device's local counters.
-    func cachedParentStatistics(days: Int, endDay: String?) -> ParentStatisticsReport? {
-        guard deviceRole == .parent, pairingState?.isLinked == true,
-              let family = pairingState?.familyID else { return nil }
-        let key = family.uuidString + ":" + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
-        return statisticsCache[key]?.report
-    }
-
-    func parentStatistics(days: Int, endDay: String?, force: Bool = false) async throws -> ParentStatisticsReport {
-        guard deviceRole == .parent, pairingState?.isLinked == true,
-              let family = pairingState?.familyID else { throw CancellationError() }
-        let prefix = family.uuidString + ":"
-        statisticsCache = statisticsCache.filter { $0.key.hasPrefix(prefix) }
-        let key = prefix + String(days) + ":" + (endDay ?? parentBudgetStatus?.policy?.extraDay ?? "current")
-        if !force, let cached = statisticsCache[key], Date().timeIntervalSince(cached.loadedAt) < 60 {
-            return cached.report
-        }
-        let remote = try await remoteSyncService.fetchParentStatistics(days: days, endDay: endDay)
-        try Task.checkCancellation()
-        guard deviceRole == .parent, pairingState?.familyID == family else { throw CancellationError() }
-        let report = remote.merging(parentBudgetStatus)
-        if statisticsCache.count >= 6 { statisticsCache.removeAll() }
-        statisticsCache[key] = (Date(), report)
-        return report
     }
 
     func dailyStats(for date: Date, steps: Int) -> DailyStats {
@@ -3408,14 +3553,15 @@ private final class ParentalRemoteSyncService {
         }
     }
 
-    func fetchCommandStatus(commandID: UUID) async throws -> CommandStatusDTO? {
+    func fetchCommandStatus(commandID: UUID, timeout: TimeInterval? = nil) async throws -> CommandStatusDTO? {
         struct Payload: Encodable {
             let installID: String
             let commandID: String
         }
         return try await call(
             action: "fetch_command_status",
-            payload: Payload(installID: installID, commandID: commandID.uuidString)
+            payload: Payload(installID: installID, commandID: commandID.uuidString),
+            timeout: timeout
         )
     }
 
@@ -3431,7 +3577,7 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func ackCommand(id: UUID, status: RemoteFocusCommandStatus, errorMessage: String?) async throws {
+    func ackCommand(id: UUID, status: RemoteFocusCommandStatus, errorMessage: String?, timeout: TimeInterval? = nil) async throws {
         struct Payload: Encodable {
             let installID: String
             let commandID: String
@@ -3445,7 +3591,8 @@ private final class ParentalRemoteSyncService {
                 commandID: id.uuidString,
                 status: status.rawValue,
                 errorMessage: errorMessage
-            )
+            ),
+            timeout: timeout
         )
     }
 
@@ -3503,15 +3650,19 @@ private final class ParentalRemoteSyncService {
 
     /// Child → backend: один вызов вместо `fetch_desired_focus_state` + `fetch_pending_commands`
     /// (+ `fetch_parent_pin` + `fetch_parent_pro`, если `includeParentSettings == true`).
-    func changeDailyBudget(kind: String, seconds: Int, expectedRevision: Int, intentID: UUID) async throws -> DailyBudgetStatus {
+    func changeDailyBudget(kind: String, seconds: Int, expectedRevision: Int, intentID: UUID,
+                           weeklyLimitsSeconds: [Int]? = nil) async throws -> DailyBudgetStatus {
         struct Payload: Encodable {
             let kind: String
             let seconds: Int
             let expectedRevision: Int
             let intentID: UUID
+            let weeklyLimitsSeconds: [Int]?
+            let weeklyBudgetProtocol = 1
         }
         return try await call(action: "change_daily_budget", payload: Payload(
-            kind: kind, seconds: seconds, expectedRevision: expectedRevision, intentID: intentID))
+            kind: kind, seconds: seconds, expectedRevision: expectedRevision, intentID: intentID,
+            weeklyLimitsSeconds: weeklyLimitsSeconds))
     }
 
     func childPoll(includeParentSettings: Bool) async throws -> ChildPollDTO {
@@ -3530,16 +3681,6 @@ private final class ParentalRemoteSyncService {
     func parentPoll() async throws -> ParentPollDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "parent_poll", payload: Payload(installID: installID))
-    }
-
-    func fetchParentStatistics(days: Int, endDay: String?) async throws -> ParentStatisticsReport {
-        struct Payload: Encodable {
-            let installID: String
-            let days: Int
-            let endDay: String?
-        }
-        return try await call(action: "fetch_parent_statistics",
-                              payload: Payload(installID: installID, days: days, endDay: endDay))
     }
 
     /// Child → backend: один вызов вместо `upsert_child_day_stats` + `update_child_runtime`
@@ -3565,6 +3706,7 @@ private final class ParentalRemoteSyncService {
             let budgetState: DailyBudgetState?
             let budgetHistory: [DailyBudgetState]
             let budgetProtocol = 1
+            let weeklyBudgetProtocol = 1
             let budgetTimezone = TimeZone.current.identifier
         }
         let dayStart = Calendar.current.startOfDay(for: stats.date)
@@ -3589,11 +3731,12 @@ private final class ParentalRemoteSyncService {
 
     /// Parent → backend: попросить ребёнка прислать свежую координату.
     /// Сервер ставит focus_command типа request_location и шлёт alert push на ребёнка.
-    func requestChildLocation() async throws {
+    func requestChildLocation() async throws -> PendingCommandDTO {
         struct Payload: Encodable { let installID: String }
-        let _: EmptyResponse = try await call(
+        return try await call(
             action: "request_child_location",
-            payload: Payload(installID: installID)
+            payload: Payload(installID: installID),
+            timeout: 10
         )
     }
 
@@ -3614,7 +3757,8 @@ private final class ParentalRemoteSyncService {
                 longitude: snapshot.longitude,
                 horizontalAccuracy: snapshot.horizontalAccuracy,
                 capturedAtISO: ISO8601DateFormatter().string(from: snapshot.capturedAt)
-            )
+            ),
+            timeout: 5
         )
     }
 
@@ -3623,12 +3767,16 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable { let installID: String }
         let dto: ChildLocationDTO? = try await call(
             action: "fetch_child_location",
-            payload: Payload(installID: installID)
+            payload: Payload(installID: installID),
+            timeout: 8
         )
         guard let dto else { return nil }
-        let formatter = ISO8601DateFormatter()
-        let captured = formatter.date(from: dto.capturedAtISO) ?? Date()
-        let updated = formatter.date(from: dto.updatedAtISO) ?? captured
+        guard let captured = decodeISO8601Fractional.date(from: dto.capturedAtISO)
+                ?? decodeISO8601.date(from: dto.capturedAtISO),
+              let updated = decodeISO8601Fractional.date(from: dto.updatedAtISO)
+                ?? decodeISO8601.date(from: dto.updatedAtISO) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid location timestamp"))
+        }
         return ChildLocationSnapshot(
             latitude: dto.latitude,
             longitude: dto.longitude,
@@ -3770,10 +3918,12 @@ private final class ParentalRemoteSyncService {
         action: String,
         payload: P,
         includeSecret: Bool = true,
-        endpoint: URL? = nil
+        endpoint: URL? = nil,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
         let endpointURL = endpoint ?? Endpoint.focusBaseURL
         var request = URLRequest(url: endpointURL)
+        if let timeout { request.timeoutInterval = timeout }
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(Endpoint.anonKey, forHTTPHeaderField: "apikey")

@@ -5,13 +5,14 @@ struct GlassCardModifier: ViewModifier {
     var glowColor: Color? = nil
     var borderOpacity: Double = 0.30
     var drawsOuterShadows: Bool = true
+    var backgroundColor: Color? = nil
 
     func body(content: Content) -> some View {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(
-                        LinearGradient(
+                        backgroundColor.map { AnyShapeStyle($0) } ?? AnyShapeStyle(LinearGradient(
                             colors: [
                                 Color(red: 0.09, green: 0.13, blue: 0.24).opacity(0.98),
                                 Color(red: 0.05, green: 0.08, blue: 0.17).opacity(0.97),
@@ -19,22 +20,26 @@ struct GlassCardModifier: ViewModifier {
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
-                        )
+                        ))
                     )
                     .shadow(color: drawsOuterShadows ? .black.opacity(0.30) : .clear, radius: 12, x: 0, y: 7)
                     .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.11),
-                                        Color.white.opacity(0.04),
-                                        .clear
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                        Group {
+                            if backgroundColor == nil {
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.11),
+                                                Color.white.opacity(0.04),
+                                                .clear
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                        }
                     )
                     .overlay(cardLightAccents(cornerRadius: cornerRadius, glowColor: glowColor))
                     .overlay(
@@ -172,8 +177,8 @@ private struct ChipHorizontalSizing: ViewModifier {
 }
 
 extension View {
-    func glassCard(cornerRadius: CGFloat = 24, glowColor: Color? = nil, drawsOuterShadows: Bool = true) -> some View {
-        modifier(GlassCardModifier(cornerRadius: cornerRadius, glowColor: glowColor, drawsOuterShadows: drawsOuterShadows))
+    func glassCard(cornerRadius: CGFloat = 24, glowColor: Color? = nil, drawsOuterShadows: Bool = true, backgroundColor: Color? = nil) -> some View {
+        modifier(GlassCardModifier(cornerRadius: cornerRadius, glowColor: glowColor, drawsOuterShadows: drawsOuterShadows, backgroundColor: backgroundColor))
     }
 }
 
