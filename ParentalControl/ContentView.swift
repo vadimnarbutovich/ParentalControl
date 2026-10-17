@@ -58,10 +58,10 @@ private struct RoleSelectionView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     VStack(spacing: 14) {
-                        roleCard("role.select.parent", symbol: "person.crop.circle", tint: AppTheme.neonBlue) {
+                        roleCard("role.select.parent", image: "onboardingParents", tint: AppTheme.neonBlue) {
                             appState.chooseDeviceRole(.parent)
                         }
-                        roleCard("role.select.child", symbol: "iphone", tint: AppTheme.neonGreen) {
+                        roleCard("role.select.child", image: "onboardingChildren", tint: AppTheme.neonGreen) {
                             appState.chooseDeviceRole(.child)
                         }
                     }
@@ -77,14 +77,13 @@ private struct RoleSelectionView: View {
         .preferredColorScheme(.dark)
     }
 
-    private func roleCard(_ title: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func roleCard(_ title: String, image: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                Image(systemName: symbol)
-                    .font(.system(size: 26, weight: .medium))
-                    .foregroundStyle(tint)
-                    .frame(width: 52, height: 52)
-                    .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+                Image(image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
                     .accessibilityHidden(true)
                 Text(L10n.tr(title))
                     .font(.system(.title3, design: .rounded, weight: .semibold))
