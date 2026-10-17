@@ -561,7 +561,7 @@
 "setup.install.title" = "在孩子的手机上安装";
 "setup.install.body" = "孩子的手机也需要安装同一个 App。[把链接发送给孩子](%@)，或用孩子手机的相机扫描二维码，安装这个 App。\n\n首次打开时选择“孩子的手机”，接下来我们会将两部手机配对。";
 "setup.install.qr.accessibility" = "用于从 App Store 安装此 App 的二维码";
-"setup.link.parent" = "创建配对码，然后在孩子手机上的这个 App 中输入。连接成功后，这里会显示确认信息。\n\n接着在两部手机上继续设置。";
+"setup.link.parent" = "创建配对码，然后在孩子手机上输入。连接成功后，这里会显示确认信息。\n\n接着在两部手机上继续设置。";
 "setup.link.child" = "在家长手机的初始设置中创建配对码，然后在下方输入。如果已经完成初始设置，可以前往“设置”→“连接孩子的手机”创建。";
 "setup.link.wait" = "等待孩子的手机连接";
 "setup.link.required" = "请先将家长的手机与孩子的手机配对。也可以稍后再设置。";
@@ -569,7 +569,8 @@
 "setup.pin.child" = "请在家长手机的 PIN 设置步骤或“设置”中设置 PIN。只能从家长的手机设置。\n\n然后在这里输入，选择应用并设置保护功能。如果尚未收到，请点击“检查连接”。";
 "setup.pin.verify" = "已收到 PIN。请在这部手机上输入，以打开家长设置。";
 "setup.apps.body" = "选择要应用时间限制和屏蔽的应用、类别或网站。其他应用仍可使用。\n\n更改选择需要输入家长 PIN。";
-"setup.protection.action_body" = "还可以通过 Apple“家人共享”防止孩子删除 App。这需要孩子的儿童账户已加入家庭群组。\n\n下方按钮可打开保护设置和操作说明。不启用此保护也能使用 App，但孩子可以删除它。";
+"setup.protection.action_body" = "还可以通过 Apple“家人共享”防止孩子删除 App。这需要孩子的儿童账户已加入家庭群组。\n\n你可以稍后在设置中开启保护。不启用此保护也能使用 App，但孩子可以删除它。";
+"setup.protection.later" = "稍后设置";
 "setup.limit.child" = "请在家长的手机上设置每日限额。";
 "setup.limit.initial" = "初始限额为每天60分钟。轻点“下一步”即可应用，也可以调整时长。";
 "setup.check.title" = "检查设置";

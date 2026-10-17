@@ -625,7 +625,7 @@
 "setup.install.title" = "Install the app on your child’s phone";
 "setup.install.body" = "Your child’s phone needs this same app. [Send your child the link](%@) or scan the QR code with their phone’s camera to install it.\n\nChoose “Child phone” when you first open it — we’ll connect the phones next.";
 "setup.install.qr.accessibility" = "QR code to install the app from the App Store";
-"setup.link.parent" = "Create a pairing code and enter it in this app on your child’s phone. A confirmation will appear here once they’re connected.\n\nThen continue setup on both phones.";
+"setup.link.parent" = "Create a pairing code and enter it on your child’s phone. A confirmation will appear here once they’re connected.\n\nThen continue setup on both phones.";
 "setup.link.child" = "On the parent’s phone, create a pairing code during setup and enter it below. If setup is already finished, create a code in Settings → Connection to child.";
 "setup.link.wait" = "Waiting for the child’s phone";
 "setup.link.required" = "Connect the parent’s phone to the child’s phone first. You can do this later.";
@@ -633,7 +633,8 @@
 "setup.pin.child" = "Set a PIN on the parent’s phone, at the Parent PIN step or in Settings. A PIN can only be set from the parent’s phone.\n\nThen enter it here to choose apps and configure protection. If it hasn’t arrived yet, tap Check connection.";
 "setup.pin.verify" = "PIN received. Enter it on this phone to access parent settings.";
 "setup.apps.body" = "Choose the apps, categories or websites that limits and blocks will apply to. Other apps will remain available.\n\nChanging this selection requires the parent PIN.";
-"setup.protection.action_body" = "You can also prevent your child from deleting the app through Apple Family Sharing. This requires a child account in your family group.\n\nThe button below opens protection settings and instructions. The app works without this protection, but your child will be able to delete it.";
+"setup.protection.action_body" = "You can also prevent your child from deleting the app through Apple Family Sharing. This requires a child account in your family group.\n\nYou can enable protection later in Settings. The app still works without it, but your child will be able to delete it.";
+"setup.protection.later" = "Set up later";
 "setup.limit.child" = "Set a daily limit on the parent’s phone.";
 "setup.limit.initial" = "Start with 60 minutes a day. Tap Next to apply this limit, or choose a different amount.";
 "setup.check.title" = "Review your setup";

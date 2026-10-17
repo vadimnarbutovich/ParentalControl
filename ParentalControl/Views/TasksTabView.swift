@@ -406,10 +406,10 @@ struct TaskEditorView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if isSaving {
-                        ProgressView().tint(AppTheme.neonBlue)
+                        ProgressView().tint(.white)
                     } else {
                         Button("tasks.editor.save") { saveAndDismiss() }
-                            .tint(AppTheme.neonBlue)
+                            .tint(.white)
                             .opacity(isFormValid ? 1 : 0.5)
                     }
                 }

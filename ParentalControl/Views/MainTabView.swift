@@ -710,10 +710,6 @@ private struct ParentDashboardView: View {
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
                             // поэтому не нужно дёргать AppState на каждом тике.
                             ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
-                            if let familyID = appState.pairingState?.familyID {
-                                RemovalProtectionSuggestion(familyID: familyID)
-                                    .id(familyID)
-                            }
                         } else {
                             // Пары ещё нет — это важная для пользователя информация, поэтому она
                             // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.
@@ -784,9 +780,8 @@ private struct ParentDashboardView: View {
                 AdjustTimeSheet { deltaMinutes in
                     Task { await appState.sendParentAdjustTimeCommand(deltaMinutes: deltaMinutes) }
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(.thinMaterial)
             }
         }
     }
@@ -893,7 +888,7 @@ private struct ChildBalanceCard: View {
     }
 }
 
-/// Шторка «Изменить доступное время» (открывается на половину экрана через `.presentationDetents([.medium])`).
+/// Шторка «Изменить время на сегодня» (открывается на половину экрана, можно развернуть).
 /// Содержит вертикальный wheel-Picker со значениями −60…+60 мин с шагом 5 (отрицательные — забрать,
 /// положительные — добавить, 0 — без изменений в центре). Кнопка «Готово» внизу применяет дельту,
 /// свайп вниз / drag indicator закрывает без сохранения. Логика выбора server-команды — в
@@ -909,33 +904,48 @@ private struct AdjustTimeSheet: View {
     private static let allowedDeltas: [Int] = stride(from: -60, through: 60, by: 5).map { $0 }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("budget.adjust_today")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
-                .padding(.top, 16)
+        ZStack {
+            AppBackgroundView()
 
-            Picker("budget.adjust_today", selection: $selectedDelta) {
-                ForEach(Self.allowedDeltas, id: \.self) { delta in
-                    Text(label(for: delta))
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("budget.adjust_today")
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .tag(delta)
-                }
-            }
-            .pickerStyle(.wheel)
-            .labelsHidden()
-            .tint(AppTheme.neonPurple)
-            .frame(maxHeight: 180)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
 
+                    Picker("budget.adjust_today", selection: $selectedDelta) {
+                        ForEach(Self.allowedDeltas, id: \.self) { delta in
+                            Text(label(for: delta))
+                                .foregroundStyle(.white)
+                                .tag(delta)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .labelsHidden()
+                    .tint(AppTheme.neonBlue)
+                    .frame(height: 180)
+                    .padding(12)
+                    .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("parent.dashboard.adjust_time.done") {
                 onApply(selectedDelta)
                 dismiss()
             }
-            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
+            .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
             .padding(.horizontal, 16)
+            .padding(.top, 8)
             .padding(.bottom, 16)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
     }
 

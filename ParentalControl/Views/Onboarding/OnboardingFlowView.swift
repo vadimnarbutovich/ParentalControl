@@ -145,7 +145,11 @@ struct OnboardingFlowView: View {
                         Button("setup.back") { stepIndex -= 1 }.disabled(busy)
                     }
                     if !canAdvance {
-                        Button("location.setup.later") { advance() }.disabled(busy)
+                        if step == .protection {
+                            Button("protection.enable") { openProtectedSheet(.protection) }.disabled(busy)
+                        } else {
+                            Button("location.setup.later") { advance() }.disabled(busy)
+                        }
                     }
                 }
                 .buttonStyle(OnboardingQuietButtonStyle())
@@ -451,7 +455,7 @@ struct OnboardingFlowView: View {
         case .apps:
             if !isLinked { return "setup.pairing.title" }
             return screenTimeService.isAuthorized ? "blocklist.pick.apps" : "onboarding.screentime.title"
-        case .protection: return "protection.enable"
+        case .protection: return "setup.protection.later"
         case .limit:
             if !isLinked { return "setup.pairing.title" }
             if offersInitialLimit { return "onboarding.cta.next" }
@@ -508,7 +512,7 @@ struct OnboardingFlowView: View {
             guard isLinked else { go(to: .pairing); return }
             guard screenTimeService.isAuthorized else { go(to: .screenTime); return }
             openProtectedSheet(.apps)
-        case .protection: openProtectedSheet(.protection)
+        case .protection: advance()
         case .limit:
             guard isLinked else { go(to: .pairing); return }
             if isParent { activeSheet = .limit }

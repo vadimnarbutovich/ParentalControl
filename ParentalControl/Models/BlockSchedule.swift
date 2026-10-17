@@ -114,6 +114,33 @@ struct BlockSchedule: Codable, Equatable, Identifiable {
     let createdAt: Date
     var updatedAt: Date
 
+    /// Старые записи содержат готовый перевод, а не ключ шаблона. Переводим только
+    /// точные стандартные названия; исходное имя в хранилище и синхронизации не меняем.
+    /// Название, введённое вручную и совпавшее со стандартным, также отображается переводом.
+    var localizedName: String {
+        guard let key = Self.standardNameKeys[name] else { return name }
+        return L10n.tr(key)
+    }
+
+    private static let standardNameKeys: [String: String] = {
+        let keys = [
+            "schedule.default.sleep.title",
+            "schedule.template.school.title",
+            "schedule.template.homework.title",
+            "schedule.template.dinner.title"
+        ]
+        var result: [String: String] = [:]
+        for language in Bundle.main.localizations {
+            guard let path = Bundle.main.path(forResource: language, ofType: "lproj"),
+                  let bundle = Bundle(path: path) else { continue }
+            for key in keys {
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                if value != key { result[value] = key }
+            }
+        }
+        return result
+    }()
+
     init(
         id: UUID = UUID(),
         name: String,

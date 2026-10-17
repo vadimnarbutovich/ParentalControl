@@ -177,7 +177,7 @@ struct ScheduleRowView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(schedule.name)
+                        Text(schedule.localizedName)
                             .font(.headline)
                             .foregroundStyle(.white)
                             .lineLimit(1)

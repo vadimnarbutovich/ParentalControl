@@ -68,7 +68,7 @@ struct ActiveBlockScheduleCard: View {
                 .frame(width: 28, height: 28)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(schedule.name)
+                Text(schedule.localizedName)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -99,7 +99,7 @@ struct ActiveBlockScheduleCard: View {
                     .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(schedule.name)
+                    Text(schedule.localizedName)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)

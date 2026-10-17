@@ -561,7 +561,7 @@
 "setup.install.title" = "App auf dem Telefon des Kindes installieren";
 "setup.install.body" = "Auf dem Telefon deines Kindes wird dieselbe App benötigt. [Schicke deinem Kind den Link](%@) oder scanne den QR-Code mit der Kamera seines Telefons, um die App zu installieren.\n\nWähle beim ersten Start „Telefon des Kindes“ — als Nächstes verbinden wir die Telefone.";
 "setup.install.qr.accessibility" = "QR-Code zum Installieren der App aus dem App Store";
-"setup.link.parent" = "Erstelle einen Verbindungscode und gib ihn in dieser App auf dem Telefon deines Kindes ein. Sobald die Verbindung steht, erscheint hier eine Bestätigung.\n\nFahre anschließend auf beiden Telefonen mit der Einrichtung fort.";
+"setup.link.parent" = "Erstelle einen Verbindungscode und gib ihn auf dem Telefon deines Kindes ein. Sobald die Verbindung steht, erscheint hier eine Bestätigung.\n\nFahre anschließend auf beiden Telefonen mit der Einrichtung fort.";
 "setup.link.child" = "Erstelle während der Einrichtung auf dem Telefon des Elternteils einen Verbindungscode und gib ihn unten ein. Ist die Einrichtung bereits abgeschlossen, findest du die Funktion unter Einstellungen → Verbindung zum Kind.";
 "setup.link.wait" = "Warten auf das Telefon des Kindes";
 "setup.link.required" = "Verbinde zuerst das Telefon des Elternteils mit dem Telefon des Kindes. Das ist auch später möglich.";
@@ -569,7 +569,8 @@
 "setup.pin.child" = "Lege auf dem Telefon des Elternteils im PIN-Schritt oder in den Einstellungen eine PIN fest. Das ist nur vom Telefon des Elternteils aus möglich.\n\nGib sie anschließend hier ein, um Apps auszuwählen und den Schutz einzurichten. Ist sie noch nicht angekommen, tippe auf „Verbindung prüfen“.";
 "setup.pin.verify" = "PIN empfangen. Gib sie auf diesem Telefon ein, um die Elterneinstellungen zu öffnen.";
 "setup.apps.body" = "Wähle Apps, Kategorien oder Websites, für die Limits und Sperren gelten sollen. Andere Apps bleiben verfügbar.\n\nZum Ändern der Auswahl ist die Eltern-PIN erforderlich.";
-"setup.protection.action_body" = "Über die Apple-Familienfreigabe kannst du verhindern, dass dein Kind die App löscht. Dafür ist ein Kinderaccount in deiner Familiengruppe nötig.\n\nDie Taste unten öffnet die Schutzeinstellungen und eine Anleitung. Die App funktioniert auch ohne diesen Schutz, kann dann aber vom Kind gelöscht werden.";
+"setup.protection.action_body" = "Über die Apple-Familienfreigabe kannst du verhindern, dass dein Kind die App löscht. Dafür ist ein Kinderaccount in deiner Familiengruppe nötig.\n\nDu kannst den Schutz später in den Einstellungen aktivieren. Die App funktioniert auch ohne diesen Schutz, kann dann aber vom Kind gelöscht werden.";
+"setup.protection.later" = "Später einrichten";
 "setup.limit.child" = "Lege auf dem Telefon des Elternteils ein Tageslimit fest.";
 "setup.limit.initial" = "Starte mit 60 Minuten pro Tag. Tippe auf „Weiter“, um dieses Limit zu übernehmen, oder passe die Zeit an.";
 "setup.check.title" = "Einrichtung prüfen";

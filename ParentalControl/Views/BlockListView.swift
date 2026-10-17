@@ -44,6 +44,7 @@ struct BlockListView: View {
                 if selectionOnly {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("exercise.done") { dismiss() }
+                            .tint(.white)
                     }
                 }
             }

@@ -561,7 +561,7 @@
 "setup.install.title" = "Instala la app en el teléfono del niño";
 "setup.install.body" = "El teléfono de tu hijo necesita esta misma app. [Envía el enlace a tu hijo](%@) o escanea el código QR con la cámara de su teléfono para instalarla.\n\nAl abrirla por primera vez, elige «Teléfono del niño»; después vincularemos los teléfonos.";
 "setup.install.qr.accessibility" = "Código QR para instalar la app desde el App Store";
-"setup.link.parent" = "Crea un código de vinculación e introdúcelo en esta app en el teléfono de tu hijo. Aquí aparecerá la confirmación cuando estén vinculados.\n\nDespués, continúa la configuración en ambos teléfonos.";
+"setup.link.parent" = "Crea un código de vinculación e introdúcelo en el teléfono de tu hijo. Aquí aparecerá la confirmación cuando estén vinculados.\n\nDespués, continúa la configuración en ambos teléfonos.";
 "setup.link.child" = "En el teléfono del padre o la madre, crea un código durante la configuración e introdúcelo abajo. Si ya se ha completado la configuración, puedes crearlo en Ajustes → Conexión con el hijo.";
 "setup.link.wait" = "Esperando al teléfono del niño";
 "setup.link.required" = "Primero vincula el teléfono del padre o la madre con el del niño. Puedes hacerlo más tarde.";
@@ -569,7 +569,8 @@
 "setup.pin.child" = "Crea un PIN en el teléfono del padre o la madre, durante la configuración del PIN o en Ajustes. Solo se puede establecer desde ese teléfono.\n\nDespués, introdúcelo aquí para elegir apps y configurar la protección. Si aún no se ha recibido, pulsa «Comprobar conexión».";
 "setup.pin.verify" = "PIN recibido. Introdúcelo en este teléfono para acceder a los ajustes parentales.";
 "setup.apps.body" = "Elige las apps, categorías o sitios web a los que se aplicarán los límites y bloqueos. Las demás apps seguirán disponibles.\n\nPara cambiar la selección se necesita el PIN parental.";
-"setup.protection.action_body" = "También puedes impedir que tu hijo elimine la app mediante En familia de Apple. Necesitas una cuenta infantil dentro del grupo familiar.\n\nEl botón de abajo abre los ajustes de protección y las instrucciones. La app funciona sin esta protección, pero el niño podrá eliminarla.";
+"setup.protection.action_body" = "También puedes impedir que tu hijo elimine la app mediante En familia de Apple. Necesitas una cuenta infantil dentro del grupo familiar.\n\nPuedes activar la protección más tarde en Ajustes. La app funciona sin esta protección, pero tu hijo podrá eliminarla.";
+"setup.protection.later" = "Configurar más tarde";
 "setup.limit.child" = "Establece un límite diario en el teléfono del padre o la madre.";
 "setup.limit.initial" = "Empieza con 60 minutos al día. Pulsa «Siguiente» para aplicar este límite o elige otra duración.";
 "setup.check.title" = "Revisa la configuración";

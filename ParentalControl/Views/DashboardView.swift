@@ -357,7 +357,7 @@ struct DashboardView: View {
             Image(systemName: schedule.icon.rawValue)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(AppTheme.neonOrange)
-            Text(schedule.name)
+            Text(schedule.localizedName)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(.white)
                 .lineLimit(1)

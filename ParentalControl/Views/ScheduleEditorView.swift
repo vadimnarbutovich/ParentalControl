@@ -28,6 +28,8 @@ struct ScheduleEditorView: View {
 
     private let id: UUID
     private let createdAt: Date
+    private let originalName: String
+    private let initialDisplayName: String
 
     init(
         initialSchedule: BlockSchedule,
@@ -40,7 +42,9 @@ struct ScheduleEditorView: View {
         self.onDelete = onDelete
         self.id = initialSchedule.id
         self.createdAt = initialSchedule.createdAt
-        _name = State(initialValue: initialSchedule.name)
+        self.originalName = initialSchedule.name
+        self.initialDisplayName = initialSchedule.localizedName
+        _name = State(initialValue: initialSchedule.localizedName)
         _startDate = State(initialValue: initialSchedule.startTime.dateToday())
         _endDate = State(initialValue: initialSchedule.endTime.dateToday())
         _weekdays = State(initialValue: initialSchedule.weekdays)
@@ -85,7 +89,7 @@ struct ScheduleEditorView: View {
                     // чтобы можно было показать красный хинт «Укажите название».
                     // Когда форма невалидна — визуально выглядит приглушённой (opacity 0.5).
                     Button("schedule.editor.save") { saveAndDismiss() }
-                        .tint(AppTheme.neonPurple)
+                        .tint(.white)
                         .opacity(isFormValid ? 1 : 0.5)
                 }
             }
@@ -319,7 +323,7 @@ struct ScheduleEditorView: View {
         }
         let updated = BlockSchedule(
             id: id,
-            name: trimmedName,
+            name: trimmedName == initialDisplayName ? originalName : trimmedName,
             icon: icon,
             accent: accent,
             startTime: ScheduleTimeOfDay.from(date: startDate),

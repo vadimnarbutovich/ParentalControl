@@ -436,6 +436,7 @@ private struct StatisticsCalendarSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("statistics.calendar.close") { dismiss() }
+                        .tint(.white)
                 }
             }
         }
