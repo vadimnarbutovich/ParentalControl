@@ -1,0 +1,41 @@
+Aidez votre enfant à utiliser son téléphone de façon plus réfléchie, avec des règles claires et du temps pour la vie loin des écrans.
+
+ParentalControl vous permet de gérer, depuis votre propre téléphone, le temps que votre enfant passe dans les applications choisies. Définissez des limites et des horaires, encouragez les bonnes habitudes et demandez sa position quand vous en avez besoin.
+
+DES LIMITES POUR LA SEMAINE ET LE WEEK-END
+
+Définissez la même limite quotidienne pour toute la semaine ou adaptez le temps à chaque jour. Par exemple, moins les jours d’école et davantage le week-end.
+
+DES HORAIRES POUR DORMIR ET ÉTUDIER
+
+Choisissez les jours et les heures où les applications sélectionnées doivent être bloquées. Aidez votre enfant à se consacrer aux devoirs, au repos et aux moments partagés sans téléphone.
+
+TOUT GÉRER DEPUIS VOTRE TÉLÉPHONE
+
+Bloquez ou débloquez les applications choisies, ajustez le temps disponible pour aujourd’hui et consultez le temps qu’il reste à votre enfant.
+
+DES TÂCHES AVEC UNE RÉCOMPENSE
+
+Créez des tâches pour votre enfant et attribuez du temps supplémentaire dans les applications comme récompense. Votre enfant envoie la tâche accomplie pour vérification. Vous validez le résultat et accordez le temps prévu.
+
+LA POSITION DE VOTRE ENFANT
+
+Demandez la position de votre enfant et consultez-la sur la carte.
+
+LES STATISTIQUES D’UTILISATION
+
+Consultez le temps passé dans les applications choisies pour le jour qui vous intéresse. Les statistiques détaillées sont disponibles sur le téléphone de votre enfant, dans le mode parent protégé par un code PIN.
+
+UNE CONFIGURATION SIMPLE
+
+Installez l’application sur votre téléphone et celui de votre enfant, choisissez les rôles correspondants et associez les téléphones à l’aide d’un code. La configuration vous guide pour accorder les autorisations nécessaires, choisir les applications à gérer et définir un code PIN parental.
+
+Pour limiter les applications, vous devez autoriser l’accès à Temps d’écran sur le téléphone de votre enfant. Pour demander sa position en arrière-plan, réglez l’accès à la localisation sur « Toujours ».
+
+Vous pouvez aussi configurer une protection contre la suppression de l’application grâce au partage familial Apple et à l’autorisation pour votre enfant. Cette étape n’est pas obligatoire pour commencer.
+
+Politique de confidentialité :
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Conditions d’utilisation :
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

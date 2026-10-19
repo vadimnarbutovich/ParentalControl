@@ -1,0 +1,41 @@
+Ajută-ți copilul să folosească telefonul în mod conștient, cu reguli clare și timp pentru viața dincolo de ecran.
+
+ParentalControl te ajută să gestionezi de pe propriul telefon timpul pe care copilul îl petrece în aplicațiile alese. Stabilește limite și programe, încurajează obiceiurile bune și solicită locația copilului când ai nevoie.
+
+LIMITE PENTRU ZILELE DE ȘCOALĂ ȘI WEEKEND
+
+Stabilește aceeași limită zilnică pentru toată săptămâna sau alege un timp diferit pentru fiecare zi. De exemplu, mai puțin în zilele de școală și mai mult în weekend.
+
+PROGRAME PENTRU SOMN ȘI ÎNVĂȚAT
+
+Alege zilele și orele în care aplicațiile selectate vor fi blocate. Ajută-ți copilul să se concentreze pe teme, odihnă și timpul petrecut cu cei din jur, fără telefon.
+
+GESTIONARE DE PE TELEFONUL TĂU
+
+Blochează sau deblochează aplicațiile alese, modifică timpul disponibil pentru azi și vezi cât timp îi mai rămâne copilului.
+
+SARCINI CU RECOMPENSE
+
+Creează sarcini pentru copil și oferă timp suplimentar în aplicații drept recompensă. Copilul trimite sarcina îndeplinită pentru verificare, iar tu aprobi rezultatul și acorzi timpul.
+
+LOCAȚIA COPILULUI
+
+Solicită locația copilului și vezi unde se află pe hartă.
+
+STATISTICI DE UTILIZARE
+
+Vezi timpul petrecut în aplicațiile alese în ziua care te interesează. Statisticile detaliate sunt disponibile pe telefonul copilului, în modul pentru părinți protejat prin PIN.
+
+CONFIGURARE SIMPLĂ
+
+Instalează aplicația pe telefonul tău și pe cel al copilului, alege rolurile corespunzătoare și conectează telefoanele cu un cod. Configurarea pas cu pas te ajută să acorzi permisiunile necesare, să alegi aplicațiile de gestionat și să setezi PIN-ul parental.
+
+Pentru a limita aplicațiile, este necesar accesul la „Timp de utilizare” pe telefonul copilului. Pentru a solicita locația în fundal, setează accesul la localizare pe „Întotdeauna”.
+
+Poți configura și protecția împotriva ștergerii aplicației prin Partajare familială Apple și autorizarea pentru copil. Acest pas este opțional la început.
+
+Politica de confidențialitate:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Condiții de utilizare:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

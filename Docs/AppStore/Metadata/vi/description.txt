@@ -1,0 +1,41 @@
+Giúp con dùng điện thoại có ý thức, với những quy tắc rõ ràng và thời gian dành cho cuộc sống ngoài màn hình.
+
+ParentalControl giúp cha mẹ quản lý thời gian con dùng các ứng dụng đã chọn ngay từ điện thoại của mình. Đặt giới hạn và lịch sử dụng, khuyến khích con làm việc có ích và yêu cầu xem vị trí của con khi cần.
+
+GIỚI HẠN CHO NGÀY ĐI HỌC VÀ CUỐI TUẦN
+
+Đặt cùng một giới hạn hằng ngày cho cả tuần hoặc chọn thời lượng riêng cho từng ngày. Chẳng hạn, ít hơn vào ngày đi học và nhiều hơn vào cuối tuần.
+
+LỊCH CHO GIỜ NGỦ VÀ HỌC TẬP
+
+Chọn ngày và khung giờ cần chặn các ứng dụng đã chọn. Giúp con tập trung vào bài vở, nghỉ ngơi và trò chuyện cùng mọi người mà không bị điện thoại làm phân tâm.
+
+QUẢN LÝ TỪ ĐIỆN THOẠI CỦA BẠN
+
+Chặn hoặc bỏ chặn các ứng dụng đã chọn, điều chỉnh thời gian được dùng hôm nay và xem con còn bao nhiêu thời gian.
+
+NHIỆM VỤ KÈM PHẦN THƯỞNG
+
+Tạo nhiệm vụ cho con và đặt phần thưởng là thời gian dùng ứng dụng bổ sung. Con gửi nhiệm vụ đã hoàn thành để bạn kiểm tra; bạn xác nhận kết quả rồi cộng thời gian cho con.
+
+VỊ TRÍ CỦA CON
+
+Yêu cầu vị trí của con và xem trên bản đồ.
+
+THỐNG KÊ SỬ DỤNG
+
+Xem thời gian sử dụng các ứng dụng đã chọn trong ngày bạn muốn. Thống kê chi tiết có trên điện thoại của con, trong chế độ dành cho cha mẹ được bảo vệ bằng mã PIN.
+
+THIẾT LẬP DỄ DÀNG
+
+Cài ứng dụng trên điện thoại của bạn và của con, chọn vai trò tương ứng rồi liên kết hai điện thoại bằng mã. Hướng dẫn từng bước giúp bạn cấp các quyền cần thiết, chọn ứng dụng muốn quản lý và đặt mã PIN cho cha mẹ.
+
+Để giới hạn ứng dụng, cần cấp quyền truy cập Thời gian sử dụng trên điện thoại của con. Để yêu cầu vị trí khi ứng dụng chạy nền, hãy đặt quyền truy cập vị trí thành “Luôn luôn”.
+
+Bạn cũng có thể thiết lập tính năng ngăn xóa ứng dụng qua Chia sẻ trong gia đình của Apple và phê duyệt quyền kiểm soát của cha mẹ cho con. Không bắt buộc phải hoàn thành bước này để bắt đầu sử dụng.
+
+Chính sách quyền riêng tư:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Điều khoản sử dụng:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

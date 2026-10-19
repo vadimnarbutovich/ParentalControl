@@ -1,0 +1,41 @@
+Pomóż dziecku świadomie korzystać z telefonu — dzięki jasnym zasadom i czasowi na życie poza ekranem.
+
+ParentalControl pozwala rodzicom zarządzać z własnego telefonu czasem dziecka w wybranych aplikacjach. Ustawiaj limity i harmonogramy, zachęcaj do dobrych nawyków i sprawdzaj lokalizację dziecka, gdy tego potrzebujesz.
+
+LIMITY NA DNI NAUKI I WEEKENDY
+
+Ustaw taki sam dzienny limit na cały tydzień lub wybierz inną ilość czasu na każdy dzień. Na przykład mniej w dni nauki i więcej w weekendy.
+
+HARMONOGRAMY NA SEN I NAUKĘ
+
+Wybierz dni i godziny, w których wybrane aplikacje mają być zablokowane. Pomóż dziecku skupić się na lekcjach, odpoczynku i wspólnych chwilach bez telefonu.
+
+ZARZĄDZANIE Z WŁASNEGO TELEFONU
+
+Blokuj i odblokowuj wybrane aplikacje, zmieniaj czas dostępny na dziś i sprawdzaj, ile czasu zostało dziecku.
+
+ZADANIA Z NAGRODĄ
+
+Twórz zadania dla dziecka i ustalaj nagrodę w postaci dodatkowego czasu w aplikacjach. Dziecko przesyła wykonane zadanie do sprawdzenia, a ty zatwierdzasz wynik i przyznajesz czas.
+
+LOKALIZACJA DZIECKA
+
+Wyślij prośbę o lokalizację dziecka i zobacz ją na mapie.
+
+STATYSTYKI UŻYTKOWANIA
+
+Sprawdzaj czas spędzony w wybranych aplikacjach w interesującym cię dniu. Szczegółowe statystyki są dostępne na telefonie dziecka w trybie rodzica chronionym kodem PIN.
+
+PROSTA KONFIGURACJA
+
+Zainstaluj aplikację na swoim telefonie i telefonie dziecka, wybierz odpowiednie role i połącz telefony za pomocą kodu. Konfiguracja krok po kroku pomoże ci nadać wymagane uprawnienia, wybrać aplikacje do kontroli i ustawić PIN rodzica.
+
+Ograniczanie aplikacji wymaga dostępu do funkcji „Czas przed ekranem” na telefonie dziecka. Aby pobierać lokalizację w tle, ustaw dostęp do niej na „Zawsze”.
+
+Możesz też skonfigurować ochronę przed usunięciem aplikacji, korzystając z Chmury rodzinnej Apple i autoryzacji dla dziecka. Ten krok nie jest wymagany, aby zacząć.
+
+Polityka prywatności:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Warunki użytkowania:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
