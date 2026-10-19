@@ -2,7 +2,9 @@ import Foundation
 import CoreLocation
 
 @MainActor
-protocol LocationProviding {
+protocol LocationProviding: AnyObject {
+    var onLocationPushToken: (@MainActor (String?) -> Void)? { get set }
+    func setLocationPushEnabled(_ enabled: Bool)
     var authorizationStatus: CLAuthorizationStatus { get }
     func requestWhenInUseAuthorization() async -> CLAuthorizationStatus
     /// iOS may defer/suppress the upgrade prompt. This does not wait for a choice.
@@ -28,7 +30,17 @@ enum LocationServiceError: Error {
 }
 
 @MainActor
-final class LocationService: NSObject, LocationProviding, CLLocationManagerDelegate {
+final class LocationService: NSObject, LocationProviding, @preconcurrency CLLocationManagerDelegate {
+    enum Mode {
+        case application
+        case locationPush
+    }
+
+    private let mode: Mode
+    var onLocationPushToken: (@MainActor (String?) -> Void)?
+    private var locationPushEnabled = false
+    private var pushRegistrationGeneration = UUID()
+    private var serviceSession: CLServiceSession?
     private let manager: CLLocationManager
     private var pendingLocations: [UUID: CheckedContinuation<CLLocation, Error>] = [:]
     private var pendingAuthorizations: [CheckedContinuation<CLAuthorizationStatus, Never>] = []
@@ -43,13 +55,22 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
         return modes?.contains("location") == true
     }()
 
-    override init() {
+    override convenience init() {
+        self.init(mode: .application)
+    }
+
+    init(mode: Mode) {
+        self.mode = mode
         manager = CLLocationManager()
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        manager.activityType = .other
-        manager.pausesLocationUpdatesAutomatically = false
+        if mode == .application {
+            manager.activityType = .other
+            // LPSE raises an Objective-C exception for this setter, even though
+            // it is accepted by the compiler. Only configure it in the main app.
+            manager.pausesLocationUpdatesAutomatically = false
+        }
     }
 
     deinit {
@@ -66,6 +87,35 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
     // Read the actual status on explicit requests, not a .notDetermined placeholder
     // waiting for the first delegate callback after a cold launch.
     var authorizationStatus: CLAuthorizationStatus { manager.authorizationStatus }
+
+    func setLocationPushEnabled(_ enabled: Bool) {
+        locationPushEnabled = enabled
+        updateLocationPushRegistration()
+    }
+
+    private func updateLocationPushRegistration() {
+        let generation = UUID()
+        pushRegistrationGeneration = generation
+        guard locationPushEnabled, authorizationStatus == .authorizedAlways else {
+            manager.stopMonitoringLocationPushes()
+            serviceSession?.invalidate()
+            serviceSession = nil
+            onLocationPushToken?(nil)
+            return
+        }
+        if serviceSession == nil { serviceSession = CLServiceSession(authorization: .always) }
+        manager.startMonitoringLocationPushes { [weak self] token, error in
+            Task { @MainActor in
+                guard let self, self.pushRegistrationGeneration == generation else { return }
+                guard error == nil, let token, !token.isEmpty else {
+                    // Do not leave a stale registration usable after a registration failure.
+                    self.onLocationPushToken?(nil)
+                    return
+                }
+                self.onLocationPushToken?(token.map { String(format: "%02x", $0) }.joined())
+            }
+        }
+    }
 
     func requestWhenInUseAuthorization() async -> CLAuthorizationStatus {
         let current = authorizationStatus
@@ -118,11 +168,16 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
                         self.finish(.failure(LocationServiceError.timeout))
                     }
                 }
-                if backgroundLocationDeclared {
+                if mode == .application && backgroundLocationDeclared {
                     manager.allowsBackgroundLocationUpdates = true
                     manager.showsBackgroundLocationIndicator = false
                 }
-                manager.startUpdatingLocation()
+                if mode == .locationPush {
+                    // LPSE only needs one fix; match Apple's extension template.
+                    manager.requestLocation()
+                } else {
+                    manager.startUpdatingLocation()
+                }
             }
         } onCancel: {
             Task { @MainActor [weak self] in
@@ -148,7 +203,7 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
         graceTask?.cancel()
         graceTask = nil
         manager.stopUpdatingLocation()
-        if backgroundLocationDeclared { manager.allowsBackgroundLocationUpdates = false }
+        if mode == .application && backgroundLocationDeclared { manager.allowsBackgroundLocationUpdates = false }
         captureStartedAt = nil
         bestFix = nil
     }
@@ -162,6 +217,7 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
+        if locationPushEnabled { updateLocationPushRegistration() }
         if status != .notDetermined {
             let continuations = pendingAuthorizations
             pendingAuthorizations.removeAll()
@@ -181,6 +237,12 @@ final class LocationService: NSObject, LocationProviding, CLLocationManagerDeleg
             bestFix = fix
         }
         guard let fix = bestFix, isFresh(fix) else { return }
+        if mode == .locationPush {
+            // requestLocation has completed: no further updates will improve
+            // this fix. Return it immediately rather than waiting for a grace timer.
+            finish(.success(fix))
+            return
+        }
         if fix.horizontalAccuracy <= 65 {
             finish(.success(fix))
         } else if fix.horizontalAccuracy <= acceptableAccuracy && graceTask == nil {

@@ -371,7 +371,8 @@
 "map.last_seen" = "Updated: %@";
 "map.just_now" = "just now";
 "map.accuracy" = "Accuracy: ±%d m";
-"map.refresh.timeout" = "Could not get a fix in 15 seconds. Make sure your child's phone is online and that location access is granted.";
+"map.refresh.timeout" = "Your child’s phone hasn’t sent its location yet. Check the internet connection and try again later.";
+"map.refresh.push_not_ready" = "Open the updated app on your child’s phone and allow location access Always, then try again.";
 "location.settings.description" = "To let the parent see their child’s location, choose Location → Always in this app’s settings on this phone. Location is checked only when the parent requests it.";
 "location.settings.ready" = "Always access is enabled. Location is checked only when the parent requests it.";
 "location.setup.allow" = "Allow location access";

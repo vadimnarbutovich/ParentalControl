@@ -8,7 +8,8 @@
 "map.last_seen" = "更新時間：%@";
 "map.just_now" = "剛剛";
 "map.accuracy" = "精確度：±%d 公尺";
-"map.refresh.timeout" = "未能在15秒內取得位置。請確認孩子的手機已連上網路，並已允許取用位置。";
+"map.refresh.timeout" = "孩子的手機尚未傳送位置。請檢查網路連線，稍後再試。";
+"map.refresh.push_not_ready" = "請在孩子的手機上開啟更新後的 App，將位置存取權限設為「永遠」，然後重試。";
 "map.unpaired.title" = "手機尚未配對";
 "map.unpaired.subtitle" = "在設定中配對孩子的手機，即可查看其位置。";
 

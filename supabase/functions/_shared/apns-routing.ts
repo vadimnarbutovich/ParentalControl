@@ -13,15 +13,19 @@ export async function sendApnsToDevice(
   token: string,
   defaultHost: string,
   request: RequestInit,
+  channel: "alert" | "location" = "alert",
 ): Promise<Response> {
+  const tokenColumn = channel === "location" ? "location_push_token" : "apns_token";
+  const environmentColumn = channel === "location" ? "location_push_environment" : "apns_environment";
   const { data, error } = await database.from("devices")
-    .select("id, apns_environment").eq("apns_token", token);
+    .select("id, apns_environment, location_push_environment").eq(tokenColumn, token);
   if (error) throw new Error("Cannot resolve APNs environment");
   if (!data?.length) throw new Error("APNs token is no longer registered");
   const environments = new Set<Environment>();
   for (const device of data) {
-    if (device.apns_environment === "sandbox" || device.apns_environment === "production") {
-      environments.add(device.apns_environment);
+    const value = device[environmentColumn];
+    if (value === "sandbox" || value === "production") {
+      environments.add(value);
     }
   }
   if (environments.size > 1) throw new Error("Conflicting APNs environments for token");
@@ -46,9 +50,9 @@ export async function sendApnsToDevice(
     // A persistence failure must NOT turn accepted delivery into a retry.
     try {
       const { error: saveError } = await database.from("devices")
-        .update({ apns_environment: environment })
+        .update({ [environmentColumn]: environment })
         .in("id", data.map(device => device.id))
-        .eq("apns_token", token).is("apns_environment", null);
+        .eq(tokenColumn, token).is(environmentColumn, null);
       if (saveError) console.warn("[APNs] accepted; environment persistence failed");
       else console.info(`[APNs] accepted; learned environment=${environment}`);
     } catch {

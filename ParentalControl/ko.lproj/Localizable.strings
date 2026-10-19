@@ -8,7 +8,8 @@
 "map.last_seen" = "업데이트: %@";
 "map.just_now" = "방금";
 "map.accuracy" = "정확도: ±%d m";
-"map.refresh.timeout" = "15초 안에 위치를 확인하지 못했습니다. 자녀의 휴대폰이 인터넷에 연결되어 있고 위치 접근이 허용되어 있는지 확인해 주세요.";
+"map.refresh.timeout" = "자녀의 휴대전화에서 아직 위치를 보내지 않았습니다. 인터넷 연결을 확인하고 나중에 다시 시도하세요.";
+"map.refresh.push_not_ready" = "자녀의 휴대전화에서 업데이트된 앱을 열고 위치 접근을 ‘항상’으로 허용한 다음 다시 시도하세요.";
 "map.unpaired.title" = "휴대폰이 연결되지 않았습니다";
 "map.unpaired.subtitle" = "설정에서 자녀의 휴대폰을 연결하면 위치를 확인할 수 있습니다.";
 

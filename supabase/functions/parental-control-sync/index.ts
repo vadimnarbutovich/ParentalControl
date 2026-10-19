@@ -71,6 +71,38 @@ Deno.serve(async (req: Request) => {
     const authed = await requireDevice(req);
 
     switch (action) {
+      case "register_location_push": {
+        if (authed.device.role !== "child") return errorResponse("Child required", 403);
+        const token = asString(payload.token);
+        if (token !== null && !/^[0-9a-f]{32,512}$/i.test(token)) return errorResponse("Invalid token", 400);
+        const { data: registered, error: lookupError } = await supabase.from("devices")
+          .select("location_push_token").eq("id", authed.deviceId).single();
+        if (lookupError) return errorResponse("Cannot check location registration", 500);
+        if (registered.location_push_token === token) return okResponse({ ok: true });
+        const { error } = await supabase.from("devices").update({
+          location_push_token: token, location_push_environment: null,
+        }).eq("id", authed.deviceId);
+        return error ? errorResponse("Cannot register location push", 500) : okResponse({ ok: true });
+      }
+      case "begin_location_push": {
+        if (authed.device.role !== "child" || !authed.device.family_id) return errorResponse("Paired child required", 403);
+        const id = asUUIDString(payload.commandID);
+        if (!id) return errorResponse("Invalid request", 400);
+        const { data, error } = await supabase.from("focus_commands").select("status,expires_at")
+          .eq("id", id).eq("family_id", authed.device.family_id).eq("target_device_id", authed.deviceId)
+          .eq("command_type", "request_location").maybeSingle();
+        if (error) return errorResponse("Cannot check location request", 500);
+        return okResponse({ capture: !!data && ["sent", "delivered", "queued"].includes(data.status)
+          && Date.parse(data.expires_at) > Date.now() });
+      }
+      case "finish_location_push": {
+        const id = asUUIDString(payload.commandID);
+        if (!id || !payload.result || typeof payload.result !== "object") return errorResponse("Invalid result", 400);
+        const { error } = await supabase.rpc("pc_finish_location_push", {
+          p_device: authed.deviceId, p_command: id, p_result: payload.result,
+        });
+        return error ? errorResponse("Location result rejected", 400) : okResponse({ ok: true });
+      }
       case "report_child_usage": {
         if (authed.device.role !== "child" || !authed.device.family_id) {
           return errorResponse("Only paired child can report usage", 403);
@@ -130,8 +162,6 @@ Deno.serve(async (req: Request) => {
         return await fetchParentSnapshot(authed.deviceId);
       case "request_child_location":
         return await requestChildLocation(authed.deviceId);
-      case "update_child_location":
-        return await updateChildLocation(authed.deviceId, payload);
       case "fetch_child_location":
         return await fetchChildLocation(authed.deviceId);
       case "list_block_schedules":
@@ -401,7 +431,8 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
       revision: desiredRow?.revision ?? 0,
     },
-    pendingCommands: (pending ?? []).map((row: FocusCommandRow) => mapCommandForClient(row)),
+    pendingCommands: (pending ?? []).filter((row: FocusCommandRow) => row.command_type !== "request_location")
+      .map((row: FocusCommandRow) => mapCommandForClient(row)),
     parentPin,
     parentPro,
   });
@@ -629,6 +660,7 @@ async function fetchPendingCommands(deviceId: string): Promise<Response> {
     .from("focus_commands")
     .select("id, family_id, command_type, duration_seconds, status, created_at, updated_at")
     .eq("target_device_id", deviceId)
+    .neq("command_type", "request_location")
     .in("status", ["queued", "sent", "delivered"])
     .gt("expires_at", nowIso)
     .order("created_at", { ascending: true })
@@ -960,6 +992,7 @@ async function retryStuckCommandsBatch(options: RetryBatchOptions): Promise<{ re
   let query = supabase
     .from("focus_commands")
     .select("id, target_device_id, command_type, duration_seconds, status, retry_count, family_id, last_push_attempt_at")
+    .neq("command_type", "request_location")
     .in("status", ["queued", "sent"])
     .gt("expires_at", nowIso)
     .or(`last_push_attempt_at.is.null,last_push_attempt_at.lte.${cutoffIso}`)
@@ -1098,11 +1131,12 @@ async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
 
   const { data: command, error: commandError } = await supabase
     .from("focus_commands")
-    .select("id, target_device_id")
+    .select("id, target_device_id, command_type")
     .eq("id", commandID)
     .single();
   if (commandError || !command) return errorResponse("Command not found", 404);
   if (command.target_device_id !== deviceId) return errorResponse("Forbidden", 403);
+  if (command.command_type === "request_location") return errorResponse("Use location result endpoint", 400);
 
   const patch: Record<string, unknown> = { status, error_message: errorMessage || null };
   if (status === "applied") patch.applied_at = new Date().toISOString();
@@ -1244,56 +1278,38 @@ async function fetchParentSnapshot(deviceId: string): Promise<Response> {
 }
 
 async function requestChildLocation(deviceId: string): Promise<Response> {
-  const parentDevice = await getDevice(deviceId);
-  if (parentDevice.role !== "parent" || !parentDevice.family_id) {
-    return errorResponse("Parent device is not paired", 403);
+  const { data, error } = await supabase.rpc("pc_request_location_push", { p_device: deviceId });
+  if (error || !data?.command) return errorResponse("Cannot request location", 400);
+  const command = data.command as FocusCommandRow;
+  if (data.dispatch) {
+    try {
+      const auth = await apnsAuthHeaders();
+      const response = await sendApnsToDevice(supabase, data.token, auth.host, {
+        method: "POST",
+        headers: {
+          authorization: auth.authorization,
+          "apns-topic": `${auth.topic}.location-query`,
+          "apns-push-type": "location",
+          "apns-priority": "10",
+          "apns-expiration": String(Math.floor(Date.parse(data.command.expires_at) / 1000)),
+          "apns-collapse-id": `location-${command.id}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ request_id: command.id }),
+        signal: AbortSignal.timeout(8000),
+      }, "location");
+      if (!response.ok) {
+        await supabase.from("focus_commands").update({ status: "failed", error_message: "location_push_rejected" })
+          .eq("id", command.id).in("status", ["sent", "queued"]);
+      }
+    } catch {
+      // Delivery is uncertain on a transport timeout. Do not resend and consume LPSE quota.
+      console.warn("[LocationPush] dispatch uncertain");
+    }
   }
-
-  const { data: child, error: childError } = await supabase
-    .from("devices")
-    .select("id, apns_token")
-    .eq("family_id", parentDevice.family_id)
-    .eq("role", "child")
-    .single();
-  if (childError || !child) return errorResponse("Child device is not linked", 404);
-
-  return await createAndDispatchFocusCommand({
-    familyID: parentDevice.family_id,
-    parentDeviceID: parentDevice.id,
-    childDeviceID: child.id,
-    childApnsToken: child.apns_token,
-    commandType: "request_location",
-    durationSeconds: null,
-    intentID: null,
-  });
+  return okResponse(mapCommandForClient(command));
 }
 
-async function updateChildLocation(deviceId: string, payload: Json): Promise<Response> {
-  const child = await getDevice(deviceId);
-  if (child.role !== "child" || !child.family_id) return errorResponse("Only paired child can update location", 403);
-
-  const latitude = asNumber(payload.latitude);
-  const longitude = asNumber(payload.longitude);
-  const horizontalAccuracy = asNumber(payload.horizontalAccuracy);
-  const capturedAtISO = asString(payload.capturedAtISO) ?? new Date().toISOString();
-
-  if (latitude === null || longitude === null) return errorResponse("latitude and longitude are required", 400);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return errorResponse("Invalid coordinates", 400);
-
-  const { error } = await supabase
-    .from("child_location_state")
-    .upsert({
-      family_id: child.family_id,
-      child_device_id: child.id,
-      latitude,
-      longitude,
-      horizontal_accuracy: horizontalAccuracy ?? null,
-      captured_at: capturedAtISO,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "family_id" });
-  if (error) return errorResponse(error.message, 400);
-  return okResponse({ ok: true });
-}
 
 async function fetchChildLocation(deviceId: string): Promise<Response> {
   const parent = await getDevice(deviceId);
@@ -2190,8 +2206,6 @@ function commandLocalizedAlert(
       const minutes = Math.max(1, Math.round(seconds / 60));
       return { title: "ParentalControl", body: `Родитель добавил ${minutes} мин времени` };
     }
-    case "request_location":
-      return { title: "ParentalControl", body: "Родитель запросил местоположение" };
     case "schedules_updated":
       return { title: "ParentalControl", body: "Расписание обновлено" };
     case "tasks_updated":
@@ -2222,10 +2236,11 @@ async function sendApnsAlert(
   extras: ScheduleAlertExtras = {},
   scheduleID: string | null = null
 ): Promise<void> {
+  if (commandType === "request_location") throw new Error("Location requests require LPSE");
   const auth = await apnsAuthHeaders();
   const token = tokenRaw.replace(/\s+/g, "");
   const localized = commandLocalizedAlert(commandType, durationSeconds, extras);
-  const isSilentCommand = commandType === "request_location" || commandType === "schedules_updated" || commandType === "tasks_updated";
+  const isSilentCommand = commandType === "schedules_updated" || commandType === "tasks_updated";
   const interruptionLevel = isSilentCommand ? "passive" : "time-sensitive";
   const aps: Record<string, unknown> = {
     alert: {

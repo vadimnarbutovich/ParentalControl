@@ -8,7 +8,8 @@
 "map.last_seen" = "Aktualisiert: %@";
 "map.just_now" = "gerade eben";
 "map.accuracy" = "Genauigkeit: ±%d m";
-"map.refresh.timeout" = "Der Standort konnte nicht innerhalb von 15 Sekunden ermittelt werden. Prüfe, ob das Telefon deines Kindes online ist und der Standortzugriff erlaubt ist.";
+"map.refresh.timeout" = "Das Handy Ihres Kindes hat noch keinen Standort gesendet. Prüfen Sie die Internetverbindung und versuchen Sie es später erneut.";
+"map.refresh.push_not_ready" = "Öffnen Sie die aktualisierte App auf dem Handy Ihres Kindes und erlauben Sie den Standortzugriff Immer. Versuchen Sie es dann erneut.";
 "map.unpaired.title" = "Telefon nicht gekoppelt";
 "map.unpaired.subtitle" = "Kopple das Telefon deines Kindes in den Einstellungen, um seinen Standort zu sehen.";
 

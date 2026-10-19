@@ -8,7 +8,8 @@
 "map.last_seen" = "更新时间：%@";
 "map.just_now" = "刚刚";
 "map.accuracy" = "精度：±%d 米";
-"map.refresh.timeout" = "未能在15秒内获取位置。请确认孩子的手机已连接网络，并已允许访问位置。";
+"map.refresh.timeout" = "孩子的手机尚未发送位置。请检查网络连接，稍后再试。";
+"map.refresh.push_not_ready" = "请在孩子的手机上打开更新后的应用，将位置访问权限设为“始终”，然后重试。";
 "map.unpaired.title" = "手机尚未配对";
 "map.unpaired.subtitle" = "在设置中配对孩子的手机，即可查看其位置。";
 

@@ -8,7 +8,8 @@
 "map.last_seen" = "Mise à jour : %@";
 "map.just_now" = "à l’instant";
 "map.accuracy" = "Précision : ±%d m";
-"map.refresh.timeout" = "Impossible d’obtenir la position en 15 secondes. Vérifiez que le téléphone de votre enfant est connecté à Internet et que l’accès à la position est autorisé.";
+"map.refresh.timeout" = "Le téléphone de votre enfant n’a pas encore envoyé sa position. Vérifiez la connexion Internet et réessayez plus tard.";
+"map.refresh.push_not_ready" = "Ouvrez l’application mise à jour sur le téléphone de votre enfant et autorisez l’accès à la position Toujours, puis réessayez.";
 "map.unpaired.title" = "Téléphone non associé";
 "map.unpaired.subtitle" = "Associez le téléphone de votre enfant dans les réglages pour voir sa position.";
 

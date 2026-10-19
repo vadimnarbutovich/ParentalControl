@@ -185,11 +185,8 @@ final class AppState: ObservableObject {
     private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
     private let locationService: LocationProviding
-    private var childLocationUploadTask: Task<String?, Never>?
-    private var childLocationUploadID: UUID?
-    private var locationCommandTasks: [UUID: Task<Void, Never>] = [:]
-    // A bounded cache prevents repeated delivery from restarting GPS or changing a failed ACK to success.
-    private var locationCommandResults: [(id: UUID, errorCode: String?, acknowledged: Bool)] = []
+    private var locationPushRegistrationTask: Task<Void, Never>?
+    private var registeredLocationPushKey: String?
     private var isLoadingChildLocation = false
     private var parentLocationRevision = 0
     /// Управление родительским PIN'ом: хэширование, Keychain, lockout-счётчики.
@@ -309,6 +306,9 @@ final class AppState: ObservableObject {
         restoreLocalManualBlockIntent()
         syncScreenTimeEnforcement(notifyOnUnlock: false)
 
+        locationService.onLocationPushToken = { [weak self] token in
+            self?.registerLocationPushToken(token)
+        }
         Task { await self.refreshPermissionStatuses() }
         Task { await self.bootstrapRemoteIfNeeded() }
         seedDefaultBlockSchedulesIfNeeded()
@@ -440,12 +440,6 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
-        childLocationUploadTask?.cancel()
-        childLocationUploadTask = nil
-        childLocationUploadID = nil
-        for task in locationCommandTasks.values { task.cancel() }
-        locationCommandTasks.removeAll()
-        locationCommandResults.removeAll()
         pendingParentManualBlock = nil
         clearLocalManualBlockIntent()
         if let family = pairingState?.familyID {
@@ -470,6 +464,8 @@ final class AppState: ObservableObject {
         parentPairingWaitTask?.cancel()
         parentPairingWaitTask = nil
         pairingState = nil
+        registeredLocationPushKey = nil
+        locationService.setLocationPushEnabled(false)
         parentPairingCode = nil
         isParentChildStateResolved = true
         parentResolvedFocusActive = nil
@@ -539,6 +535,7 @@ final class AppState: ObservableObject {
             pairingState = state
             storage.savePairingState(state)
             remoteStatusMessage = nil
+            locationService.setLocationPushEnabled(true)
             startRemotePollingIfNeeded()
             await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
         } catch {
@@ -1404,6 +1401,7 @@ final class AppState: ObservableObject {
             if let apns = storage.loadAPNSToken() {
                 try? await remoteSyncService.updateAPNSToken(apns)
             }
+            locationService.setLocationPushEnabled(role == .child && pairingState?.isLinked == true)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1724,6 +1722,23 @@ final class AppState: ObservableObject {
 
     // MARK: - Child location
 
+    private func registerLocationPushToken(_ token: String?) {
+        guard deviceRole == .child, let family = pairingState?.familyID else { return }
+        let key = family.uuidString + ":" + (token ?? "disabled")
+        let previous = locationPushRegistrationTask
+        locationPushRegistrationTask = Task { [weak self] in
+            await previous?.value
+            guard let self, self.deviceRole == .child, self.pairingState?.familyID == family,
+                  self.registeredLocationPushKey != key else { return }
+            do {
+                try await self.remoteSyncService.registerLocationPushToken(token)
+                self.registeredLocationPushKey = key
+            } catch {
+                os_log("Location push registration failed", log: appStateLog, type: .error)
+            }
+        }
+    }
+
     /// Shared entry point for the post-PIN reminder and the child's Settings screen.
     /// An app-specific Location row may not exist in Settings before the first request.
     func configureChildLocationAccessFromParentMode() async {
@@ -1824,6 +1839,10 @@ final class AppState: ObservableObject {
 
     private func locationFailureMessage(code: String?) -> String {
         switch code {
+        case "location_push_not_ready":
+            return L10n.tr("map.refresh.push_not_ready")
+        case "location_push_rejected":
+            return L10n.tr("map.refresh.connection_error")
         case "location_always_required":
             return L10n.tr("map.refresh.always_required")
         case "location_services_disabled":
@@ -1863,91 +1882,11 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Duplicate push/foreground-poll handlers await the same operation, including its ACK.
-    /// A failed ACK is retried on redelivery, without performing another capture/upload.
-    private func applyLocationCommand(id: UUID) async {
-        if let task = locationCommandTasks[id] {
-            await task.value
-            return
-        }
-        guard let familyID = pairingState?.familyID else { return }
-        let task = Task { @MainActor in
-            let errorCode: String?
-            if let previous = self.locationCommandResults.first(where: { $0.id == id }) {
-                if previous.acknowledged { return }
-                errorCode = previous.errorCode
-            } else {
-                errorCode = await self.captureAndUploadChildLocation()
-                guard self.pairingState?.familyID == familyID, self.deviceRole == .child else { return }
-                self.locationCommandResults.append((id, errorCode, false))
-                if self.locationCommandResults.count > 20 { self.locationCommandResults.removeFirst() }
-            }
-            guard !Task.isCancelled, self.pairingState?.familyID == familyID, self.deviceRole == .child else { return }
-            do {
-                try await self.remoteSyncService.ackCommand(
-                    id: id, status: errorCode == nil ? .applied : .failed, errorMessage: errorCode, timeout: 5)
-                if let index = self.locationCommandResults.firstIndex(where: { $0.id == id }) {
-                    self.locationCommandResults[index].acknowledged = true
-                }
-            } catch {
-                os_log("Location command acknowledgement failed", log: appStateLog, type: .error)
-            }
-        }
-        locationCommandTasks[id] = task
-        await task.value
-        locationCommandTasks[id] = nil
-    }
-
-    /// Concurrent distinct location commands share one GPS capture and one upload.
-    /// Errors are returned as stable codes, not swallowed and acknowledged as success.
-    private func captureAndUploadChildLocation() async -> String? {
-        if let task = childLocationUploadTask { return await task.value }
-        let familyID = pairingState?.familyID
-        let uploadID = UUID()
-        let task = Task<String?, Never> { @MainActor in
-            do {
-                let location = try await self.locationService.captureCurrentLocation(timeout: 18)
-                try Task.checkCancellation()
-                guard self.deviceRole == .child, self.pairingState?.familyID == familyID else {
-                    return "location_cancelled"
-                }
-                let snapshot = ChildLocationSnapshot(
-                    latitude: location.coordinate.latitude,
-                    longitude: location.coordinate.longitude,
-                    horizontalAccuracy: location.horizontalAccuracy,
-                    capturedAt: location.timestamp,
-                    updatedAt: Date())
-                do {
-                    try await self.remoteSyncService.updateChildLocation(snapshot)
-                    try Task.checkCancellation()
-                } catch {
-                    return "location_upload_failed"
-                }
-                guard self.pairingState?.familyID == familyID else { return "location_cancelled" }
-                self.storage.saveChildLocationSnapshot(snapshot)
-                return nil
-            } catch let error as LocationServiceError {
-                return error.commandErrorCode
-            } catch {
-                return "location_unavailable"
-            }
-        }
-        childLocationUploadTask = task
-        childLocationUploadID = uploadID
-        let result = await task.value
-        if childLocationUploadID == uploadID {
-            childLocationUploadTask = nil
-            childLocationUploadID = nil
-        }
-        return result
-    }
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
-        if type == .requestLocation {
-            await applyLocationCommand(id: id)
-            return
-        }
+        // Location now runs exclusively in LPSE; stale alert payloads must not start GPS.
+        if type == .requestLocation { return }
         if type == .startFocus || type == .endFocus {
             guard await flushLocalManualBlockIntent() else { return }
             let requestedFamily = pairingState?.familyID
@@ -3352,6 +3291,11 @@ private final class ParentalRemoteSyncService {
         )
     }
 
+    func registerLocationPushToken(_ token: String?) async throws {
+        struct Payload: Encodable { let token: String? }
+        let _: EmptyResponse = try await call(action: "register_location_push", payload: Payload(token: token), timeout: 8)
+    }
+
     func queueFocusCommand(start: Bool, durationSeconds: Int?) async throws -> RemoteFocusCommand {
         struct Payload: Encodable {
             let installID: String
@@ -3730,7 +3674,7 @@ private final class ParentalRemoteSyncService {
     }
 
     /// Parent → backend: попросить ребёнка прислать свежую координату.
-    /// Сервер ставит focus_command типа request_location и шлёт alert push на ребёнка.
+    /// Сервер создаёт квитанцию request_location и отправляет только location-push в LPSE.
     func requestChildLocation() async throws -> PendingCommandDTO {
         struct Payload: Encodable { let installID: String }
         return try await call(
@@ -3740,27 +3684,6 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    /// Child → backend: записать только что снятую координату в child_location_state.
-    func updateChildLocation(_ snapshot: ChildLocationSnapshot) async throws {
-        struct Payload: Encodable {
-            let installID: String
-            let latitude: Double
-            let longitude: Double
-            let horizontalAccuracy: Double?
-            let capturedAtISO: String
-        }
-        let _: EmptyResponse = try await call(
-            action: "update_child_location",
-            payload: Payload(
-                installID: installID,
-                latitude: snapshot.latitude,
-                longitude: snapshot.longitude,
-                horizontalAccuracy: snapshot.horizontalAccuracy,
-                capturedAtISO: ISO8601DateFormatter().string(from: snapshot.capturedAt)
-            ),
-            timeout: 5
-        )
-    }
 
     /// Parent → backend: достать последнюю известную координату ребёнка для своей семьи.
     func fetchChildLocation() async throws -> ChildLocationSnapshot? {

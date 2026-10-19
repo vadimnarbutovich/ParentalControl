@@ -8,7 +8,8 @@
 "map.last_seen" = "Actualizado: %@";
 "map.just_now" = "ahora mismo";
 "map.accuracy" = "Precisión: ±%d m";
-"map.refresh.timeout" = "No se ha podido obtener la ubicación en 15 segundos. Comprueba que el teléfono de tu hijo tenga conexión a internet y permita el acceso a la ubicación.";
+"map.refresh.timeout" = "El teléfono de tu hijo aún no ha enviado su ubicación. Comprueba la conexión a internet e inténtalo más tarde.";
+"map.refresh.push_not_ready" = "Abre la aplicación actualizada en el teléfono de tu hijo y permite el acceso a la ubicación Siempre. Después, vuelve a intentarlo.";
 "map.unpaired.title" = "Teléfono no vinculado";
 "map.unpaired.subtitle" = "Vincula el teléfono de tu hijo en Ajustes para ver su ubicación.";
 
