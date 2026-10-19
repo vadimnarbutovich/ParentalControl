@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Таңдалған күнге пайдалану деректері жоқ.";
+"report.app_usage.other" = "Басқа";
+"report.app_usage.title" = "Пайдалану";
+"report.websites.title" = "Сайттар";

@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Камерата позволява снимка на изпълнена задача за изпращане на родителя.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Достъпът „Винаги“ позволява отговор във фонов режим на заявка от родителя. Местоположението се проверява само по заявка, не постоянно.";
+"NSLocationWhenInUseUsageDescription" = "Достъпът до местоположение позволява на родителя да вижда този телефон на картата при заявка.";

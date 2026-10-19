@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Камера орындалған тапсырманы түсіріп, ата-анаға жіберуге мүмкіндік береді.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "«Әрқашан» рұқсаты ата-ананың орын сұрауына фондық режимде жауап беруге мүмкіндік береді. Орын тек сұрағанда тексеріледі, үздіксіз емес.";
+"NSLocationWhenInUseUsageDescription" = "Орналасуға рұқсат ата-анаға жаңарту сұрағанда осы телефонды картадан көруге мүмкіндік береді.";

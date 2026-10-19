@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Nu există date pentru ziua aleasă.";
+"report.app_usage.other" = "Altele";
+"report.app_usage.title" = "Utilizare";
+"report.websites.title" = "Site-uri web";

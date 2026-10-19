@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Qoldi";
+"live.focus.title" = "Diqqat sessiyasi";
+"live.focus.total" = "jami %d daqiqa";

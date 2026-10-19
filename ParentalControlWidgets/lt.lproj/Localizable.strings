@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Liko";
+"live.focus.title" = "Susikaupimo sesija";
+"live.focus.total" = "Iš viso %d min";

@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.ok" = "Затвори";
+"shield.open.button" = "Отвори ParentalControl";
+"shield.subtitle" = "Отвори ParentalControl за оставащото време и задачите.";
+"shield.title" = "Времето изтече";

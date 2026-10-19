@@ -628,6 +628,16 @@
 				"zh-Hans",
 				"zh-Hant",
 				ar,
+				el,
+				pl,
+				ro,
+				bg,
+				lt,
+				lv,
+				ka,
+				kk,
+				ky,
+				uz,
 			);
 			mainGroup = D1A266192F5737A7005689EB;
 			minimizedProjectReferenceProxies = 1;

@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Aparat pozwala zrobić zdjęcie wykonanego zadania i wysłać je rodzicowi.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Dostęp „Zawsze” pozwala odpowiadać w tle na prośbę rodzica o lokalizację. Lokalizacja jest sprawdzana tylko na żądanie, nie stale.";
+"NSLocationWhenInUseUsageDescription" = "Dostęp do lokalizacji pozwala rodzicowi zobaczyć ten telefon na mapie, gdy poprosi o aktualizację.";

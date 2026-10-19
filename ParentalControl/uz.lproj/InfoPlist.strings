@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Kamera bajarilgan vazifani suratga olib, ota-onaga yuborish imkonini beradi.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "“Har doim” ruxsati ota-onaning joylashuv so‘roviga fonda javob berish imkonini beradi. Joylashuv faqat so‘rovda tekshiriladi, doimiy emas.";
+"NSLocationWhenInUseUsageDescription" = "Joylashuv ruxsati ota-ona yangilashni so‘raganda bu telefonni xaritada ko‘rish imkonini beradi.";

@@ -1,0 +1,3 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.open.notification.body" = "Көбірек уақыт жинау үшін ParentalControl қолданбасын ашыңыз.";
+"shield.open.notification.title" = "ParentalControl";

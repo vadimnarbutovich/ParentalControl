@@ -1,0 +1,3 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.open.notification.body" = "Atver ParentalControl, lai nopelnītu vairāk laika.";
+"shield.open.notification.title" = "ParentalControl";

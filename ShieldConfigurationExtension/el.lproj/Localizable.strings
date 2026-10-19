@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.ok" = "Κλείσιμο";
+"shield.open.button" = "Άνοιγμα ParentalControl";
+"shield.subtitle" = "Ανοίξτε το ParentalControl για υπόλοιπο χρόνου και εργασίες.";
+"shield.title" = "Ο χρόνος τελείωσε";

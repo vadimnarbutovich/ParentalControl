@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Camera permite fotografierea unei sarcini terminate pentru a o trimite părintelui.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Accesul „Întotdeauna” permite răspunsul în fundal la cererea de locație a părintelui. Verificarea are loc doar la cerere, nu continuu.";
+"NSLocationWhenInUseUsageDescription" = "Accesul la locație permite părintelui să vadă acest telefon pe hartă când cere o actualizare.";

@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Δεν υπάρχουν δεδομένα για την επιλεγμένη ημέρα.";
+"report.app_usage.other" = "Άλλα";
+"report.app_usage.title" = "Χρήση";
+"report.websites.title" = "Ιστότοποι";

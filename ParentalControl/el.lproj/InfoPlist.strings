@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Η κάμερα σάς επιτρέπει να φωτογραφίσετε ολοκληρωμένη εργασία και να τη στείλετε στον γονέα.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Η πρόσβαση «Πάντα» επιτρέπει απάντηση σε αίτημα τοποθεσίας του γονέα στο παρασκήνιο. Η τοποθεσία ελέγχεται μόνο κατόπιν αιτήματος, όχι συνεχώς.";
+"NSLocationWhenInUseUsageDescription" = "Η πρόσβαση στην τοποθεσία επιτρέπει στον γονέα να βλέπει αυτό το τηλέφωνο στον χάρτη όταν ζητά ενημέρωση.";

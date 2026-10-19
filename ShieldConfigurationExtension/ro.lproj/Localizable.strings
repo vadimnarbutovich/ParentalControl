@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.ok" = "Închide";
+"shield.open.button" = "Deschide ParentalControl";
+"shield.subtitle" = "Deschide ParentalControl pentru timpul rămas și sarcini.";
+"shield.title" = "Timpul s-a terminat";

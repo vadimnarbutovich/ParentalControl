@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "დარჩენილია";
+"live.focus.title" = "ფოკუს-სესია";
+"live.focus.total" = "სულ %d წთ";

@@ -271,7 +271,7 @@
 "paywall.feature.quick_break" = "Сохранение баланса с прошедшего дня";
 "paywall.plan.yearly" = "Годовой план";
 "paywall.plan.weekly" = "Недельный план";
-"paywall.badge.save" = "SAVE 80%";
+"paywall.badge.save" = "ЭКОНОМИЯ 80%";
 "paywall.error.iap_fallback_console" = "Подписки не подгрузились. В консоли Xcode найдите строку [ParentalControl][IAP] — там число пакетов и product id. Проверьте Sandbox, bundle и совпадение ID в ASC с RevenueCat.";
 "paywall.error.generic" = "Не удалось выполнить запрос подписки. Попробуйте еще раз.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat не настроен для этой сборки: в Info.plist отсутствует RevenueCatPublicSDKKey.";
