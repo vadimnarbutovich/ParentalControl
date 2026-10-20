@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "%d soniyada bajarildi";
 "parent.command.failed" = "Buyruq bajarilmadi";
 "parent.command.pending" = "Bola telefonidan tasdiq kutilmoqda";
-"parent.command.processing" = "Bajarilmoqda. Tasdiq 10 soniyagacha kutiladi…";
+"parent.command.processing" = "Bolangizning telefonidan tasdiq kutilmoqda…";
 "parent.command.retrying" = "Qayta yuborilmoqda…";
 "parent.command.retrying_batch" = "Qayta yuborilayotgan buyruqlar: %d";
 "parent.command.sent.start" = "Bloklash buyrug‘i yuborildi";
 "parent.command.sent.stop" = "Blokdan chiqarish buyrug‘i yuborildi";
-"parent.command.timeout" = "10 soniyada tasdiq kelmadi. Bola telefonidagi internetni tekshirib, qayta urining.";
+"parent.command.timeout" = "Bolangizning telefoni buyruq bajarilganini hali tasdiqlamadi. Uning internet aloqasini tekshirib, qayta urinib ko‘ring.";
 "parent.dashboard.add_one_minute" = "Bir daqiqa qo‘shish";
 "parent.dashboard.adjust_time" = "Vaqtni o‘zgartirish";
 "parent.dashboard.adjust_time.done" = "Tugadi";

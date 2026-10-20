@@ -625,11 +625,11 @@
 "parent.command.applied" = "자녀의 휴대폰에 명령이 적용됐어요";
 "parent.command.retrying" = "명령 재전송 중…";
 "parent.dashboard.take_all_time" = "시간 모두 회수";
-"parent.command.timeout" = "10초 안에 확인 응답을 받지 못했습니다. 자녀 휴대폰의 인터넷 연결을 확인하고 다시 시도해 주세요.";
+"parent.command.timeout" = "자녀의 휴대폰에서 아직 실행 완료 응답을 받지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.";
 "settings.parent.link.code" = "코드: %@";
 "remote.error.network_generic" = "자녀 보호 기능 동기화 중 네트워크 오류가 발생했습니다.";
 "parent.dashboard.stop_focus" = "차단 해제";
-"parent.command.processing" = "명령 실행 중이며 확인 응답을 최대 10초간 기다립니다…";
+"parent.command.processing" = "자녀의 휴대폰에서 확인 응답을 기다리는 중…";
 "parent.dashboard.focus_until" = "집중 모드 종료: %@";
 "settings.child.link.connected_code" = "연결에 사용한 코드: %@";
 "dashboard.blocking.schedule_until" = "%@까지";

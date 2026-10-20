@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "%d сек. ичинде аткарылды";
 "parent.command.failed" = "Буйрук аткарылган жок";
 "parent.command.pending" = "Баланын телефонунан ырастоо күтүлүүдө";
-"parent.command.processing" = "Аткарылууда. Ырастоону 10 сек. күтөбүз…";
+"parent.command.processing" = "Баланын телефонунан ырастоону күтүп жатабыз…";
 "parent.command.retrying" = "Кайра жөнөтүлүүдө…";
 "parent.command.retrying_batch" = "Кайталанган буйруктар: %d";
 "parent.command.sent.start" = "Бөгөттөө буйругу жөнөтүлдү";
 "parent.command.sent.stop" = "Бөгөттү алуу буйругу жөнөтүлдү";
-"parent.command.timeout" = "10 секундда ырастоо келген жок. Баланын телефонунда интернетти текшерип, кайталаңыз.";
+"parent.command.timeout" = "Баланын телефону буйруктун аткарылганын азырынча ырастай элек. Анын интернет байланышын текшерип, кайра аракет кылыңыз.";
 "parent.dashboard.add_one_minute" = "Бир мүнөт кошуу";
 "parent.dashboard.adjust_time" = "Убакытты өзгөртүү";
 "parent.dashboard.adjust_time.done" = "Бүттү";

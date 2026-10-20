@@ -625,11 +625,11 @@
 "parent.command.applied" = "お子さまのスマートフォンに適用しました";
 "parent.command.retrying" = "操作を再送中…";
 "parent.dashboard.take_all_time" = "時間をすべて取り消す";
-"parent.command.timeout" = "10秒以内に確認できませんでした。お子さまのスマートフォンのインターネット接続を確認して、もう一度お試しください。";
+"parent.command.timeout" = "お子さまのスマートフォンから操作完了の確認がまだ届いていません。インターネット接続を確認して、もう一度お試しください。";
 "settings.parent.link.code" = "コード：%@";
 "remote.error.network_generic" = "ペアレンタルコントロールの同期中にネットワークエラーが発生しました。";
 "parent.dashboard.stop_focus" = "ブロックを解除";
-"parent.command.processing" = "操作を実行中です。確認まで最大10秒お待ちください…";
+"parent.command.processing" = "お子さまのスマートフォンからの確認を待っています…";
 "parent.dashboard.focus_until" = "集中モード：%@まで";
 "settings.child.link.connected_code" = "コード %@ で連携済み";
 "dashboard.blocking.schedule_until" = "%@まで";

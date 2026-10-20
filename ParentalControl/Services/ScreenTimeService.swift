@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import FamilyControls
 import ManagedSettings
+import DeviceActivity
 
 enum RemovalProtectionError: Error {
     case busy
@@ -153,6 +154,10 @@ final class ScreenTimeService: ObservableObject {
     func stopDeviceActivityMonitoring() {
         deviceActivityService.stopMonitoring()
         isMonitoringEnabled = false
+    }
+
+    func refreshMonitoringStatus() {
+        isMonitoringEnabled = DeviceActivityCenter().activities.contains(DeviceActivityName("parentalcontrol.activity"))
     }
 
     func ensureDailyBudgetMonitoring() -> Bool {

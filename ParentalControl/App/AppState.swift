@@ -86,10 +86,10 @@ final class AppState: ObservableObject {
     @Published private(set) var parentChildEarnedSecondsToday: Int?
     @Published private(set) var parentChildSpentSecondsToday: Int?
     @Published private(set) var remoteCommandInFlight = false
-    @Published private var pendingParentManualBlock: Bool?
-    /// Optimistic position only for the disabled control, not confirmed child status.
+    @Published private(set) var parentCommandFeedback: String?
+    /// Keep the last confirmed position throughout delivery, including timeout/offline.
     var parentManualBlockControlState: Bool {
-        pendingParentManualBlock ?? parentResolvedFocusActive ?? false
+        isParentManualBlockConfirmed
     }
     @Published private(set) var remoteStatusMessage: String?
     /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
@@ -134,11 +134,6 @@ final class AppState: ObservableObject {
         if let resolved = parentResolvedFocusActive {
             return resolved
         }
-        if let health = parentLinkHealth,
-           !health.childLikelyOnline,
-           let desired = parentDesiredFocusActive {
-            return desired
-        }
         return isRemoteChildFocusSessionActive(remoteChildState)
     }
 
@@ -146,11 +141,6 @@ final class AppState: ObservableObject {
     var isParentManualBlockConfirmed: Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true else { return false }
         let runtime = lastNormalizedParentChildRuntime
-        if let delivery = parentCommandDelivery, delivery.status == .applied,
-           delivery.commandType == .startFocus || delivery.commandType == .endFocus,
-           (delivery.appliedAt ?? delivery.updatedAt) >= (runtime?.lastUpdatedAt ?? .distantPast) {
-            return delivery.commandType == .startFocus
-        }
         return runtime.map { isRemoteChildFocusSessionActive($0) } ?? false
     }
 
@@ -406,7 +396,7 @@ final class AppState: ObservableObject {
 
     func chooseDeviceRole(_ role: DeviceRole) {
         guard deviceRole != role else { return }
-        pendingParentManualBlock = nil
+        resetParentCommandWatch()
         clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
         deviceRole = role
@@ -440,11 +430,12 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
-        pendingParentManualBlock = nil
+        resetParentCommandWatch()
         clearLocalManualBlockIntent()
         if let family = pairingState?.familyID {
             UserDefaults.standard.removeObject(forKey: parentBudgetCacheKey(family))
             UserDefaults.standard.removeObject(forKey: focusRevisionKey(family))
+            RemoteControlGate.defaults?.removeObject(forKey: RemoteControlGate.revisionKey(family))
         }
         let hadDailyBudget = DailyBudgetStore.shared.isEnabled
         do {
@@ -545,8 +536,7 @@ final class AppState: ObservableObject {
 
     func sendParentFocusCommand(start: Bool) {
         let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
-        // Commit the disabled control's new position in the same MainActor turn
-        // as the drag reset, before scheduling network work.
+        // Disable immediately, but keep the last confirmed position while waiting.
         guard beginParentCommand(commandType: commandType) else { return }
         Task {
             await performParentCommand(commandType: commandType, durationSeconds: nil)
@@ -569,6 +559,8 @@ final class AppState: ObservableObject {
     private func clearLocalManualBlockIntent() {
         if let family = pairingState?.familyID {
             UserDefaults.standard.removeObject(forKey: localFocusIntentKey(family))
+            RemoteControlGate.defaults?.removeObject(forKey: RemoteControlGate.pendingKey(family))
+            RemoteControlGate.defaults?.synchronize()
         }
         pendingLocalFocusChange = nil
         localManualBlockNotice = nil
@@ -581,12 +573,21 @@ final class AppState: ObservableObject {
               let intent = try? JSONDecoder().decode(LocalManualBlockIntent.self, from: data),
               intent.familyID == family else { return }
         pendingLocalFocusChange = intent
+        RemoteControlGate.defaults?.set(data, forKey: RemoteControlGate.pendingKey(family))
+        RemoteControlGate.defaults?.synchronize()
         applyLocalManualBlock(intent.isActive)
     }
 
     /// Only the PIN-unlocked parent mode may create a local action. Persist it
     /// BEFORE changing shields; a restart/offline launch must not lose the intent.
     func setLocalManualBlock(active: Bool) {
+        RemoteControlGate.withLock {
+            adoptNotificationControlState()
+            setLocalManualBlockLocked(active: active)
+        }
+    }
+
+    private func setLocalManualBlockLocked(active: Bool) {
         guard deviceRole == .child, isParentModeActive, pairingState?.isLinked == true,
               !isLocalManualBlockSyncing, let family = pairingState?.familyID,
               let metadata = parentPinService.loadMetadata() else { return }
@@ -594,6 +595,8 @@ final class AppState: ObservableObject {
             expectedRevision: childFocusRevision, pinVersion: metadata.salt.base64EncodedString())
         guard let data = try? JSONEncoder().encode(intent) else { return }
         UserDefaults.standard.set(data, forKey: localFocusIntentKey(family))
+        RemoteControlGate.defaults?.set(data, forKey: RemoteControlGate.pendingKey(family))
+        RemoteControlGate.defaults?.synchronize()
         pendingLocalFocusChange = intent
         localManualBlockNotice = nil
         applyLocalManualBlock(active)
@@ -771,6 +774,10 @@ final class AppState: ObservableObject {
     }
 
     private func applyDailyBudgetPolicy(_ policy: DailyBudgetPolicy?) {
+        RemoteControlGate.withLock { applyDailyBudgetPolicyLocked(policy) }
+    }
+
+    private func applyDailyBudgetPolicyLocked(_ policy: DailyBudgetPolicy?) {
         guard deviceRole == .child, let policy,
               pairingState?.familyID.uuidString.lowercased() == policy.familyID.lowercased() else { return }
         do {
@@ -1098,6 +1105,7 @@ final class AppState: ObservableObject {
     #endif
 
     func refreshSharedStateFromAppGroup() {
+        RemoteControlGate.withLock { adoptNotificationControlState() }
         reloadBalanceFromSharedStore()
         #if DEBUG && !HIDE_DEBUG_UI
         refreshDeviceActivityDebug()
@@ -1112,6 +1120,10 @@ final class AppState: ObservableObject {
     }
 
     private func startTimedFocusSession(totalSeconds: Int) {
+        RemoteControlGate.withLock { startTimedFocusSessionLocked(totalSeconds: totalSeconds) }
+    }
+
+    private func startTimedFocusSessionLocked(totalSeconds: Int) {
         focusStartError = nil
         guard totalSeconds > 0 else { return }
         screenTimeService.applyShield()
@@ -1131,6 +1143,10 @@ final class AppState: ObservableObject {
 
     /// Блокировка как при фокус-сессии (shield), без дедлайна — пока родитель не отключит.
     private func startIndefiniteFocusSession() {
+        RemoteControlGate.withLock { startIndefiniteFocusSessionLocked() }
+    }
+
+    private func startIndefiniteFocusSessionLocked() {
         focusStartError = nil
         focusTask?.cancel()
         screenTimeService.applyShield()
@@ -1147,6 +1163,13 @@ final class AppState: ObservableObject {
     }
 
     func endFocusSession() {
+        RemoteControlGate.withLock {
+            adoptNotificationControlState()
+            endFocusSessionLocked()
+        }
+    }
+
+    private func endFocusSessionLocked() {
         guard isFocusSessionActive else { return }
         storage.clearFocusSessionSnapshot()
         let startDate = focusSessionStartedAt
@@ -1317,12 +1340,12 @@ final class AppState: ObservableObject {
     }
 
     /// Awaitable entry point used by `AppDelegate.didReceiveRemoteNotification` and `willPresent`.
-    /// Drains the App Group queue (commands captured by NSE while we were suspended) and
+    /// Drains the App Group queue (commands saved by earlier host push handlers) and
     /// applies the freshly-arrived payload. Then performs a full backend sync so we don't
     /// miss anything iOS may have throttled. Returns only after work is finished, allowing
     /// iOS to keep the app alive in the background until commands are acked to the backend.
     func applyAndDrainRemoteCommandsIfNeeded(initialPayload: [AnyHashable: Any]?) async {
-        // 1) Drain App Group queue first — these are commands NSE captured while we were suspended.
+        // 1) Drain commands saved by earlier host push handlers.
         let pending = storage.drainPendingRemoteCommands()
         for item in pending {
             guard let uuid = UUID(uuidString: item.commandID) else { continue }
@@ -1382,6 +1405,8 @@ final class AppState: ObservableObject {
                 let familyChanged = pairingState?.familyID != serverPair.familyID
                 pairingState = serverPair
                 if familyChanged {
+                    resetParentCommandWatch()
+                    lastNormalizedParentChildRuntime = nil
                     restoreParentBudgetCache()
                     restoreLocalManualBlockIntent()
                 }
@@ -1585,6 +1610,7 @@ final class AppState: ObservableObject {
         do {
             let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
             guard pairingState?.familyID == requestedFamily else { return }
+            guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
             applyDailyBudgetPolicy(poll.budget?.policy)
             await applyDesiredFocusState(poll.desired)
             let commands = poll.pendingCommands.map {
@@ -1618,11 +1644,12 @@ final class AppState: ObservableObject {
     private func applyDesiredFocusState(_ desired: DesiredFocusStateDTO) async {
         guard deviceRole == .child, pairingState?.isLinked == true,
               pendingLocalFocusChange == nil, let family = pairingState?.familyID,
-              let revision = desired.revision, revision >= childFocusRevision else { return }
-        if revision != childFocusRevision {
-            UserDefaults.standard.set(revision, forKey: focusRevisionKey(family))
-        }
-        do {
+              let revision = desired.revision else { return }
+        var appliedRuntime: RemoteChildRuntimeState?
+        RemoteControlGate.withLock {
+            let previousRevision = childFocusRevision
+            adoptNotificationControlState()
+            guard revision >= childFocusRevision else { return }
             let localIsActive: Bool = {
                 guard isFocusSessionActive else { return false }
                 if let end = focusSessionEndsAt { return end > Date() }
@@ -1630,25 +1657,34 @@ final class AppState: ObservableObject {
             }()
             let needsIndefiniteBlock = desired.shouldFocusActive
                 && (desired.durationSeconds ?? 0) <= 0 && focusSessionEndsAt != nil
-            guard desired.shouldFocusActive != localIsActive || needsIndefiniteBlock else { return }
-
-            if desired.shouldFocusActive {
-                if let seconds = desired.durationSeconds, seconds > 0 {
-                    focusDurationMinutes = max(1, seconds / 60)
-                    startTimedFocusSession(totalSeconds: seconds)
+            let changesFocus = desired.shouldFocusActive != localIsActive || needsIndefiniteBlock
+            if changesFocus {
+                if desired.shouldFocusActive {
+                    if let seconds = desired.durationSeconds, seconds > 0 {
+                        focusDurationMinutes = max(1, seconds / 60)
+                        startTimedFocusSession(totalSeconds: seconds)
+                    } else {
+                        startIndefiniteFocusSession()
+                    }
                 } else {
-                    startIndefiniteFocusSession()
+                    endFocusSession()
                 }
-            } else {
-                endFocusSession()
             }
-
-            let runtime = RemoteChildRuntimeState(
+            UserDefaults.standard.set(revision, forKey: focusRevisionKey(family))
+            RemoteControlGate.defaults?.set(revision, forKey: RemoteControlGate.revisionKey(family))
+            RemoteControlGate.defaults?.synchronize()
+            // An ordinary unchanged 8-second poll must not create another runtime write.
+            guard changesFocus || revision > previousRevision ||
+                    remoteChildState.isFocusActive != isFocusSessionActive else { return }
+            appliedRuntime = RemoteChildRuntimeState(
                 isFocusActive: isFocusSessionActive,
                 focusEndsAt: focusSessionEndsAt,
                 lastUpdatedAt: Date()
             )
-            remoteChildState = runtime
+        }
+        guard let runtime = appliedRuntime else { return }
+        remoteChildState = runtime
+        do {
             try await remoteSyncService.updateChildRuntimeState(runtime, focusRevision: revision)
         } catch {
             remoteStatusMessage = error.localizedDescription
@@ -1885,6 +1921,7 @@ final class AppState: ObservableObject {
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
         // Location now runs exclusively in LPSE; stale alert payloads must not start GPS.
         if type == .requestLocation { return }
         if type == .startFocus || type == .endFocus {
@@ -2012,7 +2049,11 @@ final class AppState: ObservableObject {
             do {
                 // Один combined-вызов вместо desired + snapshot + linkHealth + childBalance.
                 let poll = try await remoteSyncService.parentPoll()
-                guard pairingState?.familyID == requestedFamily else { return }
+                guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
+                let actualRuntime = normalizedRuntimeForParent(poll.runtime)
+                // Overlapping parent polls may return out of order.
+                if let previous = lastNormalizedParentChildRuntime,
+                   actualRuntime.lastUpdatedAt < previous.lastUpdatedAt { return }
                 if let status = poll.budget { receiveParentBudget(status) }
                 parentDesiredFocusActive = poll.desired.shouldFocusActive
                 parentLinkHealth = ParentLinkHealthState(
@@ -2031,29 +2072,13 @@ final class AppState: ObservableObject {
                     parentChildSpentSecondsToday = max(0, stats.spentSeconds)
                 }
 
-                let actualRuntime = normalizedRuntimeForParent(poll.runtime)
                 lastNormalizedParentChildRuntime = actualRuntime
                 // Сравниваем команду с фактическим runtime (не с «проекцией» desired) — иначе UI переключался бы до apply.
                 reconcileParentCommandWithRuntime(actualRuntime)
 
-                if remoteCommandInFlight {
-                    remoteChildState = actualRuntime
-                    parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
-                } else {
-                    // «Desired» в БД может кратковременно отставать от `child_runtime` сразу после apply —
-                    // тогда CTA нельзя брать из desired, иначе мигание: Заблокировать → (старый) → Разблокировать.
-                    let useDesiredProjection = parentLinkHealth.map { !$0.childLikelyOnline } ?? false
-                    var displayRuntime = actualRuntime
-                    if useDesiredProjection, let desired = parentDesiredFocusActive {
-                        displayRuntime = runtimeFromDesiredFallback(desired, current: actualRuntime)
-                    }
-                    remoteChildState = displayRuntime
-                    if useDesiredProjection, let desired = parentDesiredFocusActive {
-                        parentResolvedFocusActive = desired
-                    } else {
-                        parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
-                    }
-                }
+                // Desired is an instruction, not evidence that the child applied it.
+                remoteChildState = actualRuntime
+                parentResolvedFocusActive = isFocusActiveNowOnParentUI(actualRuntime)
                 if let childAvailable = poll.availableSeconds {
                     parentChildAvailableSeconds = childAvailable
                 }
@@ -2066,24 +2091,19 @@ final class AppState: ObservableObject {
                 if staleness > Self.childRuntimeStaleThreshold {
                     await requestChildWakeIfNeeded()
                 }
+                guard deviceRole == .parent, pairingState?.familyID == requestedFamily else { return }
                 isParentChildStateResolved = true
                 return
             } catch {
+                guard pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
                 lastError = error
-                if remoteCommandInFlight {
-                    if attempt == 0 { try? await Task.sleep(nanoseconds: 400_000_000) }
-                } else if let desired = parentDesiredFocusActive {
-                    remoteChildState = runtimeFromDesiredFallback(desired, current: remoteChildState)
-                    parentResolvedFocusActive = desired
-                    isParentChildStateResolved = true
-                    return
-                } else if attempt == 0 {
+                if attempt == 0 {
                     try? await Task.sleep(nanoseconds: 400_000_000)
                 }
             }
         }
         if let lastError {
-            if !remoteCommandInFlight {
+            if lastNormalizedParentChildRuntime == nil {
                 parentResolvedFocusActive = nil
                 isParentChildStateResolved = false
             }
@@ -2102,28 +2122,11 @@ final class AppState: ObservableObject {
         isRemoteChildFocusSessionActive(runtime)
     }
 
-    private func runtimeFromDesiredFallback(_ desiredActive: Bool, current: RemoteChildRuntimeState) -> RemoteChildRuntimeState {
-        guard desiredActive else {
-            return RemoteChildRuntimeState(
-                isFocusActive: false,
-                focusEndsAt: nil,
-                lastUpdatedAt: current.lastUpdatedAt
-            )
-        }
-        if current.isFocusActive, let endsAt = current.focusEndsAt, endsAt > Date() {
-            return current
-        }
-        return RemoteChildRuntimeState(
-            isFocusActive: true,
-            focusEndsAt: nil,
-            lastUpdatedAt: current.lastUpdatedAt
-        )
-    }
-
     private func watchParentCommandUntilTerminal(commandID: UUID, timeoutSeconds: Int) async {
         // Parent keeps spinner while waiting for child apply/ack.
         let ticks = max(1, timeoutSeconds)
         for tick in 0..<ticks {
+            guard activeParentCommandID == commandID else { return }
             guard !Task.isCancelled else {
                 finishParentCommandWatch(commandID: commandID)
                 return
@@ -2131,6 +2134,7 @@ final class AppState: ObservableObject {
             if tick % 3 == 0 {
                 do {
                     let retrySummary = try await remoteSyncService.retryStuckCommands()
+                    guard activeParentCommandID == commandID, !Task.isCancelled else { return }
                     if retrySummary.retried > 0 {
                         remoteStatusMessage = L10n.f("parent.command.retrying_batch", retrySummary.retried)
                     }
@@ -2138,8 +2142,10 @@ final class AppState: ObservableObject {
                     // Retry helper is best-effort and should not break command status polling.
                 }
             }
+            guard activeParentCommandID == commandID, !Task.isCancelled else { return }
             do {
                 if let status = try await remoteSyncService.fetchCommandStatus(commandID: commandID) {
+                    guard activeParentCommandID == commandID, !Task.isCancelled else { return }
                     parentCommandDelivery = ParentCommandDeliveryState(
                         commandID: status.id,
                         commandType: status.commandType,
@@ -2163,12 +2169,14 @@ final class AppState: ObservableObject {
                                 commandType: status.commandType
                             )
                         } else {
+                            parentCommandFeedback = L10n.tr("parent.command.applied")
                             finishParentCommandWatch(commandID: commandID)
                             await refreshParentChildState()
                         }
                         return
                     }
                     if status.status == .failed {
+                        parentCommandFeedback = L10n.tr("parent.command.failed")
                         remoteStatusMessage = status.errorMessage ?? L10n.tr("parent.command.failed")
                         finishParentCommandWatch(commandID: commandID)
                         await refreshParentChildState()
@@ -2176,10 +2184,13 @@ final class AppState: ObservableObject {
                     }
                 }
             } catch {
+                guard activeParentCommandID == commandID, !Task.isCancelled else { return }
                 remoteStatusMessage = error.localizedDescription
             }
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         }
+        guard activeParentCommandID == commandID, !Task.isCancelled else { return }
+        parentCommandFeedback = L10n.tr("parent.command.timeout")
         remoteStatusMessage = L10n.tr("parent.command.timeout")
         finishParentCommandWatch(commandID: commandID)
         await refreshParentChildState()
@@ -2187,17 +2198,23 @@ final class AppState: ObservableObject {
 
     private func waitForParentSnapshotToMatchAppliedCommand(commandID: UUID, commandType: RemoteFocusCommandType) async {
         for _ in 0..<10 {
+            guard activeParentCommandID == commandID else { return }
             if Task.isCancelled {
                 if activeParentCommandID == commandID { finishParentCommandWatch(commandID: commandID) }
                 return
             }
             await refreshParentChildState()
-            if let r = lastNormalizedParentChildRuntime, runtimeMatchesCommand(r, commandType: commandType) {
+            guard activeParentCommandID == commandID, !Task.isCancelled else { return }
+            if let r = lastNormalizedParentChildRuntime,
+               let delivery = parentCommandDelivery,
+               runtimeMatchesCommand(r, commandType: commandType, queuedAt: delivery.queuedAt) {
+                parentCommandFeedback = L10n.tr("parent.command.applied")
                 finishParentCommandWatch(commandID: commandID)
                 return
             }
             try? await Task.sleep(nanoseconds: 100_000_000)
         }
+        guard activeParentCommandID == commandID, !Task.isCancelled else { return }
         // The local parent may have changed the block AFTER this command applied.
         // Do not replace a newer confirmed runtime with an old command's projection.
         if let runtime = lastNormalizedParentChildRuntime, let delivery = parentCommandDelivery,
@@ -2205,60 +2222,63 @@ final class AppState: ObservableObject {
             parentResolvedFocusActive = isFocusActiveNowOnParentUI(runtime)
             remoteChildState = runtime
             isParentChildStateResolved = true
+            parentCommandFeedback = L10n.tr("parent.command.applied")
             finishParentCommandWatch(commandID: commandID)
             return
         }
-        // No newer runtime: retain the acknowledged command while the snapshot catches up.
-        parentResolvedFocusActive = (commandType == .startFocus)
-        remoteChildState = runtimeFromDesiredFallback(commandType == .startFocus, current: remoteChildState)
-        isParentChildStateResolved = true
+        // ACK alone must not manufacture a runtime snapshot. Keep last known state.
+        parentCommandFeedback = L10n.tr("parent.command.timeout")
         finishParentCommandWatch(commandID: commandID)
     }
 
     private func finishParentCommandWatch(commandID: UUID) {
         guard activeParentCommandID == commandID else { return }
         activeParentCommandID = nil
-        pendingParentManualBlock = nil
         remoteCommandInFlight = false
+    }
+
+    private func resetParentCommandWatch() {
+        parentCommandWatchTask?.cancel()
+        parentCommandWatchTask = nil
+        activeParentCommandID = nil
+        remoteCommandInFlight = false
+        parentCommandDelivery = nil
+        parentCommandFeedback = nil
     }
 
     private func reconcileParentCommandWithRuntime(_ runtime: RemoteChildRuntimeState) {
         guard let delivery = parentCommandDelivery else { return }
-        guard delivery.status != .applied, delivery.status != .failed else { return }
-        guard runtimeMatchesCommand(runtime, commandType: delivery.commandType) else { return }
+        guard delivery.status != .failed else { return }
+        // An old matching runtime (or a balance/task response) is not this command's ACK.
+        guard runtimeMatchesCommand(runtime, commandType: delivery.commandType, queuedAt: delivery.queuedAt) else { return }
 
-        parentCommandDelivery = ParentCommandDeliveryState(
-            commandID: delivery.commandID,
-            commandType: delivery.commandType,
-            status: .applied,
-            queuedAt: delivery.queuedAt,
-            updatedAt: runtime.lastUpdatedAt,
-            appliedAt: runtime.lastUpdatedAt,
-            errorMessage: nil
-        )
+        if delivery.status != .applied {
+            parentCommandDelivery = ParentCommandDeliveryState(
+                commandID: delivery.commandID,
+                commandType: delivery.commandType,
+                status: .applied,
+                queuedAt: delivery.queuedAt,
+                updatedAt: runtime.lastUpdatedAt,
+                appliedAt: runtime.lastUpdatedAt,
+                errorMessage: nil
+            )
+        }
         if let latency = parentCommandDelivery?.latencySeconds {
             remoteStatusMessage = L10n.f("parent.command.applied.latency", latency)
         } else {
             remoteStatusMessage = L10n.tr("parent.command.applied")
         }
+        parentCommandFeedback = L10n.tr("parent.command.applied")
         if activeParentCommandID == delivery.commandID {
             finishParentCommandWatch(commandID: delivery.commandID)
             parentCommandWatchTask?.cancel()
         }
     }
 
-    private func runtimeMatchesCommand(_ runtime: RemoteChildRuntimeState, commandType: RemoteFocusCommandType) -> Bool {
-        let isActiveNow = isRemoteChildFocusSessionActive(runtime)
-        switch commandType {
-        case .startFocus:
-            return isActiveNow
-        case .endFocus:
-            return !isActiveNow
-        case .resetEarnedBalance, .addEarnedSeconds, .subtractEarnedSeconds,
-             .requestLocation, .schedulesUpdated, .scheduleStarted, .scheduleEnded,
-             .tasksUpdated:
-            return true
-        }
+    private func runtimeMatchesCommand(_ runtime: RemoteChildRuntimeState, commandType: RemoteFocusCommandType, queuedAt: Date) -> Bool {
+        ParentFocusConfirmation.matches(command: commandType.rawValue, queuedAt: queuedAt,
+                                        runtimeUpdatedAt: runtime.lastUpdatedAt,
+                                        isActive: isRemoteChildFocusSessionActive(runtime))
     }
 
     private func sendParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
@@ -2268,7 +2288,8 @@ final class AppState: ObservableObject {
 
     private func beginParentCommand(commandType: RemoteFocusCommandType) -> Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true, !remoteCommandInFlight else { return false }
-        pendingParentManualBlock = commandType == .startFocus ? true : (commandType == .endFocus ? false : nil)
+        parentCommandDelivery = nil
+        parentCommandFeedback = nil
         remoteCommandInFlight = true
         remoteStatusMessage = L10n.tr("parent.command.processing")
         if commandType == .startFocus {
@@ -2281,6 +2302,7 @@ final class AppState: ObservableObject {
 
     private func performParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
         let intentID = UUID()
+        let requestedFamily = pairingState?.familyID
         do {
             let command: RemoteFocusCommand
             if commandType == .startFocus || commandType == .endFocus {
@@ -2296,6 +2318,7 @@ final class AppState: ObservableObject {
                     intentID: intentID
                 )
             }
+            guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
             parentCommandDelivery = ParentCommandDeliveryState(
                 commandID: command.id,
                 commandType: command.commandType,
@@ -2313,8 +2336,9 @@ final class AppState: ObservableObject {
             }
             await refreshParentChildState()
         } catch {
+            guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
             activeParentCommandID = nil
-            pendingParentManualBlock = nil
+            parentCommandFeedback = L10n.tr("parent.command.failed")
             remoteCommandInFlight = false
             remoteStatusMessage = error.localizedDescription
         }
@@ -2453,6 +2477,7 @@ final class AppState: ObservableObject {
 
     private func syncChildStatsSnapshotIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
         guard await flushLocalManualBlockIntent() else { return }
         resetDailyBalanceIfNeeded()
         let today = dailyStats(for: Date(), steps: todaySteps)
@@ -2511,6 +2536,7 @@ final class AppState: ObservableObject {
 
     func appDidBecomeActive() {
         storage.saveMainAppIsActive(true)
+        RemoteControlGate.withLock { adoptNotificationControlState() }
         resetDailyBalanceIfNeeded()
         syncFocusSessionWithWallClock()
         if !DailyBudgetStore.shared.isEnabled { screenTimeService.stopDeviceActivityMonitoring() }
@@ -2529,7 +2555,7 @@ final class AppState: ObservableObject {
             permissionBannerSuppressedAfterCTA = false
             await refreshStepsAndRewards()
             await bootstrapRemoteIfNeeded()
-            // Drain commands captured by NSE / earlier push handlers while suspended,
+            // Drain commands saved by earlier host push handlers,
             // before pulling fresh state — ensures the latest parent intent wins.
             await applyAndDrainRemoteCommandsIfNeeded(initialPayload: nil)
             if deviceRole == .parent {
@@ -2604,7 +2630,38 @@ final class AppState: ObservableObject {
     }
 
     private func syncScreenTimeEnforcement(notifyOnUnlock: Bool) {
+        RemoteControlGate.withLock {
+            adoptNotificationControlState()
+            syncScreenTimeEnforcementLocked(notifyOnUnlock: notifyOnUnlock)
+        }
+    }
+
+    /// Bring host memory up to date BEFORE it can overwrite an extension's shield.
+    /// Only the shared focus revision can trigger this; unrelated budget updates
+    /// do not reset a focus session or its countdown.
+    private func adoptNotificationControlState() {
+        guard deviceRole == .child, pendingLocalFocusChange == nil,
+              let family = pairingState?.familyID, let shared = RemoteControlGate.defaults else { return }
+        shared.synchronize()
+        let revision = shared.integer(forKey: RemoteControlGate.revisionKey(family))
+        guard revision > childFocusRevision else { return }
+        let snapshot = storage.loadFocusSessionSnapshot()
+        // NSE pilot only creates/removes indefinite manual sessions.
+        guard snapshot?.endsAt == nil else { return }
+        focusTask?.cancel()
+        isFocusSessionActive = snapshot != nil
+        focusSessionStartedAt = snapshot?.startedAt
+        focusSessionPlannedSeconds = 0
+        focusSessionEndsAt = nil
+        focusRemainingSeconds = 0
+        UserDefaults.standard.set(revision, forKey: focusRevisionKey(family))
+        screenTimeService.refreshMonitoringStatus()
+        Task { await focusLiveActivityService.stop() }
+    }
+
+    private func syncScreenTimeEnforcementLocked(notifyOnUnlock: Bool) {
         if deviceRole == .child, DailyBudgetStore.shared.isEnabled {
+            screenTimeService.refreshMonitoringStatus()
             dailyBudget = try? DailyBudgetStore.shared.current()
             balance = storage.loadBalance()
             budgetMonitorReady = screenTimeService.ensureDailyBudgetMonitoring()

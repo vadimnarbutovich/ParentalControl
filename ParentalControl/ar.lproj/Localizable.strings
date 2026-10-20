@@ -625,11 +625,11 @@
 "parent.command.applied" = "نُفّذ الأمر على هاتف الطفل";
 "parent.command.retrying" = "جارٍ إعادة إرسال الأمر…";
 "parent.dashboard.take_all_time" = "سحب كل الوقت";
-"parent.command.timeout" = "لم يصل تأكيد خلال 10 ثوانٍ. تحقّق من اتصال هاتف الطفل بالإنترنت وحاول مجددًا.";
+"parent.command.timeout" = "لم يؤكد هاتف طفلك تنفيذ الأمر بعد. تحقّق من اتصاله بالإنترنت وحاول مجددًا.";
 "settings.parent.link.code" = "الرمز: %@";
 "remote.error.network_generic" = "حدث خطأ في الشبكة أثناء مزامنة الرقابة الأبوية.";
 "parent.dashboard.stop_focus" = "إلغاء الحظر";
-"parent.command.processing" = "جارٍ تنفيذ الأمر وانتظار التأكيد لمدة تصل إلى 10 ثوانٍ…";
+"parent.command.processing" = "في انتظار تأكيد من هاتف طفلك…";
 "parent.dashboard.focus_until" = "التركيز مفعّل حتى %@";
 "settings.child.link.connected_code" = "تم الربط بالرمز: %@";
 "dashboard.blocking.schedule_until" = "حتى %@";

@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Изпълнено за %d сек.";
 "parent.command.failed" = "Командата е неуспешна";
 "parent.command.pending" = "Изчакване на потвърждение от телефона на детето";
-"parent.command.processing" = "Изпълнява се. Изчакване до 10 сек.…";
+"parent.command.processing" = "Изчакваме потвърждение от телефона на детето…";
 "parent.command.retrying" = "Повторно изпращане…";
 "parent.command.retrying_batch" = "Повторени команди: %d";
 "parent.command.sent.start" = "Командата за блокиране е изпратена";
 "parent.command.sent.stop" = "Командата за отблокиране е изпратена";
-"parent.command.timeout" = "Няма потвърждение за 10 секунди. Провери интернета на телефона на детето и опитай пак.";
+"parent.command.timeout" = "Телефонът на детето още не е потвърдил изпълнението. Провери връзката му с интернет и опитай отново.";
 "parent.dashboard.add_one_minute" = "Добави минута";
 "parent.dashboard.adjust_time" = "Промени времето";
 "parent.dashboard.adjust_time.done" = "Готово";

@@ -733,6 +733,26 @@ private struct ParentDashboardView: View {
                         .fill(.white.opacity(0.12))
                         .frame(height: 1)
 
+                    if appState.pairingState?.isLinked == true {
+                        if appState.remoteCommandInFlight {
+                            HStack(spacing: 8) {
+                                ProgressView().tint(AppTheme.neonBlue)
+                                Text("parent.command.processing")
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        } else if let feedback = appState.parentCommandFeedback {
+                            Text(feedback)
+                                .font(.footnote)
+                                .foregroundStyle(.white.opacity(0.85))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 8)
+                        }
+                    }
+
                     Button("budget.adjust_today") {
                         isAdjustTimePresented = true
                     }

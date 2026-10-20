@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Izpildīts %d sek.";
 "parent.command.failed" = "Komanda neizdevās";
 "parent.command.pending" = "Gaida apstiprinājumu no bērna tālruņa";
-"parent.command.processing" = "Izpilda. Gaida apstiprinājumu līdz 10 sek.…";
+"parent.command.processing" = "Gaidām apstiprinājumu no bērna tālruņa…";
 "parent.command.retrying" = "Sūta atkārtoti…";
 "parent.command.retrying_batch" = "Atkārtotās komandas: %d";
 "parent.command.sent.start" = "Bloķēšanas komanda nosūtīta";
 "parent.command.sent.stop" = "Atbloķēšanas komanda nosūtīta";
-"parent.command.timeout" = "10 sekundēs nav apstiprinājuma. Pārbaudiet internetu bērna tālrunī un mēģiniet vēlreiz.";
+"parent.command.timeout" = "Bērna tālrunis vēl nav apstiprinājis komandas izpildi. Pārbaudiet tā interneta savienojumu un mēģiniet vēlreiz.";
 "parent.dashboard.add_one_minute" = "Pievienot minūti";
 "parent.dashboard.adjust_time" = "Mainīt pieejamo laiku";
 "parent.dashboard.adjust_time.done" = "Gatavs";

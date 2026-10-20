@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Εφαρμόστηκε σε %d δευτ.";
 "parent.command.failed" = "Η εντολή απέτυχε";
 "parent.command.pending" = "Αναμονή επιβεβαίωσης από το παιδί";
-"parent.command.processing" = "Εκτέλεση· αναμονή επιβεβαίωσης έως 10 δευτ.…";
+"parent.command.processing" = "Αναμονή επιβεβαίωσης από το τηλέφωνο του παιδιού…";
 "parent.command.retrying" = "Επανάληψη αποστολής…";
 "parent.command.retrying_batch" = "Επανάληψη εντολών: %d";
 "parent.command.sent.start" = "Η εντολή αποκλεισμού στάλθηκε";
 "parent.command.sent.stop" = "Η εντολή ξεκλειδώματος στάλθηκε";
-"parent.command.timeout" = "Καμία επιβεβαίωση σε 10 δευτ. Ελέγξτε το διαδίκτυο στο τηλέφωνο του παιδιού και δοκιμάστε ξανά.";
+"parent.command.timeout" = "Το τηλέφωνο του παιδιού δεν έχει επιβεβαιώσει ακόμη την εκτέλεση. Ελέγξτε τη σύνδεσή του στο διαδίκτυο και δοκιμάστε ξανά.";
 "parent.dashboard.add_one_minute" = "Προσθήκη λεπτού";
 "parent.dashboard.adjust_time" = "Αλλαγή χρόνου";
 "parent.dashboard.adjust_time.done" = "Τέλος";

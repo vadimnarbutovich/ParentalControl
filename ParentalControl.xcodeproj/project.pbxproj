@@ -5,71 +5,6 @@
 	};
 	objectVersion = 77;
 	objects = {
-		/* Location Push Service Extension */
-		DA1910000000000000000001 = {isa = PBXBuildFile; fileRef = DA1910000000000000000002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		DA1910000000000000000003 = {isa = PBXBuildFile; fileRef = DA1910000000000000000004; };
-		DA1910000000000000000005 = {isa = PBXBuildFile; fileRef = DA1910000000000000000006; };
-		DA1910000000000000000007 = {isa = PBXContainerItemProxy; containerPortal = D1A2661A2F5737A7005689EB; proxyType = 1; remoteGlobalIDString = DA1910000000000000000008; remoteInfo = LocationPushServiceExtension; };
-		DA1910000000000000000002 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LocationPushServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		DA1910000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPushService.swift; sourceTree = "<group>"; };
-		DA1910000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/LocationService.swift; sourceTree = SOURCE_ROOT; };
-		DA1910000000000000000012 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		DA1910000000000000000013 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LocationPushServiceExtension.entitlements; sourceTree = "<group>"; };
-		DA1910000000000000000014 = {isa = PBXGroup; children = (DA1910000000000000000004, DA1910000000000000000006, DA1910000000000000000012, DA1910000000000000000013); path = LocationPushServiceExtension; sourceTree = "<group>"; };
-		DA1910000000000000000008 = {
-		 isa = PBXNativeTarget; buildConfigurationList = DA1910000000000000000015;
-		 buildPhases = (DA1910000000000000000016, DA1910000000000000000017, DA1910000000000000000018);
-		 buildRules = (); dependencies = (); name = LocationPushServiceExtension;
-		 productName = LocationPushServiceExtension; productReference = DA1910000000000000000002;
-		 productType = "com.apple.product-type.app-extension";
-		};
-		DA1910000000000000000016 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (DA1910000000000000000003, DA1910000000000000000005); runOnlyForDeploymentPostprocessing = 0; };
-		DA1910000000000000000017 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		DA1910000000000000000018 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		DA1910000000000000000019 = {isa = PBXTargetDependency; target = DA1910000000000000000008; targetProxy = DA1910000000000000000007; };
-		DA1910000000000000000015 = {isa = XCConfigurationList; buildConfigurations = (DA1910000000000000000010, DA1910000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		DA1910000000000000000010 = {
-		 isa = XCBuildConfiguration;
-		 buildSettings = {
-		 APPLICATION_EXTENSION_API_ONLY = YES;
-		 CODE_SIGN_ENTITLEMENTS = LocationPushServiceExtension/LocationPushServiceExtension.entitlements;
-		 CODE_SIGN_STYLE = Automatic;
-		 CURRENT_PROJECT_VERSION = 2;
-		 DEVELOPMENT_TEAM = 2L786WC7SM;
-		 GENERATE_INFOPLIST_FILE = NO;
-		 INFOPLIST_FILE = LocationPushServiceExtension/Info.plist;
-		 IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-		 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
-		 MARKETING_VERSION = 1.0;
-		 PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.LocationPushServiceExtension;
-		 PRODUCT_NAME = "$(TARGET_NAME)";
-		 SKIP_INSTALL = YES;
-		 SWIFT_VERSION = 5.0;
-		 TARGETED_DEVICE_FAMILY = "1,2";
-		 };
-		 name = Debug;
-		};
-		DA1910000000000000000011 = {
-		 isa = XCBuildConfiguration;
-		 buildSettings = {
-		 APPLICATION_EXTENSION_API_ONLY = YES;
-		 CODE_SIGN_ENTITLEMENTS = LocationPushServiceExtension/LocationPushServiceExtension.entitlements;
-		 CODE_SIGN_STYLE = Automatic;
-		 CURRENT_PROJECT_VERSION = 2;
-		 DEVELOPMENT_TEAM = 2L786WC7SM;
-		 GENERATE_INFOPLIST_FILE = NO;
-		 INFOPLIST_FILE = LocationPushServiceExtension/Info.plist;
-		 IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-		 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
-		 MARKETING_VERSION = 1.0;
-		 PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.LocationPushServiceExtension;
-		 PRODUCT_NAME = "$(TARGET_NAME)";
-		 SKIP_INSTALL = YES;
-		 SWIFT_VERSION = 5.0;
-		 TARGETED_DEVICE_FAMILY = "1,2";
-		 };
-		 name = Release;
-		};
 
 /* Begin PBXBuildFile section */
 		D10229472F586559001A8F2B /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D10229462F586559001A8F2B /* DeviceActivity.framework */; };
@@ -90,6 +25,11 @@
 		D1E17B5C2F859BF000B76264 /* DeviceActivityReportExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = D11C11042F78000100B0C0DE /* DeviceActivityReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */; };
 		DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */; };
+		DA1910000000000000000001 /* LocationPushServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DA1910000000000000000002 /* LocationPushServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DA1910000000000000000003 /* LocationPushService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1910000000000000000004 /* LocationPushService.swift */; };
+		DA1910000000000000000005 /* ParentalControl/Services/LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1910000000000000000006 /* ParentalControl/Services/LocationService.swift */; };
+		DA2010000000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */; };
+		DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +75,13 @@
 			remoteGlobalIDString = D1CF8F5F2F9FF5900077ABB8;
 			remoteInfo = NotificationServiceExtension;
 		};
+		DA1910000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D1A2661A2F5737A7005689EB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DA1910000000000000000008;
+			remoteInfo = LocationPushServiceExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -147,7 +94,7 @@
 				D10229652F586576001A8F2B /* ShieldConfigurationExtension.appex in Embed Foundation Extensions */,
 				D10AB07C2F647BB600B006EF /* ParentalControlWidgetsExtension.appex in Embed Foundation Extensions */,
 				D1CF8F672F9FF5900077ABB8 /* NotificationServiceExtension.appex in Embed Foundation Extensions */,
-				DA1910000000000000000001 /* LocationPushServiceExtension.appex */,
+				DA1910000000000000000001 /* LocationPushServiceExtension.appex in Embed Foundation Extensions */,
 				D102294F2F586559001A8F2B /* DeviceActivityMonitorExtension.appex in Embed Foundation Extensions */,
 				D10229772F5865A1001A8F2B /* ShieldActionExtension.appex in Embed Foundation Extensions */,
 			);
@@ -182,6 +129,12 @@
 		D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/DailyBudget.swift; sourceTree = SOURCE_ROOT; };
 		DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/BackgroundUsageUploader.swift; sourceTree = SOURCE_ROOT; };
+		DA1910000000000000000002 /* LocationPushServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LocationPushServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA1910000000000000000004 /* LocationPushService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPushService.swift; sourceTree = "<group>"; };
+		DA1910000000000000000006 /* ParentalControl/Services/LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/LocationService.swift; sourceTree = SOURCE_ROOT; };
+		DA1910000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		DA1910000000000000000013 /* LocationPushServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LocationPushServiceExtension.entitlements; sourceTree = "<group>"; };
+		DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/RemoteControlGate.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -355,6 +308,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DA1910000000000000000017 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -407,8 +367,20 @@
 			children = (
 				DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */,
 				DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */,
+				DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		DA1910000000000000000014 /* LocationPushServiceExtension */ = {
+			isa = PBXGroup;
+			children = (
+				DA1910000000000000000004 /* LocationPushService.swift */,
+				DA1910000000000000000006 /* ParentalControl/Services/LocationService.swift */,
+				DA1910000000000000000012 /* Info.plist */,
+				DA1910000000000000000013 /* LocationPushServiceExtension.entitlements */,
+			);
+			path = LocationPushServiceExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -543,7 +515,7 @@
 				D10229762F5865A1001A8F2B /* PBXTargetDependency */,
 				D10AB07B2F647BB600B006EF /* PBXTargetDependency */,
 				D1CF8F662F9FF5900077ABB8 /* PBXTargetDependency */,
-				DA1910000000000000000019 /* LocationPushServiceExtension dependency */,
+				DA1910000000000000000019 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D1A266242F5737A7005689EB /* ParentalControl */,
@@ -577,6 +549,23 @@
 			);
 			productName = NotificationServiceExtension;
 			productReference = D1CF8F602F9FF5900077ABB8 /* NotificationServiceExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DA1910000000000000000008 /* LocationPushServiceExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA1910000000000000000015 /* Build configuration list for PBXNativeTarget "LocationPushServiceExtension" */;
+			buildPhases = (
+				DA1910000000000000000016 /* Sources */,
+				DA1910000000000000000017 /* Frameworks */,
+				DA1910000000000000000018 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LocationPushServiceExtension;
+			productName = LocationPushServiceExtension;
+			productReference = DA1910000000000000000002 /* LocationPushServiceExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -712,6 +701,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DA1910000000000000000018 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -763,6 +759,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA2010000000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
+				DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA1910000000000000000016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DA1910000000000000000003 /* LocationPushService.swift in Sources */,
+				DA1910000000000000000005 /* ParentalControl/Services/LocationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -798,6 +805,11 @@
 			isa = PBXTargetDependency;
 			target = D1CF8F5F2F9FF5900077ABB8 /* NotificationServiceExtension */;
 			targetProxy = D1CF8F652F9FF5900077ABB8 /* PBXContainerItemProxy */;
+		};
+		DA1910000000000000000019 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DA1910000000000000000008 /* LocationPushServiceExtension */;
+			targetProxy = DA1910000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1239,7 +1251,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1287,7 +1299,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1388,6 +1400,56 @@
 			};
 			name = Release;
 		};
+		DA1910000000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LocationPushServiceExtension/LocationPushServiceExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2L786WC7SM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LocationPushServiceExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.LocationPushServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DA1910000000000000000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LocationPushServiceExtension/LocationPushServiceExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 2L786WC7SM;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LocationPushServiceExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = mycompny.ParentalControl.LocationPushServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1459,6 +1521,15 @@
 			buildConfigurations = (
 				D1CF8F682F9FF5900077ABB8 /* Debug */,
 				D1CF8F692F9FF5900077ABB8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA1910000000000000000015 /* Build configuration list for PBXNativeTarget "LocationPushServiceExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA1910000000000000000010 /* Debug */,
+				DA1910000000000000000011 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

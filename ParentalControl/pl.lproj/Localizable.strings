@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Wykonano w %d s";
 "parent.command.failed" = "Polecenie nie powiodło się";
 "parent.command.pending" = "Oczekiwanie na potwierdzenie z telefonu dziecka";
-"parent.command.processing" = "Wykonywanie. Czekamy do 10 s na potwierdzenie…";
+"parent.command.processing" = "Czekamy na potwierdzenie z telefonu dziecka…";
 "parent.command.retrying" = "Ponowne wysyłanie…";
 "parent.command.retrying_batch" = "Ponawianie poleceń: %d";
 "parent.command.sent.start" = "Wysłano polecenie blokady";
 "parent.command.sent.stop" = "Wysłano polecenie odblokowania";
-"parent.command.timeout" = "Brak potwierdzenia w ciągu 10 s. Sprawdź internet na telefonie dziecka i spróbuj ponownie.";
+"parent.command.timeout" = "Telefon dziecka nie potwierdził jeszcze wykonania polecenia. Sprawdź jego połączenie z internetem i spróbuj ponownie.";
 "parent.dashboard.add_one_minute" = "Dodaj minutę";
 "parent.dashboard.adjust_time" = "Zmień dostępny czas";
 "parent.dashboard.adjust_time.done" = "Gotowe";

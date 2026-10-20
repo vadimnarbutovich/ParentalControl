@@ -625,11 +625,11 @@
 "parent.command.applied" = "指令已在孩子的手機上執行";
 "parent.command.retrying" = "正在重新傳送指令…";
 "parent.dashboard.take_all_time" = "收回全部時間";
-"parent.command.timeout" = "10 秒內未收到確認。請檢查孩子手機的網路連線後再試。";
+"parent.command.timeout" = "孩子的手機尚未確認指令已執行。請檢查其網路連線後再試。";
 "settings.parent.link.code" = "配對碼：%@";
 "remote.error.network_generic" = "同步家長控制時發生網路錯誤。";
 "parent.dashboard.stop_focus" = "立即解除封鎖";
-"parent.command.processing" = "正在執行指令，等待確認，最長需 10 秒…";
+"parent.command.processing" = "正在等待孩子的手機確認…";
 "parent.dashboard.focus_until" = "專注模式將持續至 %@";
 "settings.child.link.connected_code" = "已透過配對碼連結：%@";
 "dashboard.blocking.schedule_until" = "截至 %@";

@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "%d сек. ішінде орындалды";
 "parent.command.failed" = "Пәрмен орындалмады";
 "parent.command.pending" = "Бала телефонынан растау күтілуде";
-"parent.command.processing" = "Орындалуда. Растауды 10 сек. дейін күтеміз…";
+"parent.command.processing" = "Баланың телефонынан растауды күтіп жатырмыз…";
 "parent.command.retrying" = "Қайта жіберілуде…";
 "parent.command.retrying_batch" = "Қайта жіберілетін пәрмендер: %d";
 "parent.command.sent.start" = "Бұғаттау пәрмені жіберілді";
 "parent.command.sent.stop" = "Бұғаттан шығару пәрмені жіберілді";
-"parent.command.timeout" = "10 секундта растау келмеді. Бала телефонындағы интернетті тексеріп, қайталаңыз.";
+"parent.command.timeout" = "Баланың телефоны пәрменнің орындалуын әлі растаған жоқ. Оның интернет байланысын тексеріп, қайталап көріңіз.";
 "parent.dashboard.add_one_minute" = "Бір минут қосу";
 "parent.dashboard.adjust_time" = "Уақытты өзгерту";
 "parent.dashboard.adjust_time.done" = "Дайын";

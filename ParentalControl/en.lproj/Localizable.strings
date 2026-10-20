@@ -347,8 +347,8 @@
 "parent.command.failed" = "Command failed";
 "parent.command.retrying" = "Retrying command delivery…";
 "parent.command.retrying_batch" = "Retrying stuck commands: %d";
-"parent.command.processing" = "Executing command, waiting up to 10 seconds for confirmation…";
-"parent.command.timeout" = "No confirmation within 10 seconds. Check the internet connection on your child’s phone and try again.";
+"parent.command.processing" = "Waiting for confirmation from your child’s phone…";
+"parent.command.timeout" = "Your child’s phone hasn’t confirmed the command yet. Check its internet connection and try again.";
 
 "remote.error.role_required" = "Select a device role first.";
 "remote.error.register_required" = "Device is not registered yet. Reopen the app.";

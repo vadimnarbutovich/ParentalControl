@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Įvykdyta per %d sek.";
 "parent.command.failed" = "Komanda nepavyko";
 "parent.command.pending" = "Laukiama patvirtinimo iš vaiko telefono";
-"parent.command.processing" = "Vykdoma. Patvirtinimo laukiama iki 10 sek.…";
+"parent.command.processing" = "Laukiama patvirtinimo iš vaiko telefono…";
 "parent.command.retrying" = "Siunčiama dar kartą…";
 "parent.command.retrying_batch" = "Kartojamos komandos: %d";
 "parent.command.sent.start" = "Blokavimo komanda išsiųsta";
 "parent.command.sent.stop" = "Atblokavimo komanda išsiųsta";
-"parent.command.timeout" = "Per 10 sek. negautas patvirtinimas. Patikrinkite internetą vaiko telefone ir kartokite.";
+"parent.command.timeout" = "Vaiko telefonas dar nepatvirtino, kad komanda įvykdyta. Patikrinkite jo interneto ryšį ir bandykite dar kartą.";
 "parent.dashboard.add_one_minute" = "Pridėti minutę";
 "parent.dashboard.adjust_time" = "Keisti likusį laiką";
 "parent.dashboard.adjust_time.done" = "Atlikta";

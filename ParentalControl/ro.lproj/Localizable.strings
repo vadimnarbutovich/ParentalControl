@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "Aplicat în %d sec.";
 "parent.command.failed" = "Comanda a eșuat";
 "parent.command.pending" = "Se așteaptă confirmarea de pe telefonul copilului";
-"parent.command.processing" = "Se execută. Așteptăm confirmarea până la 10 sec.…";
+"parent.command.processing" = "Așteptăm confirmarea de pe telefonul copilului…";
 "parent.command.retrying" = "Se retrimite comanda…";
 "parent.command.retrying_batch" = "Comenzi retrimise: %d";
 "parent.command.sent.start" = "Comanda de blocare a fost trimisă";
 "parent.command.sent.stop" = "Comanda de deblocare a fost trimisă";
-"parent.command.timeout" = "Nicio confirmare în 10 secunde. Verifică internetul pe telefonul copilului și reîncearcă.";
+"parent.command.timeout" = "Telefonul copilului nu a confirmat încă executarea comenzii. Verifică conexiunea lui la internet și încearcă din nou.";
 "parent.dashboard.add_one_minute" = "Adaugă un minut";
 "parent.dashboard.adjust_time" = "Ajustează timpul";
 "parent.dashboard.adjust_time.done" = "Gata";

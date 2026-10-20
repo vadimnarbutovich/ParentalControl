@@ -625,11 +625,11 @@
 "parent.command.applied" = "Befehl auf dem Telefon deines Kindes ausgeführt";
 "parent.command.retrying" = "Befehl wird erneut gesendet…";
 "parent.dashboard.take_all_time" = "Gesamte Zeit entziehen";
-"parent.command.timeout" = "Keine Bestätigung innerhalb von 10 Sekunden. Prüfe die Internetverbindung am Telefon deines Kindes und versuche es erneut.";
+"parent.command.timeout" = "Das Telefon deines Kindes hat die Ausführung noch nicht bestätigt. Prüfe seine Internetverbindung und versuche es erneut.";
 "settings.parent.link.code" = "Code: %@";
 "remote.error.network_generic" = "Netzwerkfehler beim Synchronisieren der Kindersicherung.";
 "parent.dashboard.stop_focus" = "Jetzt entsperren";
-"parent.command.processing" = "Befehl wird ausgeführt. Warte bis zu 10 Sekunden auf Bestätigung…";
+"parent.command.processing" = "Warte auf Bestätigung vom Telefon deines Kindes…";
 "parent.dashboard.focus_until" = "Fokus aktiv bis %@";
 "settings.child.link.connected_code" = "Verbunden mit Code: %@";
 "dashboard.blocking.schedule_until" = "Bis %@";

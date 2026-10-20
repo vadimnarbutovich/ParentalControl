@@ -207,12 +207,12 @@
 "parent.command.applied.latency" = "შესრულდა %d წამში";
 "parent.command.failed" = "ბრძანება ვერ შესრულდა";
 "parent.command.pending" = "ბავშვის ტელეფონიდან დასტურის მოლოდინი";
-"parent.command.processing" = "სრულდება. დადასტურების მოლოდინი 10 წამამდე…";
+"parent.command.processing" = "ველოდებით დადასტურებას ბავშვის ტელეფონიდან…";
 "parent.command.retrying" = "ბრძანების ხელახლა გაგზავნა…";
 "parent.command.retrying_batch" = "განმეორებული ბრძანებები: %d";
 "parent.command.sent.start" = "დაბლოკვის ბრძანება გაიგზავნა";
 "parent.command.sent.stop" = "ბლოკის მოხსნის ბრძანება გაიგზავნა";
-"parent.command.timeout" = "10 წამში დასტური არ მიღებულა. შეამოწმეთ ბავშვის ტელეფონის ინტერნეტი და გაიმეორეთ.";
+"parent.command.timeout" = "ბავშვის ტელეფონს ბრძანების შესრულება ჯერ არ დაუდასტურებია. შეამოწმეთ მისი ინტერნეტკავშირი და სცადეთ ხელახლა.";
 "parent.dashboard.add_one_minute" = "წუთის დამატება";
 "parent.dashboard.adjust_time" = "დროის შეცვლა";
 "parent.dashboard.adjust_time.done" = "მზადაა";

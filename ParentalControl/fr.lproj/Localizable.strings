@@ -625,11 +625,11 @@
 "parent.command.applied" = "Commande appliquée sur le téléphone de l’enfant";
 "parent.command.retrying" = "Nouvelle tentative d’envoi…";
 "parent.dashboard.take_all_time" = "Retirer tout le temps";
-"parent.command.timeout" = "Aucune confirmation après 10 secondes. Vérifiez la connexion Internet du téléphone de l’enfant et réessayez.";
+"parent.command.timeout" = "Le téléphone de votre enfant n’a pas encore confirmé l’exécution. Vérifiez sa connexion Internet et réessayez.";
 "settings.parent.link.code" = "Code : %@";
 "remote.error.network_generic" = "Erreur réseau lors de la synchronisation du contrôle parental.";
 "parent.dashboard.stop_focus" = "Débloquer maintenant";
-"parent.command.processing" = "Exécution en cours, attente de confirmation jusqu’à 10 secondes…";
+"parent.command.processing" = "En attente de confirmation du téléphone de votre enfant…";
 "parent.dashboard.focus_until" = "Concentration jusqu’à %@";
 "settings.child.link.connected_code" = "Associé avec le code : %@";
 "dashboard.blocking.schedule_until" = "Jusqu’à %@";

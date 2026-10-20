@@ -625,11 +625,11 @@
 "parent.command.applied" = "Orden aplicada en el teléfono del niño";
 "parent.command.retrying" = "Reintentando el envío…";
 "parent.dashboard.take_all_time" = "Quitar todo el tiempo";
-"parent.command.timeout" = "No se recibió confirmación en 10 segundos. Comprueba la conexión a internet del teléfono del niño e inténtalo de nuevo.";
+"parent.command.timeout" = "El teléfono de tu hijo aún no ha confirmado la ejecución. Comprueba su conexión a internet e inténtalo de nuevo.";
 "settings.parent.link.code" = "Código: %@";
 "remote.error.network_generic" = "Error de red al sincronizar el control parental.";
 "parent.dashboard.stop_focus" = "Desbloquear ahora";
-"parent.command.processing" = "Ejecutando la orden; esperando confirmación hasta 10 segundos…";
+"parent.command.processing" = "Esperando confirmación del teléfono de tu hijo…";
 "parent.dashboard.focus_until" = "Concentración hasta %@";
 "settings.child.link.connected_code" = "Vinculado con el código: %@";
 "dashboard.blocking.schedule_until" = "Hasta %@";
