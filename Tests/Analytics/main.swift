@@ -42,4 +42,12 @@ check(AnalyticsSchema.sanitized("schedule_change", parameters: ["enabled": "true
 check(AnalyticsSchema.sanitized("schedule_change", parameters: ["enabled": false])?["enabled"] as? Bool == false, "Preserve false")
 check(AnalyticsSchema.sanitized("statistics_day_select", parameters: ["day": "2026-10-20"])?.isEmpty == true, "No date export")
 check(AnalyticsSchema.sanitized("main_tab_select", parameters: ["tab": "schedule"])?["tab"] as? String == "schedule", "Actual tab ID")
+for plan in ["annual", "monthly", "lifetime"] {
+    check(AnalyticsSchema.sanitized("purchase_started", parameters: ["plan": plan])?["plan"] as? String == plan,
+          "Preserve current purchase plan")
+    check(AnalyticsSchema.sanitized("purchase_result", parameters: ["plan": plan, "result": "cancelled"])?["result"] as? String == "cancelled",
+          "Preserve cancellation")
+}
+check(AnalyticsSchema.sanitized("purchase_started", parameters: ["plan": "weekly"])?.isEmpty == true,
+      "Reject removed weekly plan")
 print("PASS: \(checks) analytics configuration and privacy checks")

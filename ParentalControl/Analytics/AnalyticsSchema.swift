@@ -82,8 +82,8 @@ enum AnalyticsSchema {
         "settings_feedback_tap": [:],
         "paywall_open": ["source": .choice(["settings", "dashboard_badge", "limited_feature"])],
         "paywall_cta_tap": ["cta_type": .choice(["continue", "start_trial"])],
-        "purchase_started": ["plan": .choice(["weekly", "annual", "other"])],
-        "purchase_result": ["plan": .choice(["weekly", "annual", "other"]), "result": result],
+        "purchase_started": ["plan": .choice(["monthly", "annual", "lifetime", "other"])],
+        "purchase_result": ["plan": .choice(["monthly", "annual", "lifetime", "other"]), "result": result],
         "restore_started": [:],
         "restore_result": ["result": .choice(["restored", "no_active_subscription", "failed"])]
     ]

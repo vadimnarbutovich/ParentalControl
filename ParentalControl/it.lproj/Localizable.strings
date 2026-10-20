@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "Passa a Premium";
 
 "paywall.title.brand" = "Premium";
-"paywall.subtitle" = "Usa le tue app preferite con benefici per la tua salute";
-"paywall.feature.unlimited_apps" = "App illimitate";
-"paywall.feature.advanced_config" = "Pausa rapida del monitoraggio";
-"paywall.feature.quick_break" = "Conserva il saldo del giorno prima";
+"paywall.subtitle" = "Aiuta tuo figlio a usare il telefono in modo consapevole.";
 "paywall.plan.yearly" = "Piano annuale";
-"paywall.plan.weekly" = "Piano settimanale";
-"paywall.badge.save" = "RISPARMIA 80%";
 "paywall.error.iap_fallback_console" = "Impossibile caricare gli abbonamenti. Nella console Xcode, cerca [ParentalControl][IAP] per conteggio pacchetti e ID prodotto. Controlla Sandbox, bundle e ID prodotto corrispondenti in ASC vs RevenueCat.";
 "paywall.error.generic" = "Impossibile completare la richiesta di abbonamento. Riprova.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat non è configurato in questa build: manca RevenueCatPublicSDKKey in Info.plist.";
 "paywall.error.no_offering" = "Nessuna offerta di abbonamento da RevenueCat. Controlla l'offerta «default» e la chiave SDK pubblica della tua app.";
 "paywall.error.offerings_timeout" = "Impossibile caricare gli abbonamenti in tempo. Controlla la connessione e riprova.";
 "paywall.price.loading" = "Caricamento prezzi…";
-"paywall.price.weekly_intro_format" = "%lld %@ gratis, poi %@ a settimana";
-"paywall.price.per_week_format" = "%@ a settimana";
 "paywall.price.per_year_format" = "%@ all'anno";
 "paywall.cta.start_trial" = "Inizia la prova gratuita";
 "paywall.cta.continue" = "Continua";
-"paywall.no_payment_now" = "NESSUN PAGAMENTO ORA";
 "paywall.legal.privacy" = "Privacy";
 "paywall.legal.restore" = "Ripristina";
 "paywall.legal.terms" = "Termini";
 "paywall.legal.subscription_disclaimer" = "L'abbonamento si rinnova automaticamente a meno che non venga disattivato almeno 24 ore prima della scadenza del periodo corrente. Gestisci gli abbonamenti nelle impostazioni del tuo Apple ID.";
 "paywall.close" = "Chiudi";
-"paywall.close.wait" = "Attendi…";
 "paywall.restore.checking" = "Verifica acquisti…";
 "paywall.restore.result.restored" = "Acquisti ripristinati";
-"paywall.restore.result.none" = "Nessun acquisto attivo trovato";
+"paywall.restore.result.none" = "Nessun abbonamento attivo o acquisto a vita trovato.";
 "paywall.restore.result.failed" = "Impossibile ripristinare gli acquisti. Riprova.";
 "paywall.period.day" = "giorno";
 "paywall.period.week" = "sett.";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "Applica";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "Gli abbonamenti non sono al momento disponibili sull’App Store per questa versione. Riprova più tardi.";
+"paywall.error.store_products_unavailable" = "Impossibile caricare alcune opzioni di acquisto. Controlla la connessione e riprova.";
 "remote.notification.time_reset" = "Il genitore ha azzerato il tempo guadagnato";
 "parent.dashboard.start_focus" = "Blocca ora";
 "parent.dashboard.command_latency" = "Tempo di esecuzione: %d s";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "Sincronizzazione…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "Limiti giornalieri per le app scelte";
+"paywall.feature.schedules" = "Pause per dormire e studiare";
+"paywall.feature.tasks" = "Tempo extra per le attività completate";
+"paywall.feature.location" = "La posizione di tuo figlio su richiesta";
+"paywall.plan.monthly" = "Mensile";
+"paywall.plan.lifetime" = "A vita";
+"paywall.price.per_month_format" = "%@ al mese";
+"paywall.price.once_format" = "%@ · pagamento unico";
+"paywall.price.annual_trial_format" = "3 giorni gratis, poi %@ all’anno";
+"paywall.legal.lifetime_disclaimer" = "Acquisto unico. Nessun abbonamento o rinnovo automatico.";
+"paywall.retry" = "Riprova";

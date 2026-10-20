@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "升級至進階版";
 
 "paywall.title.brand" = "進階版";
-"paywall.subtitle" = "用喜愛的 App，對健康更有益";
-"paywall.feature.unlimited_apps" = "不限 App 數量";
-"paywall.feature.advanced_config" = "快速暫停監控";
-"paywall.feature.quick_break" = "保留前一天的餘額";
+"paywall.subtitle" = "幫助孩子養成健康的手機使用習慣。";
 "paywall.plan.yearly" = "年度方案";
-"paywall.plan.weekly" = "週方案";
-"paywall.badge.save" = "省80%";
 "paywall.error.iap_fallback_console" = "無法載入訂閱。請在 Xcode 控制台搜尋 [ParentalControl][IAP] 查看套件數量和產品 ID。請檢查 Sandbox、Bundle 以及 ASC 與 RevenueCat 中的產品 ID 是否相符。";
 "paywall.error.generic" = "無法完成訂閱要求，請重試。";
 "paywall.error.missing_public_sdk_key" = "此版本未設定 RevenueCat：Info.plist 中缺少 RevenueCatPublicSDKKey。";
 "paywall.error.no_offering" = "RevenueCat 無可用訂閱方案。請檢查 «default» 方案和 App 的公開 SDK 金鑰。";
 "paywall.error.offerings_timeout" = "無法及時載入訂閱。請檢查網路後重試。";
 "paywall.price.loading" = "正在載入價格…";
-"paywall.price.weekly_intro_format" = "免費 %lld %@，之後 %@/週";
-"paywall.price.per_week_format" = "%@/週";
 "paywall.price.per_year_format" = "%@/年";
 "paywall.cta.start_trial" = "開始免費試用";
 "paywall.cta.continue" = "繼續";
-"paywall.no_payment_now" = "現在無需付款";
 "paywall.legal.privacy" = "隱私";
 "paywall.legal.restore" = "恢復購買";
 "paywall.legal.terms" = "條款";
 "paywall.legal.subscription_disclaimer" = "訂閱將自動續訂，除非在目前期間結束前至少24小時關閉自動續訂。你可以在 Apple ID 帳號設定中管理訂閱。";
 "paywall.close" = "關閉";
-"paywall.close.wait" = "請稍候…";
 "paywall.restore.checking" = "正在檢查購買紀錄…";
 "paywall.restore.result.restored" = "購買已恢復";
-"paywall.restore.result.none" = "未找到有效購買";
+"paywall.restore.result.none" = "找不到有效訂閱或永久使用的購買紀錄。";
 "paywall.restore.result.failed" = "無法恢復購買，請重試。";
 "paywall.period.day" = "天";
 "paywall.period.week" = "週";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "套用";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "此版本暫時無法在 App Store 訂閱，請稍後再試。";
+"paywall.error.store_products_unavailable" = "部分購買選項無法載入。請檢查網路連線後重試。";
 "remote.notification.time_reset" = "家長已重設賺取的時間";
 "parent.dashboard.start_focus" = "立即封鎖";
 "parent.dashboard.command_latency" = "套用耗時：%d 秒";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "正在同步…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "為所選 App 設定每日限額";
+"paywall.feature.schedules" = "為睡眠和學習安排休息時間";
+"paywall.feature.tasks" = "完成任務可獲得額外使用時間";
+"paywall.feature.location" = "需要時查看孩子的位置";
+"paywall.plan.monthly" = "月訂閱";
+"paywall.plan.lifetime" = "永久使用";
+"paywall.price.per_month_format" = "每月 %@";
+"paywall.price.once_format" = "%@ · 一次性付款";
+"paywall.price.annual_trial_format" = "免費試用3天，之後每年 %@";
+"paywall.legal.lifetime_disclaimer" = "一次性購買，無需訂閱，不會自動續訂。";
+"paywall.retry" = "重試";

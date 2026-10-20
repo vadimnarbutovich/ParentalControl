@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "프리미엄으로 업그레이드";
 
 "paywall.title.brand" = "프리미엄";
-"paywall.subtitle" = "좋아하는 앱을 건강하게 사용하세요";
-"paywall.feature.unlimited_apps" = "앱 무제한";
-"paywall.feature.advanced_config" = "빠른 모니터링 일시정지";
-"paywall.feature.quick_break" = "전날 잔여 시간 유지";
+"paywall.subtitle" = "아이가 건강한 스마트폰 사용 습관을 기르도록 도와주세요.";
 "paywall.plan.yearly" = "연간 플랜";
-"paywall.plan.weekly" = "주간 플랜";
-"paywall.badge.save" = "80% 절약";
 "paywall.error.iap_fallback_console" = "구독을 불러올 수 없어요. Xcode 콘솔에서 [ParentalControl][IAP]를 검색하여 패키지 수와 제품 ID를 확인하세요. Sandbox, 번들, ASC와 RevenueCat의 제품 ID 일치 여부를 확인하세요.";
 "paywall.error.generic" = "구독 요청을 완료할 수 없어요. 다시 시도해 주세요.";
 "paywall.error.missing_public_sdk_key" = "이 빌드에서 RevenueCat이 구성되지 않았어요: Info.plist에 RevenueCatPublicSDKKey가 없어요.";
 "paywall.error.no_offering" = "RevenueCat에서 구독 오퍼링이 없어요. «default» 오퍼링과 앱의 공개 SDK 키를 확인하세요.";
 "paywall.error.offerings_timeout" = "구독을 제시간에 불러올 수 없어요. 네트워크를 확인하고 다시 시도해 주세요.";
 "paywall.price.loading" = "가격 불러오는 중…";
-"paywall.price.weekly_intro_format" = "%lld %@ 무료, 이후 주당 %@";
-"paywall.price.per_week_format" = "주당 %@";
 "paywall.price.per_year_format" = "연간 %@";
 "paywall.cta.start_trial" = "무료 체험 시작";
 "paywall.cta.continue" = "계속";
-"paywall.no_payment_now" = "지금 결제 없음";
 "paywall.legal.privacy" = "개인정보 보호";
 "paywall.legal.restore" = "복원";
 "paywall.legal.terms" = "이용약관";
 "paywall.legal.subscription_disclaimer" = "구독은 현재 기간 종료 최소 24시간 전에 자동 갱신을 해제하지 않으면 자동으로 갱신됩니다. Apple ID 계정 설정에서 구독을 관리할 수 있어요.";
 "paywall.close" = "닫기";
-"paywall.close.wait" = "잠시만요...";
 "paywall.restore.checking" = "구매 내역 확인 중…";
 "paywall.restore.result.restored" = "구매가 복원되었어요";
-"paywall.restore.result.none" = "활성 구매를 찾을 수 없어요";
+"paywall.restore.result.none" = "이용 중인 구독이나 평생 이용 구매 내역이 없습니다.";
 "paywall.restore.result.failed" = "구매를 복원할 수 없어요. 다시 시도해 주세요.";
 "paywall.period.day" = "일";
 "paywall.period.week" = "주";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "적용";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "이 버전에서는 현재 App Store 구독을 이용할 수 없습니다. 나중에 다시 시도해 주세요.";
+"paywall.error.store_products_unavailable" = "일부 구매 옵션을 불러오지 못했습니다. 연결을 확인하고 다시 시도해 주세요.";
 "remote.notification.time_reset" = "보호자가 획득한 시간을 초기화했어요";
 "parent.dashboard.start_focus" = "지금 차단";
 "parent.dashboard.command_latency" = "적용 소요 시간: %d초";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "동기화 중…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "선택한 앱의 일일 사용 한도";
+"paywall.feature.schedules" = "수면과 공부를 위한 휴식 시간";
+"paywall.feature.tasks" = "과제를 완료하면 앱 사용 시간 보상";
+"paywall.feature.location" = "필요할 때 아이의 위치 확인";
+"paywall.plan.monthly" = "월간";
+"paywall.plan.lifetime" = "평생 이용";
+"paywall.price.per_month_format" = "월 %@";
+"paywall.price.once_format" = "%@ · 일회성 결제";
+"paywall.price.annual_trial_format" = "3일 무료 체험 후 연 %@";
+"paywall.legal.lifetime_disclaimer" = "한 번만 결제합니다. 구독이나 자동 갱신이 없습니다.";
+"paywall.retry" = "다시 시도";

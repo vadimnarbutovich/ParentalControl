@@ -265,35 +265,26 @@
 "settings.subscription.status.free" = "Upgrade to Premium";
 
 "paywall.title.brand" = "Premium";
-"paywall.subtitle" = "Use your favorite apps with benefits for your health";
-"paywall.feature.unlimited_apps" = "Unlimited number of apps";
-"paywall.feature.advanced_config" = "Quick monitoring pause";
-"paywall.feature.quick_break" = "Keep balance from the previous day";
+"paywall.subtitle" = "Help your child build healthy phone habits.";
 "paywall.plan.yearly" = "Yearly plan";
-"paywall.plan.weekly" = "Weekly plan";
-"paywall.badge.save" = "SAVE 80%";
 "paywall.error.iap_fallback_console" = "Subscriptions didn’t load. In the Xcode console, find [ParentalControl][IAP] for package count and product ids. Check Sandbox, bundle, and matching product IDs in ASC vs RevenueCat.";
 "paywall.error.generic" = "Couldn’t complete the subscription request. Please try again.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat is not configured in this build: missing RevenueCatPublicSDKKey in Info.plist.";
 "paywall.error.no_offering" = "No subscription offering from RevenueCat. Check the «default» offering and your app’s public SDK key.";
 "paywall.error.offerings_timeout" = "Couldn’t load subscriptions in time. Check network and try again.";
-"paywall.error.store_products_unavailable" = "Subscriptions are temporarily unavailable in the App Store for this build. Please try again later.";
+"paywall.error.store_products_unavailable" = "Some purchase options could not be loaded. Check your connection and try again.";
 "paywall.price.loading" = "Loading prices…";
-"paywall.price.weekly_intro_format" = "%lld %@ free, then %@ per week";
-"paywall.price.per_week_format" = "%@ per week";
 "paywall.price.per_year_format" = "%@ per year";
 "paywall.cta.start_trial" = "Start free trial";
 "paywall.cta.continue" = "Continue";
-"paywall.no_payment_now" = "NO PAYMENT NOW";
 "paywall.legal.privacy" = "Privacy";
 "paywall.legal.restore" = "Restore";
 "paywall.legal.terms" = "Terms";
 "paywall.legal.subscription_disclaimer" = "Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Manage subscriptions in your Apple ID account settings.";
 "paywall.close" = "Close";
-"paywall.close.wait" = "Please wait...";
 "paywall.restore.checking" = "Checking purchases…";
 "paywall.restore.result.restored" = "Purchases restored";
-"paywall.restore.result.none" = "No active purchases found";
+"paywall.restore.result.none" = "No active subscription or lifetime purchase was found.";
 "paywall.restore.result.failed" = "Couldn’t restore purchases. Please try again.";
 "paywall.period.day" = "day";
 "paywall.period.week" = "wk";
@@ -657,3 +648,16 @@
 "budget.weekly.apply_days" = "Apply to days";
 "budget.weekly.draft_hint" = "After applying, tap Save on the daily limit screen.";
 "budget.weekly.apply" = "Apply";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "Daily limits for selected apps";
+"paywall.feature.schedules" = "Breaks for sleep and study";
+"paywall.feature.tasks" = "Extra app time for completed tasks";
+"paywall.feature.location" = "Your child’s location on request";
+"paywall.plan.monthly" = "Monthly";
+"paywall.plan.lifetime" = "Lifetime";
+"paywall.price.per_month_format" = "%@ per month";
+"paywall.price.once_format" = "%@ · one-time payment";
+"paywall.price.annual_trial_format" = "3 days free, then %@ per year";
+"paywall.legal.lifetime_disclaimer" = "One-time purchase. No subscription or automatic renewal.";
+"paywall.retry" = "Try again";

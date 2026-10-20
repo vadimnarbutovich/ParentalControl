@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "プレミアムにアップグレード";
 
 "paywall.title.brand" = "プレミアム";
-"paywall.subtitle" = "お気に入りのアプリを健康的に使おう";
-"paywall.feature.unlimited_apps" = "アプリ数無制限";
-"paywall.feature.advanced_config" = "クイック監視一時停止";
-"paywall.feature.quick_break" = "前日の残高を引き継ぎ";
+"paywall.subtitle" = "お子さまの健やかなスマホ習慣をサポート。";
 "paywall.plan.yearly" = "年間プラン";
-"paywall.plan.weekly" = "週間プラン";
-"paywall.badge.save" = "80%お得";
 "paywall.error.iap_fallback_console" = "サブスクリプションを読み込めませんでした。Xcodeコンソールで[ParentalControl][IAP]を検索し、パッケージ数とプロダクトIDを確認してください。Sandbox、バンドル、ASCとRevenueCatのプロダクトIDの一致を確認してください。";
 "paywall.error.generic" = "サブスクリプションのリクエストを完了できませんでした。もう一度お試しください。";
 "paywall.error.missing_public_sdk_key" = "このビルドではRevenueCatが設定されていません：Info.plistにRevenueCatPublicSDKKeyがありません。";
 "paywall.error.no_offering" = "RevenueCatからサブスクリプションのオファリングがありません。「default」オファリングとアプリのパブリックSDKキーを確認してください。";
 "paywall.error.offerings_timeout" = "サブスクリプションを時間内に読み込めませんでした。ネットワークを確認してもう一度お試しください。";
 "paywall.price.loading" = "価格を読み込み中…";
-"paywall.price.weekly_intro_format" = "%lld %@無料、その後%@/週";
-"paywall.price.per_week_format" = "%@/週";
 "paywall.price.per_year_format" = "%@/年";
 "paywall.cta.start_trial" = "無料トライアルを開始";
 "paywall.cta.continue" = "続ける";
-"paywall.no_payment_now" = "今すぐの支払いはありません";
 "paywall.legal.privacy" = "プライバシー";
 "paywall.legal.restore" = "復元";
 "paywall.legal.terms" = "利用規約";
 "paywall.legal.subscription_disclaimer" = "サブスクリプションは、現在の期間終了の24時間前までに自動更新をオフにしない限り、自動的に更新されます。サブスクリプションの管理はApple IDの設定から行えます。";
 "paywall.close" = "閉じる";
-"paywall.close.wait" = "お待ちください...";
 "paywall.restore.checking" = "購入情報を確認中…";
 "paywall.restore.result.restored" = "購入を復元しました";
-"paywall.restore.result.none" = "有効な購入が見つかりません";
+"paywall.restore.result.none" = "有効なサブスクリプションまたは買い切りの購入が見つかりませんでした。";
 "paywall.restore.result.failed" = "購入を復元できませんでした。もう一度お試しください。";
 "paywall.period.day" = "日";
 "paywall.period.week" = "週";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "適用";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "このバージョンでは現在、App Storeでサブスクリプションを利用できません。しばらくしてからお試しください。";
+"paywall.error.store_products_unavailable" = "一部の購入プランを読み込めませんでした。接続を確認して、もう一度お試しください。";
 "remote.notification.time_reset" = "保護者が獲得した時間をリセットしました";
 "parent.dashboard.start_focus" = "今すぐブロック";
 "parent.dashboard.command_latency" = "適用まで：%d秒";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "同期中…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "選んだアプリに1日の利用制限";
+"paywall.feature.schedules" = "睡眠や勉強の時間はアプリをお休み";
+"paywall.feature.tasks" = "課題を終えたら利用時間をごほうびに";
+"paywall.feature.location" = "必要なときにお子さまの位置を確認";
+"paywall.plan.monthly" = "月額プラン";
+"paywall.plan.lifetime" = "買い切り";
+"paywall.price.per_month_format" = "月額%@";
+"paywall.price.once_format" = "%@・1回限りのお支払い";
+"paywall.price.annual_trial_format" = "3日間無料、その後は年額%@";
+"paywall.legal.lifetime_disclaimer" = "1回限りの購入です。サブスクリプションや自動更新はありません。";
+"paywall.retry" = "再試行";

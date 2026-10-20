@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "Passer à Premium";
 
 "paywall.title.brand" = "Premium";
-"paywall.subtitle" = "Utilise tes apps préférées avec des bienfaits pour ta santé";
-"paywall.feature.unlimited_apps" = "Nombre illimité d'apps";
-"paywall.feature.advanced_config" = "Pause rapide de la surveillance";
-"paywall.feature.quick_break" = "Conserver le solde de la veille";
+"paywall.subtitle" = "Aidez votre enfant à utiliser son téléphone de façon équilibrée.";
 "paywall.plan.yearly" = "Plan annuel";
-"paywall.plan.weekly" = "Plan hebdomadaire";
-"paywall.badge.save" = "ÉCONOMISE 80 %";
 "paywall.error.iap_fallback_console" = "Impossible de charger les abonnements. Dans la console Xcode, cherche [ParentalControl][IAP] pour le nombre de packages et les IDs produit. Vérifie Sandbox, bundle et les IDs produit dans ASC vs RevenueCat.";
 "paywall.error.generic" = "Impossible de finaliser la demande d'abonnement. Réessaie.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat n'est pas configuré dans ce build : RevenueCatPublicSDKKey manquant dans Info.plist.";
 "paywall.error.no_offering" = "Aucune offre d'abonnement de RevenueCat. Vérifie l'offre « default » et la clé SDK publique de ton app.";
 "paywall.error.offerings_timeout" = "Impossible de charger les abonnements à temps. Vérifie ta connexion et réessaie.";
 "paywall.price.loading" = "Chargement des prix…";
-"paywall.price.weekly_intro_format" = "%lld %@ gratuits, puis %@ par semaine";
-"paywall.price.per_week_format" = "%@ par semaine";
 "paywall.price.per_year_format" = "%@ par an";
 "paywall.cta.start_trial" = "Essai gratuit";
 "paywall.cta.continue" = "Continuer";
-"paywall.no_payment_now" = "AUCUN PAIEMENT MAINTENANT";
 "paywall.legal.privacy" = "Confidentialité";
 "paywall.legal.restore" = "Restaurer";
 "paywall.legal.terms" = "Conditions";
 "paywall.legal.subscription_disclaimer" = "L'abonnement se renouvelle automatiquement sauf si le renouvellement automatique est désactivé au moins 24 heures avant la fin de la période en cours. Gère tes abonnements dans les réglages de ton Apple ID.";
 "paywall.close" = "Fermer";
-"paywall.close.wait" = "Patiente…";
 "paywall.restore.checking" = "Vérification des achats…";
 "paywall.restore.result.restored" = "Achats restaurés";
-"paywall.restore.result.none" = "Aucun achat actif trouvé";
+"paywall.restore.result.none" = "Aucun abonnement actif ni achat à vie trouvé.";
 "paywall.restore.result.failed" = "Impossible de restaurer les achats. Réessaie.";
 "paywall.period.day" = "jour";
 "paywall.period.week" = "sem.";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "Appliquer";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "Les abonnements sont temporairement indisponibles dans l’App Store pour cette version. Réessayez plus tard.";
+"paywall.error.store_products_unavailable" = "Certaines offres n’ont pas pu être chargées. Vérifiez votre connexion et réessayez.";
 "remote.notification.time_reset" = "Votre parent a remis le temps gagné à zéro";
 "parent.dashboard.start_focus" = "Bloquer maintenant";
 "parent.dashboard.command_latency" = "Délai d’application : %d s";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "Synchronisation…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "Limites quotidiennes pour les apps choisies";
+"paywall.feature.schedules" = "Pauses pour dormir et étudier";
+"paywall.feature.tasks" = "Du temps en plus pour les tâches accomplies";
+"paywall.feature.location" = "La position de votre enfant sur demande";
+"paywall.plan.monthly" = "Mensuel";
+"paywall.plan.lifetime" = "À vie";
+"paywall.price.per_month_format" = "%@ par mois";
+"paywall.price.once_format" = "%@ · paiement unique";
+"paywall.price.annual_trial_format" = "3 jours gratuits, puis %@ par an";
+"paywall.legal.lifetime_disclaimer" = "Achat unique. Sans abonnement ni renouvellement automatique.";
+"paywall.retry" = "Réessayer";

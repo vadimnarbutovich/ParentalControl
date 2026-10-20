@@ -148,7 +148,7 @@
 |---|---|---|
 | `paywall_open` | Показ экрана подписки | `source`: `settings`, `dashboard_badge`, `limited_feature` |
 | `paywall_cta_tap` | Нажатие CTA | `cta_type`: `continue` / `start_trial` |
-| `purchase_started` | Начало покупки доступного пакета | `plan`: `weekly`, `annual`, `other` |
+| `purchase_started` | Начало покупки доступного пакета | `plan`: `monthly`, `annual`, `lifetime`, `other` |
 | `purchase_result` | Результат покупки из RevenueCat | `plan`; `result`: `success`, `cancelled`, `failed` |
 | `restore_started` | Начало восстановления | — |
 | `restore_result` | Результат восстановления | `result`: `restored`, `no_active_subscription`, `failed` |

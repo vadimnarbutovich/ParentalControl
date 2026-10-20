@@ -284,34 +284,25 @@
 "settings.subscription.status.free" = "Pasarse a Premium";
 
 "paywall.title.brand" = "Premium";
-"paywall.subtitle" = "Usa tus apps favoritas con beneficios para tu salud";
-"paywall.feature.unlimited_apps" = "Número ilimitado de apps";
-"paywall.feature.advanced_config" = "Pausa rápida de monitorización";
-"paywall.feature.quick_break" = "Conservar saldo del día anterior";
+"paywall.subtitle" = "Ayuda a tu hijo a usar el teléfono de forma consciente.";
 "paywall.plan.yearly" = "Plan anual";
-"paywall.plan.weekly" = "Plan semanal";
-"paywall.badge.save" = "AHORRA 80 %";
 "paywall.error.iap_fallback_console" = "No se han podido cargar las suscripciones. En la consola de Xcode, busca [ParentalControl][IAP] para el recuento de paquetes e IDs de producto. Comprueba Sandbox, bundle e IDs de producto en ASC vs RevenueCat.";
 "paywall.error.generic" = "No se ha podido completar la solicitud de suscripción. Inténtalo de nuevo.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat no está configurado en esta compilación: falta RevenueCatPublicSDKKey en Info.plist.";
 "paywall.error.no_offering" = "No hay oferta de suscripción de RevenueCat. Comprueba la oferta «default» y la clave pública del SDK de tu app.";
 "paywall.error.offerings_timeout" = "No se han podido cargar las suscripciones a tiempo. Comprueba la conexión e inténtalo de nuevo.";
 "paywall.price.loading" = "Cargando precios…";
-"paywall.price.weekly_intro_format" = "%lld %@ gratis, luego %@ por semana";
-"paywall.price.per_week_format" = "%@ por semana";
 "paywall.price.per_year_format" = "%@ al año";
 "paywall.cta.start_trial" = "Empezar prueba gratuita";
 "paywall.cta.continue" = "Continuar";
-"paywall.no_payment_now" = "SIN PAGO AHORA";
 "paywall.legal.privacy" = "Privacidad";
 "paywall.legal.restore" = "Restaurar";
 "paywall.legal.terms" = "Condiciones";
 "paywall.legal.subscription_disclaimer" = "La suscripción se renueva automáticamente a menos que se desactive la renovación automática con al menos 24 horas de antelación al fin del período actual. Gestiona tus suscripciones en los ajustes de tu Apple ID.";
 "paywall.close" = "Cerrar";
-"paywall.close.wait" = "Espera, por favor...";
 "paywall.restore.checking" = "Comprobando compras…";
 "paywall.restore.result.restored" = "Compras restauradas";
-"paywall.restore.result.none" = "No se han encontrado compras activas";
+"paywall.restore.result.none" = "No se encontró ninguna suscripción activa ni compra de por vida.";
 "paywall.restore.result.failed" = "No se han podido restaurar las compras. Inténtalo de nuevo.";
 "paywall.period.day" = "día";
 "paywall.period.week" = "sem.";
@@ -601,7 +592,7 @@
 "budget.weekly.apply" = "Aplicar";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "Las suscripciones no están disponibles temporalmente en el App Store para esta versión. Inténtalo más tarde.";
+"paywall.error.store_products_unavailable" = "No se pudieron cargar algunas opciones de compra. Comprueba tu conexión e inténtalo de nuevo.";
 "remote.notification.time_reset" = "Tu padre o madre ha restablecido el tiempo ganado";
 "parent.dashboard.start_focus" = "Bloquear ahora";
 "parent.dashboard.command_latency" = "Tiempo de aplicación: %d s";
@@ -653,3 +644,16 @@
 "parent.dashboard.syncing_button" = "Sincronizando…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "Límites diarios para las apps elegidas";
+"paywall.feature.schedules" = "Pausas para dormir y estudiar";
+"paywall.feature.tasks" = "Tiempo extra por completar tareas";
+"paywall.feature.location" = "La ubicación de tu hijo cuando la solicites";
+"paywall.plan.monthly" = "Mensual";
+"paywall.plan.lifetime" = "De por vida";
+"paywall.price.per_month_format" = "%@ al mes";
+"paywall.price.once_format" = "%@ · pago único";
+"paywall.price.annual_trial_format" = "3 días gratis, después %@ al año";
+"paywall.legal.lifetime_disclaimer" = "Compra única. Sin suscripción ni renovación automática.";
+"paywall.retry" = "Reintentar";
