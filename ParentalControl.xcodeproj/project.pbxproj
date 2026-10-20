@@ -30,6 +30,8 @@
 		DA1910000000000000000005 /* ParentalControl/Services/LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1910000000000000000006 /* ParentalControl/Services/LocationService.swift */; };
 		DA2010000000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */; };
 		DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */; };
+		DA2020000000000000000001 /* ParentalControl/Services/ControlSystemWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */; };
+		DA2020000000000000000002 /* ParentalControl/Services/ScreenTimeEnforcer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -135,6 +137,8 @@
 		DA1910000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DA1910000000000000000013 /* LocationPushServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LocationPushServiceExtension.entitlements; sourceTree = "<group>"; };
 		DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/RemoteControlGate.swift; sourceTree = SOURCE_ROOT; };
+		DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ControlSystemWorker.swift; sourceTree = SOURCE_ROOT; };
+		DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScreenTimeEnforcer.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -368,6 +372,8 @@
 				DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */,
 				DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */,
 				DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */,
+				DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */,
+				DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -761,6 +767,8 @@
 			files = (
 				DA2010000000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
 				DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */,
+				DA2020000000000000000001 /* ParentalControl/Services/ControlSystemWorker.swift in Sources */,
+				DA2020000000000000000002 /* ParentalControl/Services/ScreenTimeEnforcer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

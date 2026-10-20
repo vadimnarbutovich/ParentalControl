@@ -182,6 +182,9 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             let center = DeviceActivityCenter()
             if restartUsage || state.monitorEvent == nil || !center.activities.contains(activityName) {
                 guard startNextChunkMonitoring(selection: selection, availableSeconds: state.availableSeconds, defaults: defaults) else {
+                    guard !budgetTemporarilyBlocked(defaults),
+                          let current = try? DailyBudgetStore.shared.current(),
+                          current.policy.revision == state.policy.revision else { return }
                     applyShield(selection: selection)
                     return
                 }
@@ -206,6 +209,14 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     }
 
     private func clearShield() {
+        // startMonitoring can return after a newer manual block arrived.
+        // Never clear the default store based on the pre-IPC snapshot.
+        guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+        defaults.synchronize()
+        guard !budgetTemporarilyBlocked(defaults) else { return }
+        if DailyBudgetStore.shared.isEnabled {
+            guard let state = try? DailyBudgetStore.shared.current(), state.availableSeconds > 0 else { return }
+        }
         let settingsStore = ManagedSettingsStore()
         settingsStore.clearAllSettings()
     }
@@ -247,15 +258,26 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
         do {
             let center = DeviceActivityCenter()
-            let eventName = DailyBudgetStore.shared.isEnabled
-                ? DeviceActivityEvent.Name(try DailyBudgetStore.shared.arm(threshold: threshold))
+            let enabled = DailyBudgetStore.shared.isEnabled
+            let before = enabled ? try DailyBudgetStore.shared.current() : nil
+            guard !budgetTemporarilyBlocked(defaults),
+                  !enabled || before?.availableSeconds == availableSeconds else { return false }
+            let eventName = enabled
+                ? DeviceActivityEvent.Name(try DailyBudgetStore.shared.arm(threshold: threshold, matching: before))
                 : usageBudgetEvent
             center.stopMonitoring([activityName])
+            guard !budgetTemporarilyBlocked(defaults) else { return false }
             try center.startMonitoring(
                 activityName,
                 during: schedule,
                 events: [eventName: usageEvent]
             )
+            if enabled {
+                guard let after = try DailyBudgetStore.shared.current(),
+                      after.monitorEvent == eventName.rawValue,
+                      after.policy.revision == before?.policy.revision,
+                      !budgetTemporarilyBlocked(defaults) else { return false }
+            }
             markHeartbeat("startNextChunkMonitoring.success")
             return true
         } catch {

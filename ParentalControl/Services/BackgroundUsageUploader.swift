@@ -119,6 +119,12 @@ nonisolated final class BackgroundUsageUploader: NSObject, URLSessionTaskDelegat
               let state = try DailyBudgetStore.shared.current(),
               UUID(uuidString: state.policy.familyID) == pairing.familyID else { return }
 
+        defaults.synchronize()
+        guard DailyBudgetStore.mayReport(revision: state.policy.revision,
+            pending: defaults.integer(forKey: DailyBudgetStore.pendingEnforcementKey(state.policy.familyID)),
+            confirmed: defaults.integer(forKey: DailyBudgetStore.confirmedEnforcementKey(state.policy.familyID)))
+        else { return }
+
         let folder = try directory()
         let now = Date()
         let receiptURL = folder.appendingPathComponent("receipt.json")

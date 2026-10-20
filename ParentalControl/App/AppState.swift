@@ -451,7 +451,7 @@ final class AppState: ObservableObject {
         hasLoadedParentBudget = false
         budgetChangeIntent = nil
         budgetMonitorReady = false
-        _ = screenTimeService.ensureDailyBudgetMonitoring()
+        screenTimeService.ensureDailyBudgetMonitoring()
         parentPairingWaitTask?.cancel()
         parentPairingWaitTask = nil
         pairingState = nil
@@ -581,7 +581,7 @@ final class AppState: ObservableObject {
     /// Only the PIN-unlocked parent mode may create a local action. Persist it
     /// BEFORE changing shields; a restart/offline launch must not lose the intent.
     func setLocalManualBlock(active: Bool) {
-        RemoteControlGate.withLock {
+        withControlStateLock {
             adoptNotificationControlState()
             setLocalManualBlockLocked(active: active)
         }
@@ -774,7 +774,7 @@ final class AppState: ObservableObject {
     }
 
     private func applyDailyBudgetPolicy(_ policy: DailyBudgetPolicy?) {
-        RemoteControlGate.withLock { applyDailyBudgetPolicyLocked(policy) }
+        withControlStateLock { applyDailyBudgetPolicyLocked(policy) }
     }
 
     private func applyDailyBudgetPolicyLocked(_ policy: DailyBudgetPolicy?) {
@@ -1105,7 +1105,7 @@ final class AppState: ObservableObject {
     #endif
 
     func refreshSharedStateFromAppGroup() {
-        RemoteControlGate.withLock { adoptNotificationControlState() }
+        withControlStateLock { adoptNotificationControlState() }
         reloadBalanceFromSharedStore()
         #if DEBUG && !HIDE_DEBUG_UI
         refreshDeviceActivityDebug()
@@ -1120,7 +1120,7 @@ final class AppState: ObservableObject {
     }
 
     private func startTimedFocusSession(totalSeconds: Int) {
-        RemoteControlGate.withLock { startTimedFocusSessionLocked(totalSeconds: totalSeconds) }
+        withControlStateLock { startTimedFocusSessionLocked(totalSeconds: totalSeconds) }
     }
 
     private func startTimedFocusSessionLocked(totalSeconds: Int) {
@@ -1134,16 +1134,20 @@ final class AppState: ObservableObject {
         focusSessionPlannedSeconds = totalSeconds
         let endsAt = startDate.addingTimeInterval(TimeInterval(totalSeconds))
         focusSessionEndsAt = endsAt
-        focusLiveActivityService.start(endsAt: endsAt, totalSeconds: totalSeconds)
+        Task { @MainActor in
+            guard focusSessionEndsAt == endsAt else { return }
+            focusLiveActivityService.start(endsAt: endsAt, totalSeconds: totalSeconds)
+        }
         storage.saveFocusSessionSnapshot(
             FocusSessionSnapshot(startedAt: startDate, endsAt: endsAt, plannedSeconds: totalSeconds)
         )
+        syncScreenTimeEnforcement(notifyOnUnlock: false)
         startFocusCountdownTask()
     }
 
     /// Блокировка как при фокус-сессии (shield), без дедлайна — пока родитель не отключит.
     private func startIndefiniteFocusSession() {
-        RemoteControlGate.withLock { startIndefiniteFocusSessionLocked() }
+        withControlStateLock { startIndefiniteFocusSessionLocked() }
     }
 
     private func startIndefiniteFocusSessionLocked() {
@@ -1163,7 +1167,7 @@ final class AppState: ObservableObject {
     }
 
     func endFocusSession() {
-        RemoteControlGate.withLock {
+        withControlStateLock {
             adoptNotificationControlState()
             endFocusSessionLocked()
         }
@@ -1521,17 +1525,14 @@ final class AppState: ObservableObject {
 
     private func processPendingRemoteCommandsIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
-        do {
-            let commands = try await remoteSyncService.fetchPendingCommands()
-            await applyPendingCommands(commands)
-        } catch {
-            remoteStatusMessage = error.localizedDescription
-        }
+        // tasks_updated also wakes budget changes: fetch/apply their current policy
+        // before acknowledging the wake signal, just like the regular polling path.
+        await pollChildAndApply(includeParentSettings: false)
     }
 
     /// Применяет уже полученный список pending-команд (вынесено из `processPendingRemoteCommandsIfNeeded`,
     /// чтобы переиспользовать из combined `pollChildAndApply` без повторного fetch).
-    private func applyPendingCommands(_ commands: [RemoteFocusCommand]) async {
+    private func applyPendingCommands(_ commands: [RemoteFocusCommand], budgetReady: Bool) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
         guard !commands.isEmpty else { return }
         let sorted = commands.sorted { $0.createdAt < $1.createdAt }
@@ -1563,10 +1564,12 @@ final class AppState: ObservableObject {
         if !taskCmds.isEmpty {
             await refreshChildTasksFromServer()
             for cmd in taskCmds {
+                guard budgetReady, await confirmChildEnforcement() else { break }
                 try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
             }
         }
 
+        guard budgetReady else { return }
         let nonSchedule = sorted.filter {
             $0.commandType != .schedulesUpdated
                 && $0.commandType != .scheduleStarted
@@ -1610,9 +1613,26 @@ final class AppState: ObservableObject {
         do {
             let poll = try await remoteSyncService.childPoll(includeParentSettings: includeParentSettings)
             guard pairingState?.familyID == requestedFamily else { return }
-            guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
+            // PIN/Pro setup must not depend on Screen Time already being authorized
+            // or on a synchronous system operation returning successfully.
+            if includeParentSettings {
+                applyParentPinFromBackend(
+                    hashBase64: poll.parentPin?.hashBase64,
+                    saltBase64: poll.parentPin?.saltBase64,
+                    updatedAt: poll.parentPin.flatMap { $0.updatedAt }
+                )
+                let proValue = poll.parentPro?.isPro ?? false
+                storage.saveParentIsPro(proValue)
+                subscriptionService?.applyParentProStatus(proValue)
+            }
+            guard withControlStateLock({ adoptNotificationControlState() }) else { return }
             applyDailyBudgetPolicy(poll.budget?.policy)
             await applyDesiredFocusState(poll.desired)
+            var budgetReady = await confirmChildEnforcement()
+            guard pairingState?.familyID == requestedFamily else { return }
+            if let policy = poll.budget?.policy, (dailyBudget?.policy.revision ?? -1) < policy.revision {
+                budgetReady = false
+            }
             let commands = poll.pendingCommands.map {
                 RemoteFocusCommand(
                     id: $0.id,
@@ -1624,17 +1644,7 @@ final class AppState: ObservableObject {
                     updatedAt: $0.updatedAt
                 )
             }
-            await applyPendingCommands(commands)
-            if includeParentSettings {
-                applyParentPinFromBackend(
-                    hashBase64: poll.parentPin?.hashBase64,
-                    saltBase64: poll.parentPin?.saltBase64,
-                    updatedAt: poll.parentPin.flatMap { $0.updatedAt }
-                )
-                let proValue = poll.parentPro?.isPro ?? false
-                storage.saveParentIsPro(proValue)
-                subscriptionService?.applyParentProStatus(proValue)
-            }
+            await applyPendingCommands(commands, budgetReady: budgetReady)
         } catch {
             remoteStatusMessage = error.localizedDescription
         }
@@ -1646,7 +1656,7 @@ final class AppState: ObservableObject {
               pendingLocalFocusChange == nil, let family = pairingState?.familyID,
               let revision = desired.revision else { return }
         var appliedRuntime: RemoteChildRuntimeState?
-        RemoteControlGate.withLock {
+        withControlStateLock {
             let previousRevision = childFocusRevision
             adoptNotificationControlState()
             guard revision >= childFocusRevision else { return }
@@ -1683,6 +1693,8 @@ final class AppState: ObservableObject {
             )
         }
         guard let runtime = appliedRuntime else { return }
+        guard await confirmChildEnforcement(), pairingState?.familyID == family,
+              childFocusRevision == revision, isFocusSessionActive == runtime.isFocusActive else { return }
         remoteChildState = runtime
         do {
             try await remoteSyncService.updateChildRuntimeState(runtime, focusRevision: revision)
@@ -1921,7 +1933,7 @@ final class AppState: ObservableObject {
 
     private func applyRemoteCommandIfNeeded(id: UUID, type: RemoteFocusCommandType, durationSeconds: Int?) async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
-        guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
+        guard withControlStateLock({ adoptNotificationControlState() }) else { return }
         // Location now runs exclusively in LPSE; stale alert payloads must not start GPS.
         if type == .requestLocation { return }
         if type == .startFocus || type == .endFocus {
@@ -1936,6 +1948,9 @@ final class AppState: ObservableObject {
                       let revision = desired.revision, revision >= childFocusRevision else { return }
                 await applyDesiredFocusState(desired)
                 guard pairingState?.familyID == requestedFamily,
+                      pendingLocalFocusChange == nil, revision == childFocusRevision,
+                      await confirmChildEnforcement(),
+                      pairingState?.familyID == requestedFamily,
                       pendingLocalFocusChange == nil, revision == childFocusRevision else { return }
                 let matches = desired.shouldFocusActive == (type == .startFocus)
                 try await remoteSyncService.ackCommand(id: id, status: matches ? .applied : .failed,
@@ -1951,6 +1966,7 @@ final class AppState: ObservableObject {
             return
         }
         if storage.loadLastHandledRemoteCommandID() == id.uuidString {
+            guard await confirmChildEnforcement() else { return }
             try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
             return
         }
@@ -1996,11 +2012,16 @@ final class AppState: ObservableObject {
             // Обычно tasks_updated отфильтровывается в applyPendingCommands; ветка здесь —
             // защита от случая, если команда дойдёт сюда как «последняя» (просто перетягиваем список).
             await refreshChildTasksFromServer()
+            return // Only the policy-aware polling path may ACK this budget wake signal.
         }
+        // Legacy additive commands have already changed persisted balance. Record
+        // that before awaiting enforcement so a retry cannot add their minutes twice.
         storage.saveLastHandledRemoteCommandID(id.uuidString)
+        guard await confirmChildEnforcement() else { return }
         do {
             try await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
             if pendingLocalFocusChange == nil {
+                guard await confirmChildEnforcement() else { return }
                 // Capture state AND revision after the await: a local toggle may
                 // have completed while the acknowledgement was in flight.
                 let newState = RemoteChildRuntimeState(isFocusActive: isFocusSessionActive,
@@ -2477,11 +2498,13 @@ final class AppState: ObservableObject {
 
     private func syncChildStatsSnapshotIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
-        guard RemoteControlGate.withLock({ adoptNotificationControlState() }) else { return }
+        guard withControlStateLock({ adoptNotificationControlState() }) else { return }
         guard await flushLocalManualBlockIntent() else { return }
         resetDailyBalanceIfNeeded()
+        guard await confirmChildEnforcement() else { return }
         let today = dailyStats(for: Date(), steps: todaySteps)
         let history = (try? DailyBudgetStore.shared.pendingHistory()) ?? []
+        guard screenTimeService.lastEnforcementReceipt?.isCurrent() == true else { return }
         do {
             // Один combined-вызов вместо трёх (upsert_child_day_stats + update_child_runtime
             // + update_child_balance). Runtime и balance пишутся в одну строку child_runtime_state.
@@ -2536,7 +2559,7 @@ final class AppState: ObservableObject {
 
     func appDidBecomeActive() {
         storage.saveMainAppIsActive(true)
-        RemoteControlGate.withLock { adoptNotificationControlState() }
+        withControlStateLock { adoptNotificationControlState() }
         resetDailyBalanceIfNeeded()
         syncFocusSessionWithWallClock()
         if !DailyBudgetStore.shared.isEnabled { screenTimeService.stopDeviceActivityMonitoring() }
@@ -2630,7 +2653,7 @@ final class AppState: ObservableObject {
     }
 
     private func syncScreenTimeEnforcement(notifyOnUnlock: Bool) {
-        RemoteControlGate.withLock {
+        withControlStateLock {
             adoptNotificationControlState()
             syncScreenTimeEnforcementLocked(notifyOnUnlock: notifyOnUnlock)
         }
@@ -2661,61 +2684,49 @@ final class AppState: ObservableObject {
 
     private func syncScreenTimeEnforcementLocked(notifyOnUnlock: Bool) {
         if deviceRole == .child, DailyBudgetStore.shared.isEnabled {
-            screenTimeService.refreshMonitoringStatus()
             dailyBudget = try? DailyBudgetStore.shared.current()
             balance = storage.loadBalance()
-            budgetMonitorReady = screenTimeService.ensureDailyBudgetMonitoring()
-            if !budgetMonitorReady || dailyBudget == nil {
-                budgetError = L10n.tr("budget.apply_error")
-                screenTimeService.stopDeviceActivityMonitoring()
-                screenTimeService.applyShield()
-                return
+        }
+        // Schedules network/system work after this short data-lock scope returns.
+        screenTimeService.requestEnforcement()
+        if notifyOnUnlock, balance.availableSeconds > 0 {
+            Task {
+                guard await confirmChildEnforcement() else { return }
+                notificationService.notify(
+                    title: L10n.tr("notification.balance.updated.title"),
+                    body: L10n.f("notification.balance.updated.body", L10n.duration(seconds: balance.availableSeconds)))
             }
-            if budgetError == L10n.tr("budget.apply_error") { budgetError = nil }
         }
-        if isFocusSessionActive {
-            screenTimeService.stopDeviceActivityMonitoring()
-            screenTimeService.applyShield()
-            return
-        }
+    }
 
-        if isMonitoringPaused {
-            screenTimeService.stopDeviceActivityMonitoring()
-            // Пауза должна временно отключать и мониторинг, и блокировку.
-            screenTimeService.clearShield()
-            return
+    private func confirmChildEnforcement() async -> Bool {
+        guard deviceRole == .child, screenTimeService.isAuthorized,
+              let receipt = await screenTimeService.enforceAndConfirm(),
+              deviceRole == .child, receipt.isCurrent() else {
+            budgetMonitorReady = false
+            return false
         }
+        guard withControlStateLock({ adoptNotificationControlState() }) else { return false }
+        guard receipt.isCurrent(), receipt.stamp.focusRevision == childFocusRevision,
+              receipt.stamp.focusActive == isFocusSessionActive else { return false }
+        dailyBudget = try? DailyBudgetStore.shared.current()
+        balance = storage.loadBalance()
+        guard receipt.isCurrent() else { budgetMonitorReady = false; return false }
+        budgetMonitorReady = true
+        if budgetError == L10n.tr("budget.apply_error") { budgetError = nil }
+        return true
+    }
 
-        let hasSelection = !screenTimeService.selection.applicationTokens.isEmpty ||
-            !screenTimeService.selection.categoryTokens.isEmpty ||
-            !screenTimeService.selection.webDomainTokens.isEmpty
-
-        if hasSelection && balance.availableSeconds > 0 {
-            if !screenTimeService.isMonitoringEnabled {
-                let started = screenTimeService.startDeviceActivityMonitoring(availableSeconds: balance.availableSeconds)
-                if DailyBudgetStore.shared.isEnabled && !started {
-                    budgetMonitorReady = false
-                    budgetError = L10n.tr("budget.apply_error")
-                    screenTimeService.applyShield()
-                    return
-                }
-            }
-        } else {
-            screenTimeService.stopDeviceActivityMonitoring()
-        }
-
-        if balance.availableSeconds <= 0 {
-            screenTimeService.applyShield()
-            return
-        }
-
-        screenTimeService.clearShield()
-        if notifyOnUnlock {
-            notificationService.notify(
-                title: L10n.tr("notification.balance.updated.title"),
-                body: L10n.f("notification.balance.updated.body", L10n.duration(seconds: balance.availableSeconds))
-            )
-        }
+    @discardableResult
+    private func withControlStateLock(_ action: () -> Void) -> Bool {
+        // These scopes contain data only. No network, DeviceActivity, shields or await.
+        // The outer transaction already holds a UIKit assertion; don't request a
+        // new system assertion from inside its data lock.
+        if RemoteControlGate.isHoldingDataLock { return RemoteControlGate.withLock(action) }
+        let execution = ControlBackgroundExecution(context: .init())
+        defer { execution.end() }
+        guard execution.canRun else { return false }
+        return RemoteControlGate.withLock(action)
     }
 
     private func configureMainAppActivityTracking() {

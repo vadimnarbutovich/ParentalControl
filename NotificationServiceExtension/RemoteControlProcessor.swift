@@ -16,8 +16,8 @@ final class RemoteControlProcessor {
     private let secret: String
     private let session: URLSession
     private let lifetime: NotificationDeliveryLifetime
-    private let usage = DeviceActivityName("parentalcontrol.activity")
-    private let store = ManagedSettingsStore()
+    private let execution = ControlSystemWorker.Context()
+    private var appliedReceipt: ScreenTimeEnforcer.Receipt?
     private var diagnosticCommandID: UUID?
     private var diagnosticCommandType: String?
     private var diagnosticAuthorizationStatus: Int?
@@ -76,6 +76,7 @@ final class RemoteControlProcessor {
         session = URLSession(configuration: config)
         self.lifetime = lifetime
         lifetime.onCancel { [session] in session.invalidateAndCancel() }
+        lifetime.onCancel { [execution] in execution.cancel() }
     }
 
     /// One bounded, non-sensitive record, readable without collecting a system archive.
@@ -87,8 +88,16 @@ final class RemoteControlProcessor {
         if let diagnosticCommandType { value["commandType"] = diagnosticCommandType }
         if let diagnosticAuthorizationStatus { value["authorizationStatus"] = diagnosticAuthorizationStatus }
         if let error {
-            value["reason"] = (error as? Failure)?.diagnostic ??
-                (error is DecodingError ? "decoding_failed" : "operation_error")
+            if let failure = error as? ControlSystemWorker.Failure {
+                switch failure {
+                case .expired: value["reason"] = "system_operation_expired"
+                case .stale: value["reason"] = "system_operation_stale"
+                case .busy: value["reason"] = "system_worker_busy"
+                }
+            } else {
+                value["reason"] = (error as? Failure)?.diagnostic ??
+                    (error is DecodingError ? "decoding_failed" : "operation_error")
+            }
             value["errorCode"] = (error as NSError).code
         }
         defaults.set(value, forKey: "parentalcontrol.notificationControlDiagnostic")
@@ -113,6 +122,22 @@ final class RemoteControlProcessor {
         }
         let active = poll.desired.shouldFocusActive
         let budget: DailyBudgetState
+        let authorization = AuthorizationCenter.shared.authorizationStatus
+        diagnosticAuthorizationStatus = authorization.rawValue
+        guard authorization != .denied else { throw Failure.authorizationNotApproved(authorization.rawValue) }
+        // Validate actual system access OUTSIDE the data lock and MainActor.
+        recordDiagnostic("system_monitoring_check")
+        do {
+            try await ScreenTimeEnforcer.verifyMonitoringAccess(context: execution)
+        } catch DeviceActivityCenter.MonitoringError.unauthorized {
+            throw Failure.monitoringAccessRejected
+        } catch let error as ControlSystemWorker.Failure {
+            throw error
+        } catch {
+            throw Failure.monitoringAccessFailed((error as NSError).code)
+        }
+        try checkContext()
+        recordDiagnostic("system_monitoring_ready")
         // Never hold a process lock over network I/O or await. Recheck revisions
         // after obtaining it: a foreground poll may have applied newer state.
         do {
@@ -126,12 +151,11 @@ final class RemoteControlProcessor {
             }
             guard let policy = poll.budget?.policy else { throw Failure.policy(.missingBudgetPolicy) }
             guard DailyBudgetStore.shared.isEnabled else { throw Failure.budgetDisabled }
-            let authorization = AuthorizationCenter.shared.authorizationStatus
-            diagnosticAuthorizationStatus = authorization.rawValue
+            guard active || !defaults.bool(forKey: "parentalcontrol.isDeviceActivityMonitoringPaused")
+            else { throw Failure.monitoringPaused }
             // NSE can report notDetermined while the containing app is authorized.
             // This is not approval: the actual monitoring API must still accept
-            // the operation below. Never prompt or use cached consent in NSE.
-            guard authorization != .denied else { throw Failure.authorizationNotApproved(authorization.rawValue) }
+            // the operation checked above. Never prompt or use cached consent in NSE.
             guard let selectionData = defaults.data(forKey: "parentalcontrol.familySelection") else { throw Failure.selectionMissing }
             let selection = try JSONDecoder().decode(FamilyActivitySelection.self, from: selectionData)
             guard !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty ||
@@ -144,8 +168,6 @@ final class RemoteControlProcessor {
             // or shield. Use the real midnight budget monitor, not a dummy activity.
             // Even an existing activity must be registered again: merely finding its
             // name is not evidence that authorization is still valid.
-            try verifyMonitoringAccess()
-            try checkContext()
             budget = try DailyBudgetStore.shared.apply(policy, legacyUsedToday: 0)
             if active {
                 let encoder = JSONEncoder()
@@ -163,12 +185,11 @@ final class RemoteControlProcessor {
             }
             defaults.set(poll.desired.revision, forKey: RemoteControlGate.revisionKey(family))
             defaults.synchronize()
-            // Named schedule stores are intentionally untouched. Unblocking manually
-            // must never bypass bedtime or unlock an exhausted allowance.
-            try enforce(selection, budget: budget, active: active,
-                        restart: previous?.budgetSeconds != budget.budgetSeconds || previous?.day != budget.day)
         }
+        appliedReceipt = try await ScreenTimeEnforcer.apply(context: execution)
         try checkContext()
+        guard appliedReceipt?.stamp.focusRevision == poll.desired.revision,
+              appliedReceipt?.stamp.focusActive == active else { throw Failure.stale }
         recordDiagnostic("locally_applied")
         logger.info("Control locally applied revision=\(poll.desired.revision)")
 
@@ -222,79 +243,14 @@ final class RemoteControlProcessor {
 
     private func checkContext() throws {
         try lifetime.checkCancellation()
+        try execution.check()
         try Task.checkCancellation()
+        if let appliedReceipt, !appliedReceipt.isCurrent() { throw Failure.stale }
         defaults.synchronize()
         guard defaults.string(forKey: "parentalcontrol.deviceRole") == "child",
               defaults.data(forKey: "parentalcontrol.pairingState") == pairingData,
               defaults.string(forKey: "parentalcontrol.deviceSecret") == secret,
               defaults.data(forKey: RemoteControlGate.pendingKey(family)) == nil else { throw Failure.stale }
-    }
-
-    private var dailySchedule: DeviceActivitySchedule {
-        DeviceActivitySchedule(intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: true)
-    }
-
-    private func verifyMonitoringAccess() throws {
-        recordDiagnostic("system_monitoring_check")
-        do {
-            try DeviceActivityCenter().startMonitoring(
-                DeviceActivityName("parentalcontrol.dailyBudget"), during: dailySchedule)
-        } catch DeviceActivityCenter.MonitoringError.unauthorized {
-            throw Failure.monitoringAccessRejected
-        } catch {
-            throw Failure.monitoringAccessFailed((error as NSError).code)
-        }
-        try checkContext()
-        recordDiagnostic("system_monitoring_ready")
-    }
-
-    private func enforce(_ selection: FamilyActivitySelection, budget: DailyBudgetState, active: Bool, restart: Bool) throws {
-        try checkContext()
-        let center = DeviceActivityCenter()
-        if active || budget.availableSeconds <= 0 {
-            try shield(selection)
-            try checkContext()
-            center.stopMonitoring([usage])
-            try checkContext()
-            return
-        }
-        // Don't override an explicit local monitoring pause in the pilot.
-        guard !defaults.bool(forKey: "parentalcontrol.isDeviceActivityMonitoringPaused") else { throw Failure.monitoringPaused }
-        do {
-            // The daily monitor was already validated by verifyMonitoringAccess().
-            let needsRestart = restart || budget.monitorEvent == nil || !center.activities.contains(usage)
-            try checkContext()
-            if needsRestart {
-                let threshold = min(budget.availableSeconds, budget.availableSeconds < 60 ? 10 : 30)
-                let event = try DailyBudgetStore.shared.arm(threshold: threshold)
-                center.stopMonitoring([usage])
-                try checkContext()
-                try center.startMonitoring(usage, during: dailySchedule, events: [
-                    DeviceActivityEvent.Name(event): DeviceActivityEvent(applications: selection.applicationTokens,
-                        categories: selection.categoryTokens, webDomains: selection.webDomainTokens,
-                        threshold: DateComponents(second: threshold), includesPastActivity: false)
-                ])
-                try checkContext()
-            }
-            // The API returning does not prove on-device shielding; TestFlight QA is required.
-            store.clearAllSettings()
-        } catch {
-            // Expiry/cancellation/context change must not start another system operation.
-            try checkContext()
-            try shield(selection)
-            logger.error("Control monitoring failed code=\((error as NSError).code)")
-            throw Failure.monitoring
-        }
-    }
-
-    private func shield(_ selection: FamilyActivitySelection) throws {
-        try checkContext()
-        store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
-        try checkContext()
-        store.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
-        try checkContext()
-        store.shield.webDomains = selection.webDomainTokens.isEmpty ? nil : selection.webDomainTokens
     }
 
     private func call(_ action: String, _ payload: [String: Any]) async throws -> Data {

@@ -255,15 +255,39 @@ nonisolated final class DailyBudgetStore {
                     extraSeconds: policy.extraDay == today ? policy.extraSeconds : 0)
                 state.initializeOperations()
             }
+            // Persisting desired policy is not proof that Screen Time accepted it.
+            // A monitor callback must not report a new revision before enforcement.
+            let key = Self.pendingEnforcementKey(state.policy.familyID)
+            defaults?.set(max(defaults?.integer(forKey: key) ?? 0, state.policy.revision), forKey: key)
+            defaults?.synchronize()
             try write(state, in: dir)
             return state
         }
     }
 
+    static func pendingEnforcementKey(_ family: String) -> String {
+        "parentalcontrol.pendingBudgetEnforcement." + family.lowercased()
+    }
+
+    static func confirmedEnforcementKey(_ family: String) -> String {
+        "parentalcontrol.confirmedBudgetEnforcement." + family.lowercased()
+    }
+
+    static func mayReport(revision: Int, pending: Int, confirmed: Int) -> Bool {
+        // Existing installations without the new marker retain their usage uploads.
+        pending == 0 || revision <= confirmed
+    }
+
     /// Each monitor generation has its own event name: delayed callbacks cannot spend twice.
-    func arm(threshold: Int) throws -> String {
+    func arm(threshold: Int, matching expected: DailyBudgetState? = nil) throws -> String {
         try locked { dir in
             guard var state = try read(dir), state.availableSeconds > 0 else { throw StoreError.unavailable }
+            if let expected {
+                guard state.policy.familyID == expected.policy.familyID,
+                      state.policy.revision == expected.policy.revision, state.day == expected.day,
+                      state.usedSeconds == expected.usedSeconds, state.monitorEvent == expected.monitorEvent
+                else { throw StoreError.unavailable }
+            }
             let event = "parentalcontrol.usageBudget." + UUID().uuidString
             state.monitorEvent = event
             state.monitorThreshold = min(max(1, threshold), state.availableSeconds)

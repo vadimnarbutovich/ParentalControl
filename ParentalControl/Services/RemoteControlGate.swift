@@ -1,7 +1,8 @@
 import Foundation
 import Darwin
 
-/// Serializes local enforcement across the host and notification extension.
+/// Serializes short shared-data transactions across the host and notification extension.
+/// Never keep a lease across DeviceActivity / ManagedSettings IPC.
 /// Never waits for another process: the existing poll/push retry will try again.
 nonisolated enum RemoteControlGate {
     static let group = "group.mycompny.parentalcontrol"
@@ -33,17 +34,27 @@ nonisolated enum RemoteControlGate {
     }
 
     private static let localLock = NSRecursiveLock()
+    private static let threadKey = "parentalcontrol.dataLockHeld"
+    static var isHoldingDataLock: Bool { Thread.current.threadDictionary[threadKey] != nil }
+    static func assertOutsideDataLock() {
+        precondition(!isHoldingDataLock,
+                     "System IPC must never run while holding the shared data lock")
+    }
     // Only used inside synchronous withLock closures, on the owning thread.
     nonisolated(unsafe) private static var depth = 0
     @discardableResult
-    static func withLock(_ action: () -> Void) -> Bool {
+    static func withLock(directory: URL? = nil, _ action: () -> Void) -> Bool {
         localLock.lock()
         defer { localLock.unlock() }
         if depth > 0 { action(); return true }
-        guard let lease = Lease() else { return false }
+        guard let lease = Lease(directory: directory) else { return false }
         return withExtendedLifetime(lease) {
             depth += 1
-            defer { depth -= 1 }
+            Thread.current.threadDictionary[threadKey] = true
+            defer {
+                depth -= 1
+                Thread.current.threadDictionary.removeObject(forKey: threadKey)
+            }
             action()
             return true
         }

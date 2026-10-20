@@ -3,6 +3,7 @@ import Foundation
 import FamilyControls
 import ManagedSettings
 import DeviceActivity
+import UIKit
 
 enum RemovalProtectionError: Error {
     case busy
@@ -36,14 +37,15 @@ final class ScreenTimeService: ObservableObject {
     // success after an explicit .child request, and invalidate on observed loss.
     var isRemovalProtectionEnabled: Bool { childAuthorizationConfirmed && isAuthorized }
 
-    private let store = ManagedSettingsStore()
     private let appStore: AppGroupStore
-    private let deviceActivityService: DeviceActivityService
     private var authorizationObservation: AnyCancellable?
+    private var enforcementTask: Task<ScreenTimeEnforcer.Receipt?, Never>?
+    private var enforcementGeneration = UUID()
+    private var enforcementRequested = false
+    private(set) var lastEnforcementReceipt: ScreenTimeEnforcer.Receipt?
 
     init(appStore: AppGroupStore) {
         self.appStore = appStore
-        self.deviceActivityService = DeviceActivityService(appStore: appStore)
         prefersChildAuthorization = appStore.loadScreenTimeAuthorizationMember() == "child"
         childAuthorizationConfirmed = appStore.loadChildAuthorizationConfirmed()
         loadSelection()
@@ -128,40 +130,67 @@ final class ScreenTimeService: ObservableObject {
     }
 
     func applyShield() {
-        let apps = selection.applicationTokens
-        let categories = selection.categoryTokens
-        let domains = selection.webDomainTokens
-
-        store.shield.applications = apps.isEmpty ? nil : apps
-        store.shield.applicationCategories = categories.isEmpty ? nil : .specific(categories)
-        store.shield.webDomains = domains.isEmpty ? nil : domains
+        requestEnforcement()
     }
 
     func clearShield() {
-        store.clearAllSettings()
-    }
-
-    @discardableResult
-    func startDeviceActivityMonitoring(availableSeconds: Int) -> Bool {
-        let started = deviceActivityService.startMonitoringDailySchedule(
-            selection: selection,
-            availableSeconds: availableSeconds
-        )
-        isMonitoringEnabled = started
-        return started
+        requestEnforcement()
     }
 
     func stopDeviceActivityMonitoring() {
-        deviceActivityService.stopMonitoring()
-        isMonitoringEnabled = false
+        // Persist invalidation, not a stop command that could arrive after a newer start.
+        RemoteControlGate.defaults?.set(UUID().uuidString, forKey: ScreenTimeEnforcer.restartKey)
+        requestEnforcement()
     }
 
     func refreshMonitoringStatus() {
-        isMonitoringEnabled = DeviceActivityCenter().activities.contains(DeviceActivityName("parentalcontrol.activity"))
+        requestEnforcement()
     }
 
-    func ensureDailyBudgetMonitoring() -> Bool {
-        deviceActivityService.ensureDailyBudgetMonitoring()
+    func ensureDailyBudgetMonitoring() {
+        requestEnforcement()
+    }
+
+    /// Coalesce simultaneous UI/poll/push requests. The worker reads shared state
+    /// after the data transaction finishes, rather than capturing host memory.
+    func requestEnforcement() {
+        guard appStore.loadDeviceRole() == .child else { return }
+        enforcementRequested = true
+        guard enforcementTask == nil else { return }
+        let generation = UUID()
+        enforcementGeneration = generation
+        enforcementTask = Task { @MainActor [weak self] in
+            guard let self else { return nil }
+            let context = ControlSystemWorker.Context()
+            let background = ControlBackgroundExecution(context: context)
+            defer {
+                background.end()
+                if self.enforcementGeneration == generation { self.enforcementTask = nil }
+            }
+            guard background.canRun else { return nil }
+            for _ in 0..<3 {
+                self.enforcementRequested = false
+                do {
+                    let receipt = try await ScreenTimeEnforcer.apply(context: context)
+                    if !receipt.isCurrent() { continue }
+                    self.lastEnforcementReceipt = receipt
+                    self.isMonitoringEnabled = receipt.monitoring
+                    return receipt
+                } catch {
+                    self.lastEnforcementReceipt = nil
+                    guard self.enforcementRequested, (try? context.check()) != nil else { return nil }
+                }
+            }
+            return nil // Existing poll/push retries persisted state; no optimistic ACK.
+        }
+    }
+
+    func enforceAndConfirm() async -> ScreenTimeEnforcer.Receipt? {
+        requestEnforcement()
+        guard let task = enforcementTask else { return nil }
+        let receipt = await task.value
+        guard !Task.isCancelled, let receipt, receipt.isCurrent() else { return nil }
+        return receipt
     }
 
     func saveSelection() {

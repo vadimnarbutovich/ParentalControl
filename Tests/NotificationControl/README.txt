@@ -11,6 +11,9 @@ Local tests (from project root)
 xcrun swiftc ParentalControl/Models/DailyBudget.swift ParentalControl/Models/ParentFocusConfirmation.swift ParentalControl/Services/RemoteControlGate.swift NotificationServiceExtension/NotificationControlSnapshot.swift NotificationServiceExtension/NotificationDeliveryLifetime.swift Tests/NotificationControl/main.swift -o /tmp/parental-notification-control-tests
 /tmp/parental-notification-control-tests
 
+xcrun swiftc -parse-as-library ParentalControl/Services/ControlSystemWorker.swift ParentalControl/Services/RemoteControlGate.swift Tests/NotificationControl/WorkerTests.swift -o /tmp/parental-control-worker-tests
+/tmp/parental-control-worker-tests
+
 Before TestFlight
 The NotificationServiceExtension App ID is:
 mycompny.ParentalControl.NotificationServiceExtension
@@ -26,7 +29,7 @@ entitlement does not establish whether distribution access has been approved.
 Refresh the distribution profile if already approved, otherwise request approval:
 https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement
 Before export, also align extension CFBundleVersion with the host: the unsigned
-build currently warns about extension build 1 versus host build 3.
+build currently warns about extension builds 1/2 versus host build 4.
 
 Hardware acceptance (both supported test iPhones, without Xcode debugger)
 1. Update both devices, open the child app once. Verify pairing, Screen Time
@@ -46,6 +49,10 @@ Hardware acceptance (both supported test iPhones, without Xcode debugger)
    No action for wrong family or stale command, no false successful ACK on errors.
 9. Disable notifications: existing host/poll fallback is best-effort, NOT a
    guarantee of immediate background execution.
+10. Reproduce the TestFlight crash scenario: child uses another selected app,
+    parent alternates block/unblock/+5 minutes. Repeat with screen locked.
+    No dead10cc crash, no false applied result after an enforcement timeout,
+    actual usage must continue counting after an unlock. Verify midnight rollover.
 
 Diagnostics
 Console.app: process NotificationServiceExtension, subsystem
@@ -79,11 +86,28 @@ location activity to execute unrelated commands.
 The content handler and cancellation flag now run independently of MainActor.
 This cannot interrupt an in-flight synchronous system API call or undo its side
 effects; once it returns, cancellation checks prevent subsequent work / ACK.
-The process lease remains held until that call unwinds, preserving serialization.
+The process lease now covers ONLY short data transactions, never synchronous
+DeviceActivity or ManagedSettings IPC. The host and NSE use ControlSystemWorker:
+a serial non-main queue, a 12-second caller deadline, at most two admitted jobs,
+and cancellation/revision checks before and after system calls. A late return
+cannot continue an obsolete plan or acknowledge it. A busy/expired job is retried
+by the existing poll/push path; no parallel bypass thread is spawned.
+The host holds a bounded UIKit background assertion and ends it on expiration.
+Desired state remains persisted for retry, but runtime/command confirmations wait
+for successful enforcement. Background usage uploads also wait until a newly
+persisted budget revision has been enforced. Named schedule stores and LPSE are
+unchanged; there is no server deployment or additional push channel.
+Cross-process changes are detected optimistically, not by locking around IPC.
+The OS call already in progress cannot be cancelled or made transactional. Hardware
+tests must verify concurrent host/NSE/monitor callbacks and late system returns.
 Tests cover exactly-once delivery, late worker completion, cancellation, blocked
 main-thread expiry and stale / non-focus parent snapshot confirmation.
-Validation after hardening: 52 local checks, Debug and Release iphoneos builds
-(CODE_SIGNING_ALLOWED=NO), and syntax validation of all 21 localization files.
+The worker regression tests additionally simulate a blocked system service, check
+that another process can still take the data lock, reject obsolete results, and
+verify queue capacity and recovery. Pure tests cannot simulate Apple's daemon.
+Validation for this fix: 56 model/gate/delivery checks and 11 worker checks pass.
+The worker suite also passed 10 consecutive runs. Debug and Release iphoneos
+builds pass with CODE_SIGNING_ALLOWED=NO; existing build warnings remain.
 This is not a signed distribution/archive validation or a hardware acceptance run.
 The parent keeps last confirmed runtime during delivery and offline/error states,
 never projecting desired into applied. Waiting/result messages are visible in
