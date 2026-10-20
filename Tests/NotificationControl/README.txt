@@ -2,17 +2,21 @@ Notification control pilot — 2026-10-20
 
 Scope
 Manual indefinite block/unblock and revisioned daily-budget updates through visible
-APNs notifications. Location Push, scheduled shields, parent notifications and legacy
+APNs notifications. Schedule update/start/end signals now also reconcile the latest
+authenticated schedule list in NSE. Location Push, parent notifications and legacy
 additive commands are not rerouted. No server deployment or database migration needed.
 Delivery, actual ManagedSettings enforcement and DeviceActivity restart MUST be
 verified on hardware; a successful build or HTTP ACK does not establish that.
 
 Local tests (from project root)
-xcrun swiftc ParentalControl/Models/DailyBudget.swift ParentalControl/Models/ParentFocusConfirmation.swift ParentalControl/Services/RemoteControlGate.swift NotificationServiceExtension/NotificationControlSnapshot.swift NotificationServiceExtension/NotificationDeliveryLifetime.swift Tests/NotificationControl/main.swift -o /tmp/parental-notification-control-tests
+xcrun swiftc ParentalControl/Models/ScheduleControlPlan.swift ParentalControl/Models/DailyBudget.swift ParentalControl/Models/ParentFocusConfirmation.swift ParentalControl/Services/RemoteControlGate.swift NotificationServiceExtension/NotificationControlSnapshot.swift NotificationServiceExtension/NotificationDeliveryLifetime.swift Tests/NotificationControl/main.swift -o /tmp/parental-notification-control-tests
 /tmp/parental-notification-control-tests
 
 xcrun swiftc -parse-as-library ParentalControl/Services/ControlSystemWorker.swift ParentalControl/Services/RemoteControlGate.swift Tests/NotificationControl/WorkerTests.swift -o /tmp/parental-control-worker-tests
 /tmp/parental-control-worker-tests
+
+xcrun swiftc -parse-as-library ParentalControl/Models/ScheduleControlPlan.swift ParentalControl/Services/ScheduleControlStore.swift ParentalControl/Services/ControlSystemWorker.swift ParentalControl/Services/RemoteControlGate.swift Tests/NotificationControl/ScheduleTests.swift -o /tmp/parental-schedule-control-tests
+/tmp/parental-schedule-control-tests
 
 Before TestFlight
 The NotificationServiceExtension App ID is:
@@ -53,11 +57,38 @@ Hardware acceptance (both supported test iPhones, without Xcode debugger)
     parent alternates block/unblock/+5 minutes. Repeat with screen locked.
     No dead10cc crash, no false applied result after an enforcement timeout,
     actual usage must continue counting after an unlock. Verify midnight rollover.
+11. Keep child app closed. Create a schedule on parent starting in 2 minutes,
+    ending 3 minutes later. Observe actual shield, then automatic removal, without
+    opening child app. Also create an already-active window; change, disable and
+    delete it while active. Check late/duplicate pushes do not replay old state.
+12. Test overlapping schedules, manual block and exhausted daily budget: ending
+    one schedule must not clear ANY other restriction. Test Tue 23:55 -> Wed 07:00
+    with Tuesday-only selection, and Sunday -> Monday. Device must be in use for
+    Apple's interval callbacks; wall-clock UI alone is not proof of a callback.
+13. After schedule update has applied, disconnect network and test the next local
+    start/end. Registration and local execution must not depend on receiving a
+    fresh server push at each boundary. Failed registration must remain unacked.
+
+Schedule implementation
+Host and NSE share ScheduleControlPlan/Store/Enforcer. Only pcsched_* monitors and
+pcsched_store_* named shields are changed. Full snapshots use a fetch generation
+and pairing check so stale network responses cannot overwrite newer fetches.
+Existing monitors with matching signatures are not all stopped/recreated.
+Overnight windows use one interval. Windows shorter than Apple's 15-minute minimum
+use a padded monitor and an end warning at the actual end; callbacks reconcile
+current time/data (including stop/re-registration callbacks), not their old intent.
+https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter/monitoringerror/intervaltooshort
+https://developer.apple.com/documentation/deviceactivity/deviceactivityschedule/warningtime
+Parent UI says "Schedule active now" based on time, not "Apps are blocked".
+Command ACKs report successful reconciliation to the existing backend; no new
+per-schedule child-status API or parent confirmation indicator has been added.
 
 Diagnostics
 Console.app: process NotificationServiceExtension, subsystem
 mycompny.ParentalControl, category NotificationControl.
 Stages: received -> locally_applied -> acknowledged; unfinished on failure.
+For schedules: snapshot_decoded -> schedule_snapshot_saved ->
+schedule_locally_applied -> acknowledged. A saved snapshot alone is NOT success.
 Deadline / system_expiry is logged by the independent delivery callback, without
 waiting for MainActor or App Group I/O. On expiry the last persisted stage may
 therefore remain system_monitoring_check (the system API call is still blocked).
@@ -70,8 +101,10 @@ command ID/type, stage, a fixed reason string and numeric error code.
 Authorization diagnostics preserve the actual AuthorizationStatus raw value.
 On the test device NSE reports notDetermined (0) while the host is authorized.
 The pilot no longer treats that alone as denial. Explicit denial still stops
-processing; every command must successfully register the real daily budget
-monitor using DeviceActivity before changing budget/focus state. A system
+processing; budget/focus commands must successfully register the real daily budget
+monitor using DeviceActivity before changing budget/focus state. Schedule commands
+register their own monitors (including an access check for an unchanged enabled
+schedule); an empty list only removes obsolete schedule monitors/shields. A system
 unauthorized/monitoring error prevents acknowledgement. No cached consent or
 permission prompts are used in NSE. Validate this path and revocation on hardware.
 Do not sign off the experiment if ManagedSettings setters return but apps remain
@@ -95,8 +128,9 @@ by the existing poll/push path; no parallel bypass thread is spawned.
 The host holds a bounded UIKit background assertion and ends it on expiration.
 Desired state remains persisted for retry, but runtime/command confirmations wait
 for successful enforcement. Background usage uploads also wait until a newly
-persisted budget revision has been enforced. Named schedule stores and LPSE are
-unchanged; there is no server deployment or additional push channel.
+persisted budget revision has been enforced. Schedule reconciliation uses the
+same worker, with separate named stores; LPSE is unchanged. There is no server
+deployment or additional push channel.
 Cross-process changes are detected optimistically, not by locking around IPC.
 The OS call already in progress cannot be cancelled or made transactional. Hardware
 tests must verify concurrent host/NSE/monitor callbacks and late system returns.
@@ -105,9 +139,10 @@ main-thread expiry and stale / non-focus parent snapshot confirmation.
 The worker regression tests additionally simulate a blocked system service, check
 that another process can still take the data lock, reject obsolete results, and
 verify queue capacity and recovery. Pure tests cannot simulate Apple's daemon.
-Validation for this fix: 56 model/gate/delivery checks and 11 worker checks pass.
-The worker suite also passed 10 consecutive runs. Debug and Release iphoneos
-builds pass with CODE_SIGNING_ALLOWED=NO; existing build warnings remain.
+Validation: 62 model/gate/delivery checks, 44 schedule checks and 11 worker checks.
+The worker suite also passed 10 consecutive runs during the earlier worker fix.
+Debug and Release iphoneos builds pass with CODE_SIGNING_ALLOWED=NO; existing
+build warnings remain.
 This is not a signed distribution/archive validation or a hardware acceptance run.
 The parent keeps last confirmed runtime during delivery and offline/error states,
 never projecting desired into applied. Waiting/result messages are visible in

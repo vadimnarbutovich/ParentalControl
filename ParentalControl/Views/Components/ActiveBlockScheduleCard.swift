@@ -41,7 +41,7 @@ struct ActiveBlockScheduleCard: View {
 
     private func activeContent(_ schedules: [BlockSchedule]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(L10n.tr("dashboard.blocking.schedule_active"), systemImage: "calendar.badge.clock")
+            Label(L10n.tr("dashboard.active_schedule.title"), systemImage: "calendar.badge.clock")
                 .font(.headline.bold())
                 .foregroundStyle(.white.opacity(0.9))
 
@@ -51,9 +51,7 @@ struct ActiveBlockScheduleCard: View {
                 }
             }
 
-            Text("dashboard.active_schedule.hint")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            // Time window != confirmation of a shield on the child's device.
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

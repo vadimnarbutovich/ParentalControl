@@ -37,7 +37,7 @@ final class NotificationService: UNNotificationServiceExtension, @unchecked Send
             guard let raw = incoming.content.userInfo["command_id"] as? String,
                   let id = UUID(uuidString: raw),
                   let type = incoming.content.userInfo["command_type"] as? String,
-                  ["start_focus", "end_focus", "tasks_updated"].contains(type),
+                  (["start_focus", "end_focus", "tasks_updated"] + ScheduleControlPlan.commandTypes).contains(type),
                   let client = RemoteControlProcessor(lifetime: lifetime) else {
                 lifetime.finish(reason: "not_processable")
                 return

@@ -36,6 +36,10 @@ check(!(try snapshot(pending: false)).contains(id: commandID, type: "start_focus
 check(!(try snapshot(type: "request_location")).contains(id: commandID, type: "request_location"), "LPSE must stay separate")
 check(!(try snapshot(type: "add_earned_seconds")).contains(id: commandID, type: "add_earned_seconds"), "No legacy additive replay")
 check((try snapshot(type: "tasks_updated")).contains(id: commandID, type: "tasks_updated"), "Budget wake signal")
+for type in ScheduleControlPlan.commandTypes {
+    check((try snapshot(type: type)).contains(id: commandID, type: type), "Schedule wake signal must reach NSE: \(type)")
+    check(!(try snapshot(type: type, pending: false)).contains(id: commandID, type: type), "No replay of acknowledged schedule signal")
+}
 check(valid.policyForControl(family: family, minimumFocusRevision: 5) == nil, "Reject stale focus revision")
 check(valid.policyForControl(family: family, minimumFocusRevision: 4) != nil, "Same revision can repair enforcement")
 check((try snapshot(duration: 600)).policyForControl(family: family, minimumFocusRevision: 0) == nil, "Timed focus stays in host")

@@ -25,7 +25,7 @@ nonisolated struct NotificationControlSnapshot: Decodable {
     }
 
     func contains(id: UUID, type: String) -> Bool {
-        ["start_focus", "end_focus", "tasks_updated"].contains(type)
+        (["start_focus", "end_focus", "tasks_updated"] + ScheduleControlPlan.commandTypes).contains(type)
             && pendingCommands.contains { $0.id == id && $0.commandType == type }
     }
 

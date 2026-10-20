@@ -1106,6 +1106,10 @@ final class AppState: ObservableObject {
 
     func refreshSharedStateFromAppGroup() {
         withControlStateLock { adoptNotificationControlState() }
+        if deviceRole == .child {
+            let sharedSchedules = storage.loadBlockSchedules()
+            if sharedSchedules != blockSchedules { blockSchedules = sharedSchedules }
+        }
         reloadBalanceFromSharedStore()
         #if DEBUG && !HIDE_DEBUG_UI
         refreshDeviceActivityDebug()
@@ -1537,25 +1541,15 @@ final class AppState: ObservableObject {
         guard !commands.isEmpty else { return }
         let sorted = commands.sorted { $0.createdAt < $1.createdAt }
 
-        let scheduleCmds = sorted.filter { $0.commandType == .schedulesUpdated }
+        let scheduleCmds = sorted.filter {
+            $0.commandType == .schedulesUpdated || $0.commandType == .scheduleStarted || $0.commandType == .scheduleEnded
+        }
         if !scheduleCmds.isEmpty {
-            await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
-            for cmd in scheduleCmds {
-                try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
-            }
-        }
-
-        // Команды schedule_started/schedule_ended приходят с бэкенд-cron при наступлении
-        // границы окна расписания. На клиенте делаем единый refresh enforcement (а не
-        // по каждой команде отдельно — чтобы избежать множественных последовательных
-        // start/stopMonitoring). Acknowledge всех таких команд.
-        let scheduleEventCmds = sorted.filter {
-            $0.commandType == .scheduleStarted || $0.commandType == .scheduleEnded
-        }
-        if !scheduleEventCmds.isEmpty {
-            blockScheduleEnforcement.refreshFromStoredSchedules()
-            for cmd in scheduleEventCmds {
-                try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
+            if let receipt = await refreshChildBlockSchedulesFromServerAndApplyEnforcement() {
+                for cmd in scheduleCmds {
+                    guard receipt.isCurrent() else { break }
+                    try? await remoteSyncService.ackCommand(id: cmd.id, status: .applied, errorMessage: nil)
+                }
             }
         }
 
@@ -1705,18 +1699,28 @@ final class AppState: ObservableObject {
 
     // MARK: - Block schedules (remote)
 
-    private func refreshChildBlockSchedulesFromServerAndApplyEnforcement() async {
-        guard deviceRole == .child, pairingState?.isLinked == true else { return }
+    @discardableResult
+    private func refreshChildBlockSchedulesFromServerAndApplyEnforcement() async -> ScheduleControlEnforcer.Receipt? {
+        guard deviceRole == .child, pairingState?.isLinked == true else { return nil }
+        let context = ControlSystemWorker.Context()
+        let background = ControlBackgroundExecution(context: context)
+        defer { background.end() }
+        guard background.canRun else { return nil }
         do {
+            let fetch = try ScheduleControlStore.beginFetch()
             let dtos = try await remoteSyncService.fetchBlockSchedules()
+            try context.check()
             let merged = dtos.map { BlockSchedule(remoteDTO: $0) }
-            blockSchedules = merged
-            storage.saveBlockSchedules(merged)
-            blockScheduleEnforcement.refreshFromStoredSchedules()
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            try ScheduleControlStore.commit(encoder.encode(merged), fetch: fetch)
+            blockSchedules = storage.loadBlockSchedules()
+            return await blockScheduleEnforcement.enforceAndConfirm()
         } catch {
             os_log("refreshChildBlockSchedules: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
             // Оставляем/восстанавливаем мониторинг из кэша App Group, если сервер временно недоступен.
             blockScheduleEnforcement.refreshFromStoredSchedules()
+            return nil // Cached fallback cannot acknowledge a server update.
         }
     }
 
@@ -1999,14 +2003,11 @@ final class AppState: ObservableObject {
             }
         case .requestLocation:
             return // Handled separately, including failed capture/upload and duplicate delivery.
-        case .schedulesUpdated:
-            await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
-        case .scheduleStarted, .scheduleEnded:
-            // Бэкенд-cron детектировал переход start/end окна расписания. Просто перезапускаем
-            // enforcement — внутренняя логика `isScheduleActiveNow` сама применит/снимет
-            // именованный shield для нужного расписания. Список расписаний не изменился,
-            // поэтому fetch делать не нужно.
-            blockScheduleEnforcement.refreshFromStoredSchedules()
+        case .schedulesUpdated, .scheduleStarted, .scheduleEnded:
+            guard let receipt = await refreshChildBlockSchedulesFromServerAndApplyEnforcement(),
+                  receipt.isCurrent() else { return }
+            try? await remoteSyncService.ackCommand(id: id, status: .applied, errorMessage: nil)
+            return
         case .tasksUpdated:
             await pollChildAndApply(includeParentSettings: false)
             // Обычно tasks_updated отфильтровывается в applyPendingCommands; ветка здесь —

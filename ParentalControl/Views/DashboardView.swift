@@ -329,7 +329,7 @@ struct DashboardView: View {
             if appState.pairingState?.isLinked == true,
                let activeSchedule = appState.activeBlockSchedules(at: context.date).first {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("dashboard.blocking.title", systemImage: "lock.shield")
+                    Label("dashboard.active_schedule.title", systemImage: "calendar.badge.clock")
                         .font(.headline.bold())
                         .foregroundStyle(.white.opacity(0.9))
                     blockingScheduleStatus(schedule: activeSchedule)

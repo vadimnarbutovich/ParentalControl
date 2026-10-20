@@ -4,7 +4,7 @@ import ManagedSettings
 import DeviceActivity
 import OSLog
 
-/// Pilot: only manual block/unblock and the revisioned daily-budget wake signal.
+/// Manual block/unblock, revisioned daily budget and schedule reconciliation.
 /// Never trusts the action/seconds in the push; reads the authenticated child snapshot.
 @MainActor
 final class RemoteControlProcessor {
@@ -18,6 +18,7 @@ final class RemoteControlProcessor {
     private let lifetime: NotificationDeliveryLifetime
     private let execution = ControlSystemWorker.Context()
     private var appliedReceipt: ScreenTimeEnforcer.Receipt?
+    private var scheduleReceipt: ScheduleControlEnforcer.Receipt?
     private var diagnosticCommandID: UUID?
     private var diagnosticCommandType: String?
     private var diagnosticAuthorizationStatus: Int?
@@ -106,7 +107,7 @@ final class RemoteControlProcessor {
     }
 
     func process(id: UUID, type: String) async throws {
-        guard ["start_focus", "end_focus", "tasks_updated"].contains(type) else { return }
+        guard (["start_focus", "end_focus", "tasks_updated"] + ScheduleControlPlan.commandTypes).contains(type) else { return }
         diagnosticCommandID = id
         diagnosticCommandType = type
         recordDiagnostic("received")
@@ -118,6 +119,10 @@ final class RemoteControlProcessor {
         guard poll.contains(id: id, type: type) else {
             recordDiagnostic("no_longer_pending")
             logger.info("Control skipped: no longer pending")
+            return
+        }
+        if ScheduleControlPlan.commandTypes.contains(type) {
+            try await processSchedules(id: id)
             return
         }
         let active = poll.desired.shouldFocusActive
@@ -233,6 +238,29 @@ final class RemoteControlProcessor {
         logger.info("Control acknowledged id=\(id.uuidString, privacy: .public)")
     }
 
+    private func processSchedules(id: UUID) async throws {
+        // The push is only a wake hint. A delayed start/end must NEVER override
+        // the latest schedule list or blindly toggle the shared manual shield.
+        guard AuthorizationCenter.shared.authorizationStatus != .denied else {
+            throw Failure.authorizationNotApproved(AuthorizationCenter.shared.authorizationStatus.rawValue)
+        }
+        let fetch = try ScheduleControlStore.beginFetch()
+        let response = try await call("list_block_schedules", ["installID": installID])
+        let data = try ScheduleControlPlan.cacheFromResponse(response)
+        try checkContext()
+        try ScheduleControlStore.commit(data, fetch: fetch)
+        recordDiagnostic("schedule_snapshot_saved")
+        // notDetermined in NSE is not proof of permission: verify with a real
+        // schedule registration even when all existing names/signatures match.
+        scheduleReceipt = try await ScheduleControlEnforcer.apply(context: execution, verifyAccess: true)
+        try checkContext()
+        recordDiagnostic("schedule_locally_applied")
+        // ACK means the latest list was reconciled, NOT that an obsolete "start"
+        // was replayed. Registration failures / stale results leave it pending.
+        _ = try await call("ack_command", ["commandID": id.uuidString, "status": "applied", "errorMessage": NSNull()])
+        recordDiagnostic("acknowledged")
+    }
+
     private func normalizedDate(_ value: String) throws -> String {
         let plain = ISO8601DateFormatter()
         let fractional = ISO8601DateFormatter()
@@ -246,11 +274,14 @@ final class RemoteControlProcessor {
         try execution.check()
         try Task.checkCancellation()
         if let appliedReceipt, !appliedReceipt.isCurrent() { throw Failure.stale }
+        if let scheduleReceipt, !scheduleReceipt.isCurrent() { throw Failure.stale }
         defaults.synchronize()
         guard defaults.string(forKey: "parentalcontrol.deviceRole") == "child",
               defaults.data(forKey: "parentalcontrol.pairingState") == pairingData,
-              defaults.string(forKey: "parentalcontrol.deviceSecret") == secret,
-              defaults.data(forKey: RemoteControlGate.pendingKey(family)) == nil else { throw Failure.stale }
+              defaults.string(forKey: "parentalcontrol.deviceSecret") == secret else { throw Failure.stale }
+        // Named schedule shields are independent of a pending local manual toggle.
+        if !ScheduleControlPlan.commandTypes.contains(diagnosticCommandType ?? ""),
+           defaults.data(forKey: RemoteControlGate.pendingKey(family)) != nil { throw Failure.stale }
     }
 
     private func call(_ action: String, _ payload: [String: Any]) async throws -> Data {
