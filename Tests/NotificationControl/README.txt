@@ -18,6 +18,24 @@ xcrun swiftc -parse-as-library ParentalControl/Services/ControlSystemWorker.swif
 xcrun swiftc -parse-as-library ParentalControl/Models/ScheduleControlPlan.swift ParentalControl/Services/ScheduleControlStore.swift ParentalControl/Services/ControlSystemWorker.swift ParentalControl/Services/RemoteControlGate.swift Tests/NotificationControl/ScheduleTests.swift -o /tmp/parental-schedule-control-tests
 /tmp/parental-schedule-control-tests
 
+Legacy allowance audit — 2026-10-20
+The current AdjustTimeSheet uses change_daily_budget / revisioned adjustment.
+Removed uncalled sendParentTakeAllTimeCommand/sendParentAddOneMinuteCommand,
+their private sendParentCommand wrapper and the unreachable queueBalanceCommand
+client branch/API method. Manual focus now has a focus-only sending method.
+Keep the child legacy command decoder/handlers and server compatibility for now:
+1. parental-control-balance-sync.queue_balance_command accepts old-client requests
+   ONLY when family_daily_policy is absent; an existing policy produces HTTP 409.
+2. approve_child_task still dispatches add_earned_seconds when
+   pc_approve_task_daily_budget returns legacy=true (no family_daily_policy row).
+   With a policy, reward accounting is transactional and uses tasks_updated / NSE.
+Missing policy does not mean a zero-minute limit: it means the setup save has
+not happened. A new pairing can exist before the parent confirms the initial
+60-minute draft. Saving a limit also invalidates pending legacy balance commands.
+Do not automatically grant 60 minutes or delete executable reward paths as cleanup.
+The remote aggregate audit could not run because Supabase OAuth refresh failed.
+No production data, server function or migration was changed during this audit.
+
 Before TestFlight
 The NotificationServiceExtension App ID is:
 mycompny.ParentalControl.NotificationServiceExtension

@@ -539,7 +539,7 @@ final class AppState: ObservableObject {
         // Disable immediately, but keep the last confirmed position while waiting.
         guard beginParentCommand(commandType: commandType) else { return }
         Task {
-            await performParentCommand(commandType: commandType, durationSeconds: nil)
+            await performParentFocusCommand(start: start)
         }
     }
 
@@ -650,23 +650,8 @@ final class AppState: ObservableObject {
         }
     }
 
-    func sendParentTakeAllTimeCommand() async {
-        await sendParentCommand(commandType: .resetEarnedBalance, durationSeconds: nil)
-    }
-
-    func sendParentAddOneMinuteCommand() async {
-        await sendParentCommand(commandType: .addEarnedSeconds, durationSeconds: 60)
-    }
-
-    /// Универсальная команда «изменить доступное время ребёнка на ±N минут».
-    /// Используется новой шторкой `AdjustTimeSheet`. Логика выбора command_type:
-    /// - `delta == 0` → no-op;
-    /// - `delta > 0` → `addEarnedSeconds` с `durationSeconds = delta * 60`;
-    /// - `delta < 0`:
-    ///   - если `|delta| * 60 >= parentChildAvailableSeconds` (известный родителю live-баланс)
-    ///     → `resetEarnedBalance` (как «забрать всё»), чтобы гарантированно обнулить;
-    ///   - иначе → `subtractEarnedSeconds` с `durationSeconds = |delta| * 60`.
-    /// На стороне ребёнка `subtractEarnedSeconds` применяется как `addSeconds(-N)` с clamp 0.
+    /// Шторка изменяет дневной бюджет на ±N минут через revisioned adjustment.
+    /// Старые аддитивные команды баланса из текущего интерфейса не отправляются.
     func sendParentAdjustTimeCommand(deltaMinutes: Int) async {
         guard deltaMinutes != 0, parentBudgetStatus?.policy != nil else { return }
         _ = await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
@@ -2303,11 +2288,6 @@ final class AppState: ObservableObject {
                                         isActive: isRemoteChildFocusSessionActive(runtime))
     }
 
-    private func sendParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
-        guard beginParentCommand(commandType: commandType) else { return }
-        await performParentCommand(commandType: commandType, durationSeconds: durationSeconds)
-    }
-
     private func beginParentCommand(commandType: RemoteFocusCommandType) -> Bool {
         guard deviceRole == .parent, pairingState?.isLinked == true, !remoteCommandInFlight else { return false }
         parentCommandDelivery = nil
@@ -2322,24 +2302,16 @@ final class AppState: ObservableObject {
         return true
     }
 
-    private func performParentCommand(commandType: RemoteFocusCommandType, durationSeconds: Int?) async {
+    private func performParentFocusCommand(start: Bool) async {
+        let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
         let intentID = UUID()
         let requestedFamily = pairingState?.familyID
         do {
-            let command: RemoteFocusCommand
-            if commandType == .startFocus || commandType == .endFocus {
-                command = try await remoteSyncService.replaceFocusCommand(
-                    commandType: commandType,
-                    durationSeconds: durationSeconds,
-                    intentID: intentID
-                )
-            } else {
-                command = try await remoteSyncService.queueBalanceCommand(
-                    commandType: commandType,
-                    durationSeconds: durationSeconds,
-                    intentID: intentID
-                )
-            }
+            let command = try await remoteSyncService.replaceFocusCommand(
+                commandType: commandType,
+                durationSeconds: nil,
+                intentID: intentID
+            )
             guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
             parentCommandDelivery = ParentCommandDeliveryState(
                 commandID: command.id,
@@ -3398,29 +3370,6 @@ private final class ParentalRemoteSyncService {
                 intentID: intentID.uuidString
             ),
             endpoint: Endpoint.focusBaseURL
-        )
-    }
-
-    func queueBalanceCommand(
-        commandType: RemoteFocusCommandType,
-        durationSeconds: Int?,
-        intentID: UUID
-    ) async throws -> RemoteFocusCommand {
-        struct Payload: Encodable {
-            let installID: String
-            let commandType: String
-            let durationSeconds: Int?
-            let intentID: String
-        }
-        return try await call(
-            action: "queue_balance_command",
-            payload: Payload(
-                installID: installID,
-                commandType: commandType.rawValue,
-                durationSeconds: durationSeconds,
-                intentID: intentID.uuidString
-            ),
-            endpoint: Endpoint.balanceBaseURL
         )
     }
 

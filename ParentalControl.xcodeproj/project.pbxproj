@@ -32,10 +32,10 @@
 		DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */; };
 		DA2020000000000000000001 /* ParentalControl/Services/ControlSystemWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */; };
 		DA2020000000000000000002 /* ParentalControl/Services/ScreenTimeEnforcer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */; };
-		DA2030000000000000000001 /* ScheduleControlPlan.swift in NSE */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000011; };
-		DA2030000000000000000002 /* ScheduleControlPlan.swift in Monitor */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000011; };
-		DA2030000000000000000003 /* ScheduleControlStore.swift in NSE */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000012; };
-		DA2030000000000000000004 /* ScheduleControlEnforcer.swift in NSE */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000013; };
+		DA2030000000000000000001 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */; };
+		DA2030000000000000000002 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */; };
+		DA2030000000000000000003 /* ParentalControl/Services/ScheduleControlStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000012 /* ParentalControl/Services/ScheduleControlStore.swift */; };
+		DA2030000000000000000004 /* ParentalControl/Services/ScheduleControlEnforcer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000013 /* ParentalControl/Services/ScheduleControlEnforcer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,9 +143,9 @@
 		DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/RemoteControlGate.swift; sourceTree = SOURCE_ROOT; };
 		DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ControlSystemWorker.swift; sourceTree = SOURCE_ROOT; };
 		DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScreenTimeEnforcer.swift; sourceTree = SOURCE_ROOT; };
-		DA2030000000000000000011 /* ScheduleControlPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/ScheduleControlPlan.swift; sourceTree = SOURCE_ROOT; };
-		DA2030000000000000000012 /* ScheduleControlStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlStore.swift; sourceTree = SOURCE_ROOT; };
-		DA2030000000000000000013 /* ScheduleControlEnforcer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlEnforcer.swift; sourceTree = SOURCE_ROOT; };
+		DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/ScheduleControlPlan.swift; sourceTree = SOURCE_ROOT; };
+		DA2030000000000000000012 /* ParentalControl/Services/ScheduleControlStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlStore.swift; sourceTree = SOURCE_ROOT; };
+		DA2030000000000000000013 /* ParentalControl/Services/ScheduleControlEnforcer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlEnforcer.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -381,9 +381,9 @@
 				DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */,
 				DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */,
 				DA2020000000000000000004 /* ParentalControl/Services/ScreenTimeEnforcer.swift */,
-				DA2030000000000000000011 /* ScheduleControlPlan.swift */,
-				DA2030000000000000000012 /* ScheduleControlStore.swift */,
-				DA2030000000000000000013 /* ScheduleControlEnforcer.swift */,
+				DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */,
+				DA2030000000000000000012 /* ParentalControl/Services/ScheduleControlStore.swift */,
+				DA2030000000000000000013 /* ParentalControl/Services/ScheduleControlEnforcer.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -733,7 +733,7 @@
 			files = (
 				DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
 				DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */,
-				DA2030000000000000000002 /* ScheduleControlPlan.swift in Monitor */,
+				DA2030000000000000000002 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -780,9 +780,9 @@
 				DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */,
 				DA2020000000000000000001 /* ParentalControl/Services/ControlSystemWorker.swift in Sources */,
 				DA2020000000000000000002 /* ParentalControl/Services/ScreenTimeEnforcer.swift in Sources */,
-				DA2030000000000000000001 /* ScheduleControlPlan.swift in NSE */,
-				DA2030000000000000000003 /* ScheduleControlStore.swift in NSE */,
-				DA2030000000000000000004 /* ScheduleControlEnforcer.swift in NSE */,
+				DA2030000000000000000001 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */,
+				DA2030000000000000000003 /* ParentalControl/Services/ScheduleControlStore.swift in Sources */,
+				DA2030000000000000000004 /* ParentalControl/Services/ScheduleControlEnforcer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1273,7 +1273,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1321,7 +1321,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
