@@ -345,12 +345,18 @@ final class AppState: ObservableObject {
         }
         isNotificationAuthorized = await notificationService.isAuthorizedForAlerts()
         isNotificationAuthorizationDenied = await notificationService.currentAuthorizationStatus() == .denied
+        AppAnalytics.report("permission_request_result", parameters: [
+            "permission": "notifications", "granted": isNotificationAuthorized
+        ])
     }
 
     func requestScreenTimeAccessOnly() async {
         guard deviceRole == .child else { return }
         await screenTimeService.requestAuthorization()
         screenTimeService.refreshAuthorizationStatus()
+        AppAnalytics.report("permission_request_result", parameters: [
+            "permission": "screenTime", "granted": screenTimeService.isAuthorized
+        ])
         syncScreenTimeEnforcement(notifyOnUnlock: false)
     }
 
@@ -363,7 +369,7 @@ final class AppState: ObservableObject {
             AppAnalytics.report("removal_protection_enable", parameters: ["result": "success"])
         } catch {
             AppAnalytics.report("removal_protection_enable", parameters: [
-                "result": "failed", "reason": RemovalProtectionError.messageKey(for: error)
+                "result": "failed"
             ])
             throw error
         }
@@ -406,6 +412,8 @@ final class AppState: ObservableObject {
         clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
         deviceRole = role
+        AppAnalytics.updateContext(role: role.rawValue, parentMode: false)
+        AppAnalytics.report("role_selected", parameters: ["role": role.rawValue])
         restoreParentBudgetCache()
         isParentChildStateResolved = role != .parent
         parentResolvedFocusActive = nil
@@ -500,9 +508,11 @@ final class AppState: ObservableObject {
             remotePollingTask = nil
             clearPairing()
             remoteStatusMessage = nil
+            AppAnalytics.report("devices_unlink", parameters: ["result": "success"])
             return true
         } catch {
             remoteStatusMessage = error.localizedDescription
+            AppAnalytics.report("devices_unlink", parameters: ["result": "failed"])
             return false
         }
     }
@@ -518,8 +528,10 @@ final class AppState: ObservableObject {
             storage.savePairingState(state)
             // Начинаем ждать присоединения ребёнка, чтобы UI обновился без перезапуска.
             startParentPairingWaitPollingIfNeeded()
+            AppAnalytics.report("pairing_code_request", parameters: ["result": "success"])
         } catch {
             remoteStatusMessage = error.localizedDescription
+            AppAnalytics.report("pairing_code_request", parameters: ["result": "failed"])
         }
     }
 
@@ -533,10 +545,12 @@ final class AppState: ObservableObject {
             storage.savePairingState(state)
             remoteStatusMessage = nil
             locationService.setLocationPushEnabled(true)
+            AppAnalytics.report("pairing_join", parameters: ["result": "success"])
             startRemotePollingIfNeeded()
             await refreshChildBlockSchedulesFromServerAndApplyEnforcement()
         } catch {
             remoteStatusMessage = error.localizedDescription
+            AppAnalytics.report("pairing_join", parameters: ["result": "failed"])
         }
     }
 
@@ -544,6 +558,7 @@ final class AppState: ObservableObject {
         let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
         // Move to the requested position and disable immediately while awaiting confirmation.
         guard beginParentCommand(commandType: commandType) else { return }
+        AppAnalytics.report("remote_block_request", parameters: ["action": start ? "block" : "unblock"])
         Task {
             await performParentFocusCommand(start: start)
         }
@@ -756,6 +771,7 @@ final class AppState: ObservableObject {
                 "limit_mode": saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"])
             return true
         } catch {
+            AppAnalytics.report("daily_budget_save_failed", parameters: ["kind": kind])
             if error.localizedDescription.contains("budget_changed_refresh") { budgetChangeIntent = nil }
             budgetError = L10n.tr(error.localizedDescription.contains("weekly_child_update_required")
                                  ? "budget.weekly.update_child" : "budget.save_error")
@@ -810,6 +826,15 @@ final class AppState: ObservableObject {
         case .notConfigured:
             parentPinLockoutEnd = nil
         }
+        let analyticsResult: String
+        switch result {
+        case .success: analyticsResult = "success"
+        case .lockedOut: analyticsResult = "locked_out"
+        case .wrongPin: analyticsResult = "wrong_pin"
+        case .notConfigured: analyticsResult = "not_configured"
+        }
+        AppAnalytics.updateContext(role: deviceRole?.rawValue, parentMode: isParentModeActive)
+        AppAnalytics.report("parent_mode_enter", parameters: ["result": analyticsResult])
         return result
     }
 
@@ -842,9 +867,11 @@ final class AppState: ObservableObject {
             parentPinService.saveMetadata(metadata)
             parentPinIsSet = true
             remoteStatusMessage = nil
+            AppAnalytics.report("parent_pin_change", parameters: ["action": "set", "result": "success"])
             return true
         } catch {
             remoteStatusMessage = error.localizedDescription
+            AppAnalytics.report("parent_pin_change", parameters: ["action": "set", "result": "failed"])
             return false
         }
     }
@@ -859,9 +886,11 @@ final class AppState: ObservableObject {
         parentPinLockoutEnd = nil
         do {
             try await remoteSyncService.clearParentPin()
+            AppAnalytics.report("parent_pin_change", parameters: ["action": "clear", "result": "success"])
             return true
         } catch {
             remoteStatusMessage = error.localizedDescription
+            AppAnalytics.report("parent_pin_change", parameters: ["action": "clear", "result": "failed"])
             return false
         }
     }
@@ -1745,7 +1774,9 @@ final class AppState: ObservableObject {
             guard let self else { return }
             do {
                 try await self.remoteSyncService.upsertBlockSchedule(schedule)
+                AppAnalytics.report("schedule_sync_result", parameters: ["action": "save", "result": "success"])
             } catch {
+                AppAnalytics.report("schedule_sync_result", parameters: ["action": "save", "result": "failed"])
                 os_log("upsertBlockSchedule: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
             }
         }
@@ -1757,7 +1788,9 @@ final class AppState: ObservableObject {
             guard let self else { return }
             do {
                 try await self.remoteSyncService.deleteBlockSchedule(id: id)
+                AppAnalytics.report("schedule_sync_result", parameters: ["action": "delete", "result": "success"])
             } catch {
+                AppAnalytics.report("schedule_sync_result", parameters: ["action": "delete", "result": "failed"])
                 os_log("deleteBlockSchedule: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
             }
         }
@@ -1815,6 +1848,9 @@ final class AppState: ObservableObject {
         guard deviceRole == .child else { return locationService.authorizationStatus }
         let status = await locationService.requestWhenInUseAuthorization()
         childLocationAuthorizationStatus = status
+        AppAnalytics.report("permission_request_result", parameters: [
+            "permission": "location", "granted": status == .authorizedAlways
+        ])
         return status
     }
 
@@ -1826,6 +1862,9 @@ final class AppState: ObservableObject {
         guard deviceRole == .child else { return locationService.authorizationStatus }
         let status = await locationService.requestAlwaysAuthorization()
         childLocationAuthorizationStatus = status
+        AppAnalytics.report("permission_request_result", parameters: [
+            "permission": "location", "granted": status == .authorizedAlways
+        ])
         return status
     }
 
@@ -1842,7 +1881,12 @@ final class AppState: ObservableObject {
         isParentRefreshingChildLocation = true
         parentLocationRevision += 1
         parentLocationStatusMessage = nil
-        defer { isParentRefreshingChildLocation = false }
+        AppAnalytics.report("location_request")
+        var analyticsResult = "cancelled"
+        defer {
+            isParentRefreshingChildLocation = false
+            AppAnalytics.report("location_request_result", parameters: ["result": analyticsResult])
+        }
 
         do {
             let command = try await remoteSyncService.requestChildLocation()
@@ -1854,6 +1898,7 @@ final class AppState: ObservableObject {
                 try Task.checkCancellation()
                 guard pairingState?.familyID == familyID else { return }
                 if result.status == .failed {
+                    analyticsResult = "failed"
                     parentLocationStatusMessage = locationFailureMessage(code: result.errorMessage)
                     return
                 }
@@ -1866,16 +1911,20 @@ final class AppState: ObservableObject {
                     guard let snapshot, snapshot.updatedAt >= command.createdAt,
                           snapshot.capturedAt >= command.createdAt.addingTimeInterval(-30) else {
                         parentLocationStatusMessage = L10n.tr("map.refresh.unavailable")
+                        analyticsResult = "unavailable"
                         return
                     }
                     childLocationSnapshot = snapshot
                     storage.saveChildLocationSnapshot(snapshot)
+                    analyticsResult = "success"
                     return
                 }
             }
             parentLocationStatusMessage = L10n.tr("map.refresh.timeout")
+            analyticsResult = "timeout"
         } catch {
             guard !Task.isCancelled, pairingState?.familyID == familyID else { return }
+            analyticsResult = "failed"
             parentLocationStatusMessage = L10n.tr("map.refresh.connection_error")
         }
     }
@@ -2183,7 +2232,7 @@ final class AppState: ObservableObject {
                             )
                         } else {
                             parentCommandFeedback = L10n.tr("parent.command.applied")
-                            finishParentCommandWatch(commandID: commandID)
+                            finishParentCommandWatch(commandID: commandID, analyticsResult: "success")
                             await refreshParentChildState()
                         }
                         return
@@ -2192,7 +2241,7 @@ final class AppState: ObservableObject {
                         parentCommandFeedback = L10n.tr("parent.command.failed")
                         parentCommandError = parentCommandFeedback
                         remoteStatusMessage = status.errorMessage ?? L10n.tr("parent.command.failed")
-                        finishParentCommandWatch(commandID: commandID)
+                        finishParentCommandWatch(commandID: commandID, analyticsResult: "failed")
                         await refreshParentChildState()
                         return
                     }
@@ -2207,7 +2256,7 @@ final class AppState: ObservableObject {
         parentCommandFeedback = L10n.tr("parent.command.timeout")
         parentCommandError = parentCommandFeedback
         remoteStatusMessage = L10n.tr("parent.command.timeout")
-        finishParentCommandWatch(commandID: commandID)
+        finishParentCommandWatch(commandID: commandID, analyticsResult: "timeout")
         await refreshParentChildState()
     }
 
@@ -2225,7 +2274,7 @@ final class AppState: ObservableObject {
                runtimeMatchesCommand(r, commandType: commandType, queuedAt: delivery.queuedAt) {
                 parentCommandFeedback = L10n.tr("parent.command.applied")
                 parentCommandError = nil
-                finishParentCommandWatch(commandID: commandID)
+                finishParentCommandWatch(commandID: commandID, analyticsResult: "success")
                 return
             }
             try? await Task.sleep(nanoseconds: 100_000_000)
@@ -2240,17 +2289,23 @@ final class AppState: ObservableObject {
             isParentChildStateResolved = true
             parentCommandFeedback = L10n.tr("parent.command.applied")
             parentCommandError = nil
-            finishParentCommandWatch(commandID: commandID)
+            finishParentCommandWatch(commandID: commandID, analyticsResult: "success")
             return
         }
         // ACK alone must not manufacture a runtime snapshot. Keep last known state.
         parentCommandFeedback = L10n.tr("parent.command.timeout")
         parentCommandError = parentCommandFeedback
-        finishParentCommandWatch(commandID: commandID)
+        finishParentCommandWatch(commandID: commandID, analyticsResult: "timeout")
     }
 
-    private func finishParentCommandWatch(commandID: UUID) {
+    private func finishParentCommandWatch(commandID: UUID, analyticsResult: String = "cancelled") {
         guard activeParentCommandID == commandID else { return }
+        if let delivery = parentCommandDelivery {
+            AppAnalytics.report("remote_block_result", parameters: [
+                "action": delivery.commandType == .startFocus ? "block" : "unblock",
+                "result": analyticsResult
+            ])
+        }
         activeParentCommandID = nil
         remoteCommandInFlight = false
         parentPendingFocusTarget = nil
@@ -2292,7 +2347,7 @@ final class AppState: ObservableObject {
         parentCommandFeedback = L10n.tr("parent.command.applied")
         parentCommandError = nil
         if activeParentCommandID == delivery.commandID {
-            finishParentCommandWatch(commandID: delivery.commandID)
+            finishParentCommandWatch(commandID: delivery.commandID, analyticsResult: "success")
             parentCommandWatchTask?.cancel()
         }
     }
@@ -2348,6 +2403,9 @@ final class AppState: ObservableObject {
             await refreshParentChildState()
         } catch {
             guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
+            AppAnalytics.report("remote_block_result", parameters: [
+                "action": start ? "block" : "unblock", "result": "failed"
+            ])
             activeParentCommandID = nil
             parentCommandFeedback = L10n.tr("parent.command.failed")
             parentCommandError = parentCommandFeedback
@@ -2938,6 +2996,9 @@ final class AppState: ObservableObject {
     @discardableResult
     func addBlockSchedule(from template: BlockScheduleTemplate) -> BlockSchedule {
         let schedule = template.makeSchedule()
+        AppAnalytics.report("schedule_change", parameters: [
+            "action": "save", "is_new": true, "enabled": schedule.isEnabled
+        ])
         var list = blockSchedules
         list.insert(schedule, at: 0)
         blockSchedules = list
@@ -2949,6 +3010,10 @@ final class AppState: ObservableObject {
     /// Обновляет существующее расписание (по `id`) или добавляет новое, если его ещё нет.
     /// Используется и для commit редактора, и для сохранения нового расписания из draft.
     func commitBlockSchedule(_ schedule: BlockSchedule) {
+        AppAnalytics.report("schedule_change", parameters: [
+            "action": "save", "is_new": !blockSchedules.contains(where: { $0.id == schedule.id }),
+            "enabled": schedule.isEnabled
+        ])
         var updated = schedule
         updated.updatedAt = Date()
         var list = blockSchedules
@@ -2968,6 +3033,7 @@ final class AppState: ObservableObject {
         var list = blockSchedules
         var updated = list[index]
         guard updated.isEnabled != enabled else { return }
+        AppAnalytics.report("schedule_change", parameters: ["action": "toggle", "enabled": enabled])
         updated.isEnabled = enabled
         updated.updatedAt = Date()
         list[index] = updated
@@ -2980,6 +3046,7 @@ final class AppState: ObservableObject {
     @discardableResult
     func deleteBlockSchedule(_ scheduleID: UUID) -> Bool {
         guard blockSchedules.contains(where: { $0.id == scheduleID }) else { return false }
+        AppAnalytics.report("schedule_change", parameters: ["action": "delete"])
         scheduleDeleteBlockScheduleOnServer(id: scheduleID)
         blockSchedules.removeAll { $0.id == scheduleID }
         storage.saveBlockSchedules(blockSchedules)
@@ -3025,7 +3092,7 @@ final class AppState: ObservableObject {
     /// UI меняется только после ответа сервера. Ошибка не удаляет локальное задание.
     func commitChildTask(_ task: ChildTask, isNew: Bool) async -> Bool {
         guard deviceRole == .parent else { return false }
-        return await changeChildTask(task.id) {
+        return await changeChildTask(task.id, analyticsAction: isNew ? "create" : "edit") {
             let dto = try await self.remoteSyncService.upsertChildTask(task, isNew: isNew)
             return ChildTask(remoteDTO: dto)
         }
@@ -3033,7 +3100,7 @@ final class AppState: ObservableObject {
 
     func deleteChildTask(_ taskID: UUID) async -> Bool {
         guard deviceRole == .parent else { return false }
-        return await changeChildTask(taskID) {
+        return await changeChildTask(taskID, analyticsAction: "delete") {
             try await self.remoteSyncService.deleteChildTask(id: taskID)
             return nil
         }
@@ -3041,7 +3108,7 @@ final class AppState: ObservableObject {
 
     func approveChildTask(_ taskID: UUID) async -> Bool {
         guard deviceRole == .parent else { return false }
-        return await changeChildTask(taskID) {
+        return await changeChildTask(taskID, analyticsAction: "approve") {
             let dto = try await self.remoteSyncService.approveChildTask(id: taskID)
             return ChildTask(remoteDTO: dto)
         }
@@ -3049,7 +3116,7 @@ final class AppState: ObservableObject {
 
     func submitChildTask(_ taskID: UUID) async -> Bool {
         guard deviceRole == .child else { return false }
-        return await changeChildTask(taskID) {
+        return await changeChildTask(taskID, analyticsAction: "submit") {
             let dto = try await self.remoteSyncService.submitChildTask(id: taskID)
             return ChildTask(remoteDTO: dto)
         }
@@ -3057,6 +3124,7 @@ final class AppState: ObservableObject {
 
     private func changeChildTask(
         _ id: UUID,
+        analyticsAction: String,
         operation: () async throws -> ChildTask?
     ) async -> Bool {
         guard pairingState?.isLinked == true, !isUpdatingChildTasks else { return false }
@@ -3078,8 +3146,10 @@ final class AppState: ObservableObject {
             childTasks.removeAll { $0.id == id }
             if let result, result.isVisible(at: Date()) { childTasks.insert(result, at: 0) }
             storage.saveChildTasks(childTasks)
+            AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "success"])
             return true
         } catch {
+            AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "failed"])
             os_log("changeChildTask: %{public}@", log: appStateLog, type: .error, error.localizedDescription)
             return false
         }

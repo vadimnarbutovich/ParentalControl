@@ -59,7 +59,7 @@ struct StatisticsView: View {
             }
             .onChange(of: selectedDate) { _, _ in
                 refreshReport()
-                AppAnalytics.report("statistics_day_select", parameters: ["day": selectedDay])
+                AppAnalytics.report("statistics_day_select")
             }
             .onChange(of: screenTimeService.selection) { _, _ in refreshReport() }
             .onChange(of: appState.dailyBudget?.day) { _, _ in refreshReport() }
@@ -149,7 +149,7 @@ struct StatisticsView: View {
         Button {
             guard canView else { return }
             presentedSheet = .summary
-            AppAnalytics.report("statistics_summary_open", parameters: ["day": selectedDay])
+            AppAnalytics.report("statistics_summary_open")
         } label: {
             Label("statistics.local.summary", systemImage: "chart.bar.xaxis")
                 .frame(maxWidth: .infinity)

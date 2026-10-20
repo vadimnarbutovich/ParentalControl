@@ -238,15 +238,24 @@ final class SubscriptionService: ObservableObject {
     @discardableResult
     func purchase(_ package: Package) async -> Bool {
         guard isConfigured else { return false }
+        let plan = package.packageType == .weekly ? "weekly" : package.packageType == .annual ? "annual" : "other"
+        AppAnalytics.report("purchase_started", parameters: ["plan": plan])
         isLoading = true
         defer { isLoading = false }
         do {
             let result = try await Purchases.shared.purchase(package: package)
+            if result.userCancelled {
+                AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "cancelled"])
+                return false
+            }
             updatePro(from: result.customerInfo)
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "success"])
             return true
         } catch ErrorCode.purchaseCancelledError {
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "cancelled"])
             return false
         } catch {
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "failed"])
             lastErrorMessage = Self.userFacingErrorMessage(from: error)
             return false
         }
@@ -262,14 +271,19 @@ final class SubscriptionService: ObservableObject {
                 )
             )
         }
+        AppAnalytics.report("restore_started")
         isLoading = true
         defer { isLoading = false }
         do {
             let info = try await Purchases.shared.restorePurchases()
             updatePro(from: info)
             let restored = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+            AppAnalytics.report("restore_result", parameters: [
+                "result": restored ? "restored" : "no_active_subscription"
+            ])
             return restored ? .restored : .noActiveSubscription
         } catch {
+            AppAnalytics.report("restore_result", parameters: ["result": "failed"])
             lastErrorMessage = Self.userFacingErrorMessage(from: error)
             return .failed(lastErrorMessage)
         }

@@ -628,7 +628,6 @@ private struct ConversionSettingsSheet: View {
                     .padding(.top, 4)
 
                     Button("settings.conversion.save") {
-                        reportConversionSaveTapped()
                         saveSettingsIfNeeded()
                         dismiss()
                     }
@@ -701,21 +700,7 @@ private struct ConversionSettingsSheet: View {
         lastSaved = settings
     }
 
-    private func reportConversionSaveTapped() {
-        let steps = Int(stepsText).flatMap { $0 > 0 ? $0 : nil }
-        let squats = Int(squatsText).flatMap { $0 > 0 ? $0 : nil }
-        let pushUps = Int(pushUpsText).flatMap { $0 > 0 ? $0 : nil }
-        var params: [String: Any] = [
-            "valid": steps != nil && squats != nil && pushUps != nil,
-        ]
-        if let steps { params["steps_per_minute"] = steps }
-        if let squats { params["squats_per_minute"] = squats }
-        if let pushUps { params["pushups_per_minute"] = pushUps }
-        AppAnalytics.report("conversion_save_tap", parameters: params)
-    }
-
     private func applyDefaults() {
-        AppAnalytics.report("conversion_apply_defaults_tap")
         let defaults = ConversionSettings.default
         stepsText = "\(defaults.stepsPerMinute)"
         squatsText = "\(defaults.squatsPerMinute)"
@@ -997,7 +982,6 @@ struct ParentPinSetupSheet: View {
         defer { isSaving = false }
         let success = await appState.setParentPinFromUI(newPin)
         if success {
-            AppAnalytics.report("settings_pin_saved")
             dismiss()
         } else {
             errorKey = "settings.pin.sheet.error.network"

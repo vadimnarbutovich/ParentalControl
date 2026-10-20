@@ -284,7 +284,6 @@ struct DashboardView: View {
                     rewardDetail: L10n.plural("dashboard.earn.rate.steps.detail", appState.settings.stepsPerMinute),
                     glowColor: AppTheme.neonGreen
                 ) {
-                    AppAnalytics.report("dashboard_earn_card_tap", parameters: ["kind": "steps"])
                     isStepsInfoPresented = true
                 }
                 .alert(isPresented: $isStepsInfoPresented) {
@@ -303,7 +302,6 @@ struct DashboardView: View {
                     rewardDetail: L10n.plural("dashboard.earn.rate.reps.detail", appState.settings.squatsPerMinute),
                     glowColor: AppTheme.neonOrange
                 ) {
-                    AppAnalytics.report("dashboard_earn_card_tap", parameters: ["kind": "squat"])
                     selectedExercise = .squat
                 }
 
@@ -315,7 +313,6 @@ struct DashboardView: View {
                     rewardDetail: L10n.plural("dashboard.earn.rate.reps.detail", appState.settings.pushUpsPerMinute),
                     glowColor: AppTheme.neonBlue
                 ) {
-                    AppAnalytics.report("dashboard_earn_card_tap", parameters: ["kind": "pushup"])
                     selectedExercise = .pushUp
                 }
             }

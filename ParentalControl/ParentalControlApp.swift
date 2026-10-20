@@ -24,11 +24,18 @@ struct ParentalControlApp: App {
                 .environmentObject(appState.screenTimeService)
                 .environmentObject(subscriptionService)
                 .onAppear {
-                    AppAnalytics.activateMetricaIfNeeded()
+                    AppAnalytics.updateContext(role: appState.deviceRole?.rawValue,
+                                               parentMode: appState.isParentModeActive)
                     appDelegate.attach(appState: appState)
                     appState.attachSubscriptionService(subscriptionService)
                     UNUserNotificationCenter.current().delegate = appDelegate
                     UIApplication.shared.registerForRemoteNotifications()
+                }
+                .onChange(of: appState.deviceRole) { _, role in
+                    AppAnalytics.updateContext(role: role?.rawValue, parentMode: appState.isParentModeActive)
+                }
+                .onChange(of: appState.isParentModeActive) { _, active in
+                    AppAnalytics.updateContext(role: appState.deviceRole?.rawValue, parentMode: active)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
@@ -62,6 +69,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        AppAnalytics.updateContext(role: storage.loadDeviceRole()?.rawValue, parentMode: false)
+        AppAnalytics.activateMetricaIfNeeded()
         BGTaskScheduler.shared.register(forTaskWithIdentifier: refreshIdentifier, using: nil) { [weak self] task in
             guard let self, let refresh = task as? BGAppRefreshTask else {
                 task.setTaskCompleted(success: false)
