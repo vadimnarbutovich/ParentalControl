@@ -284,6 +284,9 @@
 "settings.subscription.status.free" = "升级到高级版";
 
 "paywall.title.brand" = "高级版";
+"paywall.badge.three_days_free" = "免费试用3天";
+"paywall.badge.savings_format" = "节省≈%d%%";
+"paywall.badge.savings_hint" = "与连续12个月按月付费相比";
 "paywall.subtitle" = "帮助孩子养成健康的手机使用习惯。";
 "paywall.plan.yearly" = "年度方案";
 "paywall.error.iap_fallback_console" = "无法加载订阅。请在 Xcode 控制台搜索 [ParentalControl][IAP] 查看包数量和产品 ID。请检查 Sandbox、Bundle 以及 ASC 与 RevenueCat 中的产品 ID 是否匹配。";

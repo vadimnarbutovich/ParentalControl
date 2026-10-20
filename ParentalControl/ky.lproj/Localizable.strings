@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Сатып алуулар калыбына келтирилди";
 "paywall.subtitle" = "Балаңызга телефонду туура колдонууга жардам бериңиз.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 күн акысыз";
+"paywall.badge.savings_format" = "≈%d%% ҮНӨМ";
+"paywall.badge.savings_hint" = "12 ай бою ай сайын төлөөгө салыштырмалуу";
 "permission.banner.allow" = "Уруксат берүү";
 "permission.banner.notifications.title" = "Билдирмелер өчүрүлгөн";
 "permission.banner.open_settings" = "Жөндөөлөрдү ачуу";

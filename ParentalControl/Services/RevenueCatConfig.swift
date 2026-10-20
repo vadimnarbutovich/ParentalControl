@@ -67,3 +67,24 @@ enum ProPurchasePlan: String, CaseIterable, Identifiable {
             && durationDays == 3 && numberOfPeriods == 1
     }
 }
+
+/// Compare regular yearly billing with twelve monthly payments in the same currency.
+/// Never substitute a marketing constant when StoreKit prices are unavailable.
+enum PaywallSavings {
+    /// Approximate badge values use tens; avoid suggesting zero savings or a free paid plan.
+    static func approximateBadgePercent(_ percent: Int) -> Int {
+        let rounded = ((percent + 5) / 10) * 10
+        return (10...90).contains(rounded) ? rounded : percent
+    }
+
+    static func annualPercent(annual: Decimal, monthly: Decimal,
+                              annualCurrency: String?, monthlyCurrency: String?) -> Int? {
+        guard let annualCurrency, !annualCurrency.isEmpty,
+              annualCurrency == monthlyCurrency,
+              !annual.isNaN, !monthly.isNaN, annual > 0, monthly > 0 else { return nil }
+        let percent = NSDecimalNumber(decimal: (1 - annual / monthly / 12) * 100).doubleValue
+        guard percent.isFinite, percent >= 1, percent < 100 else { return nil }
+        // Whole-percent display, rounded to nearest; never advertise 100% off a paid plan.
+        return min(99, Int(percent.rounded()))
+    }
+}

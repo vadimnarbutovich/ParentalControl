@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Achiziții restabilite";
 "paywall.subtitle" = "Ajută-ți copilul să folosească telefonul în mod echilibrat.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 zile gratuit";
+"paywall.badge.savings_format" = "ECONOMISEȘTI ≈%d%%";
+"paywall.badge.savings_hint" = "Față de 12 plăți lunare";
 "permission.banner.allow" = "Permite";
 "permission.banner.notifications.title" = "Notificări dezactivate";
 "permission.banner.open_settings" = "Deschide setările";

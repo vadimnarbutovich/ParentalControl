@@ -284,6 +284,9 @@
 "settings.subscription.status.free" = "Auf Premium upgraden";
 
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 Tage kostenlos";
+"paywall.badge.savings_format" = "≈%d%% SPAREN";
+"paywall.badge.savings_hint" = "Im Vergleich zu 12 monatlichen Zahlungen";
 "paywall.subtitle" = "Helfen Sie Ihrem Kind, das Smartphone bewusst zu nutzen.";
 "paywall.plan.yearly" = "Jahresplan";
 "paywall.error.iap_fallback_console" = "Abos konnten nicht geladen werden. Suche in der Xcode-Konsole nach [ParentalControl][IAP] für Paketanzahl und Produkt-IDs. Überprüfe Sandbox, Bundle und passende Produkt-IDs in ASC vs. RevenueCat.";

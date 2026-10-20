@@ -284,6 +284,9 @@
 "settings.subscription.status.free" = "الترقية إلى بريميوم";
 
 "paywall.title.brand" = "بريميوم";
+"paywall.badge.three_days_free" = "3 أيام مجانًا";
+"paywall.badge.savings_format" = "وفّر ≈%d%%";
+"paywall.badge.savings_hint" = "مقارنةً بدفع الاشتراك الشهري لمدة 12 شهرًا";
 "paywall.subtitle" = "ساعد طفلك على استخدام الهاتف بوعي وتوازن.";
 "paywall.plan.yearly" = "الخطة السنوية";
 "paywall.error.iap_fallback_console" = "تعذّر تحميل الاشتراكات. في وحدة تحكم Xcode، ابحث عن [ParentalControl][IAP] لعدد الحزم ومعرّفات المنتجات. تحقق من Sandbox والحزمة ومعرّفات المنتجات المتطابقة في ASC و RevenueCat.";

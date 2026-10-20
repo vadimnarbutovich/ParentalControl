@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Οι αγορές επαναφέρθηκαν";
 "paywall.subtitle" = "Βοηθήστε το παιδί σας να χρησιμοποιεί το κινητό με μέτρο.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 ημέρες δωρεάν";
+"paywall.badge.savings_format" = "ΚΕΡΔΟΣ ≈%d%%";
+"paywall.badge.savings_hint" = "Σε σύγκριση με 12 μηνιαίες πληρωμές";
 "permission.banner.allow" = "Να επιτρέπεται";
 "permission.banner.notifications.title" = "Οι ειδοποιήσεις είναι κλειστές";
 "permission.banner.open_settings" = "Άνοιγμα ρυθμίσεων";

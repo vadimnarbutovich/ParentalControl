@@ -284,6 +284,9 @@
 "settings.subscription.status.free" = "Passer à Premium";
 
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 jours offerts";
+"paywall.badge.savings_format" = "ÉCONOMISEZ ≈%d%%";
+"paywall.badge.savings_hint" = "Par rapport à 12 paiements mensuels";
 "paywall.subtitle" = "Aidez votre enfant à utiliser son téléphone de façon équilibrée.";
 "paywall.plan.yearly" = "Plan annuel";
 "paywall.error.iap_fallback_console" = "Impossible de charger les abonnements. Dans la console Xcode, cherche [ParentalControl][IAP] pour le nombre de packages et les IDs produit. Vérifie Sandbox, bundle et les IDs produit dans ASC vs RevenueCat.";

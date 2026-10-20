@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "შესყიდვები აღდგენილია";
 "paywall.subtitle" = "დაეხმარეთ ბავშვს ტელეფონის გონივრულად გამოყენებაში.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 დღე უფასოდ";
+"paywall.badge.savings_format" = "დაზოგეთ ≈%d%%";
+"paywall.badge.savings_hint" = "12 ყოველთვიურ გადახდასთან შედარებით";
 "permission.banner.allow" = "დაშვება";
 "permission.banner.notifications.title" = "შეტყობინებები გამორთულია";
 "permission.banner.open_settings" = "პარამეტრების გახსნა";

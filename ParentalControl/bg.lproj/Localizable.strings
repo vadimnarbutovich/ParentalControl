@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Покупките са възстановени";
 "paywall.subtitle" = "Помогнете на детето си да използва телефона разумно.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 дни безплатно";
+"paywall.badge.savings_format" = "СПЕСТЯВАТЕ ≈%d%%";
+"paywall.badge.savings_hint" = "Спрямо 12 месечни плащания";
 "permission.banner.allow" = "Разреши";
 "permission.banner.notifications.title" = "Известията са изключени";
 "permission.banner.open_settings" = "Отвори настройките";

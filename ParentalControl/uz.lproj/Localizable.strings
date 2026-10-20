@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Xaridlar tiklandi";
 "paywall.subtitle" = "Farzandingizga telefondan ongli foydalanishga yordam bering.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 kun bepul";
+"paywall.badge.savings_format" = "≈%d%% TEJANG";
+"paywall.badge.savings_hint" = "12 oy davomida har oy to‘lashga nisbatan";
 "permission.banner.allow" = "Ruxsat berish";
 "permission.banner.notifications.title" = "Bildirishnomalar oʻchirilgan";
 "permission.banner.open_settings" = "Sozlamalarni ochish";

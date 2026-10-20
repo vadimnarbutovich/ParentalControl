@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Pirkumi atjaunoti";
 "paywall.subtitle" = "Palīdziet bērnam lietot telefonu apzināti.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 dienas bez maksas";
+"paywall.badge.savings_format" = "IETAUPIET ≈%d%%";
+"paywall.badge.savings_hint" = "Salīdzinot ar 12 ikmēneša maksājumiem";
 "permission.banner.allow" = "Atļaut";
 "permission.banner.notifications.title" = "Paziņojumi izslēgti";
 "permission.banner.open_settings" = "Atvērt iestatījumus";

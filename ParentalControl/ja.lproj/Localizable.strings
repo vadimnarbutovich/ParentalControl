@@ -284,6 +284,9 @@
 "settings.subscription.status.free" = "プレミアムにアップグレード";
 
 "paywall.title.brand" = "プレミアム";
+"paywall.badge.three_days_free" = "3日間無料";
+"paywall.badge.savings_format" = "≈%d%%お得";
+"paywall.badge.savings_hint" = "月額プランを12か月利用する場合との比較";
 "paywall.subtitle" = "お子さまの健やかなスマホ習慣をサポート。";
 "paywall.plan.yearly" = "年間プラン";
 "paywall.error.iap_fallback_console" = "サブスクリプションを読み込めませんでした。Xcodeコンソールで[ParentalControl][IAP]を検索し、パッケージ数とプロダクトIDを確認してください。Sandbox、バンドル、ASCとRevenueCatのプロダクトIDの一致を確認してください。";

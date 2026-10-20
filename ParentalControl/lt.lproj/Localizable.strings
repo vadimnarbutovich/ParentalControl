@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Pirkiniai atkurti";
 "paywall.subtitle" = "Padėkite vaikui sąmoningai naudotis telefonu.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 dienos nemokamai";
+"paywall.badge.savings_format" = "SUTAUPYKITE ≈%d%%";
+"paywall.badge.savings_hint" = "Palyginti su 12 mėnesinių mokėjimų";
 "permission.banner.allow" = "Leisti";
 "permission.banner.notifications.title" = "Pranešimai išjungti";
 "permission.banner.open_settings" = "Atidaryti nustatymus";

@@ -265,6 +265,9 @@
 "settings.subscription.status.free" = "Upgrade to Premium";
 
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 days free";
+"paywall.badge.savings_format" = "SAVE ≈%d%%";
+"paywall.badge.savings_hint" = "Compared with 12 monthly payments";
 "paywall.subtitle" = "Help your child build healthy phone habits.";
 "paywall.plan.yearly" = "Yearly plan";
 "paywall.error.iap_fallback_console" = "Subscriptions didn’t load. In the Xcode console, find [ParentalControl][IAP] for package count and product ids. Check Sandbox, bundle, and matching product IDs in ASC vs RevenueCat.";

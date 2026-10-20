@@ -5,6 +5,7 @@ import SwiftUI
 /// Showing this screen does not enable paid feature restrictions.
 struct PaywallView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var isPresented: Bool
     var openSource: PaywallOpenSource = .settings
 
@@ -12,40 +13,42 @@ struct PaywallView: View {
     @State private var isRefreshing = false
     @State private var restoreStatusKey: String?
     @State private var restored = false
+    @ScaledMetric(relativeTo: .title) private var titleSize = 28
+    @ScaledMetric(relativeTo: .body) private var bodySize = 16
+    @ScaledMetric(relativeTo: .headline) private var planTitleSize = 17
+    @ScaledMetric(relativeTo: .subheadline) private var priceSize = 14
 
     private var selectedPackage: Package? { subscriptionService.package(for: selectedPlan) }
     private var hasTrial: Bool { selectedPlan == .annual && subscriptionService.annualTrialEligible }
     private var busy: Bool { subscriptionService.isLoading || isRefreshing }
+    private var annualSavings: Int? {
+        guard let annual = subscriptionService.package(for: .annual)?.storeProduct,
+              let monthly = subscriptionService.package(for: .monthly)?.storeProduct else { return nil }
+        return PaywallSavings.annualPercent(annual: annual.price, monthly: monthly.price,
+                                           annualCurrency: annual.currencyCode, monthlyCurrency: monthly.currencyCode)
+    }
 
     var body: some View {
         ZStack {
             AppBackgroundView()
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 18) {
                     header
                     features
-                    VStack(spacing: 12) {
+                    VStack(spacing: 10) {
                         ForEach(ProPurchasePlan.allCases) { plan in planCard(plan) }
                     }
                     status
-                    if subscriptionService.hasLifetimeAccess {
-                        Text("settings.premium.active")
-                            .font(.headline)
-                            .foregroundStyle(AppTheme.neonGreen)
-                    } else {
-                        purchaseButton
-                    }
-                    legalLinks
                     Text(selectedPlan == .lifetime
                          ? "paywall.legal.lifetime_disclaimer"
                          : "paywall.legal.subscription_disclaimer")
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 28)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
@@ -55,17 +58,20 @@ struct PaywallView: View {
             HStack {
                 Spacer()
                 Button { isPresented = false } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 32))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.white.opacity(0.85))
                         .frame(width: 44, height: 44)
-                        .background(.white.opacity(0.08), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("paywall.close"))
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 2)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            purchaseFooter
         }
         .preferredColorScheme(.dark)
         .task { await refresh() }
@@ -78,26 +84,20 @@ struct PaywallView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "person.2.fill")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(AppTheme.neonGreen)
-                .frame(width: 64, height: 64)
-                .background(AppTheme.neonGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 22))
-                .accessibilityHidden(true)
+        VStack(spacing: 8) {
             Text("paywall.title.brand")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.system(size: titleSize, weight: .bold, design: .rounded))
+                .foregroundStyle(AppTheme.neonGreen)
             Text("paywall.subtitle")
-                .font(.body)
-                .foregroundStyle(.white.opacity(0.8))
+                .font(.system(size: bodySize, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.88))
         }
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
     }
 
     private var features: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             feature("hourglass", "paywall.feature.limits")
             feature("calendar", "paywall.feature.schedules")
             feature("checkmark.seal", "paywall.feature.tasks")
@@ -107,16 +107,18 @@ struct PaywallView: View {
     }
 
     private func feature(_ icon: String, _ key: LocalizedStringKey) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(AppTheme.neonGreen)
-                .frame(width: 24)
+                .frame(width: 34, height: 34)
+                .background(AppTheme.neonGreen.opacity(0.15), in: Circle())
                 .accessibilityHidden(true)
             Text(key)
                 .foregroundStyle(.white.opacity(0.9))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .font(.subheadline)
+        .font(.system(size: bodySize, weight: .semibold, design: .rounded))
     }
 
     private func priceLine(_ plan: ProPurchasePlan) -> String {
@@ -134,37 +136,109 @@ struct PaywallView: View {
             selectedPlan = plan
             restoreStatusKey = nil
         } label: {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(LocalizedStringKey(plan.titleKey))
-                        .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text(priceLine(plan))
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.8))
-                        .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 10) {
+                if plan == .annual {
+                    annualBadges
                 }
-                Spacer(minLength: 0)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(selected ? AppTheme.neonGreen : .white.opacity(0.35))
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(LocalizedStringKey(plan.titleKey))
+                            .font(.system(size: planTitleSize, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                        Text(priceLine(plan))
+                            .font(.system(size: priceSize, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.75))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                    ZStack {
+                        Circle()
+                            .stroke(selected ? AppTheme.neonGreen : .white.opacity(0.35), lineWidth: 2)
+                        if selected {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(AppTheme.neonGreen)
+                        }
+                    }
+                    .frame(width: 26, height: 26)
                     .accessibilityHidden(true)
+                }
             }
-            .padding(18)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? AppTheme.neonGreen.opacity(0.09) : .white.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 20))
+            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
             .overlay {
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 18)
                     .stroke(selected ? AppTheme.neonGreen : AppTheme.glassBorder.opacity(0.5),
                             lineWidth: selected ? 2 : 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 20))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
         .multilineTextAlignment(.leading)
         .disabled(subscriptionService.isLoading)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    @ViewBuilder private var annualBadges: some View {
+        if subscriptionService.annualTrialEligible || annualSavings != nil {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    trialBadge
+                    Spacer(minLength: 0)
+                    savingsBadge
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    trialBadge
+                    savingsBadge
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var trialBadge: some View {
+        if subscriptionService.annualTrialEligible {
+            PaywallTrialBadge()
+        }
+    }
+
+    @ViewBuilder private var savingsBadge: some View {
+        if let annualSavings {
+            Text(String(format: String(localized: "paywall.badge.savings_format"),
+                        PaywallSavings.approximateBadgePercent(annualSavings)))
+                .font(.system(.caption2, design: .rounded, weight: .heavy))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color.red.opacity(0.85), in: Capsule())
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHint(Text("paywall.badge.savings_hint"))
+        }
+    }
+
+    /// Keep the action and the selected price visible, including on compact phones.
+    private var purchaseFooter: some View {
+        VStack(spacing: 10) {
+            if subscriptionService.hasLifetimeAccess {
+                Text("settings.premium.active")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.neonGreen)
+            } else {
+                Text(priceLine(selectedPlan))
+                    .font(.system(.caption, design: .rounded, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                purchaseButton
+            }
+            legalLinks
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
     }
 
     @ViewBuilder private var status: some View {
@@ -199,33 +273,53 @@ struct PaywallView: View {
                 Text(hasTrial ? "paywall.cta.start_trial" : "paywall.cta.continue")
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                if !busy {
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 14, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
             }
+            .font(.system(.headline, design: .rounded, weight: .semibold))
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen, shimmeringSheen: !busy && selectedPackage != nil))
+        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen,
+                                           shimmeringSheen: !reduceMotion && !busy && selectedPackage != nil))
         .disabled(busy || selectedPackage == nil || !subscriptionService.isConfigured)
         .opacity(busy || selectedPackage == nil ? 0.55 : 1)
     }
 
     private var legalLinks: some View {
-        VStack(spacing: 16) {
-            Button("paywall.legal.restore") {
-                Task {
-                    restoreStatusKey = nil
-                    switch await subscriptionService.restorePurchases() {
-                    case .restored: restored = true
-                    case .noActiveSubscription: restoreStatusKey = "paywall.restore.result.none"
-                    case .failed: restoreStatusKey = "paywall.restore.result.failed"
-                    }
-                }
-            }
-            .disabled(busy)
-            Link("paywall.legal.privacy", destination: RevenueCatConfig.privacyPolicyURL)
-            Link("paywall.legal.terms", destination: RevenueCatConfig.termsOfUseURL)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) { legalLinkItems(showSeparators: true) }
+            VStack(spacing: 10) { legalLinkItems(showSeparators: false) }
         }
-        .font(.footnote)
+        .font(.system(.caption, design: .rounded, weight: .medium))
         .foregroundStyle(AppTheme.neonBlue)
         .multilineTextAlignment(.center)
+    }
+
+    private var legalLinkSeparator: some View {
+        Text(verbatim: "|")
+            .foregroundStyle(.white.opacity(0.35))
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder private func legalLinkItems(showSeparators: Bool) -> some View {
+        Link("paywall.legal.privacy", destination: RevenueCatConfig.privacyPolicyURL)
+        if showSeparators { legalLinkSeparator }
+        Button("paywall.legal.restore") {
+            Task {
+                restoreStatusKey = nil
+                switch await subscriptionService.restorePurchases() {
+                case .restored: restored = true
+                case .noActiveSubscription: restoreStatusKey = "paywall.restore.result.none"
+                case .failed: restoreStatusKey = "paywall.restore.result.failed"
+                }
+            }
+        }
+        .disabled(busy)
+        if showSeparators { legalLinkSeparator }
+        Link("paywall.legal.terms", destination: RevenueCatConfig.termsOfUseURL)
     }
 
     private func refresh() async {
@@ -233,6 +327,37 @@ struct PaywallView: View {
         isRefreshing = true
         defer { isRefreshing = false }
         await subscriptionService.refreshAll()
+    }
+}
+
+private struct PaywallTrialBadge: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "gift.fill")
+                .foregroundStyle(LinearGradient(
+                    colors: [.yellow, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .accessibilityHidden(true)
+            Text("paywall.badge.three_days_free")
+                .foregroundStyle(.white)
+        }
+        .font(.system(.caption, design: .rounded, weight: .heavy))
+        .textCase(.uppercase)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
+        .background {
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.14, green: 0.11, blue: 0.08),
+                                        Color(red: 0.07, green: 0.06, blue: 0.11)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                if !reduceMotion { ShimmeringLightSheen(opacity: 0.92) }
+            }
+            .clipShape(Capsule())
+            .overlay { Capsule().stroke(.yellow.opacity(0.5), lineWidth: 1) }
+        }
+        .shadow(color: .orange.opacity(0.12), radius: 8, y: 2)
     }
 }
 

@@ -270,6 +270,9 @@
 "paywall.restore.result.restored" = "Zakupy przywrócone";
 "paywall.subtitle" = "Pomóż dziecku świadomie korzystać z telefonu.";
 "paywall.title.brand" = "Premium";
+"paywall.badge.three_days_free" = "3 dni za darmo";
+"paywall.badge.savings_format" = "OSZCZĘDZASZ ≈%d%%";
+"paywall.badge.savings_hint" = "W porównaniu z 12 płatnościami miesięcznymi";
 "permission.banner.allow" = "Zezwól";
 "permission.banner.notifications.title" = "Powiadomienia wyłączone";
 "permission.banner.open_settings" = "Otwórz ustawienia";

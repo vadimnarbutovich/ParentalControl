@@ -27,4 +27,18 @@ assert.ok(!/12\.99|1\.99|19\.99/.test(view),'No hardcoded storefront prices');
 assert.match(view,/restorePurchases\(\)/);
 assert.match(view,/privacyPolicyURL/);
 assert.match(view,/termsOfUseURL/);
+assert.ok(!view.includes('person.2.fill'), 'No space-consuming header illustration');
+assert.match(view,/safeAreaInset\(edge: \.bottom/, 'Purchase action stays visible');
+assert.match(view,/PaywallSavings\.annualPercent/);
+assert.match(view,/PaywallSavings\.approximateBadgePercent\(annualSavings\)/);
+for (const locale of fs.readdirSync(path.join(root, 'ParentalControl')).filter(name => name.endsWith('.lproj'))) {
+  const strings = read(`ParentalControl/${locale}/Localizable.strings`);
+  const badge = strings.match(/"paywall\.badge\.savings_format"\s*=\s*"([^"]+)"/);
+  assert.ok(badge && badge[1].includes('≈%d%%'), `${locale}: approximation must be explicit`);
+}
+assert.match(view,/annualCurrency: annual\.currencyCode, monthlyCurrency: monthly\.currencyCode/);
+assert.match(view,/if subscriptionService\.annualTrialEligible \{\s+PaywallTrialBadge\(\)/);
+assert.match(view,/ViewThatFits\(in: \.horizontal\)/, 'Long translations can stack');
+assert.match(view,/@ScaledMetric/, 'Typography respects Dynamic Type');
+assert.ok(!view.includes('SAVE 50%'), 'No fabricated discount');
 console.log('PASS: paywall configuration and safety checks');
