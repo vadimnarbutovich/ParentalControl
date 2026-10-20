@@ -87,9 +87,15 @@ final class AppState: ObservableObject {
     @Published private(set) var parentChildSpentSecondsToday: Int?
     @Published private(set) var remoteCommandInFlight = false
     @Published private(set) var parentCommandFeedback: String?
-    /// Keep the last confirmed position throughout delivery, including timeout/offline.
+    @Published private(set) var parentCommandError: String?
+    /// Local UI intent: server snapshots must not move the disabled slider back.
+    @Published private(set) var parentPendingFocusTarget: Bool?
     var parentManualBlockControlState: Bool {
-        isParentManualBlockConfirmed
+        ParentFocusConfirmation.controlState(
+            confirmed: isParentManualBlockConfirmed,
+            pendingTarget: parentPendingFocusTarget,
+            isPending: remoteCommandInFlight
+        )
     }
     @Published private(set) var remoteStatusMessage: String?
     /// Список расписаний блокировки: на родителе редактируется и синкается с сервером; на ребёнке
@@ -536,7 +542,7 @@ final class AppState: ObservableObject {
 
     func sendParentFocusCommand(start: Bool) {
         let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
-        // Disable immediately, but keep the last confirmed position while waiting.
+        // Move to the requested position and disable immediately while awaiting confirmation.
         guard beginParentCommand(commandType: commandType) else { return }
         Task {
             await performParentFocusCommand(start: start)
@@ -2184,6 +2190,7 @@ final class AppState: ObservableObject {
                     }
                     if status.status == .failed {
                         parentCommandFeedback = L10n.tr("parent.command.failed")
+                        parentCommandError = parentCommandFeedback
                         remoteStatusMessage = status.errorMessage ?? L10n.tr("parent.command.failed")
                         finishParentCommandWatch(commandID: commandID)
                         await refreshParentChildState()
@@ -2198,6 +2205,7 @@ final class AppState: ObservableObject {
         }
         guard activeParentCommandID == commandID, !Task.isCancelled else { return }
         parentCommandFeedback = L10n.tr("parent.command.timeout")
+        parentCommandError = parentCommandFeedback
         remoteStatusMessage = L10n.tr("parent.command.timeout")
         finishParentCommandWatch(commandID: commandID)
         await refreshParentChildState()
@@ -2216,6 +2224,7 @@ final class AppState: ObservableObject {
                let delivery = parentCommandDelivery,
                runtimeMatchesCommand(r, commandType: commandType, queuedAt: delivery.queuedAt) {
                 parentCommandFeedback = L10n.tr("parent.command.applied")
+                parentCommandError = nil
                 finishParentCommandWatch(commandID: commandID)
                 return
             }
@@ -2230,11 +2239,13 @@ final class AppState: ObservableObject {
             remoteChildState = runtime
             isParentChildStateResolved = true
             parentCommandFeedback = L10n.tr("parent.command.applied")
+            parentCommandError = nil
             finishParentCommandWatch(commandID: commandID)
             return
         }
         // ACK alone must not manufacture a runtime snapshot. Keep last known state.
         parentCommandFeedback = L10n.tr("parent.command.timeout")
+        parentCommandError = parentCommandFeedback
         finishParentCommandWatch(commandID: commandID)
     }
 
@@ -2242,6 +2253,7 @@ final class AppState: ObservableObject {
         guard activeParentCommandID == commandID else { return }
         activeParentCommandID = nil
         remoteCommandInFlight = false
+        parentPendingFocusTarget = nil
     }
 
     private func resetParentCommandWatch() {
@@ -2251,6 +2263,8 @@ final class AppState: ObservableObject {
         remoteCommandInFlight = false
         parentCommandDelivery = nil
         parentCommandFeedback = nil
+        parentCommandError = nil
+        parentPendingFocusTarget = nil
     }
 
     private func reconcileParentCommandWithRuntime(_ runtime: RemoteChildRuntimeState) {
@@ -2276,6 +2290,7 @@ final class AppState: ObservableObject {
             remoteStatusMessage = L10n.tr("parent.command.applied")
         }
         parentCommandFeedback = L10n.tr("parent.command.applied")
+        parentCommandError = nil
         if activeParentCommandID == delivery.commandID {
             finishParentCommandWatch(commandID: delivery.commandID)
             parentCommandWatchTask?.cancel()
@@ -2292,6 +2307,8 @@ final class AppState: ObservableObject {
         guard deviceRole == .parent, pairingState?.isLinked == true, !remoteCommandInFlight else { return false }
         parentCommandDelivery = nil
         parentCommandFeedback = nil
+        parentCommandError = nil
+        parentPendingFocusTarget = commandType == .startFocus
         remoteCommandInFlight = true
         remoteStatusMessage = L10n.tr("parent.command.processing")
         if commandType == .startFocus {
@@ -2333,7 +2350,9 @@ final class AppState: ObservableObject {
             guard deviceRole == .parent, pairingState?.familyID == requestedFamily, !Task.isCancelled else { return }
             activeParentCommandID = nil
             parentCommandFeedback = L10n.tr("parent.command.failed")
+            parentCommandError = parentCommandFeedback
             remoteCommandInFlight = false
+            parentPendingFocusTarget = nil
             remoteStatusMessage = error.localizedDescription
         }
     }

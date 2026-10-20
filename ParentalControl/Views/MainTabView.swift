@@ -529,7 +529,7 @@ private struct ParentDashboardView: View {
         if appState.parentResolvedFocusActive == nil {
             return LocalizedStringKey("parent.dashboard.syncing_button")
         }
-        return (appState.parentResolvedFocusActive ?? false)
+        return appState.parentManualBlockControlState
             ? LocalizedStringKey("parent.dashboard.stop_focus")
             : LocalizedStringKey("parent.dashboard.start_focus")
     }
@@ -663,7 +663,8 @@ private struct ParentDashboardView: View {
                                 isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
                                 isManuallyBlocked: appState.isParentManualBlockConfirmed,
                                 blockSchedules: appState.blockSchedules,
-                                isAwaitingConfirmation: appState.parentBudgetStatus?.isPending == true
+                                isAwaitingConfirmation: appState.remoteCommandInFlight || appState.parentBudgetStatus?.isPending == true,
+                                commandError: appState.parentCommandError
                             )
 
                             Button {
@@ -732,26 +733,6 @@ private struct ParentDashboardView: View {
                     Rectangle()
                         .fill(.white.opacity(0.12))
                         .frame(height: 1)
-
-                    if appState.pairingState?.isLinked == true {
-                        if appState.remoteCommandInFlight {
-                            HStack(spacing: 8) {
-                                ProgressView().tint(AppTheme.neonBlue)
-                                Text("parent.command.processing")
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(.white.opacity(0.85))
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
-                        } else if let feedback = appState.parentCommandFeedback {
-                            Text(feedback)
-                                .font(.footnote)
-                                .foregroundStyle(.white.opacity(0.85))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
-                        }
-                    }
 
                     Button("budget.adjust_today") {
                         isAdjustTimePresented = true

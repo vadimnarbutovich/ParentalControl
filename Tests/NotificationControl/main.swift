@@ -93,6 +93,20 @@ try FileManager.default.removeItem(at: root.appendingPathComponent("remote-contr
 try FileManager.default.removeItem(at: root)
 
 // Parent confirmation must come from a fresh focus snapshot, not desired state.
+check(ParentFocusConfirmation.controlState(confirmed: false, pendingTarget: true, isPending: true),
+      "Pending block moves disabled slider to blocked position")
+check(!ParentFocusConfirmation.controlState(confirmed: true, pendingTarget: false, isPending: true),
+      "Pending unblock moves disabled slider to unlocked position")
+check(!ParentFocusConfirmation.controlState(confirmed: false, pendingTarget: true, isPending: false),
+      "Failed or timed-out block returns slider to confirmed unlocked position")
+check(ParentFocusConfirmation.controlState(confirmed: true, pendingTarget: false, isPending: false),
+      "Failed or timed-out unblock returns slider to confirmed blocked position")
+check(ParentFocusConfirmation.controlState(confirmed: true, pendingTarget: nil, isPending: false),
+      "Confirmed block keeps slider in new position")
+check(!ParentFocusConfirmation.controlState(confirmed: false, pendingTarget: nil, isPending: false),
+      "Confirmed unblock keeps slider in new position")
+check(ParentFocusConfirmation.controlState(confirmed: true, pendingTarget: nil, isPending: true),
+      "Missing UI intent falls back to confirmed runtime")
 let queued = Date(timeIntervalSince1970: 100)
 func confirms(_ command: String, _ active: Bool, _ timestamp: TimeInterval) -> Bool {
     ParentFocusConfirmation.matches(command: command, queuedAt: queued,
