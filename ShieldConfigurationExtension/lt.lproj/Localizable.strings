@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.ok" = "Uždaryti";
+"shield.open.button" = "Atidaryti ParentalControl";
+"shield.subtitle" = "Atverkite ParentalControl likusiam laikui ir užduotims peržiūrėti.";
+"shield.title" = "Laikas baigėsi";

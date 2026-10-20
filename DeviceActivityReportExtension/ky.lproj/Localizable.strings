@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Тандалган күн үчүн колдонуу маалыматы жок.";
+"report.app_usage.other" = "Башка";
+"report.app_usage.title" = "Колдонмолор";
+"report.websites.title" = "Сайттар";

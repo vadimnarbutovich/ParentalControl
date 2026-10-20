@@ -15,7 +15,9 @@ enum L10n {
 
     static func duration(seconds: Int) -> String {
         let normalized = max(0, seconds)
-        if normalized < 60 {
+        // Display an empty balance in minutes, matching limits and rewards.
+        // Keep seconds for positive durations shorter than a minute.
+        if normalized > 0 && normalized < 60 {
             let format = tr("unit.seconds.short")
             if format == "unit.seconds.short" {
                 return "\(normalized)s"

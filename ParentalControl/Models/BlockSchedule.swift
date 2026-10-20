@@ -177,10 +177,10 @@ struct BlockSchedule: Codable, Equatable, Identifiable {
 
     /// Возвращает `true`, если расписание сейчас должно быть активно (с учётом
     /// дней недели и переходов через полночь). Используется и парентом для UI
-    /// «активно сейчас», и совпадает по логике с бэкендом `isScheduleActiveAt`.
+    /// «активно сейчас». Как и локальный монитор, исключает пустое окно с равными часами.
     /// Параметр `now` — текущий момент в локальной таймзоне устройства.
     func isActive(at now: Date = Date(), calendar: Calendar = .current) -> Bool {
-        guard isEnabled else { return false }
+        guard isEnabled, startTime.totalMinutes != endTime.totalMinutes else { return false }
         let components = calendar.dateComponents([.hour, .minute, .weekday], from: now)
         let hour = components.hour ?? 0
         let minute = components.minute ?? 0

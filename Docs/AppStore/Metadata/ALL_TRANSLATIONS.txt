@@ -1,0 +1,1096 @@
+ParentalControl — рекламный текст и описание для App Store Connect
+
+Русский текст утверждён пользователем. Переводы адаптированы по смыслу.
+Для вставки без служебных заголовков используйте файлы в папке соответствующей локали.
+
+========================================================================
+Arabic — Арабский [ar-SA]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (126/170)
+
+ساعد طفلك على استخدام الهاتف بوعي: حدّد وقت الاستخدام، ونظّم فترات الراحة، وكافئه على المهام المكتملة بوقت إضافي في التطبيقات.
+
+ОПИСАНИЕ (1731/4000)
+
+ساعد طفلك على استخدام الهاتف بوعي، مع قواعد واضحة ووقت للاستمتاع بالحياة بعيدًا عن الشاشة.
+
+يتيح لك ParentalControl إدارة الوقت الذي يقضيه طفلك في التطبيقات المختارة من هاتفك أنت. حدّد وقت الاستخدام والجداول، وشجّعه على العادات المفيدة، واطلب معرفة موقعه عند الحاجة.
+
+حدود تناسب أيام الدراسة والعطلات
+
+حدّد وقتًا يوميًا ثابتًا طوال الأسبوع، أو خصّص وقتًا مختلفًا لكل يوم. مثلًا، وقت أقل في أيام الدراسة وأكثر في عطلة نهاية الأسبوع.
+
+جداول للنوم والدراسة
+
+اختر الأيام والساعات التي تُحظر فيها التطبيقات المحددة. ساعد طفلك على التركيز في دراسته والراحة وقضاء الوقت مع الآخرين دون هاتف.
+
+التحكم من هاتفك
+
+احظر التطبيقات المختارة أو ألغِ حظرها، وعدّل الوقت المتاح لليوم، واعرف كم بقي لطفلك من وقت.
+
+مهام مع مكافآت
+
+أنشئ مهام لطفلك وحدّد وقتًا إضافيًا في التطبيقات كمكافأة. يرسل طفلك المهمة المكتملة للمراجعة، وتوافق أنت على النتيجة وتمنحه الوقت.
+
+موقع طفلك
+
+اطلب موقع طفلك وشاهده على الخريطة.
+
+إحصاءات الاستخدام
+
+اطّلع على الوقت الذي قضاه طفلك في التطبيقات المختارة في اليوم الذي تريده. تتوفر الإحصاءات التفصيلية على هاتف الطفل في وضع ولي الأمر المحمي برمز PIN.
+
+إعداد سهل
+
+ثبّت التطبيق على هاتفك وهاتف طفلك، واختر الدور المناسب لكل هاتف، ثم اربطهما باستخدام رمز. يساعدك الإعداد خطوة بخطوة على منح الأذونات اللازمة، واختيار التطبيقات التي تريد التحكم فيها، وتعيين رمز PIN لولي الأمر.
+
+لتقييد التطبيقات، يجب السماح بالوصول إلى «مدة استخدام الجهاز» على هاتف طفلك. ولطلب موقعه في الخلفية، اضبط إذن الوصول إلى الموقع على «دائمًا».
+
+يمكنك أيضًا إعداد الحماية من حذف التطبيق عبر «المشاركة العائلية» من Apple والموافقة على الرقابة الأبوية لطفلك. هذه الخطوة اختيارية للبدء.
+
+سياسة الخصوصية:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+شروط الاستخدام:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+German — Немецкий [de-DE]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (131/170)
+
+Hilf deinem Kind, das Handy bewusst zu nutzen: Setze Limits, plane Pausen und belohne erledigte Aufgaben mit zusätzlicher App-Zeit.
+
+ОПИСАНИЕ (2304/4000)
+
+Hilf deinem Kind, das Handy bewusst zu nutzen – mit klaren Regeln und Zeit für das Leben abseits des Bildschirms.
+
+Mit ParentalControl verwaltest du von deinem eigenen Handy aus, wie viel Zeit dein Kind in ausgewählten Apps verbringt. Lege Limits und Zeitpläne fest, belohne hilfreiche Aufgaben und frage bei Bedarf den Standort deines Kindes ab.
+
+LIMITS FÜR WERKTAGE UND WOCHENENDEN
+
+Lege für die ganze Woche dasselbe Tageslimit fest oder passe die Zeit für jeden Tag einzeln an. Zum Beispiel weniger an Schultagen und mehr am Wochenende.
+
+ZEITPLÄNE FÜR SCHLAF UND LERNEN
+
+Bestimme, an welchen Tagen und zu welchen Uhrzeiten ausgewählte Apps gesperrt werden. So hilfst du deinem Kind, sich auf Hausaufgaben, Erholung und gemeinsame Zeit ohne Handy zu konzentrieren.
+
+STEUERUNG VON DEINEM HANDY AUS
+
+Sperre oder entsperre ausgewählte Apps, ändere die verfügbare Zeit für heute und sieh nach, wie viel Zeit deinem Kind noch bleibt.
+
+AUFGABEN MIT BELOHNUNG
+
+Erstelle Aufgaben für dein Kind und lege zusätzliche App-Zeit als Belohnung fest. Dein Kind reicht die erledigte Aufgabe zur Prüfung ein. Du bestätigst das Ergebnis und vergibst die Zeit.
+
+STANDORT DEINES KINDES
+
+Frage den Standort deines Kindes ab und sieh ihn auf der Karte.
+
+NUTZUNGSSTATISTIK
+
+Sieh nach, wie viel Zeit an einem bestimmten Tag in den ausgewählten Apps verbracht wurde. Die detaillierte Statistik findest du auf dem Handy deines Kindes im PIN-geschützten Elternmodus.
+
+EINFACHE EINRICHTUNG
+
+Installiere die App auf deinem Handy und dem deines Kindes, wähle die passenden Rollen und verbinde die Handys über einen Code. Die Einrichtung führt dich Schritt für Schritt durch die nötigen Berechtigungen, die App-Auswahl und das Festlegen einer Eltern-PIN.
+
+Zum Einschränken von Apps ist auf dem Handy deines Kindes die Berechtigung für „Bildschirmzeit“ nötig. Damit du den Standort auch im Hintergrund anfragen kannst, stelle den Standortzugriff auf „Immer“.
+
+Zusätzlich kannst du über die Apple-Familienfreigabe und die Autorisierung für dein Kind einen Schutz vor dem Löschen der App einrichten. Dieser Schritt ist für den Einstieg nicht erforderlich.
+
+Datenschutzerklärung:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Nutzungsbedingungen:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Greek — Греческий [el]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (165/170)
+
+Βοηθήστε το παιδί σας να χρησιμοποιεί το κινητό συνειδητά: βάλτε όρια, ορίστε διαλείμματα και ανταμείψτε τις ολοκληρωμένες εργασίες με επιπλέον χρόνο στις εφαρμογές.
+
+ОПИСАНИЕ (2384/4000)
+
+Βοηθήστε το παιδί σας να χρησιμοποιεί το κινητό πιο συνειδητά, με ξεκάθαρους κανόνες και χρόνο για τη ζωή μακριά από την οθόνη.
+
+Με το ParentalControl διαχειρίζεστε από το δικό σας κινητό τον χρόνο που περνά το παιδί στις επιλεγμένες εφαρμογές. Ορίστε όρια και προγράμματα, ενθαρρύνετε τις καλές συνήθειες και ζητήστε την τοποθεσία του όποτε τη χρειάζεστε.
+
+ΟΡΙΑ ΓΙΑ ΚΑΘΗΜΕΡΙΝΕΣ ΚΑΙ ΣΑΒΒΑΤΟΚΥΡΙΑΚΑ
+
+Ορίστε το ίδιο ημερήσιο όριο για όλη την εβδομάδα ή διαφορετικό χρόνο για κάθε ημέρα. Για παράδειγμα, λιγότερο τις ημέρες του σχολείου και περισσότερο τα Σαββατοκύριακα.
+
+ΠΡΟΓΡΑΜΜΑ ΓΙΑ ΥΠΝΟ ΚΑΙ ΔΙΑΒΑΣΜΑ
+
+Επιλέξτε τις ημέρες και τις ώρες που θα μπλοκάρονται οι επιλεγμένες εφαρμογές. Βοηθήστε το παιδί να συγκεντρώνεται στο διάβασμα, να ξεκουράζεται και να περνά χρόνο με τους άλλους χωρίς το κινητό.
+
+ΔΙΑΧΕΙΡΙΣΗ ΑΠΟ ΤΟ ΔΙΚΟ ΣΑΣ ΚΙΝΗΤΟ
+
+Μπλοκάρετε ή ξεμπλοκάρετε τις επιλεγμένες εφαρμογές, αλλάξτε τον διαθέσιμο χρόνο για σήμερα και δείτε πόσος χρόνος απομένει στο παιδί.
+
+ΕΡΓΑΣΙΕΣ ΜΕ ΑΝΤΑΜΟΙΒΗ
+
+Δημιουργήστε εργασίες για το παιδί και ορίστε ως ανταμοιβή επιπλέον χρόνο στις εφαρμογές. Το παιδί στέλνει την ολοκληρωμένη εργασία για έλεγχο και εσείς εγκρίνετε το αποτέλεσμα και προσθέτετε τον χρόνο.
+
+Η ΤΟΠΟΘΕΣΙΑ ΤΟΥ ΠΑΙΔΙΟΥ
+
+Ζητήστε την τοποθεσία του παιδιού και δείτε την στον χάρτη.
+
+ΣΤΑΤΙΣΤΙΚΑ ΧΡΗΣΗΣ
+
+Δείτε τον χρόνο στις επιλεγμένες εφαρμογές για την ημέρα που σας ενδιαφέρει. Τα αναλυτικά στατιστικά είναι διαθέσιμα στο κινητό του παιδιού, στη λειτουργία γονέα που προστατεύεται με PIN.
+
+ΕΥΚΟΛΗ ΡΥΘΜΙΣΗ
+
+Εγκαταστήστε την εφαρμογή στο δικό σας κινητό και στο κινητό του παιδιού, επιλέξτε τους αντίστοιχους ρόλους και συνδέστε τα κινητά με έναν κωδικό. Η καθοδήγηση βήμα προς βήμα σάς βοηθά να δώσετε τις απαραίτητες άδειες, να επιλέξετε εφαρμογές για έλεγχο και να ορίσετε το PIN γονέα.
+
+Για να περιορίσετε τις εφαρμογές, χρειάζεται άδεια πρόσβασης στον «Χρόνο επί οθόνης» στο κινητό του παιδιού. Για να ζητάτε την τοποθεσία στο παρασκήνιο, ορίστε την πρόσβαση στην τοποθεσία σε «Πάντα».
+
+Προαιρετικά, μπορείτε να ρυθμίσετε προστασία από τη διαγραφή της εφαρμογής μέσω της Οικογενειακής κοινής χρήσης της Apple και της εξουσιοδότησης για το παιδί. Δεν χρειάζεται να ολοκληρώσετε αυτό το βήμα για να ξεκινήσετε.
+
+Πολιτική απορρήτου:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Όροι χρήσης:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+English (Australia) — Английский (Австралия) [en-AU]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (124/170)
+
+Help your child build mindful phone habits: set limits, schedule breaks, and reward completed tasks with extra time in apps.
+
+ОПИСАНИЕ (1970/4000)
+
+Help your child use their phone more mindfully—with clear rules and time for life beyond the screen.
+
+ParentalControl lets parents manage their child's time in selected apps from their own phone. Set limits and schedules, encourage helpful habits, and request your child's location when you need it.
+
+LIMITS FOR WEEKDAYS AND WEEKENDS
+
+Set one daily limit for the whole week or choose a different allowance for each day. For example, allow less time on school days and more at weekends.
+
+SCHEDULES FOR SLEEP AND STUDY
+
+Choose the days and times when selected apps should be blocked. Help your child make room for schoolwork, rest, and time together without their phone.
+
+MANAGE EVERYTHING FROM YOUR PHONE
+
+Block or unblock selected apps, adjust today's available time, and see how much time your child has left.
+
+TASKS WITH REWARDS
+
+Create tasks for your child and offer extra time in apps as a reward. Your child submits completed tasks for review, and you approve the result and award the time.
+
+YOUR CHILD'S LOCATION
+
+Request your child's location and view it on the map.
+
+USAGE STATISTICS
+
+See time spent in selected apps on any day you choose. Detailed statistics are available on your child's phone in PIN-protected parent mode.
+
+SIMPLE SETUP
+
+Install the app on your phone and your child's phone, choose the appropriate roles, and link the phones with a code. Step-by-step setup helps you grant the required permissions, choose apps to manage, and set a parent PIN.
+
+Managing app access requires Screen Time permission on your child's phone. To request their location in the background, set location access to Always.
+
+You can also set up protection against app removal by setting up Apple Family Sharing and approving parental controls for your child. This step is optional when getting started.
+
+Privacy Policy:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Terms of Use:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+English (Canada) — Английский (Канада) [en-CA]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (124/170)
+
+Help your child build mindful phone habits: set limits, schedule breaks, and reward completed tasks with extra time in apps.
+
+ОПИСАНИЕ (1970/4000)
+
+Help your child use their phone more mindfully—with clear rules and time for life beyond the screen.
+
+ParentalControl lets parents manage their child's time in selected apps from their own phone. Set limits and schedules, encourage helpful habits, and request your child's location when you need it.
+
+LIMITS FOR WEEKDAYS AND WEEKENDS
+
+Set one daily limit for the whole week or choose a different allowance for each day. For example, allow less time on school days and more on weekends.
+
+SCHEDULES FOR SLEEP AND STUDY
+
+Choose the days and times when selected apps should be blocked. Help your child make room for schoolwork, rest, and time together without their phone.
+
+MANAGE EVERYTHING FROM YOUR PHONE
+
+Block or unblock selected apps, adjust today's available time, and see how much time your child has left.
+
+TASKS WITH REWARDS
+
+Create tasks for your child and offer extra time in apps as a reward. Your child submits completed tasks for review, and you approve the result and award the time.
+
+YOUR CHILD'S LOCATION
+
+Request your child's location and view it on the map.
+
+USAGE STATISTICS
+
+See time spent in selected apps on any day you choose. Detailed statistics are available on your child's phone in PIN-protected parent mode.
+
+SIMPLE SETUP
+
+Install the app on your phone and your child's phone, choose the appropriate roles, and link the phones with a code. Step-by-step setup helps you grant the required permissions, choose apps to manage, and set a parent PIN.
+
+Managing app access requires Screen Time permission on your child's phone. To request their location in the background, set location access to Always.
+
+You can also set up protection against app removal by setting up Apple Family Sharing and approving parental controls for your child. This step is optional when getting started.
+
+Privacy Policy:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Terms of Use:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+English (U.K.) — Английский (Великобритания) [en-GB]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (124/170)
+
+Help your child build mindful phone habits: set limits, schedule breaks, and reward completed tasks with extra time in apps.
+
+ОПИСАНИЕ (1970/4000)
+
+Help your child use their phone more mindfully—with clear rules and time for life beyond the screen.
+
+ParentalControl lets parents manage their child's time in selected apps from their own phone. Set limits and schedules, encourage helpful habits, and request your child's location when you need it.
+
+LIMITS FOR WEEKDAYS AND WEEKENDS
+
+Set one daily limit for the whole week or choose a different allowance for each day. For example, allow less time on school days and more at weekends.
+
+SCHEDULES FOR SLEEP AND STUDY
+
+Choose the days and times when selected apps should be blocked. Help your child make room for schoolwork, rest, and time together without their phone.
+
+MANAGE EVERYTHING FROM YOUR PHONE
+
+Block or unblock selected apps, adjust today's available time, and see how much time your child has left.
+
+TASKS WITH REWARDS
+
+Create tasks for your child and offer extra time in apps as a reward. Your child submits completed tasks for review, and you approve the result and award the time.
+
+YOUR CHILD'S LOCATION
+
+Request your child's location and view it on the map.
+
+USAGE STATISTICS
+
+See time spent in selected apps on any day you choose. Detailed statistics are available on your child's phone in PIN-protected parent mode.
+
+SIMPLE SETUP
+
+Install the app on your phone and your child's phone, choose the appropriate roles, and link the phones with a code. Step-by-step setup helps you grant the required permissions, choose apps to manage, and set a parent PIN.
+
+Managing app access requires Screen Time permission on your child's phone. To request their location in the background, set location access to Always.
+
+You can also set up protection against app removal by setting up Apple Family Sharing and approving parental controls for your child. This step is optional when getting started.
+
+Privacy Policy:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Terms of Use:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+English (U.S.) — Английский (США) [en-US]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (124/170)
+
+Help your child build mindful phone habits: set limits, schedule breaks, and reward completed tasks with extra time in apps.
+
+ОПИСАНИЕ (1970/4000)
+
+Help your child use their phone more mindfully—with clear rules and time for life beyond the screen.
+
+ParentalControl lets parents manage their child's time in selected apps from their own phone. Set limits and schedules, encourage helpful habits, and request your child's location when you need it.
+
+LIMITS FOR WEEKDAYS AND WEEKENDS
+
+Set one daily limit for the whole week or choose a different allowance for each day. For example, allow less time on school days and more on weekends.
+
+SCHEDULES FOR SLEEP AND STUDY
+
+Choose the days and times when selected apps should be blocked. Help your child make room for schoolwork, rest, and time together without their phone.
+
+MANAGE EVERYTHING FROM YOUR PHONE
+
+Block or unblock selected apps, adjust today's available time, and see how much time your child has left.
+
+TASKS WITH REWARDS
+
+Create tasks for your child and offer extra time in apps as a reward. Your child submits completed tasks for review, and you approve the result and award the time.
+
+YOUR CHILD'S LOCATION
+
+Request your child's location and view it on the map.
+
+USAGE STATISTICS
+
+See time spent in selected apps on any day you choose. Detailed statistics are available on your child's phone in PIN-protected parent mode.
+
+SIMPLE SETUP
+
+Install the app on your phone and your child's phone, choose the appropriate roles, and link the phones with a code. Step-by-step setup helps you grant the required permissions, choose apps to manage, and set a parent PIN.
+
+Managing app access requires Screen Time permission on your child's phone. To request their location in the background, set location access to Always.
+
+You can also set up protection against app removal by setting up Apple Family Sharing and approving parental controls for your child. This step is optional when getting started.
+
+Privacy Policy:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Terms of Use:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Spanish (Spain) — Испанский (Испания) [es-ES]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (149/170)
+
+Ayuda a tu hijo a usar el móvil con conciencia: establece límites, programa descansos y recompensa las tareas completadas con más tiempo en las apps.
+
+ОПИСАНИЕ (2251/4000)
+
+Ayuda a tu hijo a usar el móvil de forma consciente, con reglas claras y tiempo para disfrutar de la vida fuera de la pantalla.
+
+ParentalControl te permite gestionar desde tu propio móvil el tiempo que tu hijo pasa en las apps seleccionadas. Establece límites y horarios, fomenta las buenas rutinas y solicita su ubicación cuando lo necesites.
+
+LÍMITES PARA ENTRE SEMANA Y EL FIN DE SEMANA
+
+Establece el mismo límite diario para toda la semana o elige un tiempo distinto para cada día. Por ejemplo, menos los días de clase y más los fines de semana.
+
+HORARIOS PARA DORMIR Y ESTUDIAR
+
+Elige los días y las horas en los que se bloquearán las apps seleccionadas. Ayuda a tu hijo a centrarse en los deberes, el descanso y los momentos en compañía sin el móvil.
+
+GESTIÓN DESDE TU MÓVIL
+
+Bloquea o desbloquea las apps seleccionadas, ajusta el tiempo disponible para hoy y consulta cuánto tiempo le queda a tu hijo.
+
+TAREAS CON RECOMPENSA
+
+Crea tareas para tu hijo y ofrece tiempo adicional en las apps como recompensa. Tu hijo envía la tarea completada para que la revises; tú apruebas el resultado y le concedes el tiempo.
+
+LA UBICACIÓN DE TU HIJO
+
+Solicita la ubicación de tu hijo y consúltala en el mapa.
+
+ESTADÍSTICAS DE USO
+
+Consulta el tiempo dedicado a las apps seleccionadas en el día que te interese. Las estadísticas detalladas están disponibles en el móvil de tu hijo, dentro del modo para padres protegido con PIN.
+
+CONFIGURACIÓN SENCILLA
+
+Instala la app en tu móvil y en el de tu hijo, elige el rol correspondiente en cada uno y vincúlalos mediante un código. La configuración paso a paso te ayudará a conceder los permisos necesarios, elegir las apps que quieras gestionar y establecer un PIN parental.
+
+Para limitar las apps, debes permitir el acceso a Tiempo de uso en el móvil de tu hijo. Para solicitar su ubicación en segundo plano, configura el acceso a la localización en «Siempre».
+
+También puedes configurar la protección contra la eliminación de la app mediante «En familia» de Apple y la autorización para tu hijo. Este paso es opcional para empezar.
+
+Política de privacidad:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Condiciones de uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Spanish (Mexico) — Испанский (Мексика) [es-MX]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (146/170)
+
+Ayuda a tu hijo a usar el celular con conciencia: fija límites, programa descansos y recompensa las tareas completadas con más tiempo en las apps.
+
+ОПИСАНИЕ (2288/4000)
+
+Ayuda a tu hijo a usar el celular de forma consciente, con reglas claras y tiempo para disfrutar de la vida fuera de la pantalla.
+
+ParentalControl te permite administrar desde tu propio celular el tiempo que tu hijo pasa en las apps seleccionadas. Establece límites y horarios, fomenta las buenas rutinas y solicita su ubicación cuando lo necesites.
+
+LÍMITES PARA ENTRE SEMANA Y EL FIN DE SEMANA
+
+Establece el mismo límite diario para toda la semana o elige un tiempo distinto para cada día. Por ejemplo, menos los días de escuela y más los fines de semana.
+
+HORARIOS PARA DORMIR Y ESTUDIAR
+
+Elige los días y las horas en los que se bloquearán las apps seleccionadas. Ayuda a tu hijo a concentrarse en la tarea, el descanso y la convivencia sin el celular.
+
+ADMINISTRA TODO DESDE TU CELULAR
+
+Bloquea o desbloquea las apps seleccionadas, ajusta el tiempo disponible para hoy y consulta cuánto tiempo le queda a tu hijo.
+
+ACTIVIDADES CON RECOMPENSA
+
+Crea actividades para tu hijo y ofrece tiempo adicional en las apps como recompensa. Tu hijo envía la actividad completada para que la revises; tú apruebas el resultado y le otorgas el tiempo.
+
+LA UBICACIÓN DE TU HIJO
+
+Solicita la ubicación de tu hijo y consúltala en el mapa.
+
+ESTADÍSTICAS DE USO
+
+Consulta el tiempo dedicado a las apps seleccionadas en el día que te interese. Las estadísticas detalladas están disponibles en el celular de tu hijo, dentro del modo para padres protegido con PIN.
+
+CONFIGURACIÓN SENCILLA
+
+Instala la app en tu celular y en el de tu hijo, elige el rol correspondiente en cada uno y vincúlalos mediante un código. La configuración paso a paso te ayudará a otorgar los permisos necesarios, elegir las apps que quieras administrar y establecer un PIN parental.
+
+Para limitar las apps, debes permitir el acceso a Tiempo en pantalla en el celular de tu hijo. Para solicitar su ubicación en segundo plano, configura el acceso a la ubicación en «Siempre».
+
+También puedes configurar la protección contra la eliminación de la app mediante Compartir en familia de Apple y la autorización para tu hijo. Este paso es opcional para empezar.
+
+Política de privacidad:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Términos de uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+French — Французский [fr-FR]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (163/170)
+
+Aidez votre enfant à mieux utiliser son téléphone : fixez des limites, prévoyez des pauses et récompensez les tâches accomplies par du temps en plus dans les apps.
+
+ОПИСАНИЕ (2522/4000)
+
+Aidez votre enfant à utiliser son téléphone de façon plus réfléchie, avec des règles claires et du temps pour la vie loin des écrans.
+
+ParentalControl vous permet de gérer, depuis votre propre téléphone, le temps que votre enfant passe dans les applications choisies. Définissez des limites et des horaires, encouragez les bonnes habitudes et demandez sa position quand vous en avez besoin.
+
+DES LIMITES POUR LA SEMAINE ET LE WEEK-END
+
+Définissez la même limite quotidienne pour toute la semaine ou adaptez le temps à chaque jour. Par exemple, moins les jours d’école et davantage le week-end.
+
+DES HORAIRES POUR DORMIR ET ÉTUDIER
+
+Choisissez les jours et les heures où les applications sélectionnées doivent être bloquées. Aidez votre enfant à se consacrer aux devoirs, au repos et aux moments partagés sans téléphone.
+
+TOUT GÉRER DEPUIS VOTRE TÉLÉPHONE
+
+Bloquez ou débloquez les applications choisies, ajustez le temps disponible pour aujourd’hui et consultez le temps qu’il reste à votre enfant.
+
+DES TÂCHES AVEC UNE RÉCOMPENSE
+
+Créez des tâches pour votre enfant et attribuez du temps supplémentaire dans les applications comme récompense. Votre enfant envoie la tâche accomplie pour vérification. Vous validez le résultat et accordez le temps prévu.
+
+LA POSITION DE VOTRE ENFANT
+
+Demandez la position de votre enfant et consultez-la sur la carte.
+
+LES STATISTIQUES D’UTILISATION
+
+Consultez le temps passé dans les applications choisies pour le jour qui vous intéresse. Les statistiques détaillées sont disponibles sur le téléphone de votre enfant, dans le mode parent protégé par un code PIN.
+
+UNE CONFIGURATION SIMPLE
+
+Installez l’application sur votre téléphone et celui de votre enfant, choisissez les rôles correspondants et associez les téléphones à l’aide d’un code. La configuration vous guide pour accorder les autorisations nécessaires, choisir les applications à gérer et définir un code PIN parental.
+
+Pour limiter les applications, vous devez autoriser l’accès à Temps d’écran sur le téléphone de votre enfant. Pour demander sa position en arrière-plan, réglez l’accès à la localisation sur « Toujours ».
+
+Vous pouvez aussi configurer une protection contre la suppression de l’application grâce au partage familial Apple et à l’autorisation pour votre enfant. Cette étape n’est pas obligatoire pour commencer.
+
+Politique de confidentialité :
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Conditions d’utilisation :
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Italian — Итальянский [it]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (145/170)
+
+Aiuta tuo figlio a usare il telefono con consapevolezza: imposta limiti, pianifica pause e premia le attività completate con più tempo nelle app.
+
+ОПИСАНИЕ (2268/4000)
+
+Aiuta tuo figlio a usare il telefono in modo consapevole, con regole chiare e tempo da dedicare alla vita fuori dallo schermo.
+
+Con ParentalControl puoi gestire dal tuo telefono il tempo che tuo figlio trascorre nelle app selezionate. Imposta limiti e orari, incoraggia le buone abitudini e richiedi la sua posizione quando ne hai bisogno.
+
+LIMITI PER I GIORNI DI SCUOLA E IL WEEKEND
+
+Imposta lo stesso limite giornaliero per tutta la settimana oppure scegli un tempo diverso per ogni giorno. Ad esempio, meno nei giorni di scuola e di più nel weekend.
+
+ORARI PER IL RIPOSO E LO STUDIO
+
+Scegli i giorni e gli orari in cui bloccare le app selezionate. Aiuta tuo figlio a concentrarsi sui compiti, sul riposo e sui momenti insieme senza telefono.
+
+GESTISCI TUTTO DAL TUO TELEFONO
+
+Blocca o sblocca le app selezionate, modifica il tempo disponibile per oggi e controlla quanto tempo resta a tuo figlio.
+
+ATTIVITÀ CON UNA RICOMPENSA
+
+Crea attività per tuo figlio e assegna come ricompensa del tempo extra nelle app. Tuo figlio invia l’attività completata per la verifica; tu approvi il risultato e assegni il tempo previsto.
+
+LA POSIZIONE DI TUO FIGLIO
+
+Richiedi la posizione di tuo figlio e visualizzala sulla mappa.
+
+STATISTICHE DI UTILIZZO
+
+Consulta il tempo trascorso nelle app selezionate nel giorno che ti interessa. Le statistiche dettagliate sono disponibili sul telefono di tuo figlio, nella modalità genitore protetta da PIN.
+
+CONFIGURAZIONE SEMPLICE
+
+Installa l’app sul tuo telefono e su quello di tuo figlio, scegli i rispettivi ruoli e collega i telefoni con un codice. La configurazione guidata ti aiuta a concedere le autorizzazioni necessarie, scegliere le app da gestire e impostare il PIN genitore.
+
+Per limitare le app, è necessario autorizzare l’accesso a Tempo di utilizzo sul telefono di tuo figlio. Per richiederne la posizione in background, imposta l’accesso alla posizione su «Sempre».
+
+Puoi anche configurare la protezione contro la rimozione dell’app tramite «In famiglia» di Apple e l’autorizzazione per tuo figlio. Questo passaggio è facoltativo per iniziare.
+
+Informativa sulla privacy:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Condizioni d’uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Japanese — Японский [ja]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (69/170)
+
+お子さまがスマホと上手に付き合えるように。利用時間の上限や休憩時間を設定し、やり終えたお手伝いや課題には、アプリを使える時間をごほうびに。
+
+ОПИСАНИЕ (1074/4000)
+
+わかりやすいルールと、画面から離れて過ごす時間を。お子さまがスマホと上手に付き合えるようサポートします。
+
+ParentalControlなら、保護者のスマホから、お子さまが管理対象のアプリを使える時間を設定できます。利用時間の上限やスケジュールを設定し、お手伝いなどを応援。必要なときに、お子さまの位置情報もリクエストできます。
+
+平日と週末に合わせた時間制限
+
+毎日同じ上限時間にすることも、曜日ごとに変えることもできます。学校がある日は短めに、週末は少し長めにするなど、生活に合わせて設定できます。
+
+睡眠や勉強のためのスケジュール
+
+選択したアプリをブロックする曜日と時間帯を設定できます。宿題や休息、スマホを使わずに人と過ごす時間を大切にできるよう、お子さまをサポートします。
+
+保護者のスマホから操作
+
+選択したアプリのブロックや解除、今日使える時間の変更ができます。お子さまに残っている利用時間も確認できます。
+
+課題を達成したら、ごほうびを
+
+お子さまに課題を作成し、ごほうびとしてアプリを使える時間を設定できます。お子さまが完了した課題を確認に出し、保護者が結果を承認して時間を付与します。
+
+お子さまの位置情報
+
+お子さまの位置情報をリクエストし、地図で確認できます。
+
+利用状況の確認
+
+日付を選んで、対象のアプリを使った時間を確認できます。詳しい利用状況は、お子さまのスマホにあるPINで保護された保護者モードで閲覧できます。
+
+わかりやすい初期設定
+
+保護者とお子さまの両方のスマホにアプリをインストールし、それぞれの役割を選んでコードで連携します。案内に沿って、必要なアクセス許可、管理するアプリの選択、保護者用PINの設定を進められます。
+
+アプリを制限するには、お子さまのスマホでスクリーンタイムへのアクセスを許可する必要があります。バックグラウンドで位置情報をリクエストするには、位置情報へのアクセスを「常に」に設定してください。
+
+Appleのファミリー共有を設定し、お子さまのペアレンタルコントロールを承認することで、アプリの削除防止も設定できます。この設定は、使い始めるときに必須ではありません。
+
+プライバシーポリシー：
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+利用規約：
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Korean — Корейский [ko]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (79/170)
+
+자녀가 휴대폰을 현명하게 사용하도록 도와주세요. 사용 시간을 정하고 휴식 시간을 계획하며, 완료한 과제에는 앱 사용 시간을 추가로 선물하세요.
+
+ОПИСАНИЕ (1129/4000)
+
+명확한 규칙과 화면 밖의 일상을 위한 시간으로, 자녀가 휴대폰을 현명하게 사용하도록 도와주세요.
+
+ParentalControl을 사용하면 보호자의 휴대폰에서 자녀가 선택된 앱을 사용할 수 있는 시간을 관리할 수 있습니다. 시간 제한과 일정을 설정하고, 좋은 습관을 격려하고, 필요할 때 자녀의 위치를 요청하세요.
+
+평일과 주말에 맞춘 시간 제한
+
+일주일 내내 같은 하루 사용 시간을 설정하거나 요일마다 다르게 정할 수 있습니다. 예를 들어 등교하는 날에는 짧게, 주말에는 조금 더 길게 허용해 보세요.
+
+수면과 공부를 위한 일정
+
+선택된 앱을 차단할 요일과 시간대를 정하세요. 자녀가 휴대폰을 내려놓고 숙제와 휴식, 함께하는 시간에 집중하도록 도울 수 있습니다.
+
+보호자의 휴대폰에서 관리
+
+선택된 앱을 차단하거나 차단을 해제하고, 오늘 사용할 수 있는 시간을 조정하세요. 자녀에게 남은 시간도 확인할 수 있습니다.
+
+과제를 완료하면 보상
+
+자녀에게 과제를 만들어 주고 보상으로 앱 사용 시간을 추가로 정해 주세요. 자녀가 완료한 과제를 검토 요청하면, 보호자가 결과를 확인하고 시간을 지급합니다.
+
+자녀의 위치
+
+자녀의 위치를 요청하고 지도에서 확인하세요.
+
+사용 통계
+
+원하는 날짜를 선택해 관리 대상 앱의 사용 시간을 확인하세요. 자세한 통계는 자녀 휴대폰의 PIN으로 보호된 보호자 모드에서 볼 수 있습니다.
+
+쉬운 설정
+
+보호자와 자녀의 휴대폰에 앱을 설치하고 각각의 역할을 선택한 뒤 코드로 연결하세요. 단계별 안내에 따라 필요한 권한을 허용하고, 관리할 앱을 선택하고, 보호자 PIN을 설정할 수 있습니다.
+
+앱을 제한하려면 자녀의 휴대폰에서 스크린 타임 접근 권한을 허용해야 합니다. 백그라운드에서 위치를 요청하려면 위치 접근 권한을 '항상'으로 설정해 주세요.
+
+Apple 가족 공유를 설정하고 자녀에 대한 보호자 관리 권한을 승인하면 앱 삭제 방지도 설정할 수 있습니다. 시작할 때 반드시 설정해야 하는 항목은 아닙니다.
+
+개인정보 처리방침:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+이용 약관:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Polish — Польский [pl]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (138/170)
+
+Pomóż dziecku świadomie korzystać z telefonu: ustaw limity, zaplanuj przerwy i nagradzaj wykonane zadania dodatkowym czasem w aplikacjach.
+
+ОПИСАНИЕ (2066/4000)
+
+Pomóż dziecku świadomie korzystać z telefonu — dzięki jasnym zasadom i czasowi na życie poza ekranem.
+
+ParentalControl pozwala rodzicom zarządzać z własnego telefonu czasem dziecka w wybranych aplikacjach. Ustawiaj limity i harmonogramy, zachęcaj do dobrych nawyków i sprawdzaj lokalizację dziecka, gdy tego potrzebujesz.
+
+LIMITY NA DNI NAUKI I WEEKENDY
+
+Ustaw taki sam dzienny limit na cały tydzień lub wybierz inną ilość czasu na każdy dzień. Na przykład mniej w dni nauki i więcej w weekendy.
+
+HARMONOGRAMY NA SEN I NAUKĘ
+
+Wybierz dni i godziny, w których wybrane aplikacje mają być zablokowane. Pomóż dziecku skupić się na lekcjach, odpoczynku i wspólnych chwilach bez telefonu.
+
+ZARZĄDZANIE Z WŁASNEGO TELEFONU
+
+Blokuj i odblokowuj wybrane aplikacje, zmieniaj czas dostępny na dziś i sprawdzaj, ile czasu zostało dziecku.
+
+ZADANIA Z NAGRODĄ
+
+Twórz zadania dla dziecka i ustalaj nagrodę w postaci dodatkowego czasu w aplikacjach. Dziecko przesyła wykonane zadanie do sprawdzenia, a ty zatwierdzasz wynik i przyznajesz czas.
+
+LOKALIZACJA DZIECKA
+
+Wyślij prośbę o lokalizację dziecka i zobacz ją na mapie.
+
+STATYSTYKI UŻYTKOWANIA
+
+Sprawdzaj czas spędzony w wybranych aplikacjach w interesującym cię dniu. Szczegółowe statystyki są dostępne na telefonie dziecka w trybie rodzica chronionym kodem PIN.
+
+PROSTA KONFIGURACJA
+
+Zainstaluj aplikację na swoim telefonie i telefonie dziecka, wybierz odpowiednie role i połącz telefony za pomocą kodu. Konfiguracja krok po kroku pomoże ci nadać wymagane uprawnienia, wybrać aplikacje do kontroli i ustawić PIN rodzica.
+
+Ograniczanie aplikacji wymaga dostępu do funkcji „Czas przed ekranem” na telefonie dziecka. Aby pobierać lokalizację w tle, ustaw dostęp do niej na „Zawsze”.
+
+Możesz też skonfigurować ochronę przed usunięciem aplikacji, korzystając z Chmury rodzinnej Apple i autoryzacji dla dziecka. Ten krok nie jest wymagany, aby zacząć.
+
+Polityka prywatności:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Warunki użytkowania:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Portuguese (Brazil) — Португальский (Бразилия) [pt-BR]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (141/170)
+
+Ajude seu filho a usar o celular com consciência: defina limites, programe pausas e recompense as tarefas concluídas com mais tempo nos apps.
+
+ОПИСАНИЕ (2192/4000)
+
+Ajude seu filho a usar o celular de forma consciente, com regras claras e tempo para aproveitar a vida longe das telas.
+
+Com o ParentalControl, você gerencia pelo seu próprio celular o tempo que seu filho passa nos apps selecionados. Defina limites e horários, incentive bons hábitos e solicite a localização dele quando precisar.
+
+LIMITES PARA DIAS DE AULA E FINS DE SEMANA
+
+Defina o mesmo limite diário para a semana toda ou escolha um tempo diferente para cada dia. Por exemplo, menos nos dias de aula e mais nos fins de semana.
+
+HORÁRIOS PARA DORMIR E ESTUDAR
+
+Escolha os dias e horários em que os apps selecionados devem ficar bloqueados. Ajude seu filho a se concentrar nos estudos, no descanso e nos momentos em família sem o celular.
+
+CONTROLE PELO SEU CELULAR
+
+Bloqueie ou desbloqueie os apps selecionados, ajuste o tempo disponível para hoje e veja quanto tempo seu filho ainda tem.
+
+TAREFAS COM RECOMPENSAS
+
+Crie tarefas para seu filho e ofereça tempo extra nos apps como recompensa. Ele envia a tarefa concluída para você conferir; você aprova o resultado e libera o tempo.
+
+LOCALIZAÇÃO DO SEU FILHO
+
+Solicite a localização do seu filho e veja onde ele está no mapa.
+
+ESTATÍSTICAS DE USO
+
+Consulte o tempo gasto nos apps selecionados no dia que desejar. As estatísticas detalhadas ficam no celular do seu filho, no modo dos pais protegido por PIN.
+
+CONFIGURAÇÃO SIMPLES
+
+Instale o app no seu celular e no do seu filho, escolha o perfil correspondente em cada um e vincule os celulares com um código. A configuração passo a passo ajuda você a conceder as permissões necessárias, selecionar os apps que deseja gerenciar e definir o PIN dos pais.
+
+Para limitar os apps, é preciso permitir o acesso ao Tempo de Uso no celular do seu filho. Para solicitar a localização em segundo plano, defina o acesso à localização como “Sempre”.
+
+Você também pode configurar a proteção contra a remoção do app pelo Compartilhamento Familiar da Apple e pela autorização para seu filho. Essa etapa é opcional para começar.
+
+Política de Privacidade:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Termos de Uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Romanian — Румынский [ro]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (157/170)
+
+Ajută-ți copilul să folosească telefonul cu măsură: stabilește limite, programează pauze și recompensează sarcinile îndeplinite cu timp în plus în aplicații.
+
+ОПИСАНИЕ (2212/4000)
+
+Ajută-ți copilul să folosească telefonul în mod conștient, cu reguli clare și timp pentru viața dincolo de ecran.
+
+ParentalControl te ajută să gestionezi de pe propriul telefon timpul pe care copilul îl petrece în aplicațiile alese. Stabilește limite și programe, încurajează obiceiurile bune și solicită locația copilului când ai nevoie.
+
+LIMITE PENTRU ZILELE DE ȘCOALĂ ȘI WEEKEND
+
+Stabilește aceeași limită zilnică pentru toată săptămâna sau alege un timp diferit pentru fiecare zi. De exemplu, mai puțin în zilele de școală și mai mult în weekend.
+
+PROGRAME PENTRU SOMN ȘI ÎNVĂȚAT
+
+Alege zilele și orele în care aplicațiile selectate vor fi blocate. Ajută-ți copilul să se concentreze pe teme, odihnă și timpul petrecut cu cei din jur, fără telefon.
+
+GESTIONARE DE PE TELEFONUL TĂU
+
+Blochează sau deblochează aplicațiile alese, modifică timpul disponibil pentru azi și vezi cât timp îi mai rămâne copilului.
+
+SARCINI CU RECOMPENSE
+
+Creează sarcini pentru copil și oferă timp suplimentar în aplicații drept recompensă. Copilul trimite sarcina îndeplinită pentru verificare, iar tu aprobi rezultatul și acorzi timpul.
+
+LOCAȚIA COPILULUI
+
+Solicită locația copilului și vezi unde se află pe hartă.
+
+STATISTICI DE UTILIZARE
+
+Vezi timpul petrecut în aplicațiile alese în ziua care te interesează. Statisticile detaliate sunt disponibile pe telefonul copilului, în modul pentru părinți protejat prin PIN.
+
+CONFIGURARE SIMPLĂ
+
+Instalează aplicația pe telefonul tău și pe cel al copilului, alege rolurile corespunzătoare și conectează telefoanele cu un cod. Configurarea pas cu pas te ajută să acorzi permisiunile necesare, să alegi aplicațiile de gestionat și să setezi PIN-ul parental.
+
+Pentru a limita aplicațiile, este necesar accesul la „Timp de utilizare” pe telefonul copilului. Pentru a solicita locația în fundal, setează accesul la localizare pe „Întotdeauna”.
+
+Poți configura și protecția împotriva ștergerii aplicației prin Partajare familială Apple și autorizarea pentru copil. Acest pas este opțional la început.
+
+Politica de confidențialitate:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Condiții de utilizare:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Russian — Русский (утверждённый оригинал) [ru]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (159/170)
+
+Помогите ребёнку пользоваться телефоном осознанно: задавайте лимиты, планируйте перерывы и поощряйте выполненные задания дополнительным временем в приложениях.
+
+ОПИСАНИЕ (2097/4000)
+
+Помогите ребёнку пользоваться телефоном осознанно — с понятными правилами и временем для жизни вне экрана.
+
+ParentalControl помогает родителям управлять временем ребёнка в выбранных приложениях со своего телефона. Настраивайте лимиты и расписания, поощряйте полезные дела и узнавайте местоположение ребёнка по запросу.
+
+ЛИМИТЫ ДЛЯ БУДНЕЙ И ВЫХОДНЫХ
+
+Установите одинаковый дневной лимит на всю неделю или выберите разное время для каждого дня. Например, меньше в учебные дни и больше в выходные.
+
+РАСПИСАНИЯ ДЛЯ СНА И УЧЁБЫ
+
+Выберите часы и дни, когда выбранные приложения должны быть заблокированы. Помогите ребёнку сосредоточиться на уроках, отдыхе и общении без телефона.
+
+УПРАВЛЕНИЕ СО СВОЕГО ТЕЛЕФОНА
+
+Заблокируйте или разблокируйте выбранные приложения, измените доступное время на сегодня и посмотрите, сколько времени осталось у ребёнка.
+
+ЗАДАНИЯ С НАГРАДОЙ
+
+Создавайте задания для ребёнка и назначайте награду в виде дополнительного времени в приложениях. Ребёнок отправляет выполненное задание на проверку, а вы подтверждаете результат и начисляете время.
+
+МЕСТОПОЛОЖЕНИЕ РЕБЁНКА
+
+Запрашивайте местоположение и смотрите его на карте.
+
+СТАТИСТИКА ИСПОЛЬЗОВАНИЯ
+
+Просматривайте время в выбранных приложениях за нужный день. Подробная статистика доступна на телефоне ребёнка в родительском режиме, защищённом PIN-кодом.
+
+ПОНЯТНАЯ НАСТРОЙКА
+
+Установите приложение на свой телефон и телефон ребёнка, выберите соответствующие роли и свяжите телефоны с помощью кода. Пошаговая настройка поможет включить необходимые разрешения, выбрать приложения для контроля и установить родительский PIN.
+
+Для ограничения приложений нужен доступ к «Экранному времени» на телефоне ребёнка. Чтобы запрашивать местоположение в фоне, разрешите доступ к геопозиции «Всегда».
+
+Дополнительно можно настроить защиту от удаления через «Семейный доступ Apple» и авторизацию ребёнка. Эта настройка необязательна для начала работы.
+
+Политика конфиденциальности:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Условия использования:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Ukrainian — Украинский [uk]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (155/170)
+
+Допоможіть дитині свідомо користуватися телефоном: установлюйте ліміти, плануйте перерви й винагороджуйте виконані завдання додатковим часом у застосунках.
+
+ОПИСАНИЕ (2095/4000)
+
+Допоможіть дитині свідомо користуватися телефоном — зі зрозумілими правилами та часом для життя поза екраном.
+
+ParentalControl допомагає батькам керувати часом дитини у вибраних застосунках зі свого телефона. Налаштовуйте ліміти й розклади, заохочуйте корисні справи та дізнавайтеся місцеположення дитини за запитом.
+
+ЛІМІТИ ДЛЯ БУДНІВ І ВИХІДНИХ
+
+Установіть однаковий денний ліміт на весь тиждень або виберіть різний час для кожного дня. Наприклад, менше в навчальні дні й більше у вихідні.
+
+РОЗКЛАДИ ДЛЯ СНУ ТА НАВЧАННЯ
+
+Виберіть години й дні, коли вибрані застосунки мають бути заблоковані. Допоможіть дитині зосередитися на уроках, відпочинку та спілкуванні без телефона.
+
+КЕРУВАННЯ ЗІ СВОГО ТЕЛЕФОНА
+
+Блокуйте чи розблоковуйте вибрані застосунки, змінюйте доступний час на сьогодні та переглядайте, скільки часу залишилося в дитини.
+
+ЗАВДАННЯ З ВИНАГОРОДОЮ
+
+Створюйте завдання для дитини й призначайте винагороду у вигляді додаткового часу в застосунках. Дитина надсилає виконане завдання на перевірку, а ви підтверджуєте результат і додаєте час.
+
+МІСЦЕПОЛОЖЕННЯ ДИТИНИ
+
+Надсилайте запит на місцеположення та переглядайте його на карті.
+
+СТАТИСТИКА ВИКОРИСТАННЯ
+
+Переглядайте час у вибраних застосунках за потрібний день. Докладна статистика доступна на телефоні дитини в батьківському режимі, захищеному PIN-кодом.
+
+ЗРОЗУМІЛЕ НАЛАШТУВАННЯ
+
+Установіть застосунок на свій телефон і телефон дитини, виберіть відповідні ролі та зв’яжіть телефони за допомогою коду. Покрокове налаштування допоможе надати потрібні дозволи, вибрати застосунки для контролю й установити батьківський PIN.
+
+Для обмеження застосунків потрібен доступ до функції «Екранний час» на телефоні дитини. Щоб запитувати місцеположення у фоновому режимі, надайте доступ до геопозиції «Завжди».
+
+Додатково можна налаштувати захист від видалення через «Сімейний доступ Apple» та авторизацію дитини. Цей крок необов’язковий для початку роботи.
+
+Політика конфіденційності:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Умови використання:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Vietnamese — Вьетнамский [vi]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (131/170)
+
+Giúp con dùng điện thoại có ý thức: đặt giới hạn, lên lịch nghỉ và thưởng thêm thời gian dùng ứng dụng khi con hoàn thành nhiệm vụ.
+
+ОПИСАНИЕ (2087/4000)
+
+Giúp con dùng điện thoại có ý thức, với những quy tắc rõ ràng và thời gian dành cho cuộc sống ngoài màn hình.
+
+ParentalControl giúp cha mẹ quản lý thời gian con dùng các ứng dụng đã chọn ngay từ điện thoại của mình. Đặt giới hạn và lịch sử dụng, khuyến khích con làm việc có ích và yêu cầu xem vị trí của con khi cần.
+
+GIỚI HẠN CHO NGÀY ĐI HỌC VÀ CUỐI TUẦN
+
+Đặt cùng một giới hạn hằng ngày cho cả tuần hoặc chọn thời lượng riêng cho từng ngày. Chẳng hạn, ít hơn vào ngày đi học và nhiều hơn vào cuối tuần.
+
+LỊCH CHO GIỜ NGỦ VÀ HỌC TẬP
+
+Chọn ngày và khung giờ cần chặn các ứng dụng đã chọn. Giúp con tập trung vào bài vở, nghỉ ngơi và trò chuyện cùng mọi người mà không bị điện thoại làm phân tâm.
+
+QUẢN LÝ TỪ ĐIỆN THOẠI CỦA BẠN
+
+Chặn hoặc bỏ chặn các ứng dụng đã chọn, điều chỉnh thời gian được dùng hôm nay và xem con còn bao nhiêu thời gian.
+
+NHIỆM VỤ KÈM PHẦN THƯỞNG
+
+Tạo nhiệm vụ cho con và đặt phần thưởng là thời gian dùng ứng dụng bổ sung. Con gửi nhiệm vụ đã hoàn thành để bạn kiểm tra; bạn xác nhận kết quả rồi cộng thời gian cho con.
+
+VỊ TRÍ CỦA CON
+
+Yêu cầu vị trí của con và xem trên bản đồ.
+
+THỐNG KÊ SỬ DỤNG
+
+Xem thời gian sử dụng các ứng dụng đã chọn trong ngày bạn muốn. Thống kê chi tiết có trên điện thoại của con, trong chế độ dành cho cha mẹ được bảo vệ bằng mã PIN.
+
+THIẾT LẬP DỄ DÀNG
+
+Cài ứng dụng trên điện thoại của bạn và của con, chọn vai trò tương ứng rồi liên kết hai điện thoại bằng mã. Hướng dẫn từng bước giúp bạn cấp các quyền cần thiết, chọn ứng dụng muốn quản lý và đặt mã PIN cho cha mẹ.
+
+Để giới hạn ứng dụng, cần cấp quyền truy cập Thời gian sử dụng trên điện thoại của con. Để yêu cầu vị trí khi ứng dụng chạy nền, hãy đặt quyền truy cập vị trí thành “Luôn luôn”.
+
+Bạn cũng có thể thiết lập tính năng ngăn xóa ứng dụng qua Chia sẻ trong gia đình của Apple và phê duyệt quyền kiểm soát của cha mẹ cho con. Không bắt buộc phải hoàn thành bước này để bắt đầu sử dụng.
+
+Chính sách quyền riêng tư:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Điều khoản sử dụng:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Chinese (Simplified) — Китайский (упрощённый) [zh-Hans]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (43/170)
+
+帮助孩子合理使用手机：设置时间限额、安排休息，并用额外的应用使用时间奖励已完成的任务。
+
+ОПИСАНИЕ (777/4000)
+
+用清晰的规则，为孩子留出屏幕之外的生活时间，帮助孩子养成合理使用手机的习惯。
+
+ParentalControl 让家长通过自己的手机，管理孩子在所选应用中的使用时间。设置时间限额和时段安排，鼓励孩子完成有益的任务，并在需要时请求查看孩子的位置。
+
+按上学日和周末设置限额
+
+为整周设置统一的每日限额，或为每天分别安排使用时间。例如，上学日少一些，周末多一些。
+
+为睡眠和学习安排时段
+
+选择需要屏蔽所选应用的日期和时间段，帮助孩子放下手机，专注于作业、休息和面对面的交流。
+
+在家长手机上管理
+
+屏蔽或解除屏蔽所选应用，调整今天的可用时间，并查看孩子还剩多少时间。
+
+完成任务，获得奖励
+
+为孩子创建任务，并将额外的应用使用时间设为奖励。孩子完成任务后提交审核，您确认结果后即可给予时间奖励。
+
+查看孩子的位置
+
+请求获取孩子的位置，并在地图上查看。
+
+使用统计
+
+选择日期，查看所选应用的使用时间。详细统计可在孩子手机上通过受 PIN 码保护的家长模式查看。
+
+轻松完成设置
+
+在您和孩子的手机上安装应用，分别选择相应角色，再通过配对码关联两部手机。按照分步引导，开启所需权限、选择要管理的应用，并设置家长 PIN 码。
+
+限制应用需要在孩子手机上授权访问“屏幕使用时间”。如需在后台请求位置信息，请将位置访问权限设为“始终”。
+
+您还可以通过 Apple“家人共享”并为孩子授权家长控制，设置防止删除应用的保护。开始使用时，无需立即完成这项可选设置。
+
+隐私政策：
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+使用条款：
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+========================================================================
+Chinese (Traditional) — Китайский (традиционный) [zh-Hant]
+========================================================================
+
+РЕКЛАМНЫЙ ТЕКСТ (46/170)
+
+幫助孩子適度使用手機：設定時間限制、安排休息，並用額外的 App 使用時間獎勵已完成的任務。
+
+ОПИСАНИЕ (804/4000)
+
+透過清楚的規則，為孩子保留螢幕之外的生活時間，幫助孩子養成適度使用手機的習慣。
+
+ParentalControl 讓家長透過自己的手機，管理孩子在所選 App 中的使用時間。設定時間限制與時段安排，鼓勵孩子完成有益的任務，並在需要時要求查看孩子的位置。
+
+依上學日與週末設定限制
+
+為整週設定相同的每日上限，或為每天分別安排使用時間。例如，上學日少一點，週末多一點。
+
+為睡眠與學習安排時段
+
+選擇要封鎖所選 App 的日期與時段，幫助孩子放下手機，專注於作業、休息和面對面的交流。
+
+從家長的手機管理
+
+封鎖或解除封鎖所選 App、調整今天的可用時間，並查看孩子還剩多少時間。
+
+完成任務，獲得獎勵
+
+為孩子建立任務，並將額外的 App 使用時間設為獎勵。孩子完成任務後送出審核，您確認結果後即可給予時間獎勵。
+
+查看孩子的位置
+
+要求取得孩子的位置，並在地圖上查看。
+
+使用統計
+
+選擇日期，查看所選 App 的使用時間。詳細統計可在孩子手機上，透過受 PIN 碼保護的家長模式查看。
+
+輕鬆完成設定
+
+在您和孩子的手機上安裝 App，分別選擇對應角色，再透過配對碼連結兩支手機。依照逐步引導，開啟必要權限、選擇要管理的 App，並設定家長 PIN 碼。
+
+限制 App 需要在孩子手機上授權存取「螢幕使用時間」。若要在背景要求位置資訊，請將位置取用權限設為「永遠」。
+
+您也可以透過 Apple「家人共享」並完成孩子的家長控制授權，設定防止刪除 App 的保護。開始使用時，不必立即完成這項選用設定。
+
+隱私權政策：
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+使用條款：
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

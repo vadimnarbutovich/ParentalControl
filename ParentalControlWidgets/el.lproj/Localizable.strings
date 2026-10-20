@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Απομένουν";
+"live.focus.title" = "Συνεδρία συγκέντρωσης";
+"live.focus.total" = "Σύνολο: %d λεπ.";

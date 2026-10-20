@@ -529,7 +529,7 @@ private struct ParentDashboardView: View {
         if appState.parentResolvedFocusActive == nil {
             return LocalizedStringKey("parent.dashboard.syncing_button")
         }
-        return (appState.parentResolvedFocusActive ?? false)
+        return appState.parentManualBlockControlState
             ? LocalizedStringKey("parent.dashboard.stop_focus")
             : LocalizedStringKey("parent.dashboard.start_focus")
     }
@@ -663,7 +663,8 @@ private struct ParentDashboardView: View {
                                 isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
                                 isManuallyBlocked: appState.isParentManualBlockConfirmed,
                                 blockSchedules: appState.blockSchedules,
-                                isAwaitingConfirmation: appState.parentBudgetStatus?.isPending == true
+                                isAwaitingConfirmation: appState.remoteCommandInFlight || appState.parentBudgetStatus?.isPending == true,
+                                commandError: appState.parentCommandError
                             )
 
                             Button {

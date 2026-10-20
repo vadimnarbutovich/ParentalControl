@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Nav datu par izvēlēto dienu.";
+"report.app_usage.other" = "Cits";
+"report.app_usage.title" = "Lietojums";
+"report.websites.title" = "Vietnes";

@@ -1,0 +1,41 @@
+Ajude seu filho a usar o celular de forma consciente, com regras claras e tempo para aproveitar a vida longe das telas.
+
+Com o ParentalControl, você gerencia pelo seu próprio celular o tempo que seu filho passa nos apps selecionados. Defina limites e horários, incentive bons hábitos e solicite a localização dele quando precisar.
+
+LIMITES PARA DIAS DE AULA E FINS DE SEMANA
+
+Defina o mesmo limite diário para a semana toda ou escolha um tempo diferente para cada dia. Por exemplo, menos nos dias de aula e mais nos fins de semana.
+
+HORÁRIOS PARA DORMIR E ESTUDAR
+
+Escolha os dias e horários em que os apps selecionados devem ficar bloqueados. Ajude seu filho a se concentrar nos estudos, no descanso e nos momentos em família sem o celular.
+
+CONTROLE PELO SEU CELULAR
+
+Bloqueie ou desbloqueie os apps selecionados, ajuste o tempo disponível para hoje e veja quanto tempo seu filho ainda tem.
+
+TAREFAS COM RECOMPENSAS
+
+Crie tarefas para seu filho e ofereça tempo extra nos apps como recompensa. Ele envia a tarefa concluída para você conferir; você aprova o resultado e libera o tempo.
+
+LOCALIZAÇÃO DO SEU FILHO
+
+Solicite a localização do seu filho e veja onde ele está no mapa.
+
+ESTATÍSTICAS DE USO
+
+Consulte o tempo gasto nos apps selecionados no dia que desejar. As estatísticas detalhadas ficam no celular do seu filho, no modo dos pais protegido por PIN.
+
+CONFIGURAÇÃO SIMPLES
+
+Instale o app no seu celular e no do seu filho, escolha o perfil correspondente em cada um e vincule os celulares com um código. A configuração passo a passo ajuda você a conceder as permissões necessárias, selecionar os apps que deseja gerenciar e definir o PIN dos pais.
+
+Para limitar os apps, é preciso permitir o acesso ao Tempo de Uso no celular do seu filho. Para solicitar a localização em segundo plano, defina o acesso à localização como “Sempre”.
+
+Você também pode configurar a proteção contra a remoção do app pelo Compartilhamento Familiar da Apple e pela autorização para seu filho. Essa etapa é opcional para começar.
+
+Política de Privacidade:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Termos de Uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

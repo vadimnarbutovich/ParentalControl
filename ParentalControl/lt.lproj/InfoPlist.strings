@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Kamera leidžia nufotografuoti atliktą užduotį ir nusiųsti tėvams.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Prieiga „Visada“ leidžia fone atsakyti į tėvų vietos užklausą. Vieta tikrinama tik paprašius, ne nuolat.";
+"NSLocationWhenInUseUsageDescription" = "Vietos leidimas suteikia tėvams galimybę matyti šį telefoną žemėlapyje paprašius atnaujinimo.";

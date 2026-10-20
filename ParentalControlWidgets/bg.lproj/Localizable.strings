@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Остават";
+"live.focus.title" = "Фокус сесия";
+"live.focus.total" = "Общо %d мин";

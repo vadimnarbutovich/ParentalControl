@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "Kamera ļauj nofotografēt paveiktu uzdevumu un nosūtīt vecākam.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Piekļuve „Vienmēr” ļauj fonā atbildēt uz vecāka vietas pieprasījumu. Vietu pārbauda tikai pēc pieprasījuma, ne nepārtraukti.";
+"NSLocationWhenInUseUsageDescription" = "Vietas atļauja ļauj vecākam redzēt šo tālruni kartē pēc atjauninājuma pieprasīšanas.";

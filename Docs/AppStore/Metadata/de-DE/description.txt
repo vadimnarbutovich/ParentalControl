@@ -1,0 +1,41 @@
+Hilf deinem Kind, das Handy bewusst zu nutzen – mit klaren Regeln und Zeit für das Leben abseits des Bildschirms.
+
+Mit ParentalControl verwaltest du von deinem eigenen Handy aus, wie viel Zeit dein Kind in ausgewählten Apps verbringt. Lege Limits und Zeitpläne fest, belohne hilfreiche Aufgaben und frage bei Bedarf den Standort deines Kindes ab.
+
+LIMITS FÜR WERKTAGE UND WOCHENENDEN
+
+Lege für die ganze Woche dasselbe Tageslimit fest oder passe die Zeit für jeden Tag einzeln an. Zum Beispiel weniger an Schultagen und mehr am Wochenende.
+
+ZEITPLÄNE FÜR SCHLAF UND LERNEN
+
+Bestimme, an welchen Tagen und zu welchen Uhrzeiten ausgewählte Apps gesperrt werden. So hilfst du deinem Kind, sich auf Hausaufgaben, Erholung und gemeinsame Zeit ohne Handy zu konzentrieren.
+
+STEUERUNG VON DEINEM HANDY AUS
+
+Sperre oder entsperre ausgewählte Apps, ändere die verfügbare Zeit für heute und sieh nach, wie viel Zeit deinem Kind noch bleibt.
+
+AUFGABEN MIT BELOHNUNG
+
+Erstelle Aufgaben für dein Kind und lege zusätzliche App-Zeit als Belohnung fest. Dein Kind reicht die erledigte Aufgabe zur Prüfung ein. Du bestätigst das Ergebnis und vergibst die Zeit.
+
+STANDORT DEINES KINDES
+
+Frage den Standort deines Kindes ab und sieh ihn auf der Karte.
+
+NUTZUNGSSTATISTIK
+
+Sieh nach, wie viel Zeit an einem bestimmten Tag in den ausgewählten Apps verbracht wurde. Die detaillierte Statistik findest du auf dem Handy deines Kindes im PIN-geschützten Elternmodus.
+
+EINFACHE EINRICHTUNG
+
+Installiere die App auf deinem Handy und dem deines Kindes, wähle die passenden Rollen und verbinde die Handys über einen Code. Die Einrichtung führt dich Schritt für Schritt durch die nötigen Berechtigungen, die App-Auswahl und das Festlegen einer Eltern-PIN.
+
+Zum Einschränken von Apps ist auf dem Handy deines Kindes die Berechtigung für „Bildschirmzeit“ nötig. Damit du den Standort auch im Hintergrund anfragen kannst, stelle den Standortzugriff auf „Immer“.
+
+Zusätzlich kannst du über die Apple-Familienfreigabe und die Autorisierung für dein Kind einen Schutz vor dem Löschen der App einrichten. Dieser Schritt ist für den Einstieg nicht erforderlich.
+
+Datenschutzerklärung:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Nutzungsbedingungen:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

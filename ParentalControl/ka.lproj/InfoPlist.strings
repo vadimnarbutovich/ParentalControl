@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"NSCameraUsageDescription" = "კამერით შესრულებულ დავალებას ფოტოს გადაუღებთ და მშობელს გაუგზავნით.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "წვდომა „ყოველთვის“ საშუალებას იძლევა ფონურ რეჟიმში ვუპასუხოთ მშობლის მოთხოვნას. მდებარეობა მოწმდება მხოლოდ მოთხოვნით, არა უწყვეტად.";
+"NSLocationWhenInUseUsageDescription" = "მდებარეობაზე წვდომით მშობელი ამ ტელეფონს რუკაზე ნახავს, როცა განახლებას მოითხოვს.";

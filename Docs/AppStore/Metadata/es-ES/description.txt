@@ -1,0 +1,41 @@
+Ayuda a tu hijo a usar el móvil de forma consciente, con reglas claras y tiempo para disfrutar de la vida fuera de la pantalla.
+
+ParentalControl te permite gestionar desde tu propio móvil el tiempo que tu hijo pasa en las apps seleccionadas. Establece límites y horarios, fomenta las buenas rutinas y solicita su ubicación cuando lo necesites.
+
+LÍMITES PARA ENTRE SEMANA Y EL FIN DE SEMANA
+
+Establece el mismo límite diario para toda la semana o elige un tiempo distinto para cada día. Por ejemplo, menos los días de clase y más los fines de semana.
+
+HORARIOS PARA DORMIR Y ESTUDIAR
+
+Elige los días y las horas en los que se bloquearán las apps seleccionadas. Ayuda a tu hijo a centrarse en los deberes, el descanso y los momentos en compañía sin el móvil.
+
+GESTIÓN DESDE TU MÓVIL
+
+Bloquea o desbloquea las apps seleccionadas, ajusta el tiempo disponible para hoy y consulta cuánto tiempo le queda a tu hijo.
+
+TAREAS CON RECOMPENSA
+
+Crea tareas para tu hijo y ofrece tiempo adicional en las apps como recompensa. Tu hijo envía la tarea completada para que la revises; tú apruebas el resultado y le concedes el tiempo.
+
+LA UBICACIÓN DE TU HIJO
+
+Solicita la ubicación de tu hijo y consúltala en el mapa.
+
+ESTADÍSTICAS DE USO
+
+Consulta el tiempo dedicado a las apps seleccionadas en el día que te interese. Las estadísticas detalladas están disponibles en el móvil de tu hijo, dentro del modo para padres protegido con PIN.
+
+CONFIGURACIÓN SENCILLA
+
+Instala la app en tu móvil y en el de tu hijo, elige el rol correspondiente en cada uno y vincúlalos mediante un código. La configuración paso a paso te ayudará a conceder los permisos necesarios, elegir las apps que quieras gestionar y establecer un PIN parental.
+
+Para limitar las apps, debes permitir el acceso a Tiempo de uso en el móvil de tu hijo. Para solicitar su ubicación en segundo plano, configura el acceso a la localización en «Siempre».
+
+También puedes configurar la protección contra la eliminación de la app mediante «En familia» de Apple y la autorización para tu hijo. Este paso es opcional para empezar.
+
+Política de privacidad:
+https://vadimnarbutovich.github.io/parentalcontrolapp/privacy-en.html
+
+Condiciones de uso:
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

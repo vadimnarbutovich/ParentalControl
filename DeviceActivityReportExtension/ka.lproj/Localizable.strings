@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "არჩეული დღის მონაცემები არ არის.";
+"report.app_usage.other" = "სხვა";
+"report.app_usage.title" = "გამოყენება";
+"report.websites.title" = "ვებსაიტები";

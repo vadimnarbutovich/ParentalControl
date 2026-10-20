@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Brak danych z wybranego dnia.";
+"report.app_usage.other" = "Inne";
+"report.app_usage.title" = "Użycie";
+"report.websites.title" = "Witryny";

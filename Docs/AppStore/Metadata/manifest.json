@@ -1,0 +1,240 @@
+{
+  "sourceLocale": "ru",
+  "limits": {
+    "promotional_text": 170,
+    "description": 4000
+  },
+  "locales": {
+    "ar-SA": {
+      "name": "Arabic — Арабский",
+      "promotional_text": {
+        "file": "ar-SA/promotional_text.txt",
+        "characters": 126
+      },
+      "description": {
+        "file": "ar-SA/description.txt",
+        "characters": 1731
+      }
+    },
+    "de-DE": {
+      "name": "German — Немецкий",
+      "promotional_text": {
+        "file": "de-DE/promotional_text.txt",
+        "characters": 131
+      },
+      "description": {
+        "file": "de-DE/description.txt",
+        "characters": 2304
+      }
+    },
+    "el": {
+      "name": "Greek — Греческий",
+      "promotional_text": {
+        "file": "el/promotional_text.txt",
+        "characters": 165
+      },
+      "description": {
+        "file": "el/description.txt",
+        "characters": 2384
+      }
+    },
+    "en-AU": {
+      "name": "English (Australia) — Английский (Австралия)",
+      "promotional_text": {
+        "file": "en-AU/promotional_text.txt",
+        "characters": 124
+      },
+      "description": {
+        "file": "en-AU/description.txt",
+        "characters": 1970
+      }
+    },
+    "en-CA": {
+      "name": "English (Canada) — Английский (Канада)",
+      "promotional_text": {
+        "file": "en-CA/promotional_text.txt",
+        "characters": 124
+      },
+      "description": {
+        "file": "en-CA/description.txt",
+        "characters": 1970
+      }
+    },
+    "en-GB": {
+      "name": "English (U.K.) — Английский (Великобритания)",
+      "promotional_text": {
+        "file": "en-GB/promotional_text.txt",
+        "characters": 124
+      },
+      "description": {
+        "file": "en-GB/description.txt",
+        "characters": 1970
+      }
+    },
+    "en-US": {
+      "name": "English (U.S.) — Английский (США)",
+      "promotional_text": {
+        "file": "en-US/promotional_text.txt",
+        "characters": 124
+      },
+      "description": {
+        "file": "en-US/description.txt",
+        "characters": 1970
+      }
+    },
+    "es-ES": {
+      "name": "Spanish (Spain) — Испанский (Испания)",
+      "promotional_text": {
+        "file": "es-ES/promotional_text.txt",
+        "characters": 149
+      },
+      "description": {
+        "file": "es-ES/description.txt",
+        "characters": 2251
+      }
+    },
+    "es-MX": {
+      "name": "Spanish (Mexico) — Испанский (Мексика)",
+      "promotional_text": {
+        "file": "es-MX/promotional_text.txt",
+        "characters": 146
+      },
+      "description": {
+        "file": "es-MX/description.txt",
+        "characters": 2288
+      }
+    },
+    "fr-FR": {
+      "name": "French — Французский",
+      "promotional_text": {
+        "file": "fr-FR/promotional_text.txt",
+        "characters": 163
+      },
+      "description": {
+        "file": "fr-FR/description.txt",
+        "characters": 2522
+      }
+    },
+    "it": {
+      "name": "Italian — Итальянский",
+      "promotional_text": {
+        "file": "it/promotional_text.txt",
+        "characters": 145
+      },
+      "description": {
+        "file": "it/description.txt",
+        "characters": 2268
+      }
+    },
+    "ja": {
+      "name": "Japanese — Японский",
+      "promotional_text": {
+        "file": "ja/promotional_text.txt",
+        "characters": 69
+      },
+      "description": {
+        "file": "ja/description.txt",
+        "characters": 1074
+      }
+    },
+    "ko": {
+      "name": "Korean — Корейский",
+      "promotional_text": {
+        "file": "ko/promotional_text.txt",
+        "characters": 79
+      },
+      "description": {
+        "file": "ko/description.txt",
+        "characters": 1129
+      }
+    },
+    "pl": {
+      "name": "Polish — Польский",
+      "promotional_text": {
+        "file": "pl/promotional_text.txt",
+        "characters": 138
+      },
+      "description": {
+        "file": "pl/description.txt",
+        "characters": 2066
+      }
+    },
+    "pt-BR": {
+      "name": "Portuguese (Brazil) — Португальский (Бразилия)",
+      "promotional_text": {
+        "file": "pt-BR/promotional_text.txt",
+        "characters": 141
+      },
+      "description": {
+        "file": "pt-BR/description.txt",
+        "characters": 2192
+      }
+    },
+    "ro": {
+      "name": "Romanian — Румынский",
+      "promotional_text": {
+        "file": "ro/promotional_text.txt",
+        "characters": 157
+      },
+      "description": {
+        "file": "ro/description.txt",
+        "characters": 2212
+      }
+    },
+    "ru": {
+      "name": "Russian — Русский (утверждённый оригинал)",
+      "promotional_text": {
+        "file": "ru/promotional_text.txt",
+        "characters": 159
+      },
+      "description": {
+        "file": "ru/description.txt",
+        "characters": 2097
+      }
+    },
+    "uk": {
+      "name": "Ukrainian — Украинский",
+      "promotional_text": {
+        "file": "uk/promotional_text.txt",
+        "characters": 155
+      },
+      "description": {
+        "file": "uk/description.txt",
+        "characters": 2095
+      }
+    },
+    "vi": {
+      "name": "Vietnamese — Вьетнамский",
+      "promotional_text": {
+        "file": "vi/promotional_text.txt",
+        "characters": 131
+      },
+      "description": {
+        "file": "vi/description.txt",
+        "characters": 2087
+      }
+    },
+    "zh-Hans": {
+      "name": "Chinese (Simplified) — Китайский (упрощённый)",
+      "promotional_text": {
+        "file": "zh-Hans/promotional_text.txt",
+        "characters": 43
+      },
+      "description": {
+        "file": "zh-Hans/description.txt",
+        "characters": 777
+      }
+    },
+    "zh-Hant": {
+      "name": "Chinese (Traditional) — Китайский (традиционный)",
+      "promotional_text": {
+        "file": "zh-Hant/promotional_text.txt",
+        "characters": 46
+      },
+      "description": {
+        "file": "zh-Hant/description.txt",
+        "characters": 804
+      }
+    }
+  }
+}

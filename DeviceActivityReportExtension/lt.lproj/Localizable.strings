@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Pasirinktos dienos duomenų nėra.";
+"report.app_usage.other" = "Kita";
+"report.app_usage.title" = "Naudojimas";
+"report.websites.title" = "Svetainės";

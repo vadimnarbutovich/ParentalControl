@@ -52,6 +52,8 @@
 			<string>%d paso</string>
 			<key>other</key>
 			<string>%d pasos</string>
+			<key>many</key>
+			<string>%d pasos</string>
 		</dict>
 	</dict>
 	<key>dashboard.earn.rate.reps.detail</key>
@@ -67,6 +69,8 @@
 			<key>one</key>
 			<string>%d repetición</string>
 			<key>other</key>
+			<string>%d repeticiones</string>
+			<key>many</key>
 			<string>%d repeticiones</string>
 		</dict>
 	</dict>

@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Қалды";
+"live.focus.title" = "Зейін қою сеансы";
+"live.focus.total" = "барлығы %d минут";

@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"report.app_usage.empty" = "Няма данни за избрания ден.";
+"report.app_usage.other" = "Други";
+"report.app_usage.title" = "Използване";
+"report.websites.title" = "Уебсайтове";

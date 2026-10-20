@@ -11,6 +11,7 @@ struct DailyBudgetBalanceCard: View {
     var isManuallyBlocked = false
     var blockSchedules: [BlockSchedule] = []
     var isAwaitingConfirmation = false
+    var commandError: String?
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
@@ -74,7 +75,20 @@ struct DailyBudgetBalanceCard: View {
                 }
             }
             if isAwaitingConfirmation {
-                Text("budget.pending")
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(AppTheme.neonOrange)
+                    Text("budget.pending")
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.caption)
+                .foregroundStyle(AppTheme.neonOrange)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            }
+            if let commandError, !isAwaitingConfirmation {
+                Text(commandError)
                     .font(.caption)
                     .foregroundStyle(AppTheme.neonOrange)
                     .multilineTextAlignment(.center)

@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Pozostało";
+"live.focus.title" = "Sesja skupienia";
+"live.focus.total" = "Łącznie %d min";

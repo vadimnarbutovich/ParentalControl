@@ -1,0 +1,5 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"shield.ok" = "დახურვა";
+"shield.open.button" = "ParentalControl-ის გახსნა";
+"shield.subtitle" = "დარჩენილი დროისა და დავალებებისთვის გახსენით ParentalControl.";
+"shield.title" = "დრო ამოიწურა";

@@ -1,0 +1,4 @@
+/* Localized interface. Keep format placeholders unchanged. */
+"live.focus.remaining" = "Rămas";
+"live.focus.title" = "Sesiune de concentrare";
+"live.focus.total" = "Total: %d min";
