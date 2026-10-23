@@ -97,6 +97,13 @@ struct PaywallView: View {
             Text("paywall.title.brand")
                 .font(.system(size: titleSize, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.neonGreen)
+            if let statusKey = access.statusKey {
+                Text(LocalizedStringKey(statusKey))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(AppTheme.neonGreen)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text("paywall.subtitle")
                 .font(.system(size: bodySize, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.88))
@@ -233,13 +240,6 @@ struct PaywallView: View {
     /// Keep the action and the selected price visible, including on compact phones.
     private var purchaseFooter: some View {
         VStack(spacing: 10) {
-            if let statusKey = access.statusKey {
-                Text(LocalizedStringKey(statusKey))
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(AppTheme.neonGreen)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
             switch access.action(for: selectedPlan) {
             case .none:
                 EmptyView()
