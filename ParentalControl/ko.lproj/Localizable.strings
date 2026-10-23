@@ -660,3 +660,7 @@
 "paywall.price.annual_trial_format" = "3일 무료 체험 후 연 %@";
 "paywall.legal.lifetime_disclaimer" = "한 번만 결제합니다. 구독이나 자동 갱신이 없습니다.";
 "paywall.retry" = "다시 시도";
+"access.paused" = "관리가 일시 중지되었습니다. 부모님 휴대폰에서 이용 권한을 확인하거나 구매를 복원해 주세요.";
+"paywall.purchase.pending_verification" = "서버에서 구매를 확인하고 있습니다. 다시 결제할 필요가 없습니다. 다시 시도하거나 나중에 구매를 복원해 주세요.";
+"settings.premium.available" = "Premium 이용 가능";
+"parent_mode.entry.unavailable" = "현재 PIN을 사용할 수 없습니다. 이 휴대전화의 잠금을 해제하고 인터넷에 연결한 뒤 잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 도움을 요청하세요.";

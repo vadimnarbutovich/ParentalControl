@@ -603,3 +603,7 @@
 "paywall.price.annual_trial_format" = "3 dienos nemokamai, vėliau %@ per metus";
 "paywall.legal.lifetime_disclaimer" = "Vienkartinis pirkinys. Be prenumeratos ir automatinio pratęsimo.";
 "paywall.retry" = "Bandyti dar kartą";
+"access.paused" = "Valdymas pristabdytas. Patikrinkite prieigą arba atkurkite pirkinius tėvų telefone.";
+"paywall.purchase.pending_verification" = "Laukiama serverio patvirtinimo apie pirkinį. Dar kartą mokėti nereikia. Bandykite dar kartą arba vėliau atkurkite pirkinius.";
+"settings.premium.available" = "Premium prieinama";
+"parent_mode.entry.unavailable" = "PIN kodas laikinai nepasiekiamas. Atrakinkite šį telefoną ir vėliau bandykite dar kartą prisijungę prie interneto. Jei problema išlieka, paprašykite tėvų pagalbos.";

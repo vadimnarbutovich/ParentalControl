@@ -278,7 +278,7 @@
 "paywall.error.store_products_unavailable" = "Не удалось загрузить некоторые варианты покупки. Проверьте интернет и повторите попытку.";
 "paywall.price.loading" = "Загрузка цен…";
 "paywall.price.per_year_format" = "%@ в год";
-"paywall.cta.start_trial" = "Начать пробный период";
+"paywall.cta.start_trial" = "Попробовать бесплатно";
 "paywall.cta.continue" = "Продолжить";
 "paywall.legal.privacy" = "Конфиденциальность";
 "paywall.legal.restore" = "Восстановить";
@@ -664,3 +664,7 @@
 "paywall.price.annual_trial_format" = "3 дня бесплатно, затем %@ в год";
 "paywall.legal.lifetime_disclaimer" = "Разовая покупка. Без подписки и автоматического продления.";
 "paywall.retry" = "Повторить";
+"access.paused" = "Управление приостановлено. Проверьте доступ или восстановите покупки на телефоне родителя.";
+"paywall.purchase.pending_verification" = "Ожидаем подтверждения покупки сервером. Повторно платить не нужно. Нажмите «Повторить» или восстановите покупки позже.";
+"settings.premium.available" = "Premium доступен";
+"parent_mode.entry.unavailable" = "PIN пока недоступен. Разблокируйте телефон и попробуйте позже при подключении к интернету. Если проблема сохраняется, обратитесь к родителю.";

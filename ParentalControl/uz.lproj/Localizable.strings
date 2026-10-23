@@ -603,3 +603,7 @@
 "paywall.price.annual_trial_format" = "3 kun bepul, keyin yiliga %@";
 "paywall.legal.lifetime_disclaimer" = "Bir martalik xarid. Obuna va avtomatik uzaytirish yo‘q.";
 "paywall.retry" = "Qayta urinish";
+"access.paused" = "Boshqaruv vaqtincha to‘xtatildi. Ota-ona telefonida kirish huquqini tekshiring yoki xaridlarni tiklang.";
+"paywall.purchase.pending_verification" = "Xarid server tasdig‘ini kutmoqda. Qayta to‘lash shart emas. Qayta urinib ko‘ring yoki xaridlarni keyinroq tiklang.";
+"settings.premium.available" = "Premium mavjud";
+"parent_mode.entry.unavailable" = "PIN kod hozircha mavjud emas. Telefon qulfini oching va internetga ulangan holda keyinroq qayta urinib ko‘ring. Muammo davom etsa, ota-onangizdan yordam so‘rang.";

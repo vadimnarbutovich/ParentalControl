@@ -53,7 +53,7 @@ struct DashboardView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             .overlay {
-                if subscriptionService.isSubscriptionStatusKnown && !subscriptionService.isPro {
+                if appState.deviceRole == .parent && subscriptionService.isSubscriptionStatusKnown && !subscriptionService.isPro {
                     GeometryReader { geo in
                         Button {
                             AppAnalytics.report("dashboard_pro_badge_tap")

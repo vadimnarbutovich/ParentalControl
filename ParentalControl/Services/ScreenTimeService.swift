@@ -9,8 +9,11 @@ enum RemovalProtectionError: Error {
     case busy
     case notApproved
     case parentRequired
+    case accessRequired
 
     static func messageKey(for error: Error) -> String {
+        if let removalError = error as? RemovalProtectionError,
+           case .accessRequired = removalError { return "access.paused" }
         if let error = error as? FamilyControlsError {
             switch error {
             case .invalidAccountType: return "protection.error.account"

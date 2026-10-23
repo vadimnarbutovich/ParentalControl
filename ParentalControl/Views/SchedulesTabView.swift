@@ -30,7 +30,10 @@ struct SchedulesTabView: View {
                                         onToggle: { newValue in
                                             appState.setBlockSchedule(schedule.id, enabled: newValue)
                                         },
-                                        onTap: { editingSchedule = schedule }
+                                        onTap: {
+                                            guard appState.requireFamilyAccess() else { return }
+                                            editingSchedule = schedule
+                                        }
                                     )
                                 }
                             }
@@ -121,6 +124,7 @@ struct SchedulesTabView: View {
                     SuggestionRowView(
                         template: template,
                         onAdd: {
+                            guard appState.requireFamilyAccess() else { return }
                             // Не добавляем расписание сразу — открываем редактор как draft.
                             // Сохранение произойдёт только в `saveAndDismiss()` через `commitBlockSchedule`,
                             // нажатие «Отмена» полностью отменяет создание.
@@ -134,6 +138,7 @@ struct SchedulesTabView: View {
 
     private var createNewButton: some View {
         Button {
+            guard appState.requireFamilyAccess() else { return }
             let draft = appState.makeDraftBlockSchedule()
             draftSchedule = draft
         } label: {
@@ -150,6 +155,7 @@ struct SchedulesTabView: View {
 // MARK: - Row of an existing schedule
 
 struct ScheduleRowView: View {
+    @EnvironmentObject private var appState: AppState
     let schedule: BlockSchedule
     let onToggle: (Bool) -> Void
     let onTap: () -> Void
@@ -191,12 +197,16 @@ struct ScheduleRowView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Toggle("", isOn: $localEnabled)
-                        .labelsHidden()
-                        .tint(schedule.accent.color)
-                        .onChange(of: localEnabled) { _, newValue in
+                    Toggle("", isOn: Binding(
+                        get: { localEnabled },
+                        set: { newValue in
+                            guard appState.requireFamilyAccess() else { return }
+                            localEnabled = newValue
                             onToggle(newValue)
                         }
+                    ))
+                        .labelsHidden()
+                        .tint(schedule.accent.color)
                 }
 
                 WeekdayChipsView(selected: schedule.weekdays, isCompact: true)

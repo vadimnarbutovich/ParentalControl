@@ -603,3 +603,7 @@
 "paywall.price.annual_trial_format" = "3 dni za darmo, potem %@ rocznie";
 "paywall.legal.lifetime_disclaimer" = "Jednorazowy zakup. Bez subskrypcji i automatycznego odnawiania.";
 "paywall.retry" = "Spróbuj ponownie";
+"access.paused" = "Kontrola jest wstrzymana. Sprawdź dostęp lub przywróć zakupy na telefonie rodzica.";
+"paywall.purchase.pending_verification" = "Zakup oczekuje na potwierdzenie przez serwer. Nie musisz płacić ponownie. Spróbuj jeszcze raz lub później przywróć zakupy.";
+"settings.premium.available" = "Premium dostępne";
+"parent_mode.entry.unavailable" = "Kod PIN jest chwilowo niedostępny. Odblokuj ten telefon i spróbuj ponownie później, po połączeniu z internetem. Jeśli problem nie ustąpi, poproś rodzica o pomoc.";

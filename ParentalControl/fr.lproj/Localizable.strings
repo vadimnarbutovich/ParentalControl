@@ -660,3 +660,7 @@
 "paywall.price.annual_trial_format" = "3 jours gratuits, puis %@ par an";
 "paywall.legal.lifetime_disclaimer" = "Achat unique. Sans abonnement ni renouvellement automatique.";
 "paywall.retry" = "Réessayer";
+"access.paused" = "Le contrôle est suspendu. Vérifiez l’accès ou restaurez les achats sur le téléphone du parent.";
+"paywall.purchase.pending_verification" = "Votre achat est en attente de confirmation par le serveur. Vous n’avez pas à payer à nouveau. Réessayez ou restaurez vos achats plus tard.";
+"settings.premium.available" = "Premium disponible";
+"parent_mode.entry.unavailable" = "Le code PIN est temporairement indisponible. Déverrouillez ce téléphone et réessayez plus tard avec une connexion Internet. Si le problème persiste, demandez de l’aide à un parent.";

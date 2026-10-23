@@ -256,7 +256,9 @@ struct ParentModeEntryView: View {
 
                 Spacer(minLength: 0)
 
-                if !appState.parentPinIsSet {
+                if appState.isRecoveringParentPin {
+                    ProgressView().tint(.white)
+                } else if !appState.parentPinIsSet || appState.parentPinUnavailable {
                     pinNotConfiguredView
                 } else {
                     pinPromptView
@@ -266,6 +268,7 @@ struct ParentModeEntryView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .task { await appState.prepareParentPinEntry() }
         .onAppear {
             errorKey = nil
             remainingAttempts = nil
@@ -285,7 +288,8 @@ struct ParentModeEntryView: View {
             Text("parent_mode.entry.title")
                 .font(.title2.bold())
                 .foregroundStyle(.white)
-            Text("parent_mode.entry.not_configured")
+            Text(LocalizedStringKey(appState.parentPinUnavailable
+                 ? "parent_mode.entry.unavailable" : "parent_mode.entry.not_configured"))
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.8))
@@ -447,7 +451,7 @@ struct ParentModeEntryView: View {
         case .lockedOut:
             errorKey = nil
             pin = ""
-        case .notConfigured:
+        case .notConfigured, .unavailable:
             // Кэш мог обновиться, пока пользователь набирал PIN — переадресуем на «не задан».
             errorKey = nil
             pin = ""
@@ -511,18 +515,24 @@ private struct ParentDashboardView: View {
     }
 
     private var isCommandButtonEnabled: Bool {
-        appState.pairingState?.isLinked == true &&
-        !appState.remoteCommandInFlight &&
+        guard appState.pairingState?.isLinked == true else { return false }
+        // An expired family can tap to purchase even when no fresh runtime exists.
+        if !appState.isFamilyAccessAllowed { return true }
+        return !appState.remoteCommandInFlight &&
         appState.parentResolvedFocusActive != nil
     }
 
     private var shouldShowDisabledVisualState: Bool {
-        appState.remoteCommandInFlight ||
+        if !appState.isFamilyAccessAllowed { return false }
+        return appState.remoteCommandInFlight ||
         appState.parentResolvedFocusActive == nil ||
         appState.pairingState?.isLinked != true
     }
 
     private var commandButtonTitleKey: LocalizedStringKey {
+        if !appState.isFamilyAccessAllowed {
+            return LocalizedStringKey("parent.dashboard.start_focus")
+        }
         if appState.remoteCommandInFlight {
             return LocalizedStringKey("parent.dashboard.syncing_button")
         }
@@ -663,11 +673,13 @@ private struct ParentDashboardView: View {
                                 isLimitLoading: appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget,
                                 isManuallyBlocked: appState.isParentManualBlockConfirmed,
                                 blockSchedules: appState.blockSchedules,
-                                isAwaitingConfirmation: appState.remoteCommandInFlight || appState.parentBudgetStatus?.isPending == true,
-                                commandError: appState.parentCommandError
+                                isAwaitingConfirmation: appState.isFamilyAccessAllowed && (appState.remoteCommandInFlight || appState.parentBudgetStatus?.isPending == true),
+                                commandError: appState.isFamilyAccessAllowed ? appState.parentCommandError : nil,
+                                isAccessPaused: !appState.isFamilyAccessAllowed
                             )
 
                             Button {
+                                guard appState.requireFamilyAccess() else { return }
                                 appState.budgetError = nil
                                 isDailyLimitPresented = true
                             } label: {
@@ -681,8 +693,10 @@ private struct ParentDashboardView: View {
                                                  : L10n.f("budget.weekly.today", duration))
                                         } else if appState.hasLoadedParentBudget {
                                             Text("budget.not_set")
-                                        } else {
+                                        } else if appState.isFamilyAccessAllowed {
                                             ProgressView().controlSize(.small).tint(.white)
+                                        } else {
+                                            Text("access.paused")
                                         }
                                     }
                                     Spacer(minLength: 8)
@@ -697,7 +711,7 @@ private struct ParentDashboardView: View {
                             .buttonStyle(.plain)
                             .background(Color.clear.glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
                                 .padding(36).drawingGroup().padding(-36))
-                            .disabled(appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget)
+                            .disabled(appState.isFamilyAccessAllowed && appState.parentBudgetStatus?.policy == nil && !appState.hasLoadedParentBudget)
                             if let error = appState.budgetError {
                                 Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
                             }
@@ -710,7 +724,9 @@ private struct ParentDashboardView: View {
                             // Видна только если у Родителя в локальном кэше есть включённые расписания.
                             // Сама карточка переоценивает активность каждые 30 секунд через TimelineView,
                             // поэтому не нужно дёргать AppState на каждом тике.
-                            ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
+                            if appState.isFamilyAccessAllowed {
+                                ActiveBlockScheduleCard(appState: appState, onOpenSchedules: onOpenSchedules)
+                            }
                         } else {
                             // Пары ещё нет — это важная для пользователя информация, поэтому она
                             // остаётся продовым блоком (не под DEBUG), с явной подсказкой куда идти.
@@ -735,17 +751,18 @@ private struct ParentDashboardView: View {
                         .frame(height: 1)
 
                     Button("budget.adjust_today") {
+                        guard appState.requireFamilyAccess() else { return }
                         isAdjustTimePresented = true
                     }
                     .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonPurple))
                     .opacity(shouldShowDisabledVisualState ? 0.65 : 1)
-                    .disabled(!isCommandButtonEnabled || appState.isBudgetSaving || appState.parentBudgetStatus?.policy == nil)
+                    .disabled(!isCommandButtonEnabled || (appState.isFamilyAccessAllowed && (appState.isBudgetSaving || appState.parentBudgetStatus?.policy == nil)))
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
                     ActionSlideButton(
-                        isOn: appState.parentManualBlockControlState,
+                        isOn: appState.isFamilyAccessAllowed && appState.parentManualBlockControlState,
                         inactiveTitle: "parent.dashboard.start_focus",
                         activeTitle: "parent.dashboard.stop_focus",
                         inactiveSymbol: "lock.fill",
@@ -779,7 +796,7 @@ private struct ParentDashboardView: View {
             }
             .sheet(isPresented: $isAdjustTimePresented) {
                 AdjustTimeSheet { deltaMinutes in
-                    Task { await appState.sendParentAdjustTimeCommand(deltaMinutes: deltaMinutes) }
+                    await appState.sendParentAdjustTimeCommand(deltaMinutes: deltaMinutes)
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -896,10 +913,12 @@ private struct ChildBalanceCard: View {
 /// `AppState.sendParentAdjustTimeCommand(deltaMinutes:)`.
 private struct AdjustTimeSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     /// Колбэк передаёт выбранную дельту в минутах (со знаком). Если `0` — `AppState` сам сделает no-op.
-    let onApply: (Int) -> Void
+    let onApply: (Int) async -> Bool
 
     @State private var selectedDelta: Int = 0
+    @State private var isSaving = false
 
     /// Допустимые значения пикера: −60, −55, …, −5, 0, +5, …, +55, +60.
     private static let allowedDeltas: [Int] = stride(from: -60, through: 60, by: 5).map { $0 }
@@ -930,6 +949,9 @@ private struct AdjustTimeSheet: View {
                     .frame(height: 180)
                     .padding(12)
                     .glassCard(cornerRadius: 24, glowColor: AppTheme.neonBlue)
+                    if let error = appState.budgetError {
+                        Text(error).font(.footnote).foregroundStyle(AppTheme.neonOrange)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 24)
@@ -939,15 +961,23 @@ private struct AdjustTimeSheet: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("parent.dashboard.adjust_time.done") {
-                onApply(selectedDelta)
-                dismiss()
+                guard appState.requireFamilyAccess(), !isSaving else { return }
+                isSaving = true
+                Task {
+                    let succeeded = await onApply(selectedDelta)
+                    isSaving = false
+                    if succeeded { dismiss() }
+                }
             }
+            .disabled(isSaving)
             .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 16)
         }
         .preferredColorScheme(.dark)
+        .interactiveDismissDisabled(isSaving)
+        .familyAccessPaywall()
     }
 
     /// Формирует подпись пункта пикера: «+5 мин», «0 мин», «−10 мин».

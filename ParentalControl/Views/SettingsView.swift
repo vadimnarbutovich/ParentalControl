@@ -132,8 +132,8 @@ struct SettingsView: View {
                 .foregroundStyle(.white.opacity(0.95))
 
             settingsRow(
-                titleKey: subscriptionService.isPro
-                    ? "settings.premium.active"
+                titleKey: (appState.isFamilyAccessAllowed && FamilyAccessStore.receipt?.lease.state == .paid)
+                    ? "settings.premium.available"
                     : "settings.premium.unlock_all"
             ) {
                 guard appState.deviceRole == .parent else { return }

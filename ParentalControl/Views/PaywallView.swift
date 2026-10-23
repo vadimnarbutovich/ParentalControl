@@ -219,7 +219,7 @@ struct PaywallView: View {
     /// Keep the action and the selected price visible, including on compact phones.
     private var purchaseFooter: some View {
         VStack(spacing: 10) {
-            if subscriptionService.hasLifetimeAccess {
+            if subscriptionService.hasLifetimeAccess && subscriptionService.hasServerConfirmedPurchase {
                 Text("settings.premium.active")
                     .font(.headline)
                     .foregroundStyle(AppTheme.neonGreen)
@@ -270,7 +270,8 @@ struct PaywallView: View {
         } label: {
             HStack(spacing: 10) {
                 if busy { ProgressView().tint(.white) }
-                Text(hasTrial ? "paywall.cta.start_trial" : "paywall.cta.continue")
+                Text(subscriptionService.isAwaitingServerConfirmation ? "paywall.retry" :
+                     (hasTrial ? "paywall.cta.start_trial" : "paywall.cta.continue"))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 if !busy {
@@ -312,6 +313,7 @@ struct PaywallView: View {
                 restoreStatusKey = nil
                 switch await subscriptionService.restorePurchases() {
                 case .restored: restored = true
+                case .pendingVerification: restoreStatusKey = nil
                 case .noActiveSubscription: restoreStatusKey = "paywall.restore.result.none"
                 case .failed: restoreStatusKey = "paywall.restore.result.failed"
                 }

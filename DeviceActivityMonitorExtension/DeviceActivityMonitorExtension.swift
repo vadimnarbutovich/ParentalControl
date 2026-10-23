@@ -41,6 +41,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         markHeartbeat("intervalDidStart")
         if DailyBudgetStore.shared.isEnabled,
            activity == activityName || activity.rawValue == "parentalcontrol.dailyBudget" {
@@ -57,6 +58,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         markHeartbeat("intervalDidEnd")
         if let id = ScheduleControlPlan.scheduleID(activityName: activity.rawValue) {
             reconcileSchedule(scheduleID: id)
@@ -65,6 +67,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
         super.intervalWillEndWarning(for: activity)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         markHeartbeat("intervalWillEndWarning")
         if let id = ScheduleControlPlan.scheduleID(activityName: activity.rawValue) {
             reconcileSchedule(scheduleID: id)
@@ -73,6 +76,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func eventWillReachThresholdWarning(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventWillReachThresholdWarning(event, activity: activity)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         markHeartbeat("eventWillReachThresholdWarning:\(event.rawValue)")
         incrementCounter(warningCountKey)
         saveString("warning", for: lastTriggerKey)
@@ -81,6 +85,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventDidReachThreshold(event, activity: activity)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         incrementCounter(thresholdCountKey)
         saveString("threshold", for: lastTriggerKey)
         handleBudgetEvent(event, trigger: "threshold")
@@ -205,10 +210,14 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     }
 
     private func applyShield(selection: FamilyActivitySelection) {
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         let settingsStore = ManagedSettingsStore()
         settingsStore.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         settingsStore.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
+        if FamilyAccessEnforcement.releaseIfNeeded() { return }
         settingsStore.shield.webDomains = selection.webDomainTokens.isEmpty ? nil : selection.webDomainTokens
+        _ = FamilyAccessEnforcement.releaseIfNeeded()
     }
 
     private func clearShield() {
@@ -230,6 +239,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         availableSeconds: Int,
         defaults: UserDefaults
     ) -> Bool {
+        if FamilyAccessEnforcement.releaseIfNeeded() { return false }
         let hasSelection = !selection.applicationTokens.isEmpty ||
             !selection.categoryTokens.isEmpty ||
             !selection.webDomainTokens.isEmpty
@@ -388,7 +398,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             let active = entry?.isActive(at: Date()) == true
             func current() -> Bool {
                 defaults.synchronize()
-                return defaults.data(forKey: ScheduleControlPlan.cacheKey) == data &&
+                return FamilyAccessStore.allowed && defaults.data(forKey: ScheduleControlPlan.cacheKey) == data &&
                     defaults.data(forKey: selectionKey) == selectionData &&
                     defaults.string(forKey: "parentalcontrol.deviceRole") == "child" &&
                     (entry?.isActive(at: Date()) == true) == active

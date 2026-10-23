@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
 import { sendApnsToDevice } from "../_shared/apns-routing.ts";
+import { accessSnapshot, accessAllows } from "../_shared/access-service.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -42,6 +43,10 @@ Deno.serve(async (req: Request) => {
     const action = body?.action ?? "";
     const payload = (body?.payload ?? {}) as Json;
     const authed = await requireDevice(req);
+    const access = await accessSnapshot(supabase, authed.deviceId);
+    if (!accessAllows(access, action)) return new Response(JSON.stringify({ error: "access_required", access }), {
+      status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
     switch (action) {
       case "queue_balance_command":

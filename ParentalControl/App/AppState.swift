@@ -15,6 +15,51 @@ enum PermissionReminderKind: Hashable {
 
 @MainActor
 final class AppState: ObservableObject {
+    @Published private(set) var isFamilyAccessAllowed = FamilyAccessStore.allowed
+    private var lastAccessCheck: Date?
+    private var accessCheckInFlight = false
+    private var purchaseRecoveryUntil: Date?
+
+    @discardableResult
+    func requireFamilyAccess() -> Bool {
+        guard FamilyAccessStore.allowed else {
+            if deviceRole == .parent {
+                NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
+            }
+            return false
+        }
+        return true
+    }
+
+    func requireFamilyConfigurationAccess() -> Bool {
+        FamilyAccessStore.isSettingUp || requireFamilyAccess()
+    }
+
+    func refreshFamilyAccess(force: Bool = false) async {
+        guard pairingState?.isLinked == true, !accessCheckInFlight else { return }
+        let renewalCheckDue = FamilyAccessStore.receipt?.needsRefresh(uptime: ProcessInfo.processInfo.systemUptime) == true
+        let interval: TimeInterval = FamilyAccessStore.isSettingUp || purchaseRecoveryUntil.map({ $0 > Date() }) == true ? 15 :
+            (renewalCheckDue ? 30 : (FamilyAccessStore.isEnrolled ? 900 : 60))
+        guard force || lastAccessCheck.map({ Date().timeIntervalSince($0) >= interval }) != false else { return }
+        accessCheckInFlight = true
+        lastAccessCheck = Date()
+        defer { accessCheckInFlight = false; adoptFamilyAccess() }
+        let ready = hasCompletedOnboarding && (deviceRole == .parent ||
+            (screenTimeService.isAuthorized && (!screenTimeService.selection.applicationTokens.isEmpty ||
+                !screenTimeService.selection.categoryTokens.isEmpty || !screenTimeService.selection.webDomainTokens.isEmpty)))
+        try? await remoteSyncService.accessStatus(ready: ready)
+    }
+
+    func adoptFamilyAccess() {
+        let allowed = FamilyAccessStore.allowed
+        let changed = isFamilyAccessAllowed != allowed
+        isFamilyAccessAllowed = allowed
+        subscriptionService?.refreshAccessState()
+        if deviceRole == .child, changed || !allowed {
+            // Existing enforcement worker owns all Screen Time IPC.
+            syncScreenTimeEnforcement(notifyOnUnlock: false)
+        }
+    }
     static let didReceiveRemotePayloadNotification = Notification.Name("parentalcontrol.didReceiveRemotePayload")
     static let didRegisterAPNSTokenNotification = Notification.Name("parentalcontrol.didRegisterAPNSToken")
     static let childBackgroundRefreshTaskIdentifier = "mycompny.parentalcontrol.child-refresh"
@@ -131,6 +176,14 @@ final class AppState: ObservableObject {
     /// при каждом успешном `refreshChildParentPinIfNeeded`. У родителя — после `setParentPinFromUI`.
     /// UI ориентируется на этот флаг, чтобы знать, можно ли вообще пытаться вводить PIN.
     @Published private(set) var parentPinIsSet = false
+    @Published private(set) var parentPinUnavailable = false
+    @Published private(set) var isRecoveringParentPin = false
+    private var parentPinFetchInFlight = false
+    private var parentPinConfirmedAbsent = false
+    private var parentPinNeedsRefresh: Bool {
+        get { UserDefaults.standard.bool(forKey: "parentalcontrol.pin.refreshRequired") }
+        set { UserDefaults.standard.set(newValue, forKey: "parentalcontrol.pin.refreshRequired") }
+    }
     @Published private(set) var isRefreshingSetup = false
     /// Конец активного lockout-таймера, если он сейчас идёт (после 5 неверных попыток PIN).
     /// `nil` — lockout не активен. UI на экране ввода показывает обратный отсчёт по этому полю.
@@ -364,6 +417,7 @@ final class AppState: ObservableObject {
         guard deviceRole == .child, isParentModeActive else {
             throw RemovalProtectionError.parentRequired
         }
+        guard FamilyAccessStore.allowed else { throw RemovalProtectionError.accessRequired }
         do {
             try await screenTimeService.enableRemovalProtection()
             AppAnalytics.report("removal_protection_enable", parameters: ["result": "success"])
@@ -399,6 +453,7 @@ final class AppState: ObservableObject {
         hasCompletedOnboarding = true
         Task {
             await refreshPermissionStatuses()
+            await refreshFamilyAccess(force: true)
             if deviceRole == .child {
                 await refreshStepsAndRewards()
                 await syncChildStatsSnapshotIfNeeded()
@@ -423,7 +478,7 @@ final class AppState: ObservableObject {
         // Любая смена роли — это полный reset privacy-state'а: чистим PIN-кэш и закрываем
         // родительский режим, чтобы старый хэш родителя не остался на устройстве с новой ролью
         // (например, если parent перепрошился в child).
-        parentPinService.clearMetadata()
+        parentPinNeedsRefresh = !parentPinService.clearMetadata()
         parentPinIsSet = false
         parentPinLockoutEnd = nil
         isParentModeActive = false
@@ -480,7 +535,7 @@ final class AppState: ObservableObject {
         lastNormalizedParentChildRuntime = nil
         // Разрыв пейринга = чужой родитель/семья — PIN из прошлого сценария не должен оставаться
         // на устройстве. Закрываем родительский режим и чистим Keychain.
-        parentPinService.clearMetadata()
+        parentPinNeedsRefresh = !parentPinService.clearMetadata()
         parentPinIsSet = false
         parentPinLockoutEnd = nil
         isParentModeActive = false
@@ -555,6 +610,7 @@ final class AppState: ObservableObject {
     }
 
     func sendParentFocusCommand(start: Bool) {
+        guard requireFamilyAccess() else { return }
         let commandType: RemoteFocusCommandType = start ? .startFocus : .endFocus
         // Move to the requested position and disable immediately while awaiting confirmation.
         guard beginParentCommand(commandType: commandType) else { return }
@@ -602,6 +658,12 @@ final class AppState: ObservableObject {
     /// Only the PIN-unlocked parent mode may create a local action. Persist it
     /// BEFORE changing shields; a restart/offline launch must not lose the intent.
     func setLocalManualBlock(active: Bool) {
+        if !FamilyAccessStore.allowed {
+            if !active, isParentModeActive {
+                adoptFamilyAccess()
+            }
+            return
+        }
         withControlStateLock {
             adoptNotificationControlState()
             setLocalManualBlockLocked(active: active)
@@ -673,9 +735,11 @@ final class AppState: ObservableObject {
 
     /// Шторка изменяет дневной бюджет на ±N минут через revisioned adjustment.
     /// Старые аддитивные команды баланса из текущего интерфейса не отправляются.
-    func sendParentAdjustTimeCommand(deltaMinutes: Int) async {
-        guard deltaMinutes != 0, parentBudgetStatus?.policy != nil else { return }
-        _ = await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
+    @discardableResult
+    func sendParentAdjustTimeCommand(deltaMinutes: Int) async -> Bool {
+        guard deltaMinutes != 0 else { return true }
+        guard requireFamilyAccess(), parentBudgetStatus?.policy != nil else { return false }
+        return await saveDailyBudgetChange(kind: "adjustment", seconds: deltaMinutes * 60)
     }
 
     func saveParentDailyLimit(minutes: Int, weeklyMinutes: [Int]? = nil) async -> Bool {
@@ -734,6 +798,7 @@ final class AppState: ObservableObject {
 
     private func saveDailyBudgetChange(kind: String, seconds: Int, weekly: [Int]? = nil,
                                       onlyIfUnset: Bool = false) async -> Bool {
+        guard kind == "limit" ? requireFamilyConfigurationAccess() : requireFamilyAccess() else { return false }
         guard deviceRole == .parent, pairingState?.isLinked == true, !isBudgetSaving else { return false }
         if onlyIfUnset {
             // A poll may have delivered the parent's edited policy since the button was tapped.
@@ -814,6 +879,8 @@ final class AppState: ObservableObject {
     /// `isParentModeActive = true`. UI на этот же `@Published` повесит появление вкладок
     /// `Блокировка`/`Настройки` и красной плашки «Выход».
     func enterParentMode(pin: String) -> ParentPinEntryResult {
+        refreshLocalParentPinStatus()
+        guard !parentPinUnavailable, !parentPinNeedsRefresh else { return .unavailable }
         let result = parentPinService.verifyPin(pin)
         switch result {
         case .success:
@@ -825,6 +892,9 @@ final class AppState: ObservableObject {
             parentPinLockoutEnd = parentPinService.currentLockoutEnd()
         case .notConfigured:
             parentPinLockoutEnd = nil
+            refreshLocalParentPinStatus()
+        case .unavailable:
+            parentPinUnavailable = true
         }
         let analyticsResult: String
         switch result {
@@ -832,6 +902,7 @@ final class AppState: ObservableObject {
         case .lockedOut: analyticsResult = "locked_out"
         case .wrongPin: analyticsResult = "wrong_pin"
         case .notConfigured: analyticsResult = "not_configured"
+        case .unavailable: analyticsResult = "unavailable"
         }
         AppAnalytics.updateContext(role: deviceRole?.rawValue, parentMode: isParentModeActive)
         AppAnalytics.report("parent_mode_enter", parameters: ["result": analyticsResult])
@@ -864,7 +935,14 @@ final class AppState: ObservableObject {
                 updatedAt: updatedAt
             )
             guard deviceRole == .parent, pairingState?.familyID == familyID else { return false }
-            parentPinService.saveMetadata(metadata)
+            parentPinNeedsRefresh = true
+            guard parentPinService.saveMetadata(metadata) else {
+                refreshLocalParentPinStatus()
+                remoteStatusMessage = L10n.tr("parent_mode.entry.unavailable")
+                return false
+            }
+            parentPinNeedsRefresh = false
+            parentPinUnavailable = false
             parentPinIsSet = true
             remoteStatusMessage = nil
             AppAnalytics.report("parent_pin_change", parameters: ["action": "set", "result": "success"])
@@ -880,12 +958,17 @@ final class AppState: ObservableObject {
     /// уведомляется через `clear_parent_pin`. После этого child больше не сможет войти в режим.
     @discardableResult
     func clearParentPinFromUI() async -> Bool {
-        guard deviceRole == .parent else { return false }
-        parentPinService.clearMetadata()
-        parentPinIsSet = false
-        parentPinLockoutEnd = nil
+        guard deviceRole == .parent, let familyID = pairingState?.familyID else { return false }
         do {
             try await remoteSyncService.clearParentPin()
+            guard deviceRole == .parent, pairingState?.familyID == familyID else { return false }
+            parentPinNeedsRefresh = true
+            guard parentPinService.clearMetadata() else {
+                refreshLocalParentPinStatus()
+                return false
+            }
+            parentPinNeedsRefresh = false
+            refreshLocalParentPinStatus()
             AppAnalytics.report("parent_pin_change", parameters: ["action": "clear", "result": "success"])
             return true
         } catch {
@@ -900,6 +983,19 @@ final class AppState: ObservableObject {
     /// на каждом polling-тике. Если backend вернул `nil` — PIN снят родителем, чистим кэш и
     /// автоматически выходим из режима, если он был активен.
     func applyParentPinFromBackend(hashBase64: String?, saltBase64: String?, updatedAt: Date?) {
+        // Never rewrite protected Keychain items while the phone is locked.
+        guard UIApplication.shared.isProtectedDataAvailable else {
+            parentPinNeedsRefresh = true
+            return
+        }
+        if hashBase64 == nil && saltBase64 == nil && updatedAt == nil {
+            parentPinConfirmedAbsent = true
+            parentPinNeedsRefresh = true
+            isParentModeActive = false
+            if parentPinService.clearMetadata() { parentPinNeedsRefresh = false }
+            refreshLocalParentPinStatus()
+            return
+        }
         guard let hashBase64, let saltBase64, let updatedAt,
               let metadata = ParentPinMetadata.fromBackend(
                 hashBase64: hashBase64,
@@ -907,26 +1003,26 @@ final class AppState: ObservableObject {
                 updatedAt: updatedAt
               )
         else {
-            // Backend сообщил, что PIN снят — на ребёнке тоже снимаем.
-            if parentPinIsSet {
-                parentPinService.clearMetadata()
-                parentPinIsSet = false
-                parentPinLockoutEnd = nil
-                if isParentModeActive { isParentModeActive = false }
-            }
+            // Malformed/partial metadata is NOT an authenticated deletion.
+            parentPinNeedsRefresh = true
+            isParentModeActive = false
+            refreshLocalParentPinStatus()
             return
         }
+        parentPinConfirmedAbsent = false
         // Сравниваем с уже сохранённым — обновляем только при реальном изменении.
         if let existing = parentPinService.loadMetadata(),
            existing.hash == metadata.hash,
            existing.salt == metadata.salt,
            existing.updatedAt == metadata.updatedAt {
-            if !parentPinIsSet { parentPinIsSet = true }
+            parentPinNeedsRefresh = false
+            refreshLocalParentPinStatus()
             return
         }
-        parentPinService.saveMetadata(metadata)
-        parentPinIsSet = true
-        parentPinLockoutEnd = nil
+        if let existing = parentPinService.loadMetadata(), existing.updatedAt > metadata.updatedAt { return }
+        parentPinNeedsRefresh = true
+        if parentPinService.saveMetadata(metadata) { parentPinNeedsRefresh = false }
+        refreshLocalParentPinStatus()
         // Принудительный exit, если родитель сменил PIN, пока ребёнок был внутри режима —
         // безопасный дефолт: попросим ввести новый.
         if isParentModeActive { isParentModeActive = false }
@@ -937,8 +1033,18 @@ final class AppState: ObservableObject {
     /// wake, ребёнок мгновенно синкает свой кэш).
     func refreshChildParentPinIfNeeded() async {
         guard deviceRole == .child, pairingState?.isLinked == true else { return }
+        guard UIApplication.shared.isProtectedDataAvailable else {
+            // Remember a PIN-change wake-up without making a request we cannot safely persist.
+            parentPinNeedsRefresh = true
+            return
+        }
+        guard !parentPinFetchInFlight else { return }
+        let requestedFamily = pairingState?.familyID
+        parentPinFetchInFlight = true
+        defer { parentPinFetchInFlight = false }
         do {
             let response = try await remoteSyncService.fetchParentPin()
+            guard deviceRole == .child, pairingState?.familyID == requestedFamily else { return }
             // Если backend вернул `null` (PIN не задан или удалён родителем) — передаём `nil`'ы:
             // `applyParentPinFromBackend` сам очистит кэш и закроет parent-mode, если он был активен.
             applyParentPinFromBackend(
@@ -948,7 +1054,50 @@ final class AppState: ObservableObject {
             )
         } catch {
             // Тихо — это фоновая операция, оффлайн-ребёнок продолжает работать на кэшированном PIN.
+            if deviceRole == .child, pairingState?.familyID == requestedFamily, !parentPinIsSet {
+                parentPinUnavailable = true
+            }
         }
+    }
+
+    /// Local only. Foregrounding does not resume paid polling or start a PIN request.
+    func refreshLocalParentPinStatus() {
+        guard !parentPinNeedsRefresh else {
+            parentPinIsSet = false
+            parentPinUnavailable = true
+            return
+        }
+        switch parentPinService.storageState() {
+        case .available:
+            parentPinIsSet = true
+            parentPinUnavailable = false
+            parentPinLockoutEnd = parentPinService.currentLockoutEnd()
+        case .missing:
+            parentPinIsSet = false
+            parentPinUnavailable = deviceRole == .child && !parentPinConfirmedAbsent
+            parentPinLockoutEnd = nil
+        case .corrupted, .unavailable:
+            parentPinIsSet = false
+            parentPinUnavailable = true
+        }
+    }
+
+    /// Only a deliberate Parent Mode entry may repair a missing cache, including after expiry.
+    /// Persist the family-scoped cooldown so repeated taps/restarts cannot create a request loop.
+    func prepareParentPinEntry() async {
+        refreshLocalParentPinStatus()
+        guard deviceRole == .child, pairingState?.isLinked == true,
+              let familyID = pairingState?.familyID, !parentPinIsSet,
+              UIApplication.shared.isProtectedDataAvailable,
+              !isRecoveringParentPin, !parentPinFetchInFlight else { return }
+        let key = "parentalcontrol.pin.recoveryAttempt.\(familyID)"
+        guard ParentPinRecoveryPolicy.shouldAttempt(state: parentPinService.storageState(),
+            requiresRefresh: parentPinNeedsRefresh,
+            lastAttempt: UserDefaults.standard.object(forKey: key) as? Date, now: Date()) else { return }
+        UserDefaults.standard.set(Date(), forKey: key)
+        isRecoveringParentPin = true
+        defer { isRecoveringParentPin = false }
+        await refreshChildParentPinIfNeeded()
     }
 
     // MARK: - Pro subscription (привязка к устройству родителя)
@@ -970,6 +1119,19 @@ final class AppState: ObservableObject {
     /// сторону ребёнка кэшированным статусом + фоновым обновлением с backend.
     func attachSubscriptionService(_ service: SubscriptionService) {
         subscriptionService = service
+        service.prepareServerPurchase = { [weak self] in
+            guard let self, self.deviceRole == .parent else { throw NSError(domain: "ParentalAccess", code: 403) }
+            try await self.remoteSyncService.accessStatus(ready: self.hasCompletedOnboarding)
+            return try await self.remoteSyncService.purchaseIdentity()
+        }
+        service.verifyServerPurchase = { [weak self] in
+            guard let self else { return false }
+            self.purchaseRecoveryUntil = Date().addingTimeInterval(120)
+            self.lastAccessCheck = nil
+            let confirmed = try await self.remoteSyncService.verifyPurchase()
+            self.adoptFamilyAccess()
+            return confirmed
+        }
         service.onEntitlementChange = { [weak self] isActive in
             guard let self else { return }
             Task { await self.pushParentProStatusIfNeeded(isActive) }
@@ -1056,6 +1218,7 @@ final class AppState: ObservableObject {
     }
 
     func saveScreenSelection() {
+        guard requireFamilyConfigurationAccess() else { screenTimeService.loadSelection(); return }
         if isMonitoringPaused {
             isMonitoringPaused = false
             storage.saveDeviceActivityMonitoringPaused(false)
@@ -1092,27 +1255,8 @@ final class AppState: ObservableObject {
     /// Revokes premium-only features when subscription expires.
     /// Called only when `isStatusKnown == true` to avoid revoking while offline (cached status stays active).
     func enforcePremiumFeatures(isPro: Bool, isStatusKnown: Bool) {
-        guard isStatusKnown, !isPro else { return }
-        if isMonitoringPaused {
-            resumeMonitoring()
-        }
-        if !isMidnightResetEnabled {
-            updateMidnightResetEnabled(true)
-        }
-        trimSelectionToFreeLimit()
-    }
-
-    /// Free users can track at most 1 app. Trims selection and re-saves if over the limit.
-    private func trimSelectionToFreeLimit() {
-        let sel = screenTimeService.selection
-        let totalItems = sel.applicationTokens.count + sel.categoryTokens.count + sel.webDomainTokens.count
-        guard totalItems > 1 else { return }
-        var trimmed = FamilyActivitySelection()
-        if let firstApp = sel.applicationTokens.first {
-            trimmed.applicationTokens = [firstApp]
-        }
-        screenTimeService.selection = trimmed
-        saveScreenSelection()
+        // Access expiry preserves the parent's selection and schedules.
+        adoptFamilyAccess()
     }
 
     #if DEBUG && !HIDE_DEBUG_UI
@@ -1125,6 +1269,7 @@ final class AppState: ObservableObject {
     #endif
 
     func refreshSharedStateFromAppGroup() {
+        adoptFamilyAccess()
         withControlStateLock { adoptNotificationControlState() }
         if deviceRole == .child {
             let sharedSchedules = storage.loadBlockSchedules()
@@ -1519,6 +1664,15 @@ final class AppState: ObservableObject {
         remotePollingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
+                // Access recovery must run for every linked device, independently
+                // of focus sessions, and before any ordinary synchronization.
+                await self.refreshFamilyAccess()
+                guard !Task.isCancelled else { return }
+                self.adoptFamilyAccess()
+                guard FamilyAccessStore.allowed || FamilyAccessStore.isSettingUp else {
+                    try? await Task.sleep(nanoseconds: Self.remotePollingIntervalNanos)
+                    continue
+                }
                 if self.deviceRole == .child {
                     let now = Date()
                     // PIN/Pro родителя подмешиваем в тот же `child_poll` лишь раз в ~60 сек (не каждый тик).
@@ -2608,6 +2762,7 @@ final class AppState: ObservableObject {
     }
 
     func appDidBecomeActive() {
+        refreshLocalParentPinStatus()
         storage.saveMainAppIsActive(true)
         withControlStateLock { adoptNotificationControlState() }
         resetDailyBalanceIfNeeded()
@@ -2624,6 +2779,7 @@ final class AppState: ObservableObject {
         startSharedStateRefreshLoop()
         // Сначала свежие статусы, потом сброс подавления баннера — иначе один кадр с устаревшим Health и снова «нет доступа».
         Task {
+            await refreshFamilyAccess(force: true)
             await refreshPermissionStatuses()
             permissionBannerSuppressedAfterCTA = false
             await refreshStepsAndRewards()
@@ -2996,6 +3152,7 @@ final class AppState: ObservableObject {
     @discardableResult
     func addBlockSchedule(from template: BlockScheduleTemplate) -> BlockSchedule {
         let schedule = template.makeSchedule()
+        guard requireFamilyAccess() else { return schedule }
         AppAnalytics.report("schedule_change", parameters: [
             "action": "save", "is_new": true, "enabled": schedule.isEnabled
         ])
@@ -3009,7 +3166,9 @@ final class AppState: ObservableObject {
 
     /// Обновляет существующее расписание (по `id`) или добавляет новое, если его ещё нет.
     /// Используется и для commit редактора, и для сохранения нового расписания из draft.
-    func commitBlockSchedule(_ schedule: BlockSchedule) {
+    @discardableResult
+    func commitBlockSchedule(_ schedule: BlockSchedule) -> Bool {
+        guard requireFamilyAccess() else { return false }
         AppAnalytics.report("schedule_change", parameters: [
             "action": "save", "is_new": !blockSchedules.contains(where: { $0.id == schedule.id }),
             "enabled": schedule.isEnabled
@@ -3025,10 +3184,12 @@ final class AppState: ObservableObject {
         blockSchedules = list
         storage.saveBlockSchedules(blockSchedules)
         schedulePushBlockScheduleToServer(updated)
+        return true
     }
 
     /// Переключает флаг `isEnabled` для конкретного расписания.
     func setBlockSchedule(_ scheduleID: UUID, enabled: Bool) {
+        guard requireFamilyAccess() else { return }
         guard let index = blockSchedules.firstIndex(where: { $0.id == scheduleID }) else { return }
         var list = blockSchedules
         var updated = list[index]
@@ -3045,6 +3206,7 @@ final class AppState: ObservableObject {
     /// Удаляет расписание из списка. Возвращает `true`, если удаление произошло.
     @discardableResult
     func deleteBlockSchedule(_ scheduleID: UUID) -> Bool {
+        guard requireFamilyAccess() else { return false }
         guard blockSchedules.contains(where: { $0.id == scheduleID }) else { return false }
         AppAnalytics.report("schedule_change", parameters: ["action": "delete"])
         scheduleDeleteBlockScheduleOnServer(id: scheduleID)
@@ -3127,6 +3289,7 @@ final class AppState: ObservableObject {
         analyticsAction: String,
         operation: () async throws -> ChildTask?
     ) async -> Bool {
+        guard requireFamilyAccess() else { return false }
         guard pairingState?.isLinked == true, !isUpdatingChildTasks else { return false }
         let family = pairingState?.familyID
         isUpdatingChildTasks = true
@@ -3549,7 +3712,7 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable { let installID: String }
         return try await call(
             action: "fetch_parent_pin",
-            payload: Payload(installID: installID)
+            payload: Payload(installID: installID), timeout: 15
         )
     }
 
@@ -3720,6 +3883,9 @@ private final class ParentalRemoteSyncService {
         struct Payload: Encodable {
             let installID: String
             let includeParentSettings: Bool
+            let budgetProtocol = 1
+            let weeklyBudgetProtocol = 1
+            let budgetTimezone = TimeZone.current.identifier
         }
         return try await call(
             action: "child_poll",
@@ -3951,6 +4117,17 @@ private final class ParentalRemoteSyncService {
         endpoint: URL? = nil,
         timeout: TimeInterval? = nil
     ) async throws -> T {
+        if !FamilyAccessStore.allowed && !FamilyAccessStore.recoveryActions.contains(action)
+            && !(FamilyAccessStore.isSettingUp && FamilyAccessStore.setupActions.contains(action)) {
+            if FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
+                NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
+            }
+            throw NSError(domain: "ParentalAccess", code: 402,
+                userInfo: [NSLocalizedDescriptionKey: L10n.tr("access.paused")])
+        }
+        let accessPairing = FamilyAccessStore.pairingData
+        let requestWall = Date().timeIntervalSince1970
+        let requestUptime = ProcessInfo.processInfo.systemUptime
         let endpointURL = endpoint ?? Endpoint.focusBaseURL
         var request = URLRequest(url: endpointURL)
         if let timeout { request.timeoutInterval = timeout }
@@ -3970,6 +4147,11 @@ private final class ParentalRemoteSyncService {
         guard let http = response as? HTTPURLResponse else {
             throw SyncError.invalidServerResponse
         }
+        FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
+            requestWall: requestWall, requestUptime: requestUptime)
+        if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
+            NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
+        }
         guard (200...299).contains(http.statusCode) else {
             if let decoded = try? decoder.decode(ErrorResponse.self, from: data),
                let msg = decoded.error {
@@ -3987,6 +4169,20 @@ private final class ParentalRemoteSyncService {
         return try decoder.decode(T.self, from: data)
     }
 
+    func accessStatus(ready: Bool) async throws {
+        struct Payload: Encodable { let ready: Bool; let protocolVersion = 1 }
+        let _: EmptyResponse = try await call(action: "access_status", payload: Payload(ready: ready), timeout: 15)
+    }
+    func purchaseIdentity() async throws -> String {
+        struct Response: Decodable { let customerID: String }
+        let result: Response = try await call(action: "purchase_identity", payload: EmptyResponse(), timeout: 15)
+        return result.customerID
+    }
+    func verifyPurchase() async throws -> Bool {
+        struct Response: Decodable { let purchaseConfirmed: Bool? }
+        let response: Response = try await call(action: "verify_purchase", payload: EmptyResponse(), timeout: 15)
+        return response.purchaseConfirmed == true
+    }
     private struct EmptyResponse: Codable {}
     private struct ErrorResponse: Codable { let error: String? }
 }

@@ -34,6 +34,7 @@ nonisolated enum ScreenTimeEnforcer {
         let event: String?
         let signature: Data?
         func isCurrent() -> Bool {
+            guard FamilyAccessStore.allowed else { return false }
             guard let current = try? ScreenTimeEnforcer.snapshot(), current.stamp == stamp else { return false }
             return !monitoring || (current.budget?.monitorEvent == event &&
                 RemoteControlGate.defaults?.data(forKey: armedKey) == signature)
@@ -118,6 +119,9 @@ nonisolated enum ScreenTimeEnforcer {
     private static func applyCurrent(context: ControlSystemWorker.Context) throws -> Receipt {
         precondition(!Thread.isMainThread)
         try context.check()
+        if FamilyAccessEnforcement.releaseIfNeeded() { throw ControlSystemWorker.Failure.stale }
+        try FamilyAccessEnforcement.armExpiry()
+        let accessReceipt = FamilyAccessStore.receipt
         let state = try snapshot()
         let stamp = state.stamp
         let center = DeviceActivityCenter()
@@ -125,6 +129,9 @@ nonisolated enum ScreenTimeEnforcer {
         var expectedEvent = state.budget?.monitorEvent
         func validate() throws {
             try context.check()
+            guard FamilyAccessStore.allowed, FamilyAccessStore.receipt == accessReceipt else {
+                throw ControlSystemWorker.Failure.stale
+            }
             let current = try snapshot()
             guard current.stamp == stamp, current.budget?.monitorEvent == expectedEvent
             else { throw ControlSystemWorker.Failure.stale }

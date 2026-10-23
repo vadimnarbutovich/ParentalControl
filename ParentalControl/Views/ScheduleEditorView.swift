@@ -8,10 +8,11 @@ import SwiftUI
 /// Закрытие без сохранения — обычный свайп вниз/Cancel.
 struct ScheduleEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
 
     let isNew: Bool
-    let onSave: (BlockSchedule) -> Void
-    let onDelete: (() -> Void)?
+    let onSave: (BlockSchedule) -> Bool
+    let onDelete: (() -> Bool)?
 
     @State private var name: String
     @State private var startDate: Date
@@ -34,8 +35,8 @@ struct ScheduleEditorView: View {
     init(
         initialSchedule: BlockSchedule,
         isNew: Bool,
-        onSave: @escaping (BlockSchedule) -> Void,
-        onDelete: (() -> Void)?
+        onSave: @escaping (BlockSchedule) -> Bool,
+        onDelete: (() -> Bool)?
     ) {
         self.isNew = isNew
         self.onSave = onSave
@@ -95,8 +96,8 @@ struct ScheduleEditorView: View {
             }
             .alert("schedule.editor.delete.confirm.title", isPresented: $showDeleteConfirm) {
                 Button("schedule.editor.delete.confirm.delete", role: .destructive) {
-                    onDelete?()
-                    dismiss()
+                    guard appState.requireFamilyAccess() else { return }
+                    if onDelete?() == true { dismiss() }
                 }
                 Button("schedule.editor.cancel", role: .cancel) {}
             } message: {
@@ -104,6 +105,7 @@ struct ScheduleEditorView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .familyAccessPaywall()
     }
 
     private var isFormValid: Bool {
@@ -311,6 +313,7 @@ struct ScheduleEditorView: View {
     }
 
     private func saveAndDismiss() {
+        guard appState.requireFamilyAccess() else { return }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         // Если форма невалидна — показываем хинты и не сохраняем.
         // Сейчас это только пустое имя; для пустых дней недели уже есть отдельный
@@ -333,7 +336,6 @@ struct ScheduleEditorView: View {
             createdAt: createdAt,
             updatedAt: Date()
         )
-        onSave(updated)
-        dismiss()
+        if onSave(updated) { dismiss() }
     }
 }

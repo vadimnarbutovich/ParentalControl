@@ -660,3 +660,7 @@
 "paywall.price.annual_trial_format" = "免费试用3天，之后每年 %@";
 "paywall.legal.lifetime_disclaimer" = "一次性购买，无需订阅，不会自动续费。";
 "paywall.retry" = "重试";
+"access.paused" = "控制已暂停。请在家长手机上检查访问权限或恢复购买。";
+"paywall.purchase.pending_verification" = "正在等待服务器确认购买。无需再次付款。请重试，或稍后恢复购买。";
+"settings.premium.available" = "Premium 可用";
+"parent_mode.entry.unavailable" = "PIN 码暂时不可用。请解锁此手机，连接互联网后稍后重试。如果问题仍然存在，请向家长寻求帮助。";

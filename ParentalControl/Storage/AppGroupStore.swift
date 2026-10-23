@@ -408,7 +408,8 @@ final class AppGroupStore {
     }
 
     func loadDeviceInstallID() -> String? {
-        store.string(forKey: StorageKey.deviceInstallID)
+        restoreDeviceIdentityIfNeeded()
+        return store.string(forKey: StorageKey.deviceInstallID)
     }
 
     func saveDeviceInstallID(_ value: String) {
@@ -421,6 +422,23 @@ final class AppGroupStore {
 
     func saveDeviceSecret(_ value: String?) {
         store.set(value, forKey: StorageKey.deviceSecret)
+        if let id = store.string(forKey: StorageKey.deviceInstallID), let value, !value.isEmpty {
+            DeviceIdentityKeychain.save(.init(installID: id, secret: value,
+                role: store.string(forKey: StorageKey.deviceRole)))
+        }
+    }
+
+    private func restoreDeviceIdentityIfNeeded() {
+        // Existing App Group identity wins. Never combine an old secret with a
+        // different install ID or overwrite an established pairing on upgrade.
+        guard store.string(forKey: StorageKey.deviceInstallID) == nil,
+              store.string(forKey: StorageKey.deviceSecret) == nil,
+              let saved = DeviceIdentityKeychain.read() else { return }
+        store.set(saved.installID, forKey: StorageKey.deviceInstallID)
+        store.set(saved.secret, forKey: StorageKey.deviceSecret)
+        if store.string(forKey: StorageKey.deviceRole) == nil, let role = saved.role {
+            store.set(role, forKey: StorageKey.deviceRole)
+        }
     }
 
     func loadAPNSToken() -> String? {

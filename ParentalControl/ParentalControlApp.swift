@@ -82,6 +82,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func scheduleChildRefreshIfNeeded() {
+        guard FamilyAccessStore.allowed else {
+            BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: refreshIdentifier)
+            return
+        }
         guard storage.loadDeviceRole() == .child, storage.loadPairingState()?.isLinked == true else { return }
         let request = BGAppRefreshTaskRequest(identifier: refreshIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)

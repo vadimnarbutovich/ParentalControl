@@ -603,3 +603,7 @@
 "paywall.price.annual_trial_format" = "3 dienas bez maksas, pēc tam %@ gadā";
 "paywall.legal.lifetime_disclaimer" = "Vienreizējs pirkums. Bez abonementa un automātiskas atjaunošanas.";
 "paywall.retry" = "Mēģināt vēlreiz";
+"access.paused" = "Pārvaldība ir apturēta. Pārbaudiet piekļuvi vai atjaunojiet pirkumus vecāka tālrunī.";
+"paywall.purchase.pending_verification" = "Pirkums gaida servera apstiprinājumu. Atkārtoti maksāt nav nepieciešams. Mēģiniet vēlreiz vai vēlāk atjaunojiet pirkumus.";
+"settings.premium.available" = "Premium pieejams";
+"parent_mode.entry.unavailable" = "PIN kods pašlaik nav pieejams. Atbloķējiet šo tālruni un vēlāk mēģiniet vēlreiz ar interneta savienojumu. Ja problēma joprojām pastāv, lūdziet palīdzību vecākiem.";

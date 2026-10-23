@@ -286,6 +286,8 @@ final class RemoteControlProcessor {
 
     private func call(_ action: String, _ payload: [String: Any]) async throws -> Data {
         try checkContext()
+        let requestWall = Date().timeIntervalSince1970
+        let requestUptime = ProcessInfo.processInfo.systemUptime
         let publicKey = "sb_publishable_urT7eQPRIxyXso8VKA2tHQ_-U0I0CsO"
         var request = URLRequest(url: URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-sync")!)
         request.httpMethod = "POST"
@@ -297,6 +299,17 @@ final class RemoteControlProcessor {
         request.httpBody = try JSONSerialization.data(withJSONObject: ["action": action, "payload": payload])
         let (data, response) = try await session.data(for: request)
         try checkContext()
+        if let http = response as? HTTPURLResponse {
+            FamilyAccessStore.acceptResponse(data, response: http, pairing: pairingData,
+                requestWall: requestWall, requestUptime: requestUptime)
+            if !FamilyAccessStore.allowed {
+                _ = try await ControlSystemWorker.shared.run(context: execution) { context in
+                    try context.check()
+                    return FamilyAccessEnforcement.releaseIfNeeded()
+                }
+                throw Failure.http(402)
+            }
+        }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw Failure.http((response as? HTTPURLResponse)?.statusCode ?? 0)
         }

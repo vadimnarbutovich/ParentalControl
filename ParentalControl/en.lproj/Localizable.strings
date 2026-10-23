@@ -664,3 +664,7 @@
 "paywall.price.annual_trial_format" = "3 days free, then %@ per year";
 "paywall.legal.lifetime_disclaimer" = "One-time purchase. No subscription or automatic renewal.";
 "paywall.retry" = "Try again";
+"access.paused" = "Control is paused. Check access or restore purchases on the parent’s phone.";
+"paywall.purchase.pending_verification" = "Your purchase is awaiting server confirmation. You do not need to pay again. Tap Try again or restore purchases later.";
+"settings.premium.available" = "Premium available";
+"parent_mode.entry.unavailable" = "The PIN is temporarily unavailable. Unlock this phone and try again later with an internet connection. If the problem persists, ask a parent for help.";

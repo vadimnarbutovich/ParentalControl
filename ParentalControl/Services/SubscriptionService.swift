@@ -3,31 +3,25 @@ import Foundation
 import RevenueCat
 import Security
 
-/// Конфиг гейтинга подписки. Pro привязан к УСТРОЙСТВУ РОДИТЕЛЯ: родитель покупает подписку,
-/// а его статус (через backend `families.parent_is_pro`) определяет ограничения и на родителе,
-/// и на ребёнке. Ребёнок свой RevenueCat для гейтинга НЕ использует — берёт статус родителя.
-enum SubscriptionConfig {
-    /// Временный dev-флаг: пока фичи под подпиской не определены, держим Pro разблокированным,
-    /// чтобы гейтинг не мешал разработке. Когда определимся со списком платных фич и захотим
-    /// включить реальные ограничения — поставить `false`. Вся инфраструктура (родитель шлёт
-    /// статус → backend → ребёнок применяет) работает независимо от этого флага.
-    static let developmentForceProUnlocked = true
-}
-
 @MainActor
 final class SubscriptionService: ObservableObject {
-    /// Эффективный Pro-статус, по которому гейтятся фичи в UI. На родителе — собственный entitlement
-    /// (или dev-override), на ребёнке — присланный статус родителя (`applyParentProStatus`).
+    /// Effective UI access follows the server-verified family lease, including demo.
+    /// SDK entitlement and legacy parent_is_pro cannot grant server access.
     @Published private(set) var isPro: Bool = true
     /// Реальный entitlement ИМЕННО этого устройства из RevenueCat (на родителе — основа гейтинга,
     /// на ребёнке обычно `false` и не используется). Источник для отправки статуса на backend.
     @Published private(set) var hasActiveEntitlement: Bool = false
     @Published private(set) var hasLifetimeAccess: Bool = false
+    @Published private(set) var hasServerConfirmedPurchase = false
+    @Published private(set) var isAwaitingServerConfirmation = false
     /// Присланный с backend Pro-статус родителя (только на ребёнке). `nil` — ещё не синхронизирован.
     private var parentProOverride: Bool?
     /// Вызывается при изменении реального entitlement этого устройства. Родитель подписывается,
     /// чтобы отправить новый статус на backend (`set_parent_pro`). `[weak]`-замыкание в `AppState`.
     var onEntitlementChange: ((Bool) -> Void)?
+    var prepareServerPurchase: (() async throws -> String)?
+    var verifyServerPurchase: (() async throws -> Bool)?
+    private var identityInitialization: Task<Void, Never>?
     /// `true` после первого получения `CustomerInfo` из RevenueCat (кэш, сеть или стрим), либо если SDK не настроен — чтобы не мигал Pro-бейдж до проверки подписки.
     @Published private(set) var isSubscriptionStatusKnown: Bool = false
     @Published private(set) var currentOffering: Offering?
@@ -75,7 +69,7 @@ final class SubscriptionService: ObservableObject {
             }
         }
 
-        Task {
+        identityInitialization = Task {
             await identifyStableUserIfNeeded(stableAppUserID)
             await refreshAll()
         }
@@ -240,7 +234,7 @@ final class SubscriptionService: ObservableObject {
 
     @discardableResult
     func purchase(_ package: Package) async -> Bool {
-        guard isConfigured, !isLoading, !hasLifetimeAccess,
+        guard isConfigured, !isLoading,
               let selectedPlan = ProPurchasePlan.allCases.first(where: {
                   $0.productIdentifier == package.storeProduct.productIdentifier
                     && $0.packageIdentifier == package.identifier
@@ -251,6 +245,11 @@ final class SubscriptionService: ObservableObject {
         lastErrorMessage = nil
         defer { isLoading = false }
         do {
+            try await preparePurchaseIdentity()
+            // An Apple purchase already exists: retry server verification, never charge again.
+            if hasActiveEntitlement && (hasLifetimeAccess || !FamilyAccessStore.allowed || isAwaitingServerConfirmation) {
+                return await confirmServerPurchase()
+            }
             let result = try await Purchases.shared.purchase(package: package)
             if result.userCancelled {
                 AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "cancelled"])
@@ -262,6 +261,10 @@ final class SubscriptionService: ObservableObject {
                     key: "paywall.error.generic", fallback: "Не удалось подтвердить покупку. Попробуйте восстановить покупки."
                 )
                 AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "failed"])
+                return false
+            }
+            guard await confirmServerPurchase() else {
+                AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "pending_verification"])
                 return false
             }
             AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "success"])
@@ -292,9 +295,13 @@ final class SubscriptionService: ObservableObject {
         lastErrorMessage = nil
         defer { isLoading = false }
         do {
+            try await preparePurchaseIdentity()
             let info = try await Purchases.shared.restorePurchases()
             updatePro(from: info)
             let restored = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+            if restored {
+                guard await confirmServerPurchase() else { return .pendingVerification }
+            }
             AppAnalytics.report("restore_result", parameters: [
                 "result": restored ? "restored" : "no_active_subscription"
             ])
@@ -314,9 +321,27 @@ final class SubscriptionService: ObservableObject {
                 == ProPurchasePlan.lifetime.productIdentifier
         let changed = active != hasActiveEntitlement
         hasActiveEntitlement = active
+        if !active { hasServerConfirmedPurchase = false; isAwaitingServerConfirmation = false }
         recomputeIsPro()
         // Уведомляем подписчика (родитель → backend) только при реальном изменении статуса.
         if changed { onEntitlementChange?(active) }
+    }
+
+    private func confirmServerPurchase() async -> Bool {
+        do {
+            if try await verifyServerPurchase?() == true {
+                hasServerConfirmedPurchase = true
+                isAwaitingServerConfirmation = false
+                lastErrorMessage = nil
+                return true
+            }
+        } catch {
+            // StoreKit may already have charged. A transport failure is not a failed purchase.
+        }
+        hasServerConfirmedPurchase = false
+        isAwaitingServerConfirmation = true
+        lastErrorMessage = L10n.tr("paywall.purchase.pending_verification")
+        return false
     }
 
     /// Child-сторона: применяет Pro-статус родителя, присланный backend'ом. Источник правды
@@ -327,17 +352,25 @@ final class SubscriptionService: ObservableObject {
         recomputeIsPro()
     }
 
-    /// Пересчёт эффективного `isPro`: dev-флаг > статус родителя (на ребёнке) > свой entitlement.
+    /// Refresh effective access after a shared lease changes or expires.
+    func refreshAccessState() { recomputeIsPro() }
+
     private func recomputeIsPro() {
-        let effective: Bool
-        if SubscriptionConfig.developmentForceProUnlocked {
-            effective = true
-        } else if let override = parentProOverride {
-            effective = override
-        } else {
-            effective = hasActiveEntitlement
-        }
+        // Server rollout/lease decides access, never a client-supplied isPro.
+        let effective = FamilyAccessStore.allowed
         if isPro != effective { isPro = effective }
+    }
+
+    private func preparePurchaseIdentity() async throws {
+        await identityInitialization?.value
+        guard let prepareServerPurchase else { throw NSError(domain: "ParentalAccess", code: 503) }
+        let identity = try await prepareServerPurchase()
+        if Purchases.shared.appUserID != identity {
+            let result = try await Purchases.shared.logIn(identity)
+            updatePro(from: result.customerInfo)
+            annualTrialEligible = false
+            await loadOfferings()
+        }
     }
 
     /// Логиним стабильный app user id, чтобы профиль не терялся при переустановке приложения.
@@ -372,6 +405,7 @@ final class SubscriptionService: ObservableObject {
 
 enum RestoreResult {
     case restored
+    case pendingVerification
     case noActiveSubscription
     case failed(String?)
 }

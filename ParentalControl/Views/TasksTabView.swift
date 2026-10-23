@@ -54,8 +54,10 @@ struct TasksTabView: View {
                 set: { if !$0 { taskToDelete = nil } }
             ), presenting: taskToDelete) { task in
                 Button("tasks.editor.delete.confirm.delete", role: .destructive) {
+                    guard appState.requireFamilyAccess() else { return }
                     Task {
                         if !(await appState.deleteChildTask(task.id)) {
+                            guard appState.requireFamilyAccess() else { return }
                             await appState.refreshChildTasksFromServer()
                             showMutationError = true
                         }
@@ -76,12 +78,15 @@ struct TasksTabView: View {
     }
 
     private func approve(_ task: ChildTask) {
+        guard appState.requireFamilyAccess() else { return }
         guard !appState.isUpdatingChildTasks else { return }
         approvingTaskID = task.id
         Task {
             if !(await appState.approveChildTask(task.id)) {
-                await appState.refreshChildTasksFromServer()
-                showMutationError = true
+                if appState.requireFamilyAccess() {
+                    await appState.refreshChildTasksFromServer()
+                    showMutationError = true
+                }
             }
             approvingTaskID = nil
         }
@@ -149,7 +154,7 @@ struct TasksTabView: View {
             task: task,
             isApproving: approvingTaskID == task.id,
             onApprove: { approve(task) },
-            onTap: { if task.isActive { editingTask = task } }
+            onTap: { if task.isActive { edit(task) } }
         )
         .disabled(appState.isUpdatingChildTasks)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -160,7 +165,7 @@ struct TasksTabView: View {
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
             if task.isActive {
-                Button { editingTask = task } label: {
+                Button { edit(task) } label: {
                     Label("tasks.edit", systemImage: "pencil")
                 }
                 .tint(AppTheme.neonBlue)
@@ -169,7 +174,7 @@ struct TasksTabView: View {
         }
         .contextMenu {
             if task.isActive {
-                Button { editingTask = task } label: {
+                Button { edit(task) } label: {
                     Label("tasks.edit", systemImage: "pencil")
                 }
                 .disabled(appState.isUpdatingChildTasks)
@@ -219,6 +224,7 @@ struct TasksTabView: View {
 
     private var createNewButton: some View {
         Button {
+            guard appState.requireFamilyAccess() else { return }
             draftTask = appState.makeDraftChildTask()
         } label: {
             HStack(spacing: 8) {
@@ -228,6 +234,11 @@ struct TasksTabView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+    }
+
+    private func edit(_ task: ChildTask) {
+        guard appState.requireFamilyAccess() else { return }
+        editingTask = task
     }
 }
 
@@ -417,6 +428,7 @@ struct TaskEditorView: View {
             .alert("tasks.editor.delete.confirm.title", isPresented: $showDeleteConfirm) {
                 Button("tasks.editor.delete.confirm.delete", role: .destructive) {
                     guard let onDelete, !isSaving else { return }
+                    guard appState.requireFamilyAccess() else { return }
                     isSaving = true
                     Task {
                         let succeeded = await onDelete()
@@ -424,6 +436,7 @@ struct TaskEditorView: View {
                         if succeeded {
                             dismiss()
                         } else {
+                            guard appState.requireFamilyAccess() else { return }
                             await appState.refreshChildTasksFromServer()
                             showMutationError = true
                         }
@@ -441,6 +454,7 @@ struct TaskEditorView: View {
         }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(isSaving)
+        .familyAccessPaywall()
     }
 
     private var isFormValid: Bool {
@@ -561,6 +575,7 @@ struct TaskEditorView: View {
     }
 
     private func saveAndDismiss() {
+        guard appState.requireFamilyAccess() else { return }
         guard !isSaving else { return }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isFormValid else {
@@ -587,6 +602,7 @@ struct TaskEditorView: View {
             if succeeded {
                 dismiss()
             } else {
+                guard appState.requireFamilyAccess() else { return }
                 await appState.refreshChildTasksFromServer()
                 showMutationError = true
             }

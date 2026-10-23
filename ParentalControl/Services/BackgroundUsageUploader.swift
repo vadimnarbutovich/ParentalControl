@@ -92,12 +92,17 @@ nonisolated final class BackgroundUsageUploader: NSObject, URLSessionTaskDelegat
     }
 
     private func enqueueIfNeeded() {
+        guard FamilyAccessStore.allowed else {
+            session?.getAllTasks { tasks in tasks.forEach { $0.cancel() } }
+            return
+        }
         // The host only drains delegate events. Its existing foreground sync is separate.
         guard backgroundCompletion == nil, !checkingTasks, !finishingSession, !uploadInFlight else { return }
         checkingTasks = true
         uploadSession().getAllTasks { tasks in
             self.queue.async {
                 defer { self.checkingTasks = false }
+                guard FamilyAccessStore.allowed else { tasks.forEach { $0.cancel() }; return }
                 // Bound the offline queue to one transfer; later callbacks read the latest
                 // authoritative state instead of accumulating one request per threshold.
                 guard tasks.isEmpty, self.backgroundCompletion == nil, !self.uploadInFlight else { return }
@@ -108,6 +113,7 @@ nonisolated final class BackgroundUsageUploader: NSObject, URLSessionTaskDelegat
     }
 
     private func createUpload() throws {
+        guard FamilyAccessStore.allowed else { return }
         guard !uploadInFlight, !finishingSession else { return }
         guard let defaults = UserDefaults(suiteName: Self.group),
               defaults.string(forKey: "parentalcontrol.deviceRole") == "child",

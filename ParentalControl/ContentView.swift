@@ -26,7 +26,30 @@ struct ContentView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            PermissionReminderBannerView()
+            VStack(spacing: 0) {
+                PermissionReminderBannerView()
+                if !appState.isFamilyAccessAllowed {
+                    VStack(spacing: 8) {
+                        Text("access.paused")
+                            .font(.footnote)
+                            .multilineTextAlignment(.center)
+                        HStack {
+                            Button("paywall.retry") { Task { await appState.refreshFamilyAccess(force: true) } }
+                            if appState.deviceRole == .parent {
+                                Button("paywall.cta.continue") { _ = appState.requireFamilyAccess() }
+                            }
+                        }
+                        .font(.footnote.weight(.semibold))
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+                }
+            }
+        }
+        .familyAccessPaywall(isRoot: true)
+        .onReceive(NotificationCenter.default.publisher(for: FamilyAccessStore.changed)) { _ in
+            appState.adoptFamilyAccess()
         }
         .onChange(of: subscriptionService.isPro) { _, isPro in
             appState.enforcePremiumFeatures(isPro: isPro, isStatusKnown: subscriptionService.isSubscriptionStatusKnown)

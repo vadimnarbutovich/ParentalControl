@@ -660,3 +660,7 @@
 "paywall.price.annual_trial_format" = "3 Tage kostenlos, danach %@ pro Jahr";
 "paywall.legal.lifetime_disclaimer" = "Einmaliger Kauf. Kein Abo und keine automatische Verlängerung.";
 "paywall.retry" = "Erneut versuchen";
+"access.paused" = "Die Steuerung ist pausiert. Prüfe den Zugriff oder stelle Käufe auf dem Elternhandy wieder her.";
+"paywall.purchase.pending_verification" = "Dein Kauf wartet auf die Bestätigung durch den Server. Du musst nicht erneut bezahlen. Versuche es noch einmal oder stelle die Käufe später wieder her.";
+"settings.premium.available" = "Premium verfügbar";
+"parent_mode.entry.unavailable" = "Die PIN ist vorübergehend nicht verfügbar. Entsperre dieses Handy und versuche es später mit einer Internetverbindung erneut. Bitte deine Eltern um Hilfe, falls das Problem weiterhin besteht.";
