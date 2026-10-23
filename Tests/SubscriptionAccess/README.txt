@@ -172,6 +172,19 @@ Limitations / release gates
   purchase again. Monthly/annual upgrades remain possible with active access.
   Missing verifier/older server response fails closed. No purchased entitlement
   is synthesized, and safe release is never undone by a confirmation.
+- Delayed purchase/restore confirmation: within the existing 120-second recovery
+  window, the throttled access check uses verify_purchase INSTEAD OF access_status
+  while the operation is awaiting confirmation. Automatic retries do not extend
+  the window. No separate timer/polling loop is added. Only an explicit positive
+  purchaseConfirmed result completes the operation; cached paid access does not.
+  Paywall observes awaiting -> confirmed and closes without restarting the app.
+  Both Retry buttons recheck the server without calling purchase/restore or
+  requiring loaded product prices. After the bounded window, Retry remains
+  available and starts a new recovery window only on an explicit user action.
+  Hardware regression: delay confirmation after Apple accepts a purchase, leave
+  the paywall open, and verify it closes once the server confirms. Also test
+  restore, a cancelled Apple sheet, offline retry, and opening the paywall with
+  an existing active subscription (must not dismiss on its own).
 - A short hardware-test demo is an explicitly approved change to the TEST owner's
   trial_started_at, with revision incremented, BEFORE either device receives an
   enforced lease. Never shorten an already cached lease without refreshing both

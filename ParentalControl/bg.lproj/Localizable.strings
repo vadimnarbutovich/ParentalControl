@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Покупката очаква потвърждение от сървъра. Не е нужно да плащате отново. Опитайте пак или възстановете покупките по-късно.";
 "settings.premium.available" = "Premium е достъпен";
 "parent_mode.entry.unavailable" = "PIN кодът временно не е достъпен. Отключете телефона и опитайте по-късно с интернет връзка. Ако проблемът продължи, потърсете помощ от родител.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Месечният абонамент е активен";
+"paywall.status.annual" = "Годишният абонамент е активен";
+"paywall.status.lifetime" = "Безсрочният достъп е активен";
+"paywall.plan.current" = "Текущ план";
+"settings.premium.paid_active" = "Premium е активен";

@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "عملية الشراء بانتظار تأكيد الخادم. لا حاجة للدفع مرة أخرى. اضغط على «المحاولة مجددًا» أو استعد المشتريات لاحقًا.";
 "settings.premium.available" = "Premium متاح";
 "parent_mode.entry.unavailable" = "رمز PIN غير متاح مؤقتًا. افتح قفل هذا الهاتف وحاول لاحقًا مع الاتصال بالإنترنت. إذا استمرت المشكلة، اطلب المساعدة من أحد الوالدين.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "الاشتراك الشهري نشط";
+"paywall.status.annual" = "الاشتراك السنوي نشط";
+"paywall.status.lifetime" = "الوصول مدى الحياة مفعّل";
+"paywall.plan.current" = "الخطة الحالية";
+"settings.premium.paid_active" = "Premium مفعّل";

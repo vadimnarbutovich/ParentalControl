@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "購入はサーバーの確認待ちです。再度お支払いいただく必要はありません。もう一度試すか、後で購入を復元してください。";
 "settings.premium.available" = "Premiumを利用できます";
 "parent_mode.entry.unavailable" = "現在PINを利用できません。このスマートフォンのロックを解除し、インターネットに接続してから、しばらくしてもう一度お試しください。解決しない場合は、保護者に相談してください。";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "月額プランが有効です";
+"paywall.status.annual" = "年額プランが有効です";
+"paywall.status.lifetime" = "無期限アクセスが有効です";
+"paywall.plan.current" = "現在のプラン";
+"settings.premium.paid_active" = "Premium 有効";

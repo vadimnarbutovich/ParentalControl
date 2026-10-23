@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "正在等待伺服器確認購買。無需再次付款。請重試，或稍後回復購買。";
 "settings.premium.available" = "Premium 可用";
 "parent_mode.entry.unavailable" = "PIN 碼暫時無法使用。請解鎖此手機，連上網路後稍後再試。如果問題仍然存在，請向家長尋求協助。";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "月訂閱已生效";
+"paywall.status.annual" = "年訂閱已生效";
+"paywall.status.lifetime" = "終身使用權限已生效";
+"paywall.plan.current" = "目前方案";
+"settings.premium.paid_active" = "Premium 已生效";

@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Xarid server tasdig‘ini kutmoqda. Qayta to‘lash shart emas. Qayta urinib ko‘ring yoki xaridlarni keyinroq tiklang.";
 "settings.premium.available" = "Premium mavjud";
 "parent_mode.entry.unavailable" = "PIN kod hozircha mavjud emas. Telefon qulfini oching va internetga ulangan holda keyinroq qayta urinib ko‘ring. Muammo davom etsa, ota-onangizdan yordam so‘rang.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Oylik obuna faol";
+"paywall.status.annual" = "Yillik obuna faol";
+"paywall.status.lifetime" = "Muddatsiz foydalanish huquqi faol";
+"paywall.plan.current" = "Joriy tarif";
+"settings.premium.paid_active" = "Premium faol";

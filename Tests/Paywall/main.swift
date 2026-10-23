@@ -54,4 +54,78 @@ check(savings("12", "2", "", "") == nil, "Empty currency is invalid")
 check(savings("0.01", "100") == 99, "Never round up to 100% free")
 check(PaywallSavings.annualPercent(annual: .nan, monthly: 1,
                                   annualCurrency: "USD", monthlyCurrency: "USD") == nil, "Reject NaN")
-print("PASS: \(checks) purchase catalog, trial-policy and savings checks")
+for paid in [false, true] {
+    for pending in [false, true] {
+        for product in [nil, "unknown"] + ProPurchasePlan.allCases.map({ Optional($0.productIdentifier) }) {
+            let access = PaywallAccessPresentation(hasPaidAccess: paid, productIdentifier: product,
+                                                  awaitingConfirmation: pending)
+            check((access.statusKey != nil) == paid, "Only canonical paid access displays an active status")
+            if !paid || pending {
+                check(access.currentPlan == nil, "Expired/demo/unconfirmed products are not current plans")
+            }
+            for selected in ProPurchasePlan.allCases {
+                let action = access.action(for: selected)
+                if pending {
+                    check(action == .retry, "Pending verification retries, never charges again")
+                } else if !paid {
+                    check(action == .purchase, "Stale SDK metadata cannot hide purchases after revocation")
+                } else if access.currentPlan == .lifetime {
+                    check(action == .none, "Lifetime suppresses purchases for every selection")
+                    check(access.statusKey == "paywall.status.lifetime", "Lifetime is not described as a subscription")
+                } else if selected == access.currentPlan {
+                    check(action == .none, "Current plan is already owned; no repeat purchase or management redirect")
+                } else {
+                    check(action == .purchase, "Other plans remain selectable for a subscriber")
+                }
+            }
+        }
+    }
+}
+for plan in [ProPurchasePlan.monthly, .annual] {
+    let offline = PaywallAccessPresentation(hasPaidAccess: true, productIdentifier: plan.productIdentifier,
+                                           awaitingConfirmation: false)
+    check(offline.currentPlan == plan, "Cached paid receipt retains its plan offline, without a local expiry timer")
+    check(offline.statusKey == "paywall.status.\(plan.rawValue)", "Correct subscription status")
+}
+check(PurchaseCustomerIdentity.isCanonical("pc-e53ccc48-9fd3-4252-93f6-ea6111046888"), "Recognize server purchase owner")
+for legacy in ["", "pc-", "pc-invalid", "sb-e53ccc48-9fd3-4252-93f6-ea6111046888", "$RCAnonymousID:123"] {
+    check(!PurchaseCustomerIdentity.isCanonical(legacy), "Legacy or malformed identity must be resolved by server")
+}
+let monthly = PaywallAccessPresentation(hasPaidAccess: true,
+    productIdentifier: ProPurchasePlan.monthly.productIdentifier, awaitingConfirmation: false)
+check(monthly.action(for: .annual) == .purchase, "Monthly subscriber can purchase annual, not open cancellation management")
+check(monthly.action(for: .monthly) == .none, "Monthly subscriber cannot buy the same current plan again")
+check(monthly.action(for: .lifetime) == .purchase, "Monthly subscriber can select lifetime")
+// Delayed server confirmation: same process, no app restart or second payment.
+var confirmation = PurchaseConfirmationState.idle
+confirmation.recordVerification(false)
+check(confirmation == .awaiting, "First negative verification waits, not success")
+let waiting = confirmation
+confirmation.receivedInactiveSDKEntitlement()
+check(confirmation == .awaiting, "Stale SDK data must not lose pending operation")
+confirmation.recordVerification(nil)
+check(confirmation == .awaiting, "Unavailable verifier cannot confirm a purchase")
+check(!PurchaseConfirmationState.shouldDismiss(previous: waiting, current: confirmation), "Network failure keeps paywall open")
+confirmation.recordVerification(true)
+check(confirmation == .confirmed, "Late positive verification clears waiting")
+check(PurchaseConfirmationState.shouldDismiss(previous: waiting, current: confirmation), "Late success closes paywall")
+let confirmedAnnual = PaywallAccessPresentation(hasPaidAccess: true,
+    productIdentifier: ProPurchasePlan.annual.productIdentifier, awaitingConfirmation: confirmation == .awaiting)
+check(confirmedAnnual.statusKey == "paywall.status.annual", "Plan is visible immediately after delayed confirmation")
+check(!PurchaseConfirmationState.shouldDismiss(previous: .idle, current: .idle), "Existing paid access alone cannot close paywall")
+check(!PurchaseConfirmationState.shouldDismiss(previous: .confirmed, current: .confirmed), "Reopening paid paywall keeps it open")
+check(!PurchaseConfirmationState.shouldDismiss(previous: .awaiting, current: .idle), "Revocation or reset is not purchase success")
+confirmation.receivedInactiveSDKEntitlement()
+check(confirmation == .idle, "Inactive entitlement clears previous completion, never grants access")
+let recoveryNow = Date(timeIntervalSince1970: 1000)
+for awaiting in [false, true] {
+    for inFlight in [false, true] {
+        for remaining in [nil, -1, 0, 1, 120] as [TimeInterval?] {
+            let deadline = remaining.map { recoveryNow.addingTimeInterval($0) }
+            check(PendingPurchaseRecovery.shouldRetry(awaiting: awaiting, inFlight: inFlight,
+                deadline: deadline, now: recoveryNow) == (awaiting && !inFlight && (remaining ?? -1) > 0),
+                "Automatic recovery is bounded, pending-only and never concurrent with purchase/restore")
+        }
+    }
+}
+print("PASS: \(checks) purchase catalog, identity, trial-policy, savings and paid presentation checks")

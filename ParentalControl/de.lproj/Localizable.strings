@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "Dein Kauf wartet auf die Bestätigung durch den Server. Du musst nicht erneut bezahlen. Versuche es noch einmal oder stelle die Käufe später wieder her.";
 "settings.premium.available" = "Premium verfügbar";
 "parent_mode.entry.unavailable" = "Die PIN ist vorübergehend nicht verfügbar. Entsperre dieses Handy und versuche es später mit einer Internetverbindung erneut. Bitte deine Eltern um Hilfe, falls das Problem weiterhin besteht.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Monatsabo aktiv";
+"paywall.status.annual" = "Jahresabo aktiv";
+"paywall.status.lifetime" = "Dauerhafter Zugang aktiv";
+"paywall.plan.current" = "Aktueller Tarif";
+"settings.premium.paid_active" = "Premium aktiv";

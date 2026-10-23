@@ -126,15 +126,15 @@ struct SettingsView: View {
     }
 
     private var premiumSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let hasPaidAccess = appState.isFamilyAccessAllowed && FamilyAccessStore.receipt?.lease.state == .paid
+        return VStack(alignment: .leading, spacing: 10) {
             Text("settings.section.premium")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.95))
 
             settingsRow(
-                titleKey: (appState.isFamilyAccessAllowed && FamilyAccessStore.receipt?.lease.state == .paid)
-                    ? "settings.premium.available"
-                    : "settings.premium.unlock_all"
+                titleKey: hasPaidAccess ? "settings.premium.paid_active" : "settings.premium.unlock_all",
+                titleColor: hasPaidAccess ? AppTheme.neonGreen : .white
             ) {
                 guard appState.deviceRole == .parent else { return }
                 AppAnalytics.report("settings_premium_tap")
@@ -529,12 +529,12 @@ struct SettingsView: View {
         UIApplication.shared.open(url)
     }
 
-    private func settingsRow(titleKey: String, action: @escaping () -> Void) -> some View {
+    private func settingsRow(titleKey: String, titleColor: Color = .white, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack {
                 Text(LocalizedStringKey(titleKey))
                     .font(.body.weight(.medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(titleColor)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.bold))

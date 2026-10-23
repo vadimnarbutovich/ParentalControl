@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Achiziția așteaptă confirmarea serverului. Nu trebuie să plătești din nou. Încearcă din nou sau restaurează achizițiile mai târziu.";
 "settings.premium.available" = "Premium disponibil";
 "parent_mode.entry.unavailable" = "Codul PIN nu este disponibil momentan. Deblochează acest telefon și încearcă din nou mai târziu, cu o conexiune la internet. Dacă problema persistă, cere ajutorul unui părinte.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Abonament lunar activ";
+"paywall.status.annual" = "Abonament anual activ";
+"paywall.status.lifetime" = "Acces pe viață activ";
+"paywall.plan.current" = "Planul actual";
+"settings.premium.paid_active" = "Premium activ";

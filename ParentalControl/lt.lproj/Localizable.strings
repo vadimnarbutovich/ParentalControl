@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Laukiama serverio patvirtinimo apie pirkinį. Dar kartą mokėti nereikia. Bandykite dar kartą arba vėliau atkurkite pirkinius.";
 "settings.premium.available" = "Premium prieinama";
 "parent_mode.entry.unavailable" = "PIN kodas laikinai nepasiekiamas. Atrakinkite šį telefoną ir vėliau bandykite dar kartą prisijungę prie interneto. Jei problema išlieka, paprašykite tėvų pagalbos.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Mėnesio prenumerata aktyvi";
+"paywall.status.annual" = "Metinė prenumerata aktyvi";
+"paywall.status.lifetime" = "Neriboto laiko prieiga aktyvi";
+"paywall.plan.current" = "Dabartinis planas";
+"settings.premium.paid_active" = "Premium aktyvus";

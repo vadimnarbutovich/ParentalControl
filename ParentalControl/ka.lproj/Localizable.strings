@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "შესყიდვა სერვერის დადასტურებას ელოდება. ხელახლა გადახდა საჭირო არ არის. სცადეთ ხელახლა ან მოგვიანებით აღადგინეთ შესყიდვები.";
 "settings.premium.available" = "Premium ხელმისაწვდომია";
 "parent_mode.entry.unavailable" = "PIN დროებით მიუწვდომელია. განბლოკეთ ტელეფონი და მოგვიანებით, ინტერნეტთან კავშირისას, ხელახლა სცადეთ. თუ პრობლემა არ მოგვარდება, დახმარება მშობელს სთხოვეთ.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "თვიური გამოწერა აქტიურია";
+"paywall.status.annual" = "წლიური გამოწერა აქტიურია";
+"paywall.status.lifetime" = "უვადო წვდომა აქტიურია";
+"paywall.plan.current" = "მიმდინარე გეგმა";
+"settings.premium.paid_active" = "Premium აქტიურია";

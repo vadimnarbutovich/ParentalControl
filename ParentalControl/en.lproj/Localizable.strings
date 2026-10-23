@@ -668,3 +668,9 @@
 "paywall.purchase.pending_verification" = "Your purchase is awaiting server confirmation. You do not need to pay again. Tap Try again or restore purchases later.";
 "settings.premium.available" = "Premium available";
 "parent_mode.entry.unavailable" = "The PIN is temporarily unavailable. Unlock this phone and try again later with an internet connection. If the problem persists, ask a parent for help.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Monthly subscription active";
+"paywall.status.annual" = "Annual subscription active";
+"paywall.status.lifetime" = "Lifetime access active";
+"paywall.plan.current" = "Current plan";
+"settings.premium.paid_active" = "Premium active";

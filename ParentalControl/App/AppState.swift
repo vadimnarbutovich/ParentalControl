@@ -44,6 +44,14 @@ final class AppState: ObservableObject {
         accessCheckInFlight = true
         lastAccessCheck = Date()
         defer { accessCheckInFlight = false; adoptFamilyAccess() }
+        if let service = subscriptionService,
+           PendingPurchaseRecovery.shouldRetry(awaiting: service.isAwaitingServerConfirmation,
+               inFlight: service.isLoading, deadline: purchaseRecoveryUntil, now: Date()) {
+            // Replace this scheduled status request, rather than adding another
+            // polling loop. Only verify_purchase can complete purchase UI state.
+            _ = await service.retryPendingPurchaseConfirmation(automatic: true)
+            return
+        }
         let ready = hasCompletedOnboarding && (deviceRole == .parent ||
             (screenTimeService.isAuthorized && (!screenTimeService.selection.applicationTokens.isEmpty ||
                 !screenTimeService.selection.categoryTokens.isEmpty || !screenTimeService.selection.webDomainTokens.isEmpty)))
@@ -1119,6 +1127,10 @@ final class AppState: ObservableObject {
     /// сторону ребёнка кэшированным статусом + фоновым обновлением с backend.
     func attachSubscriptionService(_ service: SubscriptionService) {
         subscriptionService = service
+        service.resolveServerPurchaseIdentity = { [weak self] in
+            guard let self, self.deviceRole == .parent else { throw NSError(domain: "ParentalAccess", code: 403) }
+            return try await self.remoteSyncService.purchaseIdentity()
+        }
         service.prepareServerPurchase = { [weak self] in
             guard let self, self.deviceRole == .parent else { throw NSError(domain: "ParentalAccess", code: 403) }
             try await self.remoteSyncService.accessStatus(ready: self.hasCompletedOnboarding)
@@ -1126,11 +1138,11 @@ final class AppState: ObservableObject {
         }
         service.verifyServerPurchase = { [weak self] in
             guard let self else { return false }
-            self.purchaseRecoveryUntil = Date().addingTimeInterval(120)
-            self.lastAccessCheck = nil
-            let confirmed = try await self.remoteSyncService.verifyPurchase()
-            self.adoptFamilyAccess()
-            return confirmed
+            return try await self.verifyServerPurchase(restartRecovery: true)
+        }
+        service.recheckServerPurchase = { [weak self] in
+            guard let self else { return false }
+            return try await self.verifyServerPurchase(restartRecovery: false)
         }
         service.onEntitlementChange = { [weak self] isActive in
             guard let self else { return }
@@ -1144,6 +1156,18 @@ final class AppState: ObservableObject {
             // Публикуем текущий известный статус родителя (на случай, если он изменился офлайн).
             Task { await pushParentProStatusIfNeeded(service.hasActiveEntitlement) }
         }
+    }
+
+    private func verifyServerPurchase(restartRecovery: Bool) async throws -> Bool {
+        guard deviceRole == .parent else { return false }
+        if restartRecovery {
+            purchaseRecoveryUntil = Date().addingTimeInterval(120)
+            lastAccessCheck = nil
+        }
+        let confirmed = try await remoteSyncService.verifyPurchase()
+        if confirmed { purchaseRecoveryUntil = nil }
+        adoptFamilyAccess()
+        return confirmed
     }
 
     /// Parent → backend: отправляет Pro-статус родителя (`set_parent_pro`). No-op для не-родителя,

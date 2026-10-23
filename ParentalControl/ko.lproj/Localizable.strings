@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "서버에서 구매를 확인하고 있습니다. 다시 결제할 필요가 없습니다. 다시 시도하거나 나중에 구매를 복원해 주세요.";
 "settings.premium.available" = "Premium 이용 가능";
 "parent_mode.entry.unavailable" = "현재 PIN을 사용할 수 없습니다. 이 휴대전화의 잠금을 해제하고 인터넷에 연결한 뒤 잠시 후 다시 시도해 주세요. 문제가 계속되면 보호자에게 도움을 요청하세요.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "월간 구독 이용 중";
+"paywall.status.annual" = "연간 구독 이용 중";
+"paywall.status.lifetime" = "평생 이용권 사용 중";
+"paywall.plan.current" = "현재 요금제";
+"settings.premium.paid_active" = "Premium 이용 중";

@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Pirkums gaida servera apstiprinājumu. Atkārtoti maksāt nav nepieciešams. Mēģiniet vēlreiz vai vēlāk atjaunojiet pirkumus.";
 "settings.premium.available" = "Premium pieejams";
 "parent_mode.entry.unavailable" = "PIN kods pašlaik nav pieejams. Atbloķējiet šo tālruni un vēlāk mēģiniet vēlreiz ar interneta savienojumu. Ja problēma joprojām pastāv, lūdziet palīdzību vecākiem.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Mēneša abonements ir aktīvs";
+"paywall.status.annual" = "Gada abonements ir aktīvs";
+"paywall.status.lifetime" = "Neierobežota laika piekļuve ir aktīva";
+"paywall.plan.current" = "Pašreizējais plāns";
+"settings.premium.paid_active" = "Premium ir aktīvs";

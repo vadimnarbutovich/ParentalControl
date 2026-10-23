@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Η αγορά σας αναμένει επιβεβαίωση από τον διακομιστή. Δεν χρειάζεται να πληρώσετε ξανά. Δοκιμάστε ξανά ή επαναφέρετε τις αγορές αργότερα.";
 "settings.premium.available" = "Το Premium είναι διαθέσιμο";
 "parent_mode.entry.unavailable" = "Το PIN δεν είναι διαθέσιμο προσωρινά. Ξεκλειδώστε το τηλέφωνο και δοκιμάστε αργότερα με σύνδεση στο διαδίκτυο. Αν το πρόβλημα επιμένει, ζητήστε βοήθεια από έναν γονέα.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Ενεργή μηνιαία συνδρομή";
+"paywall.status.annual" = "Ενεργή ετήσια συνδρομή";
+"paywall.status.lifetime" = "Ενεργή πρόσβαση εφ’ όρου ζωής";
+"paywall.plan.current" = "Τρέχον πρόγραμμα";
+"settings.premium.paid_active" = "Το Premium είναι ενεργό";

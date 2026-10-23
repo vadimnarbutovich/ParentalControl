@@ -19,7 +19,9 @@ struct PaywallView: View {
     @ScaledMetric(relativeTo: .subheadline) private var priceSize = 14
 
     private var selectedPackage: Package? { subscriptionService.package(for: selectedPlan) }
-    private var hasTrial: Bool { selectedPlan == .annual && subscriptionService.annualTrialEligible }
+    private var access: PaywallAccessPresentation { subscriptionService.paywallAccess }
+    private var offersTrial: Bool { !access.hasPaidAccess && !access.awaitingConfirmation && subscriptionService.annualTrialEligible }
+    private var hasTrial: Bool { selectedPlan == .annual && offersTrial }
     private var busy: Bool { subscriptionService.isLoading || isRefreshing }
     private var annualSavings: Int? {
         guard let annual = subscriptionService.package(for: .annual)?.storeProduct,
@@ -75,6 +77,13 @@ struct PaywallView: View {
         }
         .preferredColorScheme(.dark)
         .task { await refresh() }
+        .onChange(of: subscriptionService.purchaseConfirmationState) { previous, current in
+            // Close only after an operation that was pending completes. Merely
+            // opening the paywall with an existing paid lease must not dismiss it.
+            if PurchaseConfirmationState.shouldDismiss(previous: previous, current: current) {
+                isPresented = false
+            }
+        }
         .onAppear {
             AppAnalytics.report("paywall_open", parameters: ["source": openSource.rawValue])
         }
@@ -125,7 +134,7 @@ struct PaywallView: View {
         guard let package = subscriptionService.package(for: plan) else {
             return String(localized: "paywall.price.loading")
         }
-        let key = plan == .annual && subscriptionService.annualTrialEligible
+        let key = plan == .annual && offersTrial
             ? "paywall.price.annual_trial_format" : plan.priceKey
         return String(format: NSLocalizedString(key, comment: ""), package.storeProduct.localizedPriceString)
     }
@@ -145,6 +154,11 @@ struct PaywallView: View {
                         Text(LocalizedStringKey(plan.titleKey))
                             .font(.system(size: planTitleSize, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
+                        if access.currentPlan == plan {
+                            Text("paywall.plan.current")
+                                .font(.system(.caption, design: .rounded, weight: .semibold))
+                                .foregroundStyle(AppTheme.neonGreen)
+                        }
                         Text(priceLine(plan))
                             .font(.system(size: priceSize, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.75))
@@ -181,7 +195,7 @@ struct PaywallView: View {
     }
 
     @ViewBuilder private var annualBadges: some View {
-        if subscriptionService.annualTrialEligible || annualSavings != nil {
+        if offersTrial || annualSavings != nil {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     trialBadge
@@ -197,7 +211,7 @@ struct PaywallView: View {
     }
 
     @ViewBuilder private var trialBadge: some View {
-        if subscriptionService.annualTrialEligible {
+        if offersTrial {
             PaywallTrialBadge()
         }
     }
@@ -219,11 +233,19 @@ struct PaywallView: View {
     /// Keep the action and the selected price visible, including on compact phones.
     private var purchaseFooter: some View {
         VStack(spacing: 10) {
-            if subscriptionService.hasLifetimeAccess && subscriptionService.hasServerConfirmedPurchase {
-                Text("settings.premium.active")
-                    .font(.headline)
+            if let statusKey = access.statusKey {
+                Text(LocalizedStringKey(statusKey))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .foregroundStyle(AppTheme.neonGreen)
-            } else {
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            switch access.action(for: selectedPlan) {
+            case .none:
+                EmptyView()
+            case .retry:
+                purchaseButton
+            case .purchase:
                 Text(priceLine(selectedPlan))
                     .font(.system(.caption, design: .rounded, weight: .medium))
                     .foregroundStyle(.white.opacity(0.8))
@@ -247,7 +269,15 @@ struct PaywallView: View {
                 .font(.footnote)
                 .foregroundStyle(.orange)
                 .multilineTextAlignment(.center)
-            Button("paywall.retry") { Task { await refresh() } }
+            Button("paywall.retry") {
+                Task {
+                    if subscriptionService.isAwaitingServerConfirmation {
+                        if await subscriptionService.retryPendingPurchaseConfirmation() { isPresented = false }
+                    } else {
+                        await refresh()
+                    }
+                }
+            }
                 .foregroundStyle(AppTheme.neonBlue)
                 .disabled(busy)
         }
@@ -261,11 +291,14 @@ struct PaywallView: View {
 
     private var purchaseButton: some View {
         Button {
-            guard let package = selectedPackage else { return }
             AppAnalytics.report("paywall_cta_tap", parameters: ["cta_type": hasTrial ? "start_trial" : "continue"])
             Task {
                 restoreStatusKey = nil
-                if await subscriptionService.purchase(package) { isPresented = false }
+                if subscriptionService.isAwaitingServerConfirmation {
+                    if await subscriptionService.retryPendingPurchaseConfirmation() { isPresented = false }
+                } else if let package = selectedPackage {
+                    if await subscriptionService.purchase(package) { isPresented = false }
+                }
             }
         } label: {
             HStack(spacing: 10) {
@@ -285,8 +318,9 @@ struct PaywallView: View {
         }
         .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen,
                                            shimmeringSheen: !reduceMotion && !busy && selectedPackage != nil))
-        .disabled(busy || selectedPackage == nil || !subscriptionService.isConfigured)
-        .opacity(busy || selectedPackage == nil ? 0.55 : 1)
+        .disabled(busy || (!subscriptionService.isAwaitingServerConfirmation
+            && (selectedPackage == nil || !subscriptionService.isConfigured)))
+        .opacity(busy || (!subscriptionService.isAwaitingServerConfirmation && selectedPackage == nil) ? 0.55 : 1)
     }
 
     private var legalLinks: some View {
@@ -328,7 +362,7 @@ struct PaywallView: View {
         guard !busy else { return }
         isRefreshing = true
         defer { isRefreshing = false }
-        await subscriptionService.refreshAll()
+        await subscriptionService.refreshForPaywall()
     }
 }
 

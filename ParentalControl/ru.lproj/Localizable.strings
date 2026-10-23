@@ -668,3 +668,9 @@
 "paywall.purchase.pending_verification" = "Ожидаем подтверждения покупки сервером. Повторно платить не нужно. Нажмите «Повторить» или восстановите покупки позже.";
 "settings.premium.available" = "Premium доступен";
 "parent_mode.entry.unavailable" = "PIN пока недоступен. Разблокируйте телефон и попробуйте позже при подключении к интернету. Если проблема сохраняется, обратитесь к родителю.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Активна месячная подписка";
+"paywall.status.annual" = "Активна годовая подписка";
+"paywall.status.lifetime" = "Пожизненный доступ активен";
+"paywall.plan.current" = "Текущий план";
+"settings.premium.paid_active" = "Premium активен";

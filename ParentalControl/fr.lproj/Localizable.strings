@@ -664,3 +664,9 @@
 "paywall.purchase.pending_verification" = "Votre achat est en attente de confirmation par le serveur. Vous n’avez pas à payer à nouveau. Réessayez ou restaurez vos achats plus tard.";
 "settings.premium.available" = "Premium disponible";
 "parent_mode.entry.unavailable" = "Le code PIN est temporairement indisponible. Déverrouillez ce téléphone et réessayez plus tard avec une connexion Internet. Si le problème persiste, demandez de l’aide à un parent.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Abonnement mensuel actif";
+"paywall.status.annual" = "Abonnement annuel actif";
+"paywall.status.lifetime" = "Accès à vie actif";
+"paywall.plan.current" = "Offre actuelle";
+"settings.premium.paid_active" = "Premium actif";

@@ -68,6 +68,69 @@ enum ProPurchasePlan: String, CaseIterable, Identifiable {
     }
 }
 
+/// Presentation only: SDK product metadata never grants access or overrides a server revocation.
+struct PaywallAccessPresentation: Equatable {
+    enum Action: Equatable { case purchase, retry, none }
+    let hasPaidAccess: Bool
+    let productIdentifier: String?
+    let awaitingConfirmation: Bool
+
+    var currentPlan: ProPurchasePlan? {
+        guard hasPaidAccess, !awaitingConfirmation else { return nil }
+        return ProPurchasePlan.allCases.first { $0.productIdentifier == productIdentifier }
+    }
+
+    var statusKey: String? {
+        guard hasPaidAccess else { return nil }
+        switch currentPlan {
+        case .monthly: return "paywall.status.monthly"
+        case .annual: return "paywall.status.annual"
+        case .lifetime: return "paywall.status.lifetime"
+        case nil: return "settings.premium.available"
+        }
+    }
+
+    func action(for selectedPlan: ProPurchasePlan) -> Action {
+        if awaitingConfirmation { return .retry }
+        guard hasPaidAccess else { return .purchase }
+        if currentPlan == .lifetime || currentPlan == selectedPlan { return .none }
+        return .purchase
+    }
+}
+
+/// The server assigns the purchase owner; never derive it from a family or an Apple ID.
+enum PurchaseCustomerIdentity {
+    static func isCanonical(_ value: String) -> Bool {
+        value.hasPrefix("pc-") && UUID(uuidString: String(value.dropFirst(3))) != nil
+    }
+}
+
+/// Use the existing access-recovery cadence, never create an unbounded retry loop.
+enum PendingPurchaseRecovery {
+    static func shouldRetry(awaiting: Bool, inFlight: Bool, deadline: Date?, now: Date) -> Bool {
+        awaiting && !inFlight && deadline.map { $0 > now } == true
+    }
+}
+
+/// Completion of a purchase/restore operation, not the user's access entitlement.
+/// A cached paid lease or SDK update cannot complete a pending server verification.
+enum PurchaseConfirmationState: Equatable {
+    case idle, awaiting, confirmed
+
+    mutating func recordVerification(_ serverConfirmed: Bool?) {
+        self = serverConfirmed == true ? .confirmed : .awaiting
+    }
+
+    mutating func receivedInactiveSDKEntitlement() {
+        // A stale SDK response must not erase an operation still being verified.
+        if self == .confirmed { self = .idle }
+    }
+
+    static func shouldDismiss(previous: Self, current: Self) -> Bool {
+        previous == .awaiting && current == .confirmed
+    }
+}
+
 /// Compare regular yearly billing with twelve monthly payments in the same currency.
 /// Never substitute a marketing constant when StoreKit prices are unavailable.
 enum PaywallSavings {

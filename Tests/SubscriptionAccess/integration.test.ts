@@ -50,7 +50,10 @@ test("renewal uses server check deadline and Premium uses effective paid access"
   const premium = settings.slice(settings.indexOf("private var premiumSection"), settings.indexOf("private var premiumSection") + 1100);
   assert.match(premium, /appState.isFamilyAccessAllowed && FamilyAccessStore.receipt\?\.lease.state == \.paid/);
   assert.ok(!premium.includes("hasActiveEntitlement"));
-  assert.match(premium, /settings.premium.available/);
+  assert.match(premium, /hasPaidAccess \? "settings.premium.paid_active" : "settings.premium.unlock_all"/);
+  assert.match(premium, /titleColor: hasPaidAccess \? AppTheme.neonGreen : \.white/);
+  assert.match(settings, /titleColor: Color = \.white/);
+  assert.match(settings, /foregroundStyle\(titleColor\)/);
 });
 
 test("paid cached state has no local expiry monitor and foreground revalidates", () => {

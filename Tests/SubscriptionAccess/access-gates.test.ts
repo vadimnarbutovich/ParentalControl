@@ -50,7 +50,8 @@ test("enabling removal protection is gated, disabling remains PIN-only recovery"
 test("purchase and restore cannot succeed using optional verifier or SDK flag alone", () => {
   const source = readFileSync(new URL("../../ParentalControl/Services/SubscriptionService.swift", import.meta.url), "utf8");
   assert.match(source, /verifyServerPurchase: \(\(\) async throws -> Bool\)\?/);
-  assert.match(source, /if try await verifyServerPurchase\?\(\) == true/);
+  assert.match(source, /let verifier = automatic \? recheckServerPurchase : verifyServerPurchase/);
+  assert.match(source, /if try await verifier\?\(\) == true/);
   assert.match(source, /guard await confirmServerPurchase\(\) else \{ return \.pendingVerification \}/);
   assert.ok(source.includes('L10n.tr("paywall.purchase.pending_verification")'));
 });

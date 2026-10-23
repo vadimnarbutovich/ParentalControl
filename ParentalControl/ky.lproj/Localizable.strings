@@ -607,3 +607,9 @@
 "paywall.purchase.pending_verification" = "Сатып алуунун сервер тарабынан ырасталышын күтүп жатабыз. Кайра төлөөнүн кереги жок. Кайра аракет кылыңыз же сатып алууларды кийин калыбына келтириңиз.";
 "settings.premium.available" = "Premium жеткиликтүү";
 "parent_mode.entry.unavailable" = "PIN код убактылуу жеткиликсиз. Телефондун кулпусун ачып, интернетке туташканда кийинчерээк кайра аракет кылыңыз. Маселе чечилбесе, ата-энеңизден жардам сураңыз.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Айлык жазылуу активдүү";
+"paywall.status.annual" = "Жылдык жазылуу активдүү";
+"paywall.status.lifetime" = "Мөөнөтсүз мүмкүнчүлүк активдүү";
+"paywall.plan.current" = "Учурдагы план";
+"settings.premium.paid_active" = "Premium активдүү";
