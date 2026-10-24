@@ -110,3 +110,16 @@ test("only the foremost parent presentation handles a paywall request", () => {
   assert.match(host, /\.onDisappear \{ FamilyAccessPresentation.stack.unregister\(id\) \}/);
   assert.match(read("ContentView.swift"), /\.familyAccessPaywall\(isRoot: true\)/);
 });
+
+test("paywalls use full-screen presentation without replacing the underlying editor", () => {
+  const host = read("Views/FamilyAccessPaywallPresenter.swift");
+  assert.match(host, /\.fullScreenCover\(isPresented: \$isPresented\) \{\s*PaywallView\(isPresented: \$isPresented\)/);
+  assert.doesNotMatch(host, /\.sheet\(|dismiss\(\)/);
+  for (const path of ["Views/SettingsView.swift", "Views/DashboardView.swift", "Views/BlockListView.swift"]) {
+    assert.match(read(path), /\.fullScreenCover\(isPresented: \$showPaywall\)/);
+    assert.doesNotMatch(read(path), /\.sheet\(isPresented: \$showPaywall\)/);
+  }
+  const paywall = read("Views/PaywallView.swift");
+  assert.match(paywall, /Button \{ isPresented = false \} label:/);
+  assert.match(paywall, /PurchaseConfirmationState.shouldDismiss\(previous: previous, current: current\)/);
+});

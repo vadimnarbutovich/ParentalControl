@@ -23,7 +23,7 @@ private struct FamilyAccessPaywallPresenter: ViewModifier {
                       FamilyAccessPresentation.stack.presenter == id else { return }
                 isPresented = true
             }
-            .sheet(isPresented: $isPresented) {
+            .fullScreenCover(isPresented: $isPresented) {
                 PaywallView(isPresented: $isPresented)
                     .environmentObject(subscriptions)
             }
@@ -31,7 +31,8 @@ private struct FamilyAccessPaywallPresenter: ViewModifier {
 }
 
 extension View {
-    /// Sheets own their paywall so denial never replaces or dismisses a draft.
+    /// Each presentation owns its full-screen paywall so closing it returns to
+    /// the same screen, including an editor sheet with an unsaved draft.
     func familyAccessPaywall(isRoot: Bool = false) -> some View {
         modifier(FamilyAccessPaywallPresenter(isRoot: isRoot))
     }
