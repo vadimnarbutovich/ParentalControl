@@ -6,6 +6,40 @@ const root = path.resolve(__dirname, '../..');
 const read = name => fs.readFileSync(path.join(root,name),'utf8');
 const view = read('ParentalControl/Views/PaywallView.swift');
 const header = view.split('private var header: some View')[1].split('private var features: some View')[0];
+const closeBar = view.split('.safeAreaInset(edge: .top, spacing: 0)')[1].split('.safeAreaInset(edge: .bottom')[0];
+assert.ok(!closeBar.includes('paywall.title.brand'), 'Only the close button remains pinned');
+const title = view.split('private func scrollingTitle(following bounds: Anchor<CGRect>?) -> some View')[1].split('private func familyArtwork')[0];
+assert.match(view, /\.overlayPreferenceValue\(PaywallIntroductionBoundsKey.self\) \{ bounds in\s+scrollingTitle\(following: bounds\)/);
+assert.match(title, /\.offset\(y: geometry\[bounds\].minY - closeButtonSize - closeBarVerticalPadding\)/,
+  'Title follows scrolling without moving the rest of the layout');
+assert.match(title, /\.padding\(\.horizontal, closeButtonSize \+ 24\)/,
+  'Leave room for the close button on either side of the centered title');
+assert.match(title, /\.allowsHitTesting\(false\)/);
+assert.match(title, /\.clipped\(\)/);
+assert.match(header, /Text\("paywall.title.brand"\)[\s\S]*?\.hidden\(\)\s+\.accessibilityHidden\(true\)/,
+  'Preserve original title space without showing or announcing a duplicate');
+const features = view.split('private var features: some View')[1].split('private func feature(')[0];
+const artwork = view.split('private func familyArtwork(endingAt bounds: Anchor<CGRect>?) -> some View')[1].split('private var header: some View')[0];
+assert.match(view, /VStack\(spacing: 18\) \{\s+header\s+features\s+\}\s+\.anchorPreference\(key: PaywallIntroductionBoundsKey.self, value: \.bounds\)/,
+  'Artwork bottom follows the introduction, not the plan cards');
+assert.match(view, /\.backgroundPreferenceValue\(PaywallIntroductionBoundsKey.self\)[\s\S]*AppBackgroundView\(\)\s+familyArtwork\(endingAt: bounds\)/,
+  'Artwork remains behind all text and controls');
+assert.ok(!features.includes('onboardingFamily'), 'Artwork is no longer attached to the feature list');
+assert.match(artwork, /Image\("onboardingFamily"\)/);
+assert.match(artwork, /alignment: \.center/);
+assert.match(artwork, /\.opacity\(0\.24\)/);
+assert.match(artwork, /\.clipped\(\)/);
+assert.match(artwork, /let topExtension = closeButtonSize \+ closeBarVerticalPadding/,
+  'Extend only to the close button, not the physical top of the screen');
+assert.match(artwork, /let height = introduction.height \+ topExtension/,
+  'Artwork height depends on content size, never the scroll position');
+assert.doesNotMatch(artwork, /maxY|geometry.size.height/,
+  'Viewport position must not resize artwork during scrolling');
+assert.match(artwork, /\.offset\(x: introduction.minX, y: introduction.minY - topExtension\)/,
+  'Artwork moves intact with the introduction and stays above the plan cards');
+assert.match(artwork, /min\(introduction.width, 360\)/, 'Keep the original modest width limit');
+assert.match(artwork, /\.allowsHitTesting\(false\)/);
+assert.match(artwork, /\.accessibilityHidden\(true\)/);
 const footer = view.split('private var purchaseFooter: some View')[1].split('@ViewBuilder private var status: some View')[0];
 assert.ok(header.indexOf('paywall.title.brand') < header.indexOf('access.statusKey'));
 assert.ok(header.indexOf('access.statusKey') < header.indexOf('paywall.subtitle'));

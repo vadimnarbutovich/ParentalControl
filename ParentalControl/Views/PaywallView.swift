@@ -1,6 +1,14 @@
 import RevenueCat
 import SwiftUI
 
+private struct PaywallIntroductionBoundsKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? { nil }
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = nextValue() ?? value
+    }
+}
+
 /// Store prices and introductory eligibility come from RevenueCat / StoreKit.
 /// Showing this screen does not enable paid feature restrictions.
 struct PaywallView: View {
@@ -18,6 +26,9 @@ struct PaywallView: View {
     @ScaledMetric(relativeTo: .headline) private var planTitleSize = 17
     @ScaledMetric(relativeTo: .subheadline) private var priceSize = 14
 
+    private let closeButtonSize: CGFloat = 44
+    private let closeBarVerticalPadding: CGFloat = 2
+
     private var selectedPackage: Package? { subscriptionService.package(for: selectedPlan) }
     private var access: PaywallAccessPresentation { subscriptionService.paywallAccess }
     private var offersTrial: Bool { !access.hasPaidAccess && !access.awaitingConfirmation && subscriptionService.annualTrialEligible }
@@ -32,11 +43,13 @@ struct PaywallView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView()
             ScrollView {
                 VStack(spacing: 18) {
-                    header
-                    features
+                    VStack(spacing: 18) {
+                        header
+                        features
+                    }
+                    .anchorPreference(key: PaywallIntroductionBoundsKey.self, value: .bounds) { $0 }
                     VStack(spacing: 10) {
                         ForEach(ProPurchasePlan.allCases) { plan in planCard(plan) }
                     }
@@ -64,16 +77,25 @@ struct PaywallView: View {
                         .font(.system(size: 32))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.white.opacity(0.85))
-                        .frame(width: 44, height: 44)
+                        .frame(width: closeButtonSize, height: closeButtonSize)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("paywall.close"))
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 2)
+            .padding(.vertical, closeBarVerticalPadding)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             purchaseFooter
+        }
+        .backgroundPreferenceValue(PaywallIntroductionBoundsKey.self) { bounds in
+            ZStack {
+                AppBackgroundView()
+                familyArtwork(endingAt: bounds)
+            }
+        }
+        .overlayPreferenceValue(PaywallIntroductionBoundsKey.self) { bounds in
+            scrollingTitle(following: bounds)
         }
         .preferredColorScheme(.dark)
         .task { await refresh() }
@@ -92,11 +114,59 @@ struct PaywallView: View {
         }
     }
 
+    private func scrollingTitle(following bounds: Anchor<CGRect>?) -> some View {
+        // Start at the close bar, then move with the same introduction anchor
+        // as the artwork. The close button itself remains fixed and tappable.
+        GeometryReader { geometry in
+            if let bounds {
+                Text("paywall.title.brand")
+                    .font(.system(size: titleSize, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppTheme.neonGreen)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.horizontal, closeButtonSize + 24)
+                    .frame(width: geometry.size.width, height: closeButtonSize)
+                    .offset(y: geometry[bounds].minY - closeButtonSize - closeBarVerticalPadding)
+                    .accessibilityAddTraits(.isHeader)
+            }
+        }
+        .clipped()
+        .allowsHitTesting(false)
+    }
+
+    private func familyArtwork(endingAt bounds: Anchor<CGRect>?) -> some View {
+        // Extend only to the close button's top. Scrolling moves the artwork
+        // with the introduction; its size never depends on the scroll position.
+        GeometryReader { geometry in
+            if let bounds {
+                let introduction = geometry[bounds]
+                let topExtension = closeButtonSize + closeBarVerticalPadding
+                let height = introduction.height + topExtension
+                Image("onboardingFamily")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: min(introduction.width, 360), height: height)
+                    .frame(width: introduction.width, height: height, alignment: .center)
+                    .clipped()
+                    .offset(x: introduction.minX, y: introduction.minY - topExtension)
+            }
+        }
+        .opacity(0.24)
+        .clipped()
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     private var header: some View {
         VStack(spacing: 8) {
+            // Preserve the original title's layout space so all content below
+            // stays in place; the visible title follows this block above it.
             Text("paywall.title.brand")
                 .font(.system(size: titleSize, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.neonGreen)
+                .hidden()
+                .accessibilityHidden(true)
             if let statusKey = access.statusKey {
                 Text(LocalizedStringKey(statusKey))
                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
