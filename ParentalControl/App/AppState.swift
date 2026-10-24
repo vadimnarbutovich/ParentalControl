@@ -19,6 +19,8 @@ final class AppState: ObservableObject {
     private var lastAccessCheck: Date?
     private var accessCheckInFlight = false
     private var purchaseRecoveryUntil: Date?
+    private var foregroundRefreshInProgress = false
+    private var foregroundRefreshStartedAt: TimeInterval = 0
 
     @discardableResult
     func requireFamilyAccess() -> Bool {
@@ -467,6 +469,7 @@ final class AppState: ObservableObject {
 
     func chooseDeviceRole(_ role: DeviceRole) {
         guard deviceRole != role else { return }
+        remoteSyncService.invalidateRegistration()
         resetParentCommandWatch()
         clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
@@ -503,6 +506,9 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        remoteSyncService.invalidateRegistration()
+        remotePollingTask?.cancel()
+        remotePollingTask = nil
         resetParentCommandWatch()
         clearLocalManualBlockIntent()
         if let family = pairingState?.familyID {
@@ -1484,7 +1490,7 @@ final class AppState: ObservableObject {
         let environment = APNsEnvironment.current()
         Task {
             do {
-                try await remoteSyncService.updateAPNSToken(token, environment: environment)
+                try await remoteSyncService.updateAPNSToken(token, environment: environment, isFresh: true)
             } catch {
                 // Token sync retried on next bootstrap.
             }
@@ -1492,6 +1498,7 @@ final class AppState: ObservableObject {
     }
 
     func handleRemoteNotificationPayload(_ userInfo: [AnyHashable: Any]) {
+        remoteSyncService.invalidateSnapshotRequests()
         guard let commandIDRaw = userInfo["command_id"] as? String,
               let commandID = UUID(uuidString: commandIDRaw) else {
             return
@@ -1510,6 +1517,7 @@ final class AppState: ObservableObject {
     /// miss anything iOS may have throttled. Returns only after work is finished, allowing
     /// iOS to keep the app alive in the background until commands are acked to the backend.
     func applyAndDrainRemoteCommandsIfNeeded(initialPayload: [AnyHashable: Any]?) async {
+        if initialPayload != nil { remoteSyncService.invalidateSnapshotRequests() }
         // 1) Drain commands saved by earlier host push handlers.
         let pending = storage.drainPendingRemoteCommands()
         for item in pending {
@@ -1649,13 +1657,22 @@ final class AppState: ObservableObject {
         guard pairingState?.isLinked == true else { return }
         parentPairingWaitTask?.cancel()
         parentPairingWaitTask = nil
-        remotePollingTask?.cancel()
+        // Bootstrap/foreground can overlap. Keep the existing single loop and
+        // its heartbeat throttles rather than starting another immediate sync.
+        guard remotePollingTask == nil else { return }
         // Сброс троттл-таймеров: первый тик новой polling-сессии делает полный синк.
         lastChildStatsHeartbeatAt = nil
         lastChildPinProRefreshAt = nil
         remotePollingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
+                // Skip at most one polling interval. A slow task/schedule
+                // refresh must not suspend command fallback indefinitely.
+                if self.foregroundRefreshInProgress,
+                   ProcessInfo.processInfo.systemUptime - self.foregroundRefreshStartedAt < 8 {
+                    try? await Task.sleep(nanoseconds: Self.remotePollingIntervalNanos)
+                    continue
+                }
                 // Access recovery must run for every linked device, independently
                 // of focus sessions, and before any ordinary synchronization.
                 await self.refreshFamilyAccess()
@@ -2768,8 +2785,12 @@ final class AppState: ObservableObject {
             blockScheduleEnforcement.refreshFromStoredSchedules()
         }
         startSharedStateRefreshLoop()
+        guard !foregroundRefreshInProgress else { return }
+        foregroundRefreshInProgress = true
+        foregroundRefreshStartedAt = ProcessInfo.processInfo.systemUptime
         // Сначала свежие статусы, потом сброс подавления баннера — иначе один кадр с устаревшим Health и снова «нет доступа».
         Task {
+            defer { foregroundRefreshInProgress = false }
             await refreshFamilyAccess(force: true)
             await refreshPermissionStatuses()
             permissionBannerSuppressedAfterCTA = false
@@ -3450,6 +3471,19 @@ private struct ParentProSyncDTO: Decodable {
 }
 
 private final class ParentalRemoteSyncService {
+    private let readRequests = SyncRequestCoalescer()
+    private let apnsRegistration = APNSRegistrationCoordinator()
+    // Snapshots and idempotent device bootstrap only. Never share purchases,
+    // commands, ACKs or usage uploads. Registration persists credentials first.
+    private static let coalescedReads: Set<String> = [
+        "register_device", "parent_poll", "child_poll", "list_block_schedules", "list_child_tasks"
+    ]
+
+    func invalidateSnapshotRequests() { readRequests.invalidate() }
+    func invalidateRegistration() {
+        readRequests.invalidate()
+        apnsRegistration.invalidate()
+    }
     private enum Endpoint {
         static let focusBaseURL = URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-sync")!
         static let balanceBaseURL = URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-balance-sync")!
@@ -3499,6 +3533,7 @@ private final class ParentalRemoteSyncService {
         self.storage = storage
         self.session = .shared
         self.encoder = JSONEncoder()
+        self.encoder.outputFormatting = [.sortedKeys]
         self.decoder = JSONDecoder()
         encoder.dateEncodingStrategy = .custom { [encodeISO8601Fractional] date, encoder in
             var container = encoder.singleValueContainer()
@@ -3558,16 +3593,18 @@ private final class ParentalRemoteSyncService {
         )
     }
 
-    func updateAPNSToken(_ token: String, environment: String? = nil) async throws {
+    func updateAPNSToken(_ token: String, environment: String? = nil, isFresh: Bool = false) async throws {
         struct Payload: Encodable {
             let installID: String
             let apnsToken: String
             let apnsEnvironment: String?
         }
-        let _: EmptyResponse = try await call(
-            action: "update_apns_token",
-            payload: Payload(installID: installID, apnsToken: token, apnsEnvironment: environment)
-        )
+        try await apnsRegistration.register(token: token, environment: environment, isFresh: isFresh) { [self] value in
+            let _: EmptyResponse = try await call(
+                action: "update_apns_token",
+                payload: Payload(installID: installID, apnsToken: value.token, apnsEnvironment: value.environment)
+            )
+        }
     }
 
     func registerLocationPushToken(_ token: String?) async throws {
@@ -4112,8 +4149,6 @@ private final class ParentalRemoteSyncService {
                 userInfo: [NSLocalizedDescriptionKey: L10n.tr("access.paused")])
         }
         let accessPairing = FamilyAccessStore.pairingData
-        let requestWall = Date().timeIntervalSince1970
-        let requestUptime = ProcessInfo.processInfo.systemUptime
         let endpointURL = endpoint ?? Endpoint.focusBaseURL
         var request = URLRequest(url: endpointURL)
         if let timeout { request.timeoutInterval = timeout }
@@ -4129,25 +4164,45 @@ private final class ParentalRemoteSyncService {
             request.setValue(secret, forHTTPHeaderField: "x-device-secret")
         }
         request.httpBody = try encoder.encode(RequestEnvelope(action: action, payload: payload))
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw SyncError.invalidServerResponse
-        }
-        FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
-            requestWall: requestWall, requestUptime: requestUptime)
-        if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
-            NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
-        }
-        guard (200...299).contains(http.statusCode) else {
-            if let decoded = try? decoder.decode(ErrorResponse.self, from: data),
-               let msg = decoded.error {
-                throw NSError(domain: "ParentalRemoteSync", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: msg])
+        let preparedRequest = request
+        let operation = { @MainActor [self] () async throws -> Data in
+            // One receipt anchor per actual HTTP request, not per waiter.
+            let requestWall = Date().timeIntervalSince1970
+            let requestUptime = ProcessInfo.processInfo.systemUptime
+            let (data, response) = try await session.data(for: preparedRequest)
+            guard let http = response as? HTTPURLResponse else {
+                throw SyncError.invalidServerResponse
             }
-            throw NSError(
-                domain: "ParentalRemoteSync",
-                code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: L10n.tr("remote.error.network_generic")]
-            )
+            FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
+                requestWall: requestWall, requestUptime: requestUptime)
+            if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
+                NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
+            }
+            guard (200...299).contains(http.statusCode) else {
+                if let decoded = try? decoder.decode(ErrorResponse.self, from: data),
+                   let msg = decoded.error {
+                    throw NSError(domain: "ParentalRemoteSync", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: msg])
+                }
+                throw NSError(
+                    domain: "ParentalRemoteSync",
+                    code: http.statusCode,
+                    userInfo: [NSLocalizedDescriptionKey: L10n.tr("remote.error.network_generic")]
+                )
+            }
+            return data
+        }
+        let data: Data
+        if Self.coalescedReads.contains(action) {
+            let key = endpointURL.absoluteString + "|" + (accessPairing?.base64EncodedString() ?? "")
+                + "|" + (preparedRequest.httpBody?.base64EncodedString() ?? "")
+            data = try await readRequests.perform(key: key, operation: operation)
+            try Task.checkCancellation()
+        } else {
+            // A read started before/during a mutation must not be reused after
+            // it. Existing waiters are not cancelled; revision guards still apply.
+            readRequests.invalidate()
+            defer { readRequests.invalidate() }
+            data = try await operation()
         }
         if T.self == EmptyResponse.self {
             return EmptyResponse() as! T

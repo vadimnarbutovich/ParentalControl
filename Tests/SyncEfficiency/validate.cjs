@@ -1,0 +1,26 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '../..');
+const app = fs.readFileSync(path.join(root, 'ParentalControl/App/AppState.swift'), 'utf8');
+const migration = fs.readFileSync(path.join(root, 'supabase/migrations/202610240001_reduce_subscription_sync_work.sql'), 'utf8');
+const whitelist = app.split('private static let coalescedReads: Set<String> = [')[1].split(']')[0];
+assert.deepEqual([...whitelist.matchAll(/"([a-z_]+)"/g)].map(x => x[1]).sort(),
+  ['register_device', 'parent_poll', 'child_poll', 'list_block_schedules', 'list_child_tasks'].sort());
+const call = app.split('private func call<T: Decodable, P: Encodable>')[1].split('func accessStatus')[0];
+assert.ok(call.indexOf('!FamilyAccessStore.allowed') < call.indexOf('readRequests.perform'));
+assert.match(call, /let operation = \{ @MainActor[\s\S]*let requestWall = Date\(\)/);
+assert.match(call, /readRequests.invalidate\(\)\s*defer \{ readRequests.invalidate\(\) \}/);
+assert.match(call, /accessPairing\?\.base64EncodedString/);
+assert.match(call, /preparedRequest.httpBody\?\.base64EncodedString/);
+assert.match(app, /handleRemoteNotificationPayload[^]*?remoteSyncService.invalidateSnapshotRequests\(\)/);
+assert.match(app, /guard !foregroundRefreshInProgress else \{ return \}/);
+assert.match(app, /defer \{ foregroundRefreshInProgress = false \}/);
+assert.match(app, /systemUptime - self.foregroundRefreshStartedAt < 8/);
+assert.match(app, /await refreshFamilyAccess\(force: true\)/);
+assert.match(app, /guard remotePollingTask == nil else \{ return \}/);
+assert.match(app, /remotePollingIntervalNanos: UInt64 = 8_000_000_000/);
+assert.match(migration, /pc_access_maintenance_due\(\) or public.pc_schedule_work_due\(\)/);
+assert.match(migration, /pc_access_allowed_families\(candidates\)/);
+assert.match(migration, /apns_token is distinct from p_token/);
+console.log('Sync efficiency integration guards passed');
