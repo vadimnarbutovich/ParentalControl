@@ -11,8 +11,6 @@ import SwiftUI
 @main
 struct ParentalControlWidgetsBundle: WidgetBundle {
     var body: some Widget {
-        ParentalControlWidgets()
-        ParentalControlWidgetsControl()
         ParentalControlWidgetsLiveActivity()
     }
 }

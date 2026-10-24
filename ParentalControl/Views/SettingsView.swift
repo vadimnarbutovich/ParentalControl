@@ -77,10 +77,6 @@ struct SettingsView: View {
                 switch sheet {
                 case .removalProtection:
                     RemovalProtectionView()
-                case .conversion:
-                    ConversionSettingsSheet()
-                        .environmentObject(appState)
-                        .presentationDragIndicator(.hidden)
                 case .pinSetup:
                     ParentPinSetupSheet()
                         .environmentObject(appState)
@@ -555,198 +551,14 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
     }
-
-    private func settingsToggleRow(titleKey: String, isOn: Binding<Bool>) -> some View {
-        HStack {
-            Text(LocalizedStringKey(titleKey))
-                .font(.body.weight(.medium))
-                .foregroundStyle(.white)
-            Spacer()
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .tint(AppTheme.neonGreen)
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.06))
-        )
-    }
 }
 
 private enum SettingsFocusField: Hashable {
     case childPairingCode
 }
 
-private struct ConversionSettingsSheet: View {
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var stepsText = ""
-    @State private var squatsText = ""
-    @State private var pushUpsText = ""
-    @State private var lastSaved: ConversionSettings?
-    @FocusState private var focusedField: ConversionField?
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.30))
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-
-            ScrollView {
-                VStack(spacing: 24) {
-                    Spacer(minLength: 8)
-                    Text("onboarding.conversion.title")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
-
-                    Text("onboarding.conversion.subtitle")
-                        .font(.system(size: 18, weight: .medium, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white.opacity(0.88))
-                        .padding(.horizontal, 14)
-
-                    HStack(spacing: 20) {
-                        conversionPaceThumb(asset: "walk", tint: AppTheme.neonBlue)
-                        conversionPaceThumb(asset: "squat", tint: AppTheme.neonGreen)
-                        conversionPaceThumb(asset: "pushups", tint: Color.orange.opacity(0.95))
-                    }
-                    .padding(.vertical, 8)
-
-                    VStack(alignment: .leading, spacing: 16) {
-                        conversionPaceField("settings.conversion.steps.per.minute", text: $stepsText, field: .steps)
-                        conversionPaceField("settings.conversion.squats.per.minute", text: $squatsText, field: .squats)
-                        conversionPaceField("settings.conversion.pushups.per.minute", text: $pushUpsText, field: .pushUps)
-                    }
-                    .padding(.horizontal, 6)
-
-                    Button("settings.conversion.reset.defaults") {
-                        applyDefaults()
-                    }
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppTheme.neonBlue)
-                    .padding(.top, 4)
-
-                    Button("settings.conversion.save") {
-                        saveSettingsIfNeeded()
-                        dismiss()
-                    }
-                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
-                    .padding(.top, 8)
-
-                    Spacer(minLength: 24)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 22)
-                .padding(.bottom, 14)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .scrollIndicators(.hidden)
-            .onTapGesture {
-                dismissKeyboard()
-            }
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 2)
-                    .onChanged { _ in
-                        dismissKeyboard()
-                    }
-            )
-        }
-        .appScreenBackground()
-        .onAppear {
-            syncFromState()
-        }
-        .onDisappear {
-            saveSettingsIfNeeded()
-        }
-    }
-
-    private func conversionPaceThumb(asset: String, tint: Color) -> some View {
-        Image(asset)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 72, height: 72)
-            .shadow(color: tint.opacity(0.45), radius: 14, y: 2)
-    }
-
-    private func conversionPaceField(_ titleKey: String, text: Binding<String>, field: ConversionField) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(LocalizedStringKey(titleKey))
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.75))
-            TextField("", text: text)
-                .keyboardType(.numberPad)
-                .focused($focusedField, equals: field)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(AppTheme.glassBorder.opacity(0.4), lineWidth: 1)
-                        )
-                )
-        }
-    }
-
-    private func syncFromState() {
-        let settings = appState.settings
-        stepsText = "\(settings.stepsPerMinute)"
-        squatsText = "\(settings.squatsPerMinute)"
-        pushUpsText = "\(settings.pushUpsPerMinute)"
-        lastSaved = settings
-    }
-
-    private func applyDefaults() {
-        let defaults = ConversionSettings.default
-        stepsText = "\(defaults.stepsPerMinute)"
-        squatsText = "\(defaults.squatsPerMinute)"
-        pushUpsText = "\(defaults.pushUpsPerMinute)"
-    }
-
-    private func saveSettingsIfNeeded() {
-        guard
-            let steps = Int(stepsText), steps > 0,
-            let squats = Int(squatsText), squats > 0,
-            let pushUps = Int(pushUpsText), pushUps > 0
-        else {
-            return
-        }
-
-        let updated = ConversionSettings(
-            stepsPerMinute: steps,
-            squatsPerMinute: squats,
-            pushUpsPerMinute: pushUps
-        )
-        guard updated != lastSaved else { return }
-        appState.updateSettings(updated)
-        lastSaved = updated
-    }
-
-    private func dismissKeyboard() {
-        focusedField = nil
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-}
-
-private enum ConversionField: Hashable {
-    case steps
-    case squats
-    case pushUps
-}
-
 private enum SettingsSheet: Int, Identifiable {
     case removalProtection
-    case conversion
     case pinSetup
     #if DEBUG && !HIDE_DEBUG_UI
     case permissions

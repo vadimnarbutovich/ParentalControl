@@ -14,10 +14,7 @@ let package = Package(
             path: "ParentalControl",
             sources: [
                 "Models/AppModels.swift",
-                "Models/BodyJoints.swift",
-                "Localization/L10n.swift",
-                "Services/RewardEngine.swift",
-                "Services/ExerciseRepCounter.swift"
+                "Localization/L10n.swift"
             ]
         ),
         .testTarget(

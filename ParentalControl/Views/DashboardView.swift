@@ -3,14 +3,10 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var subscriptionService: SubscriptionService
-    @State private var selectedExercise: ExerciseType?
     @State private var rewardToast: String?
-    @State private var previousAvailableSeconds: Int = 0
-    @State private var isStepsInfoPresented = false
     @State private var showPaywall = false
     @State private var isPairingInProgress = false
     @FocusState private var pairingCodeFocused: Bool
-    private let ringBalanceCapMinutes = 240
 
     /// Ребёнок ещё не связан с родителем — нужно показать карточку связки прямо на «Главной».
     /// Без этого свежее устройство не может пройти связку: настройки спрятаны за родительским PIN,
@@ -90,27 +86,15 @@ struct DashboardView: View {
             .task {
                 await appState.refreshStepsAndRewards()
                 await subscriptionService.refreshCustomerInfo()
-                previousAvailableSeconds = appState.balance.availableSeconds
-            }
-            .onAppear {
-                previousAvailableSeconds = appState.balance.availableSeconds
             }
             .onChange(of: appState.balance.availableSeconds) { oldValue, newValue in
-                guard newValue > oldValue else {
-                    previousAvailableSeconds = newValue
-                    return
-                }
+                guard newValue > oldValue else { return }
                 let delta = newValue - oldValue
                 showRewardToast(deltaSeconds: delta)
-                previousAvailableSeconds = newValue
             }
             .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView(isPresented: $showPaywall, openSource: .dashboardBadge)
                     .environmentObject(subscriptionService)
-            }
-            .sheet(item: $selectedExercise) { type in
-                ExerciseSessionView(type: type)
-                    .environmentObject(appState)
             }
         }
     }
@@ -199,126 +183,6 @@ struct DashboardView: View {
         }
     }
 
-    private func balanceCard(daily: DailyStats) -> some View {
-        let availableSeconds = max(0, appState.balance.availableSeconds)
-        let isMonitoringPaused = appState.isMonitoringPaused
-        let ringValue = availableSeconds < 60 ? availableSeconds : (availableSeconds / 60)
-        let ringUnitKey = availableSeconds < 60 ? "unit.seconds.abbrev" : "unit.minutes.abbrev"
-        let ringProgress = min(
-            max(Double(appState.balance.availableMinutes) / Double(ringBalanceCapMinutes), 0),
-            1
-        )
-
-        return VStack(spacing: 14) {
-            HStack {
-                Spacer(minLength: 0)
-                HStack(spacing: 24) {
-                    MinutesRingView(progress: CGFloat(ringProgress), lineWidth: 16) {
-                        VStack(spacing: 2) {
-                            if isMonitoringPaused {
-                                Text("dashboard.balance.paused")
-                                    .font(.system(size: 24, weight: .black, design: .rounded))
-                                    .foregroundStyle(.white)
-                            } else {
-                                Text("\(ringValue)")
-                                    .font(.system(size: 38, weight: .black, design: .rounded))
-                                    .foregroundStyle(.white)
-                                    .contentTransition(.numericText())
-                                Text(L10n.tr(ringUnitKey))
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white.opacity(0.85))
-                            }
-                        }
-                    }
-                    .frame(width: 124, height: 124)
-
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("dashboard.section.today")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(AppTheme.neonGreen)
-                            .padding(.leading, 26)
-
-                        metricChip(
-                            icon: "arrow.up.right",
-                            title: L10n.tr("statistics.earned"),
-                            value: L10n.duration(seconds: daily.earnedSeconds),
-                            color: AppTheme.neonGreen
-                        )
-
-                        metricChip(
-                            icon: "arrow.down.right",
-                            title: L10n.tr("statistics.spent"),
-                            value: L10n.duration(seconds: daily.spentSeconds),
-                            color: AppTheme.neonOrange
-                        )
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-        }
-        .padding()
-        .glassCard(cornerRadius: 28, glowColor: AppTheme.neonBlue)
-        .padding(36)
-        .drawingGroup()
-        .padding(-36)
-    }
-
-    private func earnMinutesSection(daily: DailyStats) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("dashboard.section.earn")
-                .font(.title2.bold())
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12)
-            ], spacing: 12) {
-                earnCard(
-                    iconAssetName: "walk",
-                    value: appState.isHealthAuthorized
-                        ? formattedNumber(appState.todaySteps)
-                        : "—",
-                    valueLabel: L10n.plural("unit.steps.count", appState.todaySteps),
-                    rewardPrefix: L10n.tr("dashboard.earn.rate.prefix"),
-                    rewardDetail: L10n.plural("dashboard.earn.rate.steps.detail", appState.settings.stepsPerMinute),
-                    glowColor: AppTheme.neonGreen
-                ) {
-                    isStepsInfoPresented = true
-                }
-                .alert(isPresented: $isStepsInfoPresented) {
-                    Alert(
-                        title: Text(""),
-                        message: Text("dashboard.steps.alert.message"),
-                        dismissButton: .cancel(Text("dashboard.steps.alert.close"))
-                    )
-                }
-
-                earnCard(
-                    iconAssetName: "squat",
-                    value: formattedNumber(daily.squats),
-                    valueLabel: L10n.plural("unit.reps.count", daily.squats),
-                    rewardPrefix: L10n.tr("dashboard.earn.rate.prefix"),
-                    rewardDetail: L10n.plural("dashboard.earn.rate.reps.detail", appState.settings.squatsPerMinute),
-                    glowColor: AppTheme.neonOrange
-                ) {
-                    selectedExercise = .squat
-                }
-
-                earnCard(
-                    iconAssetName: "pushups",
-                    value: formattedNumber(daily.pushUps),
-                    valueLabel: L10n.plural("unit.reps.count", daily.pushUps),
-                    rewardPrefix: L10n.tr("dashboard.earn.rate.prefix"),
-                    rewardDetail: L10n.plural("dashboard.earn.rate.reps.detail", appState.settings.pushUpsPerMinute),
-                    glowColor: AppTheme.neonBlue
-                ) {
-                    selectedExercise = .pushUp
-                }
-            }
-        }
-    }
-
     /// Manual blocking is shown on the balance ring. Keep a separate card only
     /// for an active schedule, including its name and end time.
     private var activeScheduleStatusCard: some View {
@@ -390,94 +254,6 @@ struct DashboardView: View {
         .glassCard(cornerRadius: 20)
     }
     #endif
-
-    private func metricChip(icon: String, title: String, value: String, color: Color) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(color)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func earnCard(
-        iconAssetName: String,
-        value: String,
-        valueLabel: String,
-        rewardPrefix: String,
-        rewardDetail: String,
-        glowColor: Color,
-        action: (() -> Void)? = nil
-    ) -> some View {
-        let content = VStack(alignment: .center, spacing: 8) {
-            Image(iconAssetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 56, height: 56)
-
-            Text(value)
-                .font(.system(size: 34, weight: .black, design: .rounded))
-                .lineLimit(1)
-                .minimumScaleFactor(0.18)
-                .allowsTightening(true)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 40, alignment: .center)
-
-            Text(valueLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-
-            VStack(spacing: 2) {
-                Text(rewardPrefix)
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(glowColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.55)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                Text(rewardDetail)
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(glowColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.45)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-            }
-            .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity, minHeight: 178, alignment: .top)
-        .padding(.vertical, 14)
-        .padding(.horizontal, 4)
-        .glassCard(cornerRadius: 20, glowColor: glowColor)
-        .padding(36)
-        .drawingGroup()
-        .padding(-36)
-
-        if let action {
-            Button(action: action) {
-                content
-            }
-            .buttonStyle(.plain)
-        } else {
-            content
-        }
-    }
-
-    private func formattedNumber(_ value: Int) -> String {
-        value.formatted(.number.grouping(.automatic))
-    }
 
     private func showRewardToast(deltaSeconds: Int) {
         guard deltaSeconds > 0 else { return }

@@ -83,7 +83,6 @@ final class AppState: ObservableObject {
     private var budgetChangeIntent: (kind: String, seconds: Int, weekly: [Int]?, day: String, revision: Int, id: UUID)?
     @Published private(set) var todaySteps: Int = 0
     @Published private(set) var exerciseTotals: [String: Int]
-    @Published private(set) var isHealthAuthorized = false
     @Published private(set) var isNotificationAuthorized = false
     /// `true`, если уведомления явно запрещены в системе — повторный `requestAuthorization` не покажет диалог.
     @Published private(set) var isNotificationAuthorizationDenied = false
@@ -236,10 +235,8 @@ final class AppState: ObservableObject {
     }
 
     private let storage: AppGroupStore
-    private let rewardEngine = RewardEngine()
     private let notificationService: Notifying
     private let focusLiveActivityService = FocusLiveActivityService()
-    private let stepsSyncCoordinator = StepsSyncCoordinator()
     private let remoteSyncService: ParentalRemoteSyncService
     private let locationService: LocationProviding
     private var locationPushRegistrationTask: Task<Void, Never>?
@@ -342,7 +339,6 @@ final class AppState: ObservableObject {
         self.parentPinLockoutEnd = parentPinService.currentLockoutEnd()
         self.isParentChildStateResolved = !(self.deviceRole == .parent && self.pairingState?.isLinked == true)
         self.parentResolvedFocusActive = nil
-        self.isHealthAuthorized = false
         self.isCameraAuthorized = AVCaptureDevice.authorizationStatus(for: .video) == .authorized
         restoreParentBudgetCache()
         configureMainAppActivityTracking()
@@ -1211,34 +1207,6 @@ final class AppState: ObservableObject {
 
     func refreshStepsAndRewards() async {
         resetDailyBalanceIfNeeded()
-    }
-
-    func addExerciseReps(type: ExerciseType, reps: Int) {
-        guard reps > 0 else { return }
-        let seconds = rewardEngine.repSecondsEarned(reps: reps, type: type, settings: settings)
-        guard seconds > 0 else { return }
-
-        var totals = exerciseTotals
-        totals[type.rawValue, default: 0] += reps
-        exerciseTotals = totals
-        storage.saveExerciseTotals(totals)
-
-        let source: LedgerEntrySource = type == .squat ? .squat : .pushUp
-        addSeconds(
-            seconds,
-            source: source,
-            note: L10n.f("ledger.exercise", type.title.lowercased()),
-            repetitionCount: reps
-        )
-        notificationService.notify(
-            title: L10n.tr("notification.workout.counted.title"),
-            body: L10n.f("notification.workout.counted.body", L10n.duration(seconds: seconds), type.title.lowercased())
-        )
-    }
-
-    func updateSettings(_ newSettings: ConversionSettings) {
-        settings = newSettings
-        storage.saveSettings(newSettings)
     }
 
     func saveScreenSelection() {
@@ -2799,7 +2767,6 @@ final class AppState: ObservableObject {
         if deviceRole == .child, pairingState?.isLinked == true {
             blockScheduleEnforcement.refreshFromStoredSchedules()
         }
-        startStepPolling()
         startSharedStateRefreshLoop()
         // Сначала свежие статусы, потом сброс подавления баннера — иначе один кадр с устаревшим Health и снова «нет доступа».
         Task {
@@ -2823,7 +2790,6 @@ final class AppState: ObservableObject {
 
     func appDidEnterBackground() {
         storage.saveMainAppIsActive(false)
-        stepsSyncCoordinator.stop()
         sharedStateTask?.cancel()
         sharedStateTask = nil
         // Keep remote polling alive for child mode as long as iOS allows background execution.
@@ -2854,10 +2820,6 @@ final class AppState: ObservableObject {
 
     func appDidBecomeInactive() {
         storage.saveMainAppIsActive(false)
-    }
-
-    private func startStepPolling() {
-        // No step-based earning.
     }
 
     private func reloadBalanceFromSharedStore() {
