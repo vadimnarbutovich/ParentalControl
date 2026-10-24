@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "الوصول مدى الحياة مفعّل";
 "paywall.plan.current" = "الخطة الحالية";
 "settings.premium.paid_active" = "Premium مفعّل";
+"tasks.child.access_paused" = "إرسال التقارير متوقف مؤقتًا. اطلب من أحد والديك التحقق من إمكانية الوصول في تطبيقه.";

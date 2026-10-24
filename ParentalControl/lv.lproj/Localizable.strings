@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Neierobežota laika piekļuve ir aktīva";
 "paywall.plan.current" = "Pašreizējais plāns";
 "settings.premium.paid_active" = "Premium ir aktīvs";
+"tasks.child.access_paused" = "Atskaišu sūtīšana ir apturēta. Palūdz vecākiem pārbaudīt piekļuvi savā lietotnē.";

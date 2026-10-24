@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Muddatsiz foydalanish huquqi faol";
 "paywall.plan.current" = "Joriy tarif";
 "settings.premium.paid_active" = "Premium faol";
+"tasks.child.access_paused" = "Hisobot yuborish vaqtincha to‘xtatilgan. Ota-onangdan o‘z ilovasida kirish imkoniyatini tekshirishni so‘ra.";

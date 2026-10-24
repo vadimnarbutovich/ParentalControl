@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Ενεργή πρόσβαση εφ’ όρου ζωής";
 "paywall.plan.current" = "Τρέχον πρόγραμμα";
 "settings.premium.paid_active" = "Το Premium είναι ενεργό";
+"tasks.child.access_paused" = "Η αποστολή αναφορών έχει διακοπεί προσωρινά. Ζήτησε από τον γονέα σου να ελέγξει την πρόσβαση στην εφαρμογή του.";

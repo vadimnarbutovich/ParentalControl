@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Мөөнөтсүз мүмкүнчүлүк активдүү";
 "paywall.plan.current" = "Учурдагы план";
 "settings.premium.paid_active" = "Premium активдүү";
+"tasks.child.access_paused" = "Отчёт жөнөтүү убактылуу токтотулду. Ата-энеңден өз колдонмосундагы жеткиликтүүлүктү текшерүүнү суран.";

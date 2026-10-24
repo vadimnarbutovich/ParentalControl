@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "無期限アクセスが有効です";
 "paywall.plan.current" = "現在のプラン";
 "settings.premium.paid_active" = "Premium 有効";
+"tasks.child.access_paused" = "報告の送信は一時停止中です。保護者の方に、ご自身のアプリで利用状況を確認してもらってください。";

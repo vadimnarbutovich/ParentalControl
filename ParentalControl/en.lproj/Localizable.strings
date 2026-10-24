@@ -674,3 +674,4 @@
 "paywall.status.lifetime" = "Lifetime access active";
 "paywall.plan.current" = "Current plan";
 "settings.premium.paid_active" = "Premium active";
+"tasks.child.access_paused" = "Sending reports is paused. Ask your parent to check access in their app.";

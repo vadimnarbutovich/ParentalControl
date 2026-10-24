@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Мерзімсіз қолжетімділік белсенді";
 "paywall.plan.current" = "Ағымдағы жоспар";
 "settings.premium.paid_active" = "Premium белсенді";
+"tasks.child.access_paused" = "Есеп жіберу уақытша тоқтатылды. Ата-анаңнан өз қолданбасындағы қолжетімділікті тексеруді сұра.";

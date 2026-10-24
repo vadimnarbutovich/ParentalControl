@@ -25,7 +25,7 @@ struct ChildTasksSection: View {
                     emptyState
                 } else {
                     if !active.isEmpty {
-                        Text("tasks.child.subtitle")
+                        Text(appState.isFamilyAccessAllowed ? "tasks.child.subtitle" : "tasks.child.access_paused")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         ForEach(showsAll ? active : Array(active.prefix(3))) { task in
@@ -153,7 +153,14 @@ private struct ChildTaskDetailView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         infoCard(task)
                         if task.status == .pending {
-                            sendReportButton(task)
+                            if appState.isFamilyAccessAllowed {
+                                sendReportButton(task)
+                            } else {
+                                Label("tasks.child.access_paused", systemImage: "pause.circle")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         } else {
                             statusCard(task)
                         }
@@ -182,7 +189,10 @@ private struct ChildTaskDetailView: View {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 Button("tasks.detail.report_source.camera") { Task { await openTaskCamera() } }
             }
-            Button("tasks.detail.report_source.library") { showLibrary = true }
+            Button("tasks.detail.report_source.library") {
+                guard canContinueReport() else { return }
+                showLibrary = true
+            }
             Button("tasks.editor.cancel", role: .cancel) {}
         }
         .alert("permission.camera.title", isPresented: $showCameraPermissionAlert) {
@@ -202,6 +212,9 @@ private struct ChildTaskDetailView: View {
         .onChange(of: photoItem) { _, newItem in
             guard let newItem else { return }
             loadPhoto(newItem)
+        }
+        .onChange(of: appState.isFamilyAccessAllowed) { _, allowed in
+            if !allowed { dismissReportFlow() }
         }
         .sheet(isPresented: $isShareSheetPresented, onDismiss: { shareImage = nil }) {
             if let shareImage, let task {
@@ -251,6 +264,7 @@ private struct ChildTaskDetailView: View {
                 .frame(maxWidth: .infinity)
 
             Button {
+                guard canContinueReport() else { return }
                 showSourceDialog = true
             } label: {
                 HStack(spacing: 8) {
@@ -292,7 +306,7 @@ private struct ChildTaskDetailView: View {
 
     @MainActor
     private func openTaskCamera() async {
-        guard appState.deviceRole == .child else { return }
+        guard canContinueReport() else { return }
         let allowed: Bool
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: allowed = true
@@ -300,11 +314,12 @@ private struct ChildTaskDetailView: View {
         case .denied, .restricted: allowed = false
         @unknown default: allowed = false
         }
-        guard appState.deviceRole == .child, task?.status == .pending else { return }
+        guard canContinueReport() else { return }
         if allowed { showCamera = true } else { showCameraPermissionAlert = true }
     }
 
     private func loadPhoto(_ item: PhotosPickerItem) {
+        guard canContinueReport() else { return }
         isLoadingPhoto = true
         Task {
             defer { isLoadingPhoto = false; photoItem = nil }
@@ -317,20 +332,45 @@ private struct ChildTaskDetailView: View {
 
     /// Общий обработчик выбранного/снятого фото: показываем системный share sheet.
     private func handlePickedImage(_ image: UIImage) {
+        guard canContinueReport() else { return }
         shareImage = image
         isShareSheetPresented = true
     }
 
     private func submit() {
-        guard !isSubmitting else { return }
+        guard !isSubmitting, canContinueReport() else { return }
         isSubmitting = true
         Task {
+            defer { isSubmitting = false }
             if !(await appState.submitChildTask(taskID)) {
+                // Access may expire while a photo/share sheet or request is open.
+                // Show the paused state, not a mutation error or a retry prompt.
+                guard canContinueReport() else { return }
                 await appState.refreshChildTasksFromServer()
+                guard canContinueReport() else { return }
                 showMutationError = true
             }
-            isSubmitting = false
         }
+    }
+
+    private func canContinueReport() -> Bool {
+        guard FamilyAccessStore.allowed else {
+            appState.adoptFamilyAccess()
+            dismissReportFlow()
+            return false
+        }
+        return appState.deviceRole == .child && task?.status == .pending
+    }
+
+    private func dismissReportFlow() {
+        showSourceDialog = false
+        showCamera = false
+        showLibrary = false
+        isShareSheetPresented = false
+        showMutationError = false
+        showCameraPermissionAlert = false
+        shareImage = nil
+        photoItem = nil
     }
 }
 

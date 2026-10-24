@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "უვადო წვდომა აქტიურია";
 "paywall.plan.current" = "მიმდინარე გეგმა";
 "settings.premium.paid_active" = "Premium აქტიურია";
+"tasks.child.access_paused" = "ანგარიშების გაგზავნა შეჩერებულია. სთხოვე მშობელს, თავის აპში წვდომა შეამოწმოს.";

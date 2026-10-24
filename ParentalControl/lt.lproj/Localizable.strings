@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Neriboto laiko prieiga aktyvi";
 "paywall.plan.current" = "Dabartinis planas";
 "settings.premium.paid_active" = "Premium aktyvus";
+"tasks.child.access_paused" = "Ataskaitų siuntimas pristabdytas. Paprašyk tėvų patikrinti prieigą savo programėlėje.";

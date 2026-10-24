@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "终身使用权限已生效";
 "paywall.plan.current" = "当前方案";
 "settings.premium.paid_active" = "Premium 已生效";
+"tasks.child.access_paused" = "报告发送已暂停。请家长在他们的应用中检查使用权限。";

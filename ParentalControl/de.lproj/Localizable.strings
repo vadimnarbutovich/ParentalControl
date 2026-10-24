@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "Dauerhafter Zugang aktiv";
 "paywall.plan.current" = "Aktueller Tarif";
 "settings.premium.paid_active" = "Premium aktiv";
+"tasks.child.access_paused" = "Das Senden von Berichten ist pausiert. Bitte deine Eltern, den Zugang in ihrer App zu prüfen.";

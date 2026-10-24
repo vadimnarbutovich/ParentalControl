@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Acces pe viață activ";
 "paywall.plan.current" = "Planul actual";
 "settings.premium.paid_active" = "Premium activ";
+"tasks.child.access_paused" = "Trimiterea rapoartelor este suspendată. Roagă un părinte să verifice accesul în aplicația sa.";

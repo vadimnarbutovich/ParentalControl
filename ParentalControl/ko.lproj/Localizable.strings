@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "평생 이용권 사용 중";
 "paywall.plan.current" = "현재 요금제";
 "settings.premium.paid_active" = "Premium 이용 중";
+"tasks.child.access_paused" = "보고서 전송이 일시 중지되었어요. 부모님께 부모님 앱에서 이용 상태를 확인해 달라고 부탁해 주세요.";

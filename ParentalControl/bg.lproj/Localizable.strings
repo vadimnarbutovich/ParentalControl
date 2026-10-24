@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Безсрочният достъп е активен";
 "paywall.plan.current" = "Текущ план";
 "settings.premium.paid_active" = "Premium е активен";
+"tasks.child.access_paused" = "Изпращането на отчети е спряно. Помоли родителя си да провери достъпа в своето приложение.";

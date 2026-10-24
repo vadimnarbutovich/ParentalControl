@@ -613,3 +613,4 @@
 "paywall.status.lifetime" = "Dostęp bezterminowy aktywny";
 "paywall.plan.current" = "Obecny plan";
 "settings.premium.paid_active" = "Premium aktywne";
+"tasks.child.access_paused" = "Wysyłanie raportów jest wstrzymane. Poproś rodzica o sprawdzenie dostępu w jego aplikacji.";

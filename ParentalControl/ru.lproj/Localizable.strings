@@ -674,3 +674,4 @@
 "paywall.status.lifetime" = "Пожизненный доступ активен";
 "paywall.plan.current" = "Текущий план";
 "settings.premium.paid_active" = "Premium активен";
+"tasks.child.access_paused" = "Отправка отчётов приостановлена. Попроси родителя проверить доступ в своём приложении.";

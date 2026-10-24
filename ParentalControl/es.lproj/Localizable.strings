@@ -670,3 +670,4 @@
 "paywall.status.lifetime" = "Acceso de por vida activo";
 "paywall.plan.current" = "Plan actual";
 "settings.premium.paid_active" = "Premium activo";
+"tasks.child.access_paused" = "El envío de informes está en pausa. Pide a tu padre o madre que revise el acceso en su aplicación.";
