@@ -19,6 +19,7 @@ enum AppStoreLinks {
 }
 
 struct SettingsView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var subscriptionService: SubscriptionService
     @State private var activeSheet: SettingsSheet?
@@ -52,7 +53,9 @@ struct SettingsView: View {
                         if appState.deviceRole == .parent || appState.isParentModeActive {
                             removalProtectionSection
                         }
-                        if appState.deviceRole == .child && appState.isParentModeActive {
+                        if appState.deviceRole == .child,
+                           appState.isParentModeActive,
+                           appState.childLocationAuthorizationStatus != .authorizedAlways {
                             locationPermissionSection
                         }
                         appSection
@@ -123,6 +126,15 @@ struct SettingsView: View {
                 }
             }
         }
+        .onAppear { refreshLocationPermissionStatus() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshLocationPermissionStatus() }
+        }
+    }
+
+    private func refreshLocationPermissionStatus() {
+        guard appState.deviceRole == .child else { return }
+        appState.refreshChildLocationAuthorizationStatus()
     }
 
     private var premiumSection: some View {
@@ -247,7 +259,6 @@ struct SettingsView: View {
                 .drawingGroup()
                 .padding(-36)
         )
-        .onAppear { appState.refreshChildLocationAuthorizationStatus() }
     }
 
     private var locationPermissionDescriptionKey: String {
