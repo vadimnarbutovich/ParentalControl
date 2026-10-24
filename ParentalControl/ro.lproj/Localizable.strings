@@ -35,7 +35,7 @@
 "blocklist.title" = "Lista de blocare";
 "budget.adjust_today" = "Schimbă timpul de azi";
 "budget.apply_error" = "Limita nu a fost activată. Verifică accesul la Timp de utilizare și redeschide aplicația.";
-"budget.child_update" = "Deschide aplicația actualizată pe telefonul copilului și așteaptă conectarea.";
+"budget.child_update" = "Deschide aplicația pe telefonul copilului și așteaptă conectarea.";
 "budget.child_waiting" = "Părintele nu a stabilit încă limita zilnică.";
 "budget.earned" = "Câștigate";
 "budget.every_day" = "Zilnic";
@@ -170,7 +170,7 @@
 "map.refresh" = "Actualizează locația";
 "map.refresh.always_required" = "Pe telefonul copilului lipsește accesul „Întotdeauna”. Deschide acolo setările aplicației → Localizare → Întotdeauna.";
 "map.refresh.connection_error" = "Eroare de conexiune. Verifică internetul pe ambele telefoane și reîncearcă.";
-"map.refresh.push_not_ready" = "Deschide aplicația actualizată pe telefonul copilului, permite localizarea „Întotdeauna” și reîncearcă.";
+"map.refresh.push_not_ready" = "Deschide aplicația pe telefonul copilului, permite localizarea „Întotdeauna” și reîncearcă.";
 "map.refresh.services_disabled" = "Serviciile de localizare sunt oprite pe telefonul copilului. Activează-le: Configurări → Intimitate și securitate → Servicii de localizare.";
 "map.refresh.timeout" = "Telefonul copilului nu a trimis încă locația. Verifică internetul și încearcă mai târziu.";
 "map.refresh.unavailable" = "Telefonul copilului nu a trimis o locație nouă. Verifică acolo setările aplicației → Localizare → Întotdeauna și reîncearcă.";

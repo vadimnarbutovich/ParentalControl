@@ -9,7 +9,7 @@
 "map.just_now" = "à l’instant";
 "map.accuracy" = "Précision : ±%d m";
 "map.refresh.timeout" = "Le téléphone de votre enfant n’a pas encore envoyé sa position. Vérifiez la connexion Internet et réessayez plus tard.";
-"map.refresh.push_not_ready" = "Ouvrez l’application mise à jour sur le téléphone de votre enfant et autorisez l’accès à la position Toujours, puis réessayez.";
+"map.refresh.push_not_ready" = "Ouvrez l’application sur le téléphone de votre enfant et autorisez l’accès à la position Toujours, puis réessayez.";
 "map.unpaired.title" = "Téléphone non associé";
 "map.unpaired.subtitle" = "Associez le téléphone de votre enfant dans les réglages pour voir sa position.";
 
@@ -489,7 +489,7 @@
 "budget.minutes" = "min";
 "budget.rules" = "La limite est renouvelée chaque jour. Le temps restant et les minutes supplémentaires ne sont pas reportés. 0 minute signifie qu’aucun temps quotidien n’est accordé.";
 "budget.first_activation" = "Cette limite remplace le solde précédent. Le temps déjà utilisé aujourd’hui est déduit ; l’ancien temps restant n’est pas ajouté. L’historique est conservé.";
-"budget.child_update" = "Ouvrez l’app mise à jour sur le téléphone de votre enfant et attendez la connexion.";
+"budget.child_update" = "Ouvrez l’app sur le téléphone de votre enfant et attendez la connexion.";
 "budget.save" = "Enregistrer";
 "budget.save_error" = "Impossible d’enregistrer. Vérifiez la connexion et réessayez. Si le réglage a changé, rouvrez-le.";
 "budget.apply_error" = "Impossible d’activer la limite. Vérifiez l’accès à Temps d’écran et rouvrez l’app.";

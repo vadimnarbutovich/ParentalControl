@@ -9,7 +9,7 @@
 "map.just_now" = "ahora mismo";
 "map.accuracy" = "Precisión: ±%d m";
 "map.refresh.timeout" = "El teléfono de tu hijo aún no ha enviado su ubicación. Comprueba la conexión a internet e inténtalo más tarde.";
-"map.refresh.push_not_ready" = "Abre la aplicación actualizada en el teléfono de tu hijo y permite el acceso a la ubicación Siempre. Después, vuelve a intentarlo.";
+"map.refresh.push_not_ready" = "Abre la aplicación en el teléfono de tu hijo y permite el acceso a la ubicación Siempre. Después, vuelve a intentarlo.";
 "map.unpaired.title" = "Teléfono no vinculado";
 "map.unpaired.subtitle" = "Vincula el teléfono de tu hijo en Ajustes para ver su ubicación.";
 
@@ -489,7 +489,7 @@
 "budget.minutes" = "min";
 "budget.rules" = "El límite se renueva cada día. El tiempo restante y los minutos extra no se acumulan. 0 minutos significa que no se concede tiempo diario habitual.";
 "budget.first_activation" = "Este límite sustituye al saldo anterior. Se cuenta el tiempo ya usado hoy; el saldo restante anterior no se suma. El historial se conserva.";
-"budget.child_update" = "Abre la app actualizada en el teléfono de tu hijo y espera a que se conecte.";
+"budget.child_update" = "Abre la app en el teléfono de tu hijo y espera a que se conecte.";
 "budget.save" = "Guardar";
 "budget.save_error" = "No se ha podido guardar. Comprueba la conexión e inténtalo de nuevo. Si el ajuste ha cambiado, vuelve a abrirlo.";
 "budget.apply_error" = "No se ha podido activar el límite. Comprueba el acceso a Tiempo de uso y vuelve a abrir la app.";

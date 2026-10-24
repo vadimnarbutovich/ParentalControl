@@ -9,7 +9,7 @@
 "map.just_now" = "剛剛";
 "map.accuracy" = "精確度：±%d 公尺";
 "map.refresh.timeout" = "孩子的手機尚未傳送位置。請檢查網路連線，稍後再試。";
-"map.refresh.push_not_ready" = "請在孩子的手機上開啟更新後的 App，將位置存取權限設為「永遠」，然後重試。";
+"map.refresh.push_not_ready" = "請在孩子的手機上開啟App，將位置存取權限設為「永遠」，然後重試。";
 "map.unpaired.title" = "手機尚未配對";
 "map.unpaired.subtitle" = "在設定中配對孩子的手機，即可查看其位置。";
 
@@ -489,7 +489,7 @@
 "budget.minutes" = "分鐘";
 "budget.rules" = "限額每天重設。剩餘時間和額外時間不會累積到隔天。設為 0 分鐘表示不提供一般每日使用時間。";
 "budget.first_activation" = "此限額將取代原有餘額。今天已使用的時間仍會扣除，原有剩餘時間不會疊加。歷史記錄會保留。";
-"budget.child_update" = "請在孩子的手機上開啟更新後的 App，並等待連線。";
+"budget.child_update" = "請在孩子的手機上開啟App，並等待連線。";
 "budget.save" = "儲存";
 "budget.save_error" = "無法儲存。請檢查連線後再試一次。如果設定已變更，請重新開啟。";
 "budget.apply_error" = "無法啟用每日限額。請檢查「螢幕使用時間」存取權限，再重新開啟 App。";

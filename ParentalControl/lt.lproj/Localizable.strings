@@ -35,7 +35,7 @@
 "blocklist.title" = "Blokavimo sąrašas";
 "budget.adjust_today" = "Keisti šios dienos laiką";
 "budget.apply_error" = "Limito įjungti nepavyko. Patikrinkite ekrano laiko leidimą ir vėl atverkite programėlę.";
-"budget.child_update" = "Atverkite atnaujintą programėlę vaiko telefone ir palaukite ryšio.";
+"budget.child_update" = "Atverkite programėlę vaiko telefone ir palaukite ryšio.";
 "budget.child_waiting" = "Tėvai dar nenustatė dienos limito.";
 "budget.earned" = "Uždirbta";
 "budget.every_day" = "Kasdien";
@@ -170,7 +170,7 @@
 "map.refresh" = "Atnaujinti vietą";
 "map.refresh.always_required" = "Vaiko telefone nesuteikta prieiga „Visada“. Ten atverkite programėlės nustatymus → Vieta → Visada.";
 "map.refresh.connection_error" = "Ryšio klaida. Patikrinkite internetą abiejuose telefonuose ir kartokite.";
-"map.refresh.push_not_ready" = "Atverkite atnaujintą programėlę vaiko telefone, leiskite vietą „Visada“ ir kartokite.";
+"map.refresh.push_not_ready" = "Atverkite programėlę vaiko telefone, leiskite vietą „Visada“ ir kartokite.";
 "map.refresh.services_disabled" = "Vaiko telefone vietos nustatymas išjungtas. Įjunkite: Nustatymai → Privatumas ir sauga → Vietos nustatymo paslaugos.";
 "map.refresh.timeout" = "Vaiko telefonas dar neatsiuntė vietos. Patikrinkite internetą ir bandykite vėliau.";
 "map.refresh.unavailable" = "Vaiko telefonas neatsiuntė naujos vietos. Patikrinkite ten programėlės nustatymus → Vieta → Visada ir bandykite dar kartą.";

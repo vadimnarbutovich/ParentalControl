@@ -35,7 +35,7 @@
 "blocklist.title" = "Lista blokowania";
 "budget.adjust_today" = "Zmień czas na dziś";
 "budget.apply_error" = "Nie włączono limitu. Sprawdź dostęp do Czasu przed ekranem i otwórz aplikację ponownie.";
-"budget.child_update" = "Otwórz aktualną aplikację na telefonie dziecka i poczekaj na połączenie.";
+"budget.child_update" = "Otwórz aplikację na telefonie dziecka i poczekaj na połączenie.";
 "budget.child_waiting" = "Rodzic nie ustawił jeszcze limitu dziennego.";
 "budget.earned" = "Zdobyte";
 "budget.every_day" = "Codziennie";
@@ -170,7 +170,7 @@
 "map.refresh" = "Odśwież lokalizację";
 "map.refresh.always_required" = "Na telefonie dziecka brakuje dostępu „Zawsze”. Otwórz tam ustawienia aplikacji → Lokalizacja → Zawsze.";
 "map.refresh.connection_error" = "Błąd połączenia uniemożliwił aktualizację. Sprawdź internet na obu telefonach i spróbuj ponownie.";
-"map.refresh.push_not_ready" = "Otwórz aktualną aplikację na telefonie dziecka, zezwól na lokalizację „Zawsze” i spróbuj ponownie.";
+"map.refresh.push_not_ready" = "Otwórz aplikację na telefonie dziecka, zezwól na lokalizację „Zawsze” i spróbuj ponownie.";
 "map.refresh.services_disabled" = "Usługi lokalizacji są wyłączone na telefonie dziecka. Włącz je: Ustawienia → Prywatność i ochrona → Usługi lokalizacji.";
 "map.refresh.timeout" = "Telefon dziecka nie przesłał jeszcze lokalizacji. Sprawdź internet i spróbuj później.";
 "map.refresh.unavailable" = "Telefon dziecka nie przesłał nowej lokalizacji. Sprawdź tam ustawienia aplikacji → Lokalizacja → Zawsze i spróbuj ponownie.";

@@ -35,7 +35,7 @@
 "blocklist.title" = "Bloķēšanas saraksts";
 "budget.adjust_today" = "Mainīt šodienas laiku";
 "budget.apply_error" = "Limitu neizdevās ieslēgt. Pārbaudiet ekrānlaika atļauju un atveriet lietotni vēlreiz.";
-"budget.child_update" = "Atveriet atjaunināto lietotni bērna tālrunī un gaidiet savienojumu.";
+"budget.child_update" = "Atveriet lietotni bērna tālrunī un gaidiet savienojumu.";
 "budget.child_waiting" = "Vecāks vēl nav iestatījis dienas limitu.";
 "budget.earned" = "Nopelnīts";
 "budget.every_day" = "Katru dienu";
@@ -170,7 +170,7 @@
 "map.refresh" = "Atjaunināt atrašanās vietu";
 "map.refresh.always_required" = "Bērna tālrunī nav piekļuves „Vienmēr”. Atveriet tur lietotnes iestatījumus → Atrašanās vieta → Vienmēr.";
 "map.refresh.connection_error" = "Savienojuma kļūda. Pārbaudiet internetu abos tālruņos un mēģiniet vēlreiz.";
-"map.refresh.push_not_ready" = "Atveriet atjaunināto lietotni bērna tālrunī, atļaujiet atrašanās vietu „Vienmēr” un atkārtojiet.";
+"map.refresh.push_not_ready" = "Atveriet lietotni bērna tālrunī, atļaujiet atrašanās vietu „Vienmēr” un atkārtojiet.";
 "map.refresh.services_disabled" = "Bērna tālrunī atrašanās vietas pakalpojumi izslēgti. Ieslēdziet: Iestatījumi → Privātums un drošība → Atrašanās vietas pakalpojumi.";
 "map.refresh.timeout" = "Bērna tālrunis vēl nav nosūtījis vietu. Pārbaudiet internetu un mēģiniet vēlāk.";
 "map.refresh.unavailable" = "Bērna tālrunis neatsūtīja jaunu vietu. Pārbaudiet tur lietotnes iestatījumus → Atrašanās vieta → Vienmēr un mēģiniet vēlreiz.";

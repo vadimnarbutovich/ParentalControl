@@ -35,7 +35,7 @@
 "blocklist.title" = "Bloklash roʻyxati";
 "budget.adjust_today" = "Bugungi vaqtni o‘zgartirish";
 "budget.apply_error" = "Limit yoqilmadi. Ekran vaqti ruxsatini tekshirib, ilovani qayta oching.";
-"budget.child_update" = "Bola telefonida yangilangan ilovani ochib, ulanishni kuting.";
+"budget.child_update" = "Bola telefonida ilovani ochib, ulanishni kuting.";
 "budget.child_waiting" = "Ota-ona hali kunlik limit belgilamagan.";
 "budget.earned" = "Yigʻildi";
 "budget.every_day" = "Har kuni";
@@ -170,7 +170,7 @@
 "map.refresh" = "Joylashuvni yangilash";
 "map.refresh.always_required" = "Bola telefonida “Har doim” ruxsati yo‘q. Unda ilova sozlamalarini oching → Joylashuv → Har doim.";
 "map.refresh.connection_error" = "Ulanish xatosi. Ikkala telefonda internetni tekshirib, qayta urining.";
-"map.refresh.push_not_ready" = "Bola telefonida yangilangan ilovani oching, joylashuvga “Har doim” ruxsat bering va qayta urining.";
+"map.refresh.push_not_ready" = "Bola telefonida ilovani oching, joylashuvga “Har doim” ruxsat bering va qayta urining.";
 "map.refresh.services_disabled" = "Bola telefonida joylashuv xizmatlari o‘chirilgan. Yoqing: Sozlamalar → Maxfiylik va xavfsizlik → Joylashuv xizmatlari.";
 "map.refresh.timeout" = "Bola telefoni joylashuvni hali yubormadi. Internetni tekshirib, keyinroq urining.";
 "map.refresh.unavailable" = "Bola telefoni yangi joylashuvni yubormadi. Unda ilova sozlamalari → Joylashuv → Har doimni tekshirib, qayta urining.";

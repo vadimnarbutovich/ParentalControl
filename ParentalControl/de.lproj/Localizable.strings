@@ -9,7 +9,7 @@
 "map.just_now" = "gerade eben";
 "map.accuracy" = "Genauigkeit: ±%d m";
 "map.refresh.timeout" = "Das Handy Ihres Kindes hat noch keinen Standort gesendet. Prüfen Sie die Internetverbindung und versuchen Sie es später erneut.";
-"map.refresh.push_not_ready" = "Öffnen Sie die aktualisierte App auf dem Handy Ihres Kindes und erlauben Sie den Standortzugriff Immer. Versuchen Sie es dann erneut.";
+"map.refresh.push_not_ready" = "Öffnen Sie die App auf dem Handy Ihres Kindes und erlauben Sie den Standortzugriff Immer. Versuchen Sie es dann erneut.";
 "map.unpaired.title" = "Telefon nicht gekoppelt";
 "map.unpaired.subtitle" = "Kopple das Telefon deines Kindes in den Einstellungen, um seinen Standort zu sehen.";
 
@@ -489,7 +489,7 @@
 "budget.minutes" = "Min.";
 "budget.rules" = "Das Limit gilt jeden Tag neu. Restzeit und zusätzliche Minuten werden nicht übertragen. 0 Minuten bedeutet: keine reguläre tägliche Nutzungszeit.";
 "budget.first_activation" = "Dieses Limit ersetzt das bisherige Guthaben. Heute bereits genutzte Zeit wird angerechnet; die bisherige Restzeit kommt nicht hinzu. Der Verlauf bleibt erhalten.";
-"budget.child_update" = "Öffne die aktualisierte App auf dem Handy deines Kindes und warte auf die Verbindung.";
+"budget.child_update" = "Öffne die App auf dem Handy deines Kindes und warte auf die Verbindung.";
 "budget.save" = "Speichern";
 "budget.save_error" = "Speichern fehlgeschlagen. Prüfe die Verbindung und versuche es erneut. Wurde die Einstellung geändert, öffne sie erneut.";
 "budget.apply_error" = "Das Tageslimit konnte nicht aktiviert werden. Prüfe den Zugriff auf Bildschirmzeit und öffne die App erneut.";

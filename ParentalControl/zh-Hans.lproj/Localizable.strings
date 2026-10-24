@@ -9,7 +9,7 @@
 "map.just_now" = "刚刚";
 "map.accuracy" = "精度：±%d 米";
 "map.refresh.timeout" = "孩子的手机尚未发送位置。请检查网络连接，稍后再试。";
-"map.refresh.push_not_ready" = "请在孩子的手机上打开更新后的应用，将位置访问权限设为“始终”，然后重试。";
+"map.refresh.push_not_ready" = "请在孩子的手机上打开应用，将位置访问权限设为“始终”，然后重试。";
 "map.unpaired.title" = "手机尚未配对";
 "map.unpaired.subtitle" = "在设置中配对孩子的手机，即可查看其位置。";
 
@@ -489,7 +489,7 @@
 "budget.minutes" = "分钟";
 "budget.rules" = "限额每天重置。剩余时间和额外时间不会结转到第二天。设为 0 分钟表示不提供常规每日使用时间。";
 "budget.first_activation" = "此限额将取代原有余额。今天已经使用的时间仍会扣除，原有剩余时间不会叠加。历史记录会保留。";
-"budget.child_update" = "请在孩子的手机上打开更新后的 App，并等待连接。";
+"budget.child_update" = "请在孩子的手机上打开App，并等待连接。";
 "budget.save" = "保存";
 "budget.save_error" = "无法保存。请检查连接后重试。如果设置已更改，请重新打开。";
 "budget.apply_error" = "无法启用每日限额。请检查“屏幕使用时间”访问权限，然后重新打开 App。";

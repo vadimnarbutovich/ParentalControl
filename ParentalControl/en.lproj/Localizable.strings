@@ -366,7 +366,7 @@
 "map.just_now" = "just now";
 "map.accuracy" = "Accuracy: ±%d m";
 "map.refresh.timeout" = "Your child’s phone hasn’t sent its location yet. Check the internet connection and try again later.";
-"map.refresh.push_not_ready" = "Open the updated app on your child’s phone and allow location access Always, then try again.";
+"map.refresh.push_not_ready" = "Open the app on your child’s phone and allow location access Always, then try again.";
 "location.settings.description" = "To let the parent see their child’s location, choose Location → Always in this app’s settings on this phone. Location is checked only when the parent requests it.";
 "location.settings.ready" = "Always access is enabled. Location is checked only when the parent requests it.";
 "location.setup.allow" = "Allow location access";
@@ -557,7 +557,7 @@
 "budget.minutes" = "min";
 "budget.rules" = "The limit renews every day. Unused time and extra minutes do not carry over. A limit of 0 means no regular daily time.";
 "budget.first_activation" = "This limit replaces the previous balance. Time already used today still counts; the old remaining balance is not added. History is kept.";
-"budget.child_update" = "Open the updated app on your child's phone and wait for it to connect.";
+"budget.child_update" = "Open the app on your child's phone and wait for it to connect.";
 "budget.save" = "Save";
 "budget.save_error" = "Couldn't save. Check your connection and try again. If the setting has changed, reopen it first.";
 "budget.apply_error" = "Couldn't enable the daily limit. Check Screen Time access and reopen the app.";
