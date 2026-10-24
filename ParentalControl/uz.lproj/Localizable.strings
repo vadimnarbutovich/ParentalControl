@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Joriy tarif";
 "settings.premium.paid_active" = "Premium faol";
 "tasks.child.access_paused" = "Hisobot yuborish vaqtincha to‘xtatilgan. Ota-onangdan o‘z ilovasida kirish imkoniyatini tekshirishni so‘ra.";
+"access.banner.inactive.title" = "Premium faol emas";
+"access.banner.paused.title" = "Boshqaruv to‘xtatildi";
+"access.banner.pending.title" = "Xarid tasdiqlanmoqda";
+"access.banner.verification.title" = "Premium holati tasdiqlanmadi";
+"access.banner.parent.body" = "Bolangiz telefonini boshqarishni davom ettirish uchun Premium’ni faollashtiring.";
+"access.banner.child.body" = "Ota-onangdan o‘z telefonida Premium’ni faollashtirishni so‘ra.";
+"access.banner.pending.body" = "Qayta to‘lash shart emas. Holatni Premium ekranida tekshirishingiz mumkin.";
+"access.banner.verification.body" = "Obunani tekshirish yoki xaridni tiklash uchun Premium’ni oching.";
+"access.banner.child_verification.body" = "Ota-onangdan o‘z telefonida Premium holatini tekshirishni so‘ra.";
+"access.banner.choose_plan" = "Tarifni tanlash";
+"access.banner.check_status" = "Holatni tekshirish";

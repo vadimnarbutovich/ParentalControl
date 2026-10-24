@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Dabartinis planas";
 "settings.premium.paid_active" = "Premium aktyvus";
 "tasks.child.access_paused" = "Ataskaitų siuntimas pristabdytas. Paprašyk tėvų patikrinti prieigą savo programėlėje.";
+"access.banner.inactive.title" = "Premium neaktyvus";
+"access.banner.paused.title" = "Valdymas pristabdytas";
+"access.banner.pending.title" = "Pirkimas patvirtinamas";
+"access.banner.verification.title" = "Premium būsena nepatvirtinta";
+"access.banner.parent.body" = "Aktyvuokite Premium, kad galėtumėte toliau valdyti vaiko telefoną.";
+"access.banner.child.body" = "Paprašyk tėvų aktyvuoti Premium savo telefone.";
+"access.banner.pending.body" = "Dar kartą mokėti nereikia. Būseną galite patikrinti Premium lange.";
+"access.banner.verification.body" = "Atidarykite Premium, kad patikrintumėte prenumeratą arba atkurtumėte pirkinį.";
+"access.banner.child_verification.body" = "Paprašyk tėvų patikrinti Premium savo telefone.";
+"access.banner.choose_plan" = "Pasirinkti planą";
+"access.banner.check_status" = "Tikrinti būseną";

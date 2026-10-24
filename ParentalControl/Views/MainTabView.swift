@@ -37,6 +37,16 @@ struct MainTabView: View {
                 .zIndex(1)
             }
             tabs
+                .overlay(alignment: .top) {
+                    if !appState.isFamilyAccessAllowed {
+                        // Blend clipped card glows into the shared background.
+                        // Only paint the top edge; never clip the tab bar's safe area.
+                        AppBackgroundView()
+                            .frame(height: 12)
+                            .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
+                            .allowsHitTesting(false)
+                    }
+                }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)

@@ -675,3 +675,14 @@
 "paywall.plan.current" = "Текущий план";
 "settings.premium.paid_active" = "Premium активен";
 "tasks.child.access_paused" = "Отправка отчётов приостановлена. Попроси родителя проверить доступ в своём приложении.";
+"access.banner.inactive.title" = "Premium не активен";
+"access.banner.paused.title" = "Управление приостановлено";
+"access.banner.pending.title" = "Подтверждаем покупку";
+"access.banner.verification.title" = "Статус Premium не подтверждён";
+"access.banner.parent.body" = "Подключите Premium, чтобы продолжить управление телефоном ребёнка.";
+"access.banner.child.body" = "Попроси родителя подключить Premium в своём телефоне.";
+"access.banner.pending.body" = "Повторно платить не нужно. Статус можно проверить в окне Premium.";
+"access.banner.verification.body" = "Откройте Premium, чтобы проверить подписку или восстановить покупку.";
+"access.banner.child_verification.body" = "Попроси родителя проверить Premium в своём телефоне.";
+"access.banner.choose_plan" = "Выбрать план";
+"access.banner.check_status" = "Проверить статус";

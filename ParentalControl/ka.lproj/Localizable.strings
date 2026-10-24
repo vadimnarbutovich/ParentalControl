@@ -614,3 +614,14 @@
 "paywall.plan.current" = "მიმდინარე გეგმა";
 "settings.premium.paid_active" = "Premium აქტიურია";
 "tasks.child.access_paused" = "ანგარიშების გაგზავნა შეჩერებულია. სთხოვე მშობელს, თავის აპში წვდომა შეამოწმოს.";
+"access.banner.inactive.title" = "Premium არ არის აქტიური";
+"access.banner.paused.title" = "მართვა შეჩერებულია";
+"access.banner.pending.title" = "შესყიდვა დასტურდება";
+"access.banner.verification.title" = "Premium-ის სტატუსი დაუდასტურებელია";
+"access.banner.parent.body" = "გაააქტიურეთ Premium, რომ ბავშვის ტელეფონის მართვა გააგრძელოთ.";
+"access.banner.child.body" = "სთხოვე მშობელს, თავის ტელეფონში Premium გაააქტიუროს.";
+"access.banner.pending.body" = "ხელახლა გადახდა საჭირო არ არის. სტატუსის შემოწმება Premium-ის ეკრანზე შეგიძლიათ.";
+"access.banner.verification.body" = "გახსენით Premium, რომ გამოწერა შეამოწმოთ ან შესყიდვა აღადგინოთ.";
+"access.banner.child_verification.body" = "სთხოვე მშობელს, თავის ტელეფონში Premium შეამოწმოს.";
+"access.banner.choose_plan" = "გეგმის არჩევა";
+"access.banner.check_status" = "სტატუსის შემოწმება";

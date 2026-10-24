@@ -671,3 +671,14 @@
 "paywall.plan.current" = "当前方案";
 "settings.premium.paid_active" = "Premium 已生效";
 "tasks.child.access_paused" = "报告发送已暂停。请家长在他们的应用中检查使用权限。";
+"access.banner.inactive.title" = "Premium 未启用";
+"access.banner.paused.title" = "管理已暂停";
+"access.banner.pending.title" = "正在确认购买";
+"access.banner.verification.title" = "Premium 状态未确认";
+"access.banner.parent.body" = "启用 Premium 以继续管理孩子的手机。";
+"access.banner.child.body" = "请家长在他们的手机上启用 Premium。";
+"access.banner.pending.body" = "无需再次付款。你可以在 Premium 页面查看状态。";
+"access.banner.verification.body" = "打开 Premium，查看订阅状态或恢复购买。";
+"access.banner.child_verification.body" = "请家长在他们的手机上查看 Premium 状态。";
+"access.banner.choose_plan" = "选择方案";
+"access.banner.check_status" = "查看状态";

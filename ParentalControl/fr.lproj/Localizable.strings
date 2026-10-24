@@ -671,3 +671,14 @@
 "paywall.plan.current" = "Offre actuelle";
 "settings.premium.paid_active" = "Premium actif";
 "tasks.child.access_paused" = "L’envoi des comptes rendus est suspendu. Demande à ton parent de vérifier l’accès dans son application.";
+"access.banner.inactive.title" = "Premium est inactif";
+"access.banner.paused.title" = "Gestion suspendue";
+"access.banner.pending.title" = "Confirmation de l’achat";
+"access.banner.verification.title" = "Statut Premium non confirmé";
+"access.banner.parent.body" = "Activez Premium pour continuer à gérer le téléphone de votre enfant.";
+"access.banner.child.body" = "Demande à ton parent d’activer Premium sur son téléphone.";
+"access.banner.pending.body" = "Vous n’avez pas besoin de payer à nouveau. Consultez le statut dans l’écran Premium.";
+"access.banner.verification.body" = "Ouvrez Premium pour vérifier votre abonnement ou restaurer votre achat.";
+"access.banner.child_verification.body" = "Demande à ton parent de vérifier Premium sur son téléphone.";
+"access.banner.choose_plan" = "Choisir une formule";
+"access.banner.check_status" = "Vérifier le statut";

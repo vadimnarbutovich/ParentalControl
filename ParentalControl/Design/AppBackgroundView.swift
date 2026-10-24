@@ -1,10 +1,62 @@
 import SwiftUI
 
-struct AppBackgroundView: View {
+private struct AppBackgroundCanvasKey: EnvironmentKey {
+    static let defaultValue: CGRect? = nil
+}
+
+extension EnvironmentValues {
+    fileprivate var appBackgroundCanvas: CGRect? {
+        get { self[AppBackgroundCanvasKey.self] }
+        set { self[AppBackgroundCanvasKey.self] = newValue }
+    }
+}
+
+/// Navigation stacks still own their backgrounds, but all sample the same
+/// full-screen canvas. A pinned banner must not restart the gradient below it.
+struct AppBackgroundContainer<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
     var body: some View {
+        GeometryReader { proxy in
+            let frame = proxy.frame(in: .global)
+            let insets = proxy.safeAreaInsets
+            let canvas = CGRect(x: frame.minX - insets.leading,
+                                y: frame.minY - insets.top,
+                                width: frame.width + insets.leading + insets.trailing,
+                                height: frame.height + insets.top + insets.bottom)
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(AppBackgroundView())
+                .environment(\.appBackgroundCanvas, canvas)
+        }
+    }
+}
+
+struct AppBackgroundView: View {
+    @Environment(\.appBackgroundCanvas) private var sharedCanvas
+
+    var body: some View {
+        GeometryReader { proxy in
+            let localFrame = proxy.frame(in: .global)
+            let canvas = sharedCanvas ?? localFrame
+            artwork
+                .frame(width: canvas.width, height: canvas.height)
+                // Rasterize the full canvas before sampling it. On iOS 18,
+                // clipped gradient layers otherwise leave a seam below the banner.
+                .drawingGroup(opaque: true)
+                .offset(x: canvas.minX - localFrame.minX,
+                        y: canvas.minY - localFrame.minY)
+        }
+        // Clip the sampled artwork, not the screen's controls or scroll view.
+        .clipped()
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var artwork: some View {
         ZStack {
             AppTheme.screenGradient
-                .ignoresSafeArea()
 
             RadialGradient(
                 colors: [
@@ -15,7 +67,6 @@ struct AppBackgroundView: View {
                 startRadius: 20,
                 endRadius: 330
             )
-            .ignoresSafeArea()
 
             RadialGradient(
                 colors: [
@@ -26,7 +77,6 @@ struct AppBackgroundView: View {
                 startRadius: 10,
                 endRadius: 300
             )
-            .ignoresSafeArea()
 
             RadialGradient(
                 colors: [
@@ -37,10 +87,8 @@ struct AppBackgroundView: View {
                 startRadius: 30,
                 endRadius: 420
             )
-            .ignoresSafeArea()
 
             StaticStarsLayer()
-                .ignoresSafeArea()
         }
     }
 }

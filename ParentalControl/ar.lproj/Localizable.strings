@@ -671,3 +671,14 @@
 "paywall.plan.current" = "الخطة الحالية";
 "settings.premium.paid_active" = "Premium مفعّل";
 "tasks.child.access_paused" = "إرسال التقارير متوقف مؤقتًا. اطلب من أحد والديك التحقق من إمكانية الوصول في تطبيقه.";
+"access.banner.inactive.title" = "Premium غير مفعّل";
+"access.banner.paused.title" = "التحكم متوقف مؤقتًا";
+"access.banner.pending.title" = "جارٍ تأكيد الشراء";
+"access.banner.verification.title" = "لم يتم تأكيد حالة Premium";
+"access.banner.parent.body" = "فعّل Premium لمواصلة إدارة هاتف طفلك.";
+"access.banner.child.body" = "اطلب من أحد والديك تفعيل Premium على هاتفه.";
+"access.banner.pending.body" = "لا تحتاج إلى الدفع مجددًا. يمكنك التحقق من الحالة في شاشة Premium.";
+"access.banner.verification.body" = "افتح Premium للتحقق من اشتراكك أو استعادة مشترياتك.";
+"access.banner.child_verification.body" = "اطلب من أحد والديك التحقق من Premium على هاتفه.";
+"access.banner.choose_plan" = "اختيار خطة";
+"access.banner.check_status" = "التحقق من الحالة";

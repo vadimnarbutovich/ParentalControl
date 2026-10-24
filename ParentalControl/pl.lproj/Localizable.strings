@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Obecny plan";
 "settings.premium.paid_active" = "Premium aktywne";
 "tasks.child.access_paused" = "Wysyłanie raportów jest wstrzymane. Poproś rodzica o sprawdzenie dostępu w jego aplikacji.";
+"access.banner.inactive.title" = "Premium jest nieaktywne";
+"access.banner.paused.title" = "Zarządzanie wstrzymane";
+"access.banner.pending.title" = "Potwierdzanie zakupu";
+"access.banner.verification.title" = "Status Premium niepotwierdzony";
+"access.banner.parent.body" = "Aktywuj Premium, aby dalej zarządzać telefonem dziecka.";
+"access.banner.child.body" = "Poproś rodzica o aktywowanie Premium na jego telefonie.";
+"access.banner.pending.body" = "Nie musisz płacić ponownie. Status możesz sprawdzić na ekranie Premium.";
+"access.banner.verification.body" = "Otwórz Premium, aby sprawdzić subskrypcję lub przywrócić zakup.";
+"access.banner.child_verification.body" = "Poproś rodzica o sprawdzenie Premium na jego telefonie.";
+"access.banner.choose_plan" = "Wybierz plan";
+"access.banner.check_status" = "Sprawdź status";

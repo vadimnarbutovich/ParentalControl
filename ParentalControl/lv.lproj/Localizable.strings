@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Pašreizējais plāns";
 "settings.premium.paid_active" = "Premium ir aktīvs";
 "tasks.child.access_paused" = "Atskaišu sūtīšana ir apturēta. Palūdz vecākiem pārbaudīt piekļuvi savā lietotnē.";
+"access.banner.inactive.title" = "Premium nav aktīvs";
+"access.banner.paused.title" = "Pārvaldība ir apturēta";
+"access.banner.pending.title" = "Pirkums tiek apstiprināts";
+"access.banner.verification.title" = "Premium statuss nav apstiprināts";
+"access.banner.parent.body" = "Aktivizējiet Premium, lai turpinātu pārvaldīt bērna tālruni.";
+"access.banner.child.body" = "Palūdz vecākiem aktivizēt Premium savā tālrunī.";
+"access.banner.pending.body" = "Atkārtoti maksāt nav nepieciešams. Statusu var pārbaudīt Premium ekrānā.";
+"access.banner.verification.body" = "Atveriet Premium, lai pārbaudītu abonementu vai atjaunotu pirkumu.";
+"access.banner.child_verification.body" = "Palūdz vecākiem pārbaudīt Premium savā tālrunī.";
+"access.banner.choose_plan" = "Izvēlēties plānu";
+"access.banner.check_status" = "Pārbaudīt statusu";

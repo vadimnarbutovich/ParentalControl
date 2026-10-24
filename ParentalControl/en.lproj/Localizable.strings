@@ -675,3 +675,14 @@
 "paywall.plan.current" = "Current plan";
 "settings.premium.paid_active" = "Premium active";
 "tasks.child.access_paused" = "Sending reports is paused. Ask your parent to check access in their app.";
+"access.banner.inactive.title" = "Premium is inactive";
+"access.banner.paused.title" = "Controls are paused";
+"access.banner.pending.title" = "Confirming your purchase";
+"access.banner.verification.title" = "Premium status unconfirmed";
+"access.banner.parent.body" = "Activate Premium to continue managing your child’s phone.";
+"access.banner.child.body" = "Ask your parent to activate Premium on their phone.";
+"access.banner.pending.body" = "You don’t need to pay again. Check the status on the Premium screen.";
+"access.banner.verification.body" = "Open Premium to check your subscription or restore your purchase.";
+"access.banner.child_verification.body" = "Ask your parent to check Premium on their phone.";
+"access.banner.choose_plan" = "Choose a plan";
+"access.banner.check_status" = "Check status";

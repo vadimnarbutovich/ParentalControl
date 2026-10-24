@@ -671,3 +671,14 @@
 "paywall.plan.current" = "現在のプラン";
 "settings.premium.paid_active" = "Premium 有効";
 "tasks.child.access_paused" = "報告の送信は一時停止中です。保護者の方に、ご自身のアプリで利用状況を確認してもらってください。";
+"access.banner.inactive.title" = "Premiumは無効です";
+"access.banner.paused.title" = "管理を一時停止中";
+"access.banner.pending.title" = "購入を確認しています";
+"access.banner.verification.title" = "Premiumの状態が未確認です";
+"access.banner.parent.body" = "お子さまのスマートフォンの管理を続けるには、Premiumを有効にしてください。";
+"access.banner.child.body" = "保護者の方に、ご自身のスマートフォンでPremiumを有効にしてもらってください。";
+"access.banner.pending.body" = "再度お支払いいただく必要はありません。Premium画面で状況を確認できます。";
+"access.banner.verification.body" = "Premiumを開いてサブスクリプションを確認するか、購入を復元してください。";
+"access.banner.child_verification.body" = "保護者の方に、ご自身のスマートフォンでPremiumを確認してもらってください。";
+"access.banner.choose_plan" = "プランを選ぶ";
+"access.banner.check_status" = "状況を確認";

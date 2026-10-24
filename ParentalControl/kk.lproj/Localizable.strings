@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Ағымдағы жоспар";
 "settings.premium.paid_active" = "Premium белсенді";
 "tasks.child.access_paused" = "Есеп жіберу уақытша тоқтатылды. Ата-анаңнан өз қолданбасындағы қолжетімділікті тексеруді сұра.";
+"access.banner.inactive.title" = "Premium белсенді емес";
+"access.banner.paused.title" = "Басқару уақытша тоқтатылды";
+"access.banner.pending.title" = "Сатып алу расталуда";
+"access.banner.verification.title" = "Premium күйі расталмады";
+"access.banner.parent.body" = "Баланың телефонын басқаруды жалғастыру үшін Premium қосыңыз.";
+"access.banner.child.body" = "Ата-анаңнан өз телефонында Premium қосуды сұра.";
+"access.banner.pending.body" = "Қайта төлеудің қажеті жоқ. Күйін Premium экранынан тексере аласыз.";
+"access.banner.verification.body" = "Жазылымды тексеру немесе сатып алуды қалпына келтіру үшін Premium ашыңыз.";
+"access.banner.child_verification.body" = "Ата-анаңнан өз телефонында Premium күйін тексеруді сұра.";
+"access.banner.choose_plan" = "Жоспарды таңдау";
+"access.banner.check_status" = "Күйін тексеру";

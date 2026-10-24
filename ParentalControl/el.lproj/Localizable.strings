@@ -614,3 +614,14 @@
 "paywall.plan.current" = "Τρέχον πρόγραμμα";
 "settings.premium.paid_active" = "Το Premium είναι ενεργό";
 "tasks.child.access_paused" = "Η αποστολή αναφορών έχει διακοπεί προσωρινά. Ζήτησε από τον γονέα σου να ελέγξει την πρόσβαση στην εφαρμογή του.";
+"access.banner.inactive.title" = "Το Premium δεν είναι ενεργό";
+"access.banner.paused.title" = "Η διαχείριση έχει διακοπεί";
+"access.banner.pending.title" = "Επιβεβαίωση αγοράς";
+"access.banner.verification.title" = "Η κατάσταση Premium δεν έχει επιβεβαιωθεί";
+"access.banner.parent.body" = "Ενεργοποιήστε το Premium για να συνεχίσετε τη διαχείριση του τηλεφώνου του παιδιού.";
+"access.banner.child.body" = "Ζήτησε από τον γονέα σου να ενεργοποιήσει το Premium στο τηλέφωνό του.";
+"access.banner.pending.body" = "Δεν χρειάζεται να πληρώσετε ξανά. Ελέγξτε την κατάσταση στην οθόνη Premium.";
+"access.banner.verification.body" = "Ανοίξτε το Premium για να ελέγξετε τη συνδρομή σας ή να επαναφέρετε την αγορά σας.";
+"access.banner.child_verification.body" = "Ζήτησε από τον γονέα σου να ελέγξει το Premium στο τηλέφωνό του.";
+"access.banner.choose_plan" = "Επιλογή πλάνου";
+"access.banner.check_status" = "Έλεγχος κατάστασης";

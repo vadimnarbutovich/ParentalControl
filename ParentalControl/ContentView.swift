@@ -12,40 +12,25 @@ struct ContentView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
 
     var body: some View {
-        Group {
-            if let role = appState.deviceRole {
-                if appState.hasCompletedOnboarding {
-                    MainTabView()
-                        .environmentObject(subscriptionService)
-                } else {
-                    OnboardingFlowView()
-                        .id(role)
-                }
-            } else {
-                RoleSelectionView()
-            }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
+        AppBackgroundContainer {
             VStack(spacing: 0) {
                 PermissionReminderBannerView()
-                if !appState.isFamilyAccessAllowed {
-                    VStack(spacing: 8) {
-                        Text("access.paused")
-                            .font(.footnote)
-                            .multilineTextAlignment(.center)
-                        HStack {
-                            Button("paywall.retry") { Task { await appState.refreshFamilyAccess(force: true) } }
-                            if appState.deviceRole == .parent {
-                                Button("paywall.cta.continue") { _ = appState.requireFamilyAccess() }
-                            }
-                        }
-                        .font(.footnote.weight(.semibold))
+                if appState.hasCompletedOnboarding, appState.deviceRole != nil {
+                    FamilyAccessBannerView()
+                }
+                if let role = appState.deviceRole {
+                    if appState.hasCompletedOnboarding {
+                        MainTabView()
+                            .environmentObject(subscriptionService)
+                    } else {
+                        OnboardingFlowView()
+                            .id(role)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity)
-                    .background(.ultraThinMaterial)
+                } else {
+                    RoleSelectionView()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .familyAccessPaywall(isRoot: true)
         .onReceive(NotificationCenter.default.publisher(for: FamilyAccessStore.changed)) { _ in
