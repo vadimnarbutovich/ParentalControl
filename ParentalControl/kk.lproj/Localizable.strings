@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Таңдалған қолданбаларға күндік шектеу";
 "paywall.feature.schedules" = "Ұйқы мен оқуға арналған үзілістер";
 "paywall.feature.tasks" = "Орындалған тапсырмалар үшін қосымша уақыт";
-"paywall.feature.location" = "Баланың орналасқан жерін сұрау";
+"paywall.feature.location" = "Баланың орналасқан жері";
 "paywall.plan.monthly" = "Бір айға";
 "paywall.plan.lifetime" = "Мерзімсіз";
 "paywall.price.per_month_format" = "Айына %@";

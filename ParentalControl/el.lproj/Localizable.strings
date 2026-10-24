@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Ημερήσια όρια για επιλεγμένες εφαρμογές";
 "paywall.feature.schedules" = "Διαλείμματα για ύπνο και μελέτη";
 "paywall.feature.tasks" = "Επιπλέον χρόνος για ολοκληρωμένες εργασίες";
-"paywall.feature.location" = "Τοποθεσία του παιδιού κατόπιν αιτήματος";
+"paywall.feature.location" = "Τοποθεσία του παιδιού";
 "paywall.plan.monthly" = "Μηνιαίο";
 "paywall.plan.lifetime" = "Για πάντα";
 "paywall.price.per_month_format" = "%@ τον μήνα";

@@ -652,7 +652,7 @@
 "paywall.feature.limits" = "選んだアプリに1日の利用制限";
 "paywall.feature.schedules" = "睡眠や勉強の時間はアプリをお休み";
 "paywall.feature.tasks" = "課題を終えたら利用時間をごほうびに";
-"paywall.feature.location" = "必要なときにお子さまの位置を確認";
+"paywall.feature.location" = "お子さまの位置情報";
 "paywall.plan.monthly" = "月額プラン";
 "paywall.plan.lifetime" = "買い切り";
 "paywall.price.per_month_format" = "月額%@";

@@ -652,7 +652,7 @@
 "paywall.feature.limits" = "Tageslimits für ausgewählte Apps";
 "paywall.feature.schedules" = "Pausen zum Schlafen und Lernen";
 "paywall.feature.tasks" = "Extra App-Zeit für erledigte Aufgaben";
-"paywall.feature.location" = "Standort Ihres Kindes auf Anfrage";
+"paywall.feature.location" = "Standort Ihres Kindes";
 "paywall.plan.monthly" = "Monatlich";
 "paywall.plan.lifetime" = "Dauerhaft";
 "paywall.price.per_month_format" = "%@ pro Monat";

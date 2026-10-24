@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Дневни лимити за избраните приложения";
 "paywall.feature.schedules" = "Почивки за сън и учене";
 "paywall.feature.tasks" = "Допълнително време за изпълнени задачи";
-"paywall.feature.location" = "Местоположение на детето при поискване";
+"paywall.feature.location" = "Местоположение на детето";
 "paywall.plan.monthly" = "Месечен";
 "paywall.plan.lifetime" = "Завинаги";
 "paywall.price.per_month_format" = "%@ на месец";

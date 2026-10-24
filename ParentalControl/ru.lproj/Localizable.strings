@@ -656,7 +656,7 @@
 "paywall.feature.limits" = "Дневные лимиты выбранных приложений";
 "paywall.feature.schedules" = "Перерывы для сна и учёбы";
 "paywall.feature.tasks" = "Время в приложениях за выполненные задания";
-"paywall.feature.location" = "Местоположение ребёнка по запросу";
+"paywall.feature.location" = "Местоположение ребёнка";
 "paywall.plan.monthly" = "На месяц";
 "paywall.plan.lifetime" = "Навсегда";
 "paywall.price.per_month_format" = "%@ в месяц";

@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "დღიური ლიმიტები არჩეული აპებისთვის";
 "paywall.feature.schedules" = "შესვენებები ძილისა და სწავლისთვის";
 "paywall.feature.tasks" = "დამატებითი დრო შესრულებული დავალებებისთვის";
-"paywall.feature.location" = "ბავშვის მდებარეობა მოთხოვნისას";
+"paywall.feature.location" = "ბავშვის მდებარეობა";
 "paywall.plan.monthly" = "ერთი თვით";
 "paywall.plan.lifetime" = "სამუდამოდ";
 "paywall.price.per_month_format" = "%@ თვეში";

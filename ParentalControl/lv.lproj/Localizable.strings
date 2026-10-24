@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Dienas limiti izvēlētajām lietotnēm";
 "paywall.feature.schedules" = "Pārtraukumi miegam un mācībām";
 "paywall.feature.tasks" = "Papildu laiks par izpildītiem uzdevumiem";
-"paywall.feature.location" = "Bērna atrašanās vieta pēc pieprasījuma";
+"paywall.feature.location" = "Bērna atrašanās vieta";
 "paywall.plan.monthly" = "Mēnesim";
 "paywall.plan.lifetime" = "Uz visiem laikiem";
 "paywall.price.per_month_format" = "%@ mēnesī";

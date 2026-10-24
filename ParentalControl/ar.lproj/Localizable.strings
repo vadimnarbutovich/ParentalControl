@@ -652,7 +652,7 @@
 "paywall.feature.limits" = "حدود يومية للتطبيقات المختارة";
 "paywall.feature.schedules" = "فترات راحة للنوم والدراسة";
 "paywall.feature.tasks" = "وقت إضافي مقابل إنجاز المهام";
-"paywall.feature.location" = "موقع طفلك عند الطلب";
+"paywall.feature.location" = "موقع طفلك";
 "paywall.plan.monthly" = "شهري";
 "paywall.plan.lifetime" = "مدى الحياة";
 "paywall.price.per_month_format" = "%@ شهريًا";

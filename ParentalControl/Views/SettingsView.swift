@@ -38,11 +38,6 @@ struct SettingsView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("settings.title")
-                            .font(.largeTitle.bold())
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
                         if appState.deviceRole == .parent {
                             premiumSection
                         }

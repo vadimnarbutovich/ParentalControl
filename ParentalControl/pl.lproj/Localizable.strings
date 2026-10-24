@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Dzienne limity wybranych aplikacji";
 "paywall.feature.schedules" = "Przerwy na sen i naukę";
 "paywall.feature.tasks" = "Dodatkowy czas za wykonane zadania";
-"paywall.feature.location" = "Lokalizacja dziecka na żądanie";
+"paywall.feature.location" = "Lokalizacja dziecka";
 "paywall.plan.monthly" = "Miesięcznie";
 "paywall.plan.lifetime" = "Na zawsze";
 "paywall.price.per_month_format" = "%@ miesięcznie";

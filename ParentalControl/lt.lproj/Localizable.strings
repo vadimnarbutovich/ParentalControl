@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Pasirinktų programėlių dienos limitai";
 "paywall.feature.schedules" = "Pertraukos miegui ir mokslui";
 "paywall.feature.tasks" = "Papildomas laikas už atliktas užduotis";
-"paywall.feature.location" = "Vaiko buvimo vieta pagal užklausą";
+"paywall.feature.location" = "Vaiko buvimo vieta";
 "paywall.plan.monthly" = "Mėnesiui";
 "paywall.plan.lifetime" = "Visam laikui";
 "paywall.price.per_month_format" = "%@ per mėnesį";

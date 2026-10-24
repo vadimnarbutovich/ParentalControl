@@ -652,7 +652,7 @@
 "paywall.feature.limits" = "為所選 App 設定每日限額";
 "paywall.feature.schedules" = "為睡眠和學習安排休息時間";
 "paywall.feature.tasks" = "完成任務可獲得額外使用時間";
-"paywall.feature.location" = "需要時查看孩子的位置";
+"paywall.feature.location" = "孩子的位置";
 "paywall.plan.monthly" = "月訂閱";
 "paywall.plan.lifetime" = "永久使用";
 "paywall.price.per_month_format" = "每月 %@";

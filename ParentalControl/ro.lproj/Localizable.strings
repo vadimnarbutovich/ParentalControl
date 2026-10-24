@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Limite zilnice pentru aplicațiile alese";
 "paywall.feature.schedules" = "Pauze pentru somn și studiu";
 "paywall.feature.tasks" = "Timp suplimentar pentru sarcini îndeplinite";
-"paywall.feature.location" = "Locația copilului la cerere";
+"paywall.feature.location" = "Locația copilului";
 "paywall.plan.monthly" = "Lunar";
 "paywall.plan.lifetime" = "Pe viață";
 "paywall.price.per_month_format" = "%@ pe lună";

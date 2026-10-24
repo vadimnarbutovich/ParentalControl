@@ -595,7 +595,7 @@
 "paywall.feature.limits" = "Tanlangan ilovalar uchun kunlik limitlar";
 "paywall.feature.schedules" = "Uyqu va o‘qish uchun tanaffuslar";
 "paywall.feature.tasks" = "Bajarilgan vazifalar uchun qo‘shimcha vaqt";
-"paywall.feature.location" = "Farzandingiz joylashuvini so‘rov orqali bilish";
+"paywall.feature.location" = "Farzandingiz joylashuvi";
 "paywall.plan.monthly" = "Bir oyga";
 "paywall.plan.lifetime" = "Muddatsiz";
 "paywall.price.per_month_format" = "Oyiga %@";
