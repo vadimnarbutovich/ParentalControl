@@ -54,6 +54,22 @@ Before export, also align extension CFBundleVersion with the host: the unsigned
 build currently warns about extension builds 1/2 versus host build 4.
 
 Hardware acceptance (both supported test iPhones, without Xcode debugger)
+Access-expiry ACK regression (2026-10-25)
+- A confirmed expired child_poll response releases shields through the bounded
+  system worker, then acknowledges only tasks_updated with accessReleaseRevision.
+  The server verifies the stored target/type and its existing access snapshot;
+  ordinary ACKs, subscription verification and retry limits are unchanged.
+- No ACK on worker failure/cancellation, malformed denial, changed pairing,
+  missing/stale receipt, renewed access or unsuccessful HTTP response.
+- Run: xcrun swiftc -parse-as-library -module-cache-path /private/tmp/parental-sync-module-cache ParentalControl/Models/FamilyAccessLease.swift NotificationServiceExtension/NotificationAccessRelease.swift Tests/NotificationControl/AccessReleaseTests.swift -o /private/tmp/parental-access-release-tests
+  Then /private/tmp/parental-access-release-tests and
+  node --experimental-strip-types --test Tests/SubscriptionAccess/access-release-ack.test.ts
+- Device follow-up: install the new child build without deleting data, arrange a
+  short demo with the parent, close the child app, and wait for expiry. Check actual
+  shield removal, diagnostic access_release_acknowledged, and the tasks_updated
+  row applied (not max_retry_exceeded). Do not start a timed demo automatically.
+
+General hardware acceptance
 1. Update both devices, open the child app once. Verify pairing, Screen Time
    authorization, selected test apps and an initialized daily allowance.
 2. Allow visible notifications on child. For locked-screen tests enable previews.

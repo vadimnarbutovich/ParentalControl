@@ -4,6 +4,7 @@ import * as jose from "npm:jose@5.9.6";
 import { sendApnsToDevice } from "../_shared/apns-routing.ts";
 import { accessAction, accessSnapshot, accessAllows, refreshOwner } from "../_shared/access-service.ts";
 import { authenticateWebhook, webhookEvent, renewalNeedsRetry } from "../_shared/access-webhook.ts";
+import { permitsAccessReleaseAck } from "../_shared/access-release-ack.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -160,7 +161,7 @@ Deno.serve(async (req: Request) => {
       case "fetch_link_health":
         return await fetchLinkHealth(authed.deviceId);
       case "ack_command":
-        return await ackCommand(authed.deviceId, payload);
+        return await ackCommand(authed.deviceId, payload, access);
       case "upsert_child_day_stats":
         return await upsertChildDayStats(authed.deviceId, payload);
       case "fetch_child_day_stats":
@@ -1228,7 +1229,7 @@ async function fetchLinkHealth(deviceId: string): Promise<Response> {
   });
 }
 
-async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
+async function ackCommand(deviceId: string, payload: Json, access: Json): Promise<Response> {
   const commandID = asString(payload.commandID);
   const status = asString(payload.status);
   const errorMessage = asString(payload.errorMessage);
@@ -1242,6 +1243,11 @@ async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
   if (commandError || !command) return errorResponse("Command not found", 404);
   if (command.target_device_id !== deviceId) return errorResponse("Forbidden", 403);
   if (command.command_type === "request_location") return errorResponse("Use location result endpoint", 400);
+  // Reuse the already fetched authenticated snapshot: no additional DB read.
+  // Never treat a denied manual/schedule command as successfully applied.
+  if ("accessReleaseRevision" in payload && !permitsAccessReleaseAck(payload, command.command_type, access)) {
+    return errorResponse("Access release acknowledgement is stale or invalid", 409);
+  }
 
   const patch: Record<string, unknown> = { status, error_message: errorMessage || null };
   if (status === "applied") patch.applied_at = new Date().toISOString();
