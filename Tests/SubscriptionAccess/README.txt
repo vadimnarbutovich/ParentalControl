@@ -33,9 +33,20 @@ Confirmed purchase state (2026-10-22; supersedes paid continuity)
   APNs delivery is best-effort; undelivered revocation requires later sync.
 - Automated SQL regression: Tests/SubscriptionAccess/continuity.sql.
 
-ROLLOUT IS OFF. This is implemented integration code, not a production acceptance
-sign-off. Do not enable pc_access_rollout until BOTH updated devices pass the
-hardware checklist below. Existing families have not started their demo.
+Global rollout enabled with user approval on 2026-10-25 at 15:28 UTC.
+- server.sql and pilots.sql passed against the deployed database with all test
+  changes rolled back before enabling the singleton flag.
+- New ready pairs retain the normal 24-hour demo; no existing trial/purchase,
+  pairing, or device data was reset. Both devices must complete readiness before
+  the ordinary prepare path starts a new demo. No bulk trial activation was run.
+- Sandbox remains allowed only for the original test owner. The existing pilot
+  row remains harmless with global rollout enabled; it was not deleted.
+- Readback: global flag true, all 47 device snapshots enforced (45 setup, two
+  expired test devices), 18 families unchanged, zero pending commands and no
+  due access/schedule work. The test owner's short demo remains expired.
+- Physical-device expiry test: wake sent 08:33:02 UTC, ACK applied 08:33:05;
+  one send, no retry failure, child shields released and parent access paused.
+This records server activation, not final App Store/TestFlight release sign-off.
 
 Implementation
 - Keychain backup of the existing device ID + secret; no account registration.
