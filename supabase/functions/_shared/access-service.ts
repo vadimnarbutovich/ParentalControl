@@ -29,8 +29,7 @@ export async function refreshOwner(db: DB, owner: string, secret: string): Promi
   if (!claim) return false;
   let state = "unknown", until: string | null = null, lifetime = false;
   try {
-    const result = await verifyRevenueCatAccess({ secret, customerID: claim.customerID,
-      environment: claim.sandbox ? "sandbox" : "production" });
+    const result = await verifyRevenueCatAccess({ secret, customerID: claim.customerID });
     state = result.status; lifetime = result.lifetime;
     until = result.expiresAt === null ? null : new Date(result.expiresAt).toISOString();
   } catch { /* Unknown must not overwrite paid cache or extend its verification time. */ }

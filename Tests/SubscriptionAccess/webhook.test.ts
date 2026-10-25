@@ -9,10 +9,13 @@ test("early renewal retries canonical verification without trusting event as a g
   const now = 1792658857000;
   const event = webhookEvent({ event: { id: "early", app_id: "app09b71b22ed", type: "RENEWAL",
     environment: "SANDBOX", expiration_at_ms: now + 187000, app_user_id: a } });
-  const owner = { sandbox_allowed: true, lifetime: false, purchase_until: new Date(now + 7000).toISOString() };
+  const owner = { lifetime: false, purchase_until: new Date(now + 7000).toISOString() };
   assert.equal(renewalNeedsRetry(event, owner, now), true);
   assert.equal(renewalNeedsRetry(event, { ...owner, purchase_until: new Date(now + 187000).toISOString() }, now), false);
-  assert.equal(renewalNeedsRetry(event, { ...owner, sandbox_allowed: false }, now), false);
+  const production = webhookEvent({ event: { id: "prod", app_id: "app09b71b22ed", type: "RENEWAL",
+    environment: "PRODUCTION", expiration_at_ms: now + 187000, app_user_id: a } });
+  assert.equal(renewalNeedsRetry(production, owner, now), true);
+  assert.equal(renewalNeedsRetry(event, { ...owner, lifetime: true }, now), false);
   assert.equal(renewalNeedsRetry(event, owner, now + 187000), false);
   assert.equal(renewalNeedsRetry({ id: "refund", test: false, customers: [a] }, owner, now), false);
 });

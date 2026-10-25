@@ -1,0 +1,72 @@
+App Store readiness — 2026-10-25
+
+COMPLETED SERVER CHANGE
+Verified Apple Production and Sandbox purchases use common access rules without
+an owner allowlist. Deployed sync v23 and balance-sync v11; files read back and
+matched. No schema, family, trial, subscription, polling or APNs routing change.
+57 automated subscription tests, both Deno entry-point checks, paywall checks and
+21-locale validation passed. New purchase/renewal/expiry hardware acceptance
+after this deployment is still required. Existing TestFlight build 8 is usable;
+these server-only changes do not require an iOS rebuild.
+
+APP STORE CONNECT READBACK — updated 2026-10-25
+Owner's edits verified and preserved:
+- Primary category PRODUCTIVITY; secondary category LIFESTYLE.
+- Japanese name: ペアレンタルコントロール・画面の時間
+- Content Rights: DOES_NOT_USE_THIRD_PARTY_CONTENT.
+Saved through API with HTTP 200 and then independently read back:
+- Age questionnaire: parentalControls=true, other capability flags false,
+  content frequencies NONE, no age override, kidsAgeBand=null. Result FOUR_PLUS;
+  Brazil L. Family-only task descriptions and external iOS photo sharing are
+  not a public UGC feed or a built-in chat. Made for Kids was not enabled.
+- Version 1.0 App Review Information > Notes: full review-notes-en.txt,
+  shortened at the owner's request to two-device setup, permissions, PIN,
+  task photo sharing, optional removal protection, 24h demo and Premium access.
+  Removed the test checklist, prices and server implementation details.
+  Contact details unchanged.
+Price creation failed with HTTP 403 FORBIDDEN_ERROR: the local API key does not
+allow POST /v1/appPriceSchedules. No price change was applied. Manual price
+list is still empty. Owner must set Free in Pricing and Availability, or provide
+an appropriately authorized App Store Connect API key via a local file.
+No submission, category/title/content-rights edit, or build selection was made.
+
+Confirmed by owner:
+- Primary category: Productivity.
+- App download price: Free (separate from paid in-app plans).
+- App Privacy and Business completed, per owner; not independently verified.
+- Age questionnaire: parental controls present; no ads, open chat/social network,
+  public user-generated content, unrestricted embedded browser, gambling or adult
+  content. Do not opt into Made for Kids.
+- Content Rights declaration: completed by owner and verified above.
+
+TO SAVE IN APP STORE CONNECT
+1. App Information/category and Japanese name: already saved by owner.
+2. Pricing and Availability: free download; availability already enabled for
+   175 territories. Purchase prices remain annual $12.99, monthly $1.99,
+   lifetime $19.99 (US), with 3-day eligible annual introductory trial.
+3. Age Rating: saved. Detailed responses:
+   parentalControls=true; advertising/gambling/healthOrWellnessTopics/lootBox/
+   messagingAndChat/ageAssurance/socialMedia/socialMediaAgeRestricted/
+   unrestrictedWebAccess/userGeneratedContent=false. All content-frequency
+   questions NONE. No age override or Made for Kids opt-in. Review the actual
+   questions before saving if Apple changes the form.
+4. Japanese title correction: verified; existing subtitle preserved.
+5. Version 1.0 > App Review Information: review-notes-en.txt is saved.
+   Contact details are already present. No demo account is needed; no universal
+   PIN should be added. Reviewers need two iPhones and their own pairing/PIN.
+6. Version 1.0: select processed build 8 after final TestFlight acceptance.
+   Its usesNonExemptEncryption is now false on readback; the earlier missing
+   export-compliance answer has been completed outside this preparation.
+7. Include all three READY_TO_SUBMIT purchases in the initial app submission.
+   Actual paywall review images are already processed (no placeholder remains).
+8. Content Rights is complete. Recheck App Privacy reflects the server,
+   location, RevenueCat and AppMetrica data handling and Business has no warnings.
+
+ALREADY CHECKED
+21 localizations have name/subtitle/keywords/description/promo and policy/support/
+marketing URLs, within character limits. Five processed screenshots each for
+en-US and ru. Other locales have no dedicated screenshot sets. Contact fields
+present. App version remains PREPARE_FOR_SUBMISSION; no review submitted.
+Release mode currently AFTER_APPROVAL: publication will be automatic after
+approval if this setting is left unchanged. This checklist does not authorize
+submission or publication.

@@ -54,15 +54,11 @@ function entitlementAttached(value: unknown): boolean {
 export async function verifyRevenueCatAccess(options: {
   secret: string;
   customerID: string;
-  // Must come from a server-side test-account allowlist, never request payload,
-  // APNs environment, DEBUG, or a receipt's own assertion that it is sandbox.
-  environment: "production" | "sandbox";
   now?: number;
   fetcher?: typeof fetch;
 }): Promise<PurchaseAccess> {
-  const { secret, customerID, environment } = options;
-  if (!/^sk_[A-Za-z0-9_-]+$/.test(secret) || !customerID || customerID.length > 1500 ||
-      !["production", "sandbox"].includes(environment)) {
+  const { secret, customerID } = options;
+  if (!/^sk_[A-Za-z0-9_-]+$/.test(secret) || !customerID || customerID.length > 1500) {
     throw new VerificationUnavailable("configuration");
   }
   const now = options.now ?? Date.now();
@@ -73,7 +69,9 @@ export async function verifyRevenueCatAccess(options: {
   const signal = AbortSignal.timeout(8_000);
   async function collection(resource: "subscriptions" | "purchases"): Promise<ObjectValue[]> {
     const path = `${base}/${resource}`;
-    let next: string | null = `${path}?environment=${environment}&limit=100`;
+    // RevenueCat returns both Apple environments when the filter is omitted.
+    // App Review needs Sandbox too. No client environment flag or owner allowlist.
+    let next: string | null = `${path}?limit=100`;
     const visited = new Set<string>();
     const rows: ObjectValue[] = [];
     while (next !== null) {
@@ -85,7 +83,8 @@ export async function verifyRevenueCatAccess(options: {
           visited.has(url.href) || visited.size >= 10) {
         throw new VerificationUnavailable("invalid_response");
       }
-      url.searchParams.set("environment", environment);
+      // Keep subsequent pages unfiltered as well; never silently lose one side.
+      url.searchParams.delete("environment");
       url.searchParams.set("limit", "100");
       if (visited.has(url.href)) throw new VerificationUnavailable("invalid_response");
       visited.add(url.href);
@@ -113,34 +112,48 @@ export async function verifyRevenueCatAccess(options: {
   }
   const [subscriptions, purchases] = await Promise.all([collection("subscriptions"), collection("purchases")]);
   let expiresAt = 0;
+  let uncertain = false;
   for (const row of subscriptions) {
-    if (row.environment !== environment || row.store !== "app_store" || !SUBSCRIPTIONS.has(String(row.product_id))) continue;
-    if (typeof row.gives_access !== "boolean") throw new VerificationUnavailable("invalid_response");
-    if (!row.gives_access || !entitlementAttached(row.entitlements)) continue;
-    // RevenueCat's gives_access includes cancellation-with-time-remaining and
-    // store billing grace. Never use auto_renewal_status as the access decision.
-    const currentEnd = timestamp(row.current_period_ends_at);
-    // Apple can renew before the current period ends. RevenueCat explicitly
-    // exposes the already-paid next period in ends_at (not pending_changes).
-    const end = row.auto_renewal_status === "has_already_renewed"
-      ? Math.max(currentEnd, timestamp(row.ends_at)) : currentEnd;
-    const start = timestamp(row.current_period_starts_at);
-    if (start > now || end <= start) throw new VerificationUnavailable("invalid_response");
-    if (end <= now && row.status !== "in_grace_period") {
-      // Conflicting/stale API data is unknown, NOT a fresh five-minute purchase
-      // and NOT evidence of expiry. In particular it must not revive an owner
-      // whose expiration was already confirmed by a newer canonical response.
-      throw new VerificationUnavailable("invalid_response");
+    if (!["production", "sandbox"].includes(String(row.environment)) || row.store !== "app_store" || !SUBSCRIPTIONS.has(String(row.product_id))) continue;
+    try {
+      if (typeof row.gives_access !== "boolean") throw new VerificationUnavailable("invalid_response");
+      if (!row.gives_access || !entitlementAttached(row.entitlements)) continue;
+      // RevenueCat's gives_access includes cancellation-with-time-remaining and
+      // store billing grace. Never use auto_renewal_status as the access decision.
+      const currentEnd = timestamp(row.current_period_ends_at);
+      // Apple can renew before the current period ends. RevenueCat explicitly
+      // exposes the already-paid next period in ends_at (not pending_changes).
+      const end = row.auto_renewal_status === "has_already_renewed"
+        ? Math.max(currentEnd, timestamp(row.ends_at)) : currentEnd;
+      const start = timestamp(row.current_period_starts_at);
+      if (start > now || end <= start) throw new VerificationUnavailable("invalid_response");
+      if (end <= now && row.status !== "in_grace_period") {
+        // Conflicting/stale API data is unknown, NOT a fresh five-minute purchase
+        // and NOT evidence of expiry. In particular it must not revive an owner
+        // whose expiration was already confirmed by a newer canonical response.
+        throw new VerificationUnavailable("invalid_response");
+      }
+      expiresAt = Math.max(expiresAt, end > now ? end : now + 5 * 60 * 1000);
+    } catch (error) {
+      if (!(error instanceof VerificationUnavailable)) throw error;
+      // One stale/malformed purchase must not mask another verified active one.
+      // Without any positive evidence the whole decision stays unknown.
+      uncertain = true;
     }
-    expiresAt = Math.max(expiresAt, end > now ? end : now + 5 * 60 * 1000);
   }
   for (const row of purchases) {
-    if (row.environment !== environment || row.store !== "app_store" || row.product_id !== LIFETIME) continue;
-    if (typeof row.status !== "string") throw new VerificationUnavailable("invalid_response");
-    if (row.status === "owned" && entitlementAttached(row.entitlements)) {
-      return { status: "active", lifetime: true, expiresAt: null };
+    if (!["production", "sandbox"].includes(String(row.environment)) || row.store !== "app_store" || row.product_id !== LIFETIME) continue;
+    try {
+      if (typeof row.status !== "string") throw new VerificationUnavailable("invalid_response");
+      if (row.status === "owned" && entitlementAttached(row.entitlements)) {
+        return { status: "active", lifetime: true, expiresAt: null };
+      }
+    } catch (error) {
+      if (!(error instanceof VerificationUnavailable)) throw error;
+      uncertain = true;
     }
   }
+  if (expiresAt <= now && uncertain) throw new VerificationUnavailable("invalid_response");
   return expiresAt > now
     ? { status: "active", lifetime: false, expiresAt }
     : { status: "inactive", lifetime: false, expiresAt: null };

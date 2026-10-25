@@ -1,5 +1,32 @@
 Subscription access integration — 2026-10-22
 
+Unified verified Apple purchases — 2026-10-25 (current policy)
+- Production and Apple Sandbox purchases now use the same canonical verifier.
+  RevenueCat subscription/purchase lists omit the environment filter. Only the
+  existing project, three product IDs, App Store and active Premium entitlement
+  are accepted. RevenueCat Test Store and arbitrary client flags cannot grant.
+- An active purchase in either environment grants access; another expired or
+  refunded purchase cannot revoke it. A malformed/stale purchase cannot mask
+  another positively verified active purchase. With no positive evidence,
+  malformed data remains unknown and preserves the existing confirmed cache.
+- Same two collection requests per refresh (subscriptions + purchases), with
+  existing bounded pagination, timeout, single-flight and cooldown. No extra
+  database query, polling loop, environment lookup or schema migration.
+- Legacy pc_access_owners.sandbox_allowed and the RPC's sandbox field remain
+  stored for rollback compatibility only; deployed code no longer reads them.
+  There is no test-owner allowlist in the purchase-access decision.
+- Webhooks remain authenticated refresh signals, never grants. Both environments
+  already reach our webhook; renewal retry no longer checks an owner allowlist.
+- Deployed parental-control-sync v23 and parental-control-balance-sync v11.
+  Readback matched all local deployed files. No family, demo, purchase or global
+  rollout rows were modified. App Review Sandbox can use a fresh owner identity.
+- Verified: 57 Node tests; Deno checks for both deployed entry points; paywall
+  validation; localization validation (21 locales). Unfiltered live RevenueCat
+  lists return the existing Sandbox history. These are not a new hardware test.
+- Before submission: on TestFlight build 8, buy/restore, verify parent commands
+  and child enforcement, then test expiration/refund. A fresh owner acceptance
+  test is desirable; automated tests cover legacy flag false/true/absent.
+
 Confirmed purchase state (2026-10-22; supersedes paid continuity)
 - Paid access is the last authenticated canonical decision. Offline/verification
   failures preserve active, including sleep/reboot. No local paid expiry timer.
@@ -17,7 +44,8 @@ Confirmed purchase state (2026-10-22; supersedes paid continuity)
 - Renewal checks use nextCheckAtMs (including early checks near period end),
   not only a fixed 15min client interval. Server TTL respects a nearby expiry.
 - Early renewal webhook + stale API period is retried, not marked completed.
-  Webhook payload never grants access; environment allowlisting is preserved.
+  Webhook payload never grants access. The original environment allowlist was
+  superseded by unified verified Apple purchases on 2026-10-25.
 - Premium settings use effective server paid access, labelled Premium available.
   Cached SDK entitlement alone cannot show active access.
 - Both migrations paid_access_continuity and confirmed_purchase_state passed
@@ -39,8 +67,9 @@ Global rollout enabled with user approval on 2026-10-25 at 15:28 UTC.
 - New ready pairs retain the normal 24-hour demo; no existing trial/purchase,
   pairing, or device data was reset. Both devices must complete readiness before
   the ordinary prepare path starts a new demo. No bulk trial activation was run.
-- Sandbox remains allowed only for the original test owner. The existing pilot
-  row remains harmless with global rollout enabled; it was not deleted.
+- At rollout time Sandbox was allowed only for the original test owner; this
+  was superseded by the unified verifier above. The existing pilot row remains
+  harmless with global rollout enabled; it was not deleted.
 - Readback: global flag true, all 47 device snapshots enforced (45 setup, two
   expired test devices), 18 families unchanged, zero pending commands and no
   due access/schedule work. The test owner's short demo remains expired.
@@ -58,7 +87,7 @@ Implementation
   child Screen Time authorization and selection. Re-pairing does not reset it.
 - Server-verified paid decisions; inactive and verification failure differ.
   Network failures preserve the last verified decision, not a new purchase.
-  Sandbox requires an explicit server-side owner allowlist.
+  Both verified Apple environments are accepted without an owner allowlist.
 - Host request gate, ordinary polling suspension, usage-upload gate, location
   request gate, both sync endpoints, schedule cron and command-retry gates.
   Recovery checks remain at 15-minute intervals; purchase/restore gets a
@@ -87,7 +116,7 @@ Migrations: family_access, explicit_purchase_refresh, access_maintenance,
 family_access_pilots, access_setup_and_enrollment, paid_access_continuity,
 confirmed_purchase_state.
 Both sync functions include access checks; normal device/cron authentication is
-preserved. Restriction switch remains false.
+preserved. Global restriction switch is enabled as of 2026-10-25.
 Webhook: ParentalControl Supabase Access / whintgr235923552d
 https://app.revenuecat.com/projects/77ee7cb3/integrations/webhooks/whintgr235923552d
 The user configured Authorization header and received 'ok' for a dashboard TEST.
@@ -130,8 +159,8 @@ Build all app/extension targets, not only the host.
 Required hardware acceptance BEFORE enabling restrictions
 1. Install new builds on BOTH phones; open child once; verify permissions,
    selection, initialized budget and pairing. Confirm both access-ready flags.
-2. Explicitly approve enabling a test family/rollout and sandbox allowance.
-   Do not use an arbitrary client environment flag to grant sandbox purchases.
+2. Global rollout is already enabled. No Sandbox owner allowance is required.
+   Do not use an arbitrary client environment flag to grant purchases.
 3. Verify exactly one demo start; restart/re-pair must not move its timestamp.
 4. Expire a TEST owner's demo deliberately; with child app closed and another
    app active, verify actual manual AND schedule shields clear without payment.
@@ -162,7 +191,7 @@ Limitations / release gates
 - Turning rollout off does not reset an already enrolled local receipt: delayed
   legacy responses must not bypass payment. Plan rollback with safe release,
   not a client isPro override.
-- Keep the global rollout flag OFF during pilots. A pilot initially identifies an
+- Historical pilot behavior (global rollout is now ON): a pilot identifies an
   exact family + parent + child, then permanently enrolls that parent device.
   Replacing the child, unlinking or deleting the family cannot reopen legacy access
   or restart the owner's demo. Other parents remain unaffected.

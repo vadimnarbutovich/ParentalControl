@@ -10,11 +10,11 @@ const subscription = { environment: "production", store: "app_store", product_id
   entitlements: attached, auto_renewal_status: "will_not_renew" };
 const lifetime = { environment: "production", store: "app_store", product_id: "prod2046b253a9", status: "owned", entitlements: attached };
 const page = (items: unknown[], next_page: string | null = null) => Response.json({ object: "list", items, next_page });
-function verify(subs: unknown[] = [], purchases: unknown[] = [], environment: "production" | "sandbox" = "production") {
-  return verifyRevenueCatAccess({ secret: "sk_test_fixture_only", customerID: "fixture", environment, now,
+function verify(subs: unknown[] = [], purchases: unknown[] = []) {
+  return verifyRevenueCatAccess({ secret: "sk_test_fixture_only", customerID: "fixture", now,
     fetcher: async (input, init) => {
       const url = new URL(String(input));
-      assert.equal(url.searchParams.get("environment"), environment);
+      assert.equal(url.searchParams.has("environment"), false);
       assert.equal(init?.redirect, "error");
       return page(url.pathname.endsWith("/subscriptions") ? subs : purchases);
     } });
@@ -25,10 +25,50 @@ test("cancelled renewal retains paid access", async () => {
 test("empty successful responses confirm no purchase", async () => {
   assert.equal((await verify()).status, "inactive");
 });
-test("sandbox does not grant production; explicit test environment does", async () => {
-  const row = { ...subscription, environment: "sandbox" };
-  assert.equal((await verify([row])).status, "inactive");
-  assert.equal((await verify([row], [], "sandbox")).status, "active");
+test("verified Apple sandbox purchases grant access without a test-owner allowlist", async () => {
+  assert.equal((await verify([{ ...subscription, environment: "sandbox" }])).status, "active");
+  assert.deepEqual(await verify([], [{ ...lifetime, environment: "sandbox" }]),
+    { status: "active", lifetime: true, expiresAt: null });
+});
+test("expired/refunded purchase in either environment cannot revoke another active purchase", async () => {
+  for (const environment of ["sandbox", "production"]) {
+    const other = environment === "sandbox" ? "production" : "sandbox";
+    const active = { ...subscription, environment };
+    const inactive = { ...subscription, environment: other, gives_access: false };
+    assert.equal((await verify([inactive, active])).status, "active");
+    assert.equal((await verify([active], [{ ...lifetime, environment: other, status: "refunded" }])).status, "active");
+    assert.equal((await verify([inactive], [{ ...lifetime, environment }])).lifetime, true);
+    assert.equal((await verify([inactive], [{ ...lifetime, environment: other, status: "refunded" }])).status, "inactive");
+  }
+});
+test("mixed subscriptions choose the latest verified access horizon", async () => {
+  assert.deepEqual(await verify([subscription, { ...subscription, environment: "sandbox", current_period_ends_at: now + 200000 }]),
+    { status: "active", lifetime: false, expiresAt: now + 200000 });
+});
+test("stale or malformed purchase does not mask another active subscription or lifetime", async () => {
+  const stale = { ...subscription, environment: "sandbox", current_period_ends_at: now - 1 };
+  const malformed = { ...subscription, current_period_ends_at: null };
+  for (const bad of [stale, malformed]) {
+    await assert.rejects(verify([bad]), VerificationUnavailable);
+    assert.equal((await verify([bad, subscription])).status, "active");
+    assert.equal((await verify([subscription, bad])).status, "active");
+    assert.equal((await verify([bad], [lifetime])).lifetime, true);
+  }
+});
+test("unknown environments and RevenueCat Test Store never grant access", async () => {
+  assert.equal((await verify([{ ...subscription, environment: "unknown" }], [{ ...lifetime, environment: "unknown" }])).status, "inactive");
+  assert.equal((await verify([{ ...subscription, environment: "sandbox", store: "test_store" }])).status, "inactive");
+});
+test("both environments use only the existing two requests", async () => {
+  let calls = 0;
+  await verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", now,
+    fetcher: async (input) => {
+      calls++;
+      const url = new URL(String(input));
+      assert.equal(url.searchParams.has("environment"), false);
+      return page(url.pathname.endsWith("/subscriptions") ? [subscription, { ...subscription, environment: "sandbox" }] : []);
+    } });
+  assert.equal(calls, 2);
 });
 test("lifetime requires owned state and correct product and entitlement", async () => {
   assert.deepEqual(await verify([], [lifetime]), { status: "active", lifetime: true, expiresAt: null });
@@ -50,28 +90,28 @@ test("explicit RevenueCat billing grace gets a short verified lease", async () =
   assert.deepEqual(result, { status: "active", lifetime: false, expiresAt: now + 300000 });
 });
 test("configuration errors do not call the network", async () => {
-  await assert.rejects(verifyRevenueCatAccess({ secret: "", customerID: "fixture", environment: "production",
+  await assert.rejects(verifyRevenueCatAccess({ secret: "", customerID: "fixture",
     fetcher: async () => { throw new Error("must not execute"); } }), /configuration/);
 });
 test("HTTP failures and malformed success are unknown", async () => {
   for (const code of [401, 403, 404, 429, 500]) {
-    await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", environment: "production",
+    await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture",
       fetcher: async () => new Response("private upstream body", { status: code }) }), /upstream/);
   }
-  await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", environment: "production",
+  await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture",
     fetcher: async () => Response.json({}) }), /invalid_response/);
 });
 test("pagination reads later purchases without exposing bearer to another host", async () => {
   for (const bad of ["https://attacker.example/collect", "/v2/projects/another/customers/fixture/purchases"]) {
     let calls = 0;
-    await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", environment: "production",
+    await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture",
       fetcher: async (input) => {
         assert.equal(new URL(String(input)).origin, "https://api.revenuecat.com"); calls++;
         return page([], bad);
       } }), /invalid_response/);
     assert.equal(calls, 2);
   }
-  const result = await verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", environment: "production", now,
+  const result = await verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", now,
     fetcher: async (input) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith("/subscriptions")) return page([]);
@@ -82,7 +122,7 @@ test("pagination reads later purchases without exposing bearer to another host",
 });
 test("pagination cycles are bounded", async () => {
   let calls = 0;
-  await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture", environment: "production",
+  await assert.rejects(verifyRevenueCatAccess({ secret: "sk_test", customerID: "fixture",
     fetcher: async (input) => { calls++; return page([], String(input)); } }), /invalid_response/);
   assert.equal(calls, 2);
 });

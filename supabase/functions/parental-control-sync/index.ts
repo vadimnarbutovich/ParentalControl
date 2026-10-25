@@ -262,7 +262,7 @@ async function handleAccessWebhook(req: Request): Promise<Response> {
       if (owner.family_id) await notifyChildTasksUpdated(owner.family_id, owner.id);
       if (event.renewalExpiresAt) {
         const { data: verified, error: readError } = await supabase.from("pc_access_owners")
-          .select("sandbox_allowed,purchase_until,lifetime").eq("device_id", owner.id).single();
+          .select("purchase_until,lifetime").eq("device_id", owner.id).single();
         if (readError || !verified || renewalNeedsRetry(event, verified)) success = false;
       }
     }

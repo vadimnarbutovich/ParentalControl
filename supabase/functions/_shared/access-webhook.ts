@@ -10,7 +10,7 @@ export async function authenticateWebhook(provided: string | null, expected: str
 }
 
 type WebhookEvent = { id: string; customers: string[]; test: boolean;
-  renewalExpiresAt?: number; sandbox?: boolean };
+  renewalExpiresAt?: number };
 export function webhookEvent(body: unknown): WebhookEvent {
   const event = (body as { event?: Record<string, unknown> })?.event;
   if (!event || typeof event.id !== "string" || event.id.length < 1 || event.id.length > 128) throw new Error("Invalid event");
@@ -28,7 +28,6 @@ export function webhookEvent(body: unknown): WebhookEvent {
       Number.isSafeInteger(event.expiration_at_ms) && event.expiration_at_ms > 0 &&
       ["SANDBOX", "PRODUCTION"].includes(String(event.environment))) {
     result.renewalExpiresAt = event.expiration_at_ms;
-    result.sandbox = event.environment === "SANDBOX";
   }
   return result;
 }
@@ -36,10 +35,10 @@ export function webhookEvent(body: unknown): WebhookEvent {
 // The event is only a retry hint. It NEVER grants/extends access. An early
 // renewal webhook may precede the API's new current billing period.
 export function renewalNeedsRetry(event: WebhookEvent, owner: {
-  sandbox_allowed: boolean; purchase_until: string | null; lifetime: boolean;
+  purchase_until: string | null; lifetime: boolean;
 }, now = Date.now()): boolean {
   if (!event.renewalExpiresAt || event.renewalExpiresAt <= now ||
-      event.sandbox !== owner.sandbox_allowed || owner.lifetime) return false;
+      owner.lifetime) return false;
   const end = Date.parse(owner.purchase_until ?? "");
   return !Number.isFinite(end) || end < event.renewalExpiresAt;
 }

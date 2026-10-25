@@ -1,0 +1,14 @@
+ParentalControl helps parents manage a child's app usage from their own phone. It requires two iPhones running iOS 18.4 or later and an internet connection. No registration or demo login is required.
+
+SETUP
+Select the parent role on one phone and the child role on the other, then follow onboarding to pair them using the displayed code.
+On the child phone, authorize Screen Time and select apps to manage. Allow notifications on both phones. Background location requests require Always location permission on the child phone.
+Set a parental PIN during setup or in the parent phone's Settings. This PIN opens Parent mode on the child phone, including detailed usage statistics.
+
+IMPORTANT DETAILS
+Task photo reports use the iOS share sheet. After the child takes or selects a photo and completes sharing to the parent, the task is marked as submitted for approval. Photos are not uploaded to our server; there is no built-in chat or public feed.
+Removal protection is optional and requires Apple Family Sharing with child authorization. It is not needed for basic setup.
+
+PREMIUM
+The app includes 24 hours of full access after paired-device setup. Continued parental control requires a monthly or annual subscription, or a lifetime purchase. The 24-hour demo is separate from the annual subscription's 3-day introductory trial for eligible Apple accounts.
+Settings > Premium opens the paywall at any time, including during the demo. Restore is available on the paywall.
