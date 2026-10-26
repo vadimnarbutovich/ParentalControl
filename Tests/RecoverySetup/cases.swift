@@ -2,7 +2,9 @@ import Foundation
 
 enum Role { case parent, child }
 enum Location { case authorizedAlways, denied }
-struct Pair { let familyID: UUID; var isLinked = true }
+struct Pair { let familyID: UUID; var isLinked = true; var pairingCode = "test-code" }
+struct Registration { var pairingState: Pair?; var deviceRole: Role? = .parent }
+final class Storage { func savePairingState(_ pair: Pair) {} }
 struct Pin { var hashBase64 = "hash"; var saltBase64 = "salt"; var updatedAt = Date() }
 struct Budget { var policy: Int? = 3600 }
 struct Poll { var budget: Budget? = Budget() }
@@ -14,6 +16,16 @@ struct Selection {
 final class Screen { var isAuthorized = true; var selection = Selection() }
 @MainActor enum FamilyAccessStore { static var allowed = true; static var isSettingUp = false }
 @MainActor final class Remote {
+    var registration = Registration(pairingState: nil)
+    var failInspection = false
+    var inspections = 0
+    var afterInspection: (() -> Void)?
+    func inspectDeviceRegistration() async throws -> Registration {
+        inspections += 1
+        if failInspection { throw CancellationError() }
+        afterInspection?()
+        return registration
+    }
     var pin: Pin? = Pin()
     var poll = Poll()
     var failPin = false
@@ -44,6 +56,11 @@ final class Screen { var isAuthorized = true; var selection = Selection() }
     var deviceRole: Role? = .parent
     var pairingState: Pair?
     let remoteSyncService = Remote()
+    let storage = Storage()
+    var parentPairingCode: String?
+    var returnedToRecovery = false
+    var cleared = false
+    var hasCompletedOnboarding = false
     let screenTimeService = Screen()
     var parentPinNeedsRefresh = false
     var parentPinUnavailable = false
@@ -53,7 +70,13 @@ final class Screen { var isAuthorized = true; var selection = Selection() }
     var parentBudgetStatus: Budget?
     var appliedPins = 0
     var failPinStorage = false
-    init() { pairingState = Pair(familyID: recoverySetupFamilyID!) }
+    init() {
+        pairingState = Pair(familyID: recoverySetupFamilyID!)
+        remoteSyncService.registration = Registration(pairingState: pairingState)
+    }
+    func setRecoverySetupFamily(_ id: UUID?) { recoverySetupFamilyID = id }
+    func clearPairing() { cleared = true; pairingState = nil; recoverySetupFamilyID = nil }
+    func returnToFamilyRecovery() async { returnedToRecovery = true; recoverySetupFamilyID = nil }
     func bootstrapRemoteIfNeeded() async { }
     func refreshPermissionStatuses() async { }
     func adoptFamilyAccess() { }
@@ -120,14 +143,50 @@ final class Screen { var isAuthorized = true; var selection = Selection() }
     precondition(expired.remoteSyncService.budgetCalls == 0 && expired.parentPinIsSet)
     let child = Harness()
     child.deviceRole = .child
+    child.remoteSyncService.registration.deviceRole = .child
     child.screenTimeService.selection.applicationTokens = []
     let childPlan = try await child.prepareRecoveredSetup()
-    precondition(childPlan.isEmpty)
+    precondition(childPlan?.isEmpty == true)
     precondition(child.remoteSyncService.budgetCalls == 0)
 
     FamilyAccessStore.isSettingUp = true
     let setupPlan = try await child.prepareRecoveredSetup()
     precondition(setupPlan == [.pin, .apps])
+    // Previously trapped after reinstall: persisted recovery marker plus a
+    // parent-only family. No PIN, budget or access request is appropriate yet.
+    let pending = Harness()
+    pending.remoteSyncService.registration.pairingState?.isLinked = false
+    let pendingPlan = try await pending.prepareRecoveredSetup()
+    precondition(pendingPlan == nil && pending.recoverySetupFamilyID == nil)
+    precondition(pending.returnedToRecovery && pending.parentPairingCode == "test-code")
+    precondition(pending.remoteSyncService.pinCalls == 0 && pending.remoteSyncService.readyValues.isEmpty)
+    precondition(!pending.hasCompletedOnboarding && !pending.cleared)
+
+    let detached = Harness()
+    detached.remoteSyncService.registration.pairingState = nil
+    let detachedPlan = try await detached.prepareRecoveredSetup()
+    precondition(detachedPlan == nil && detached.cleared && detached.recoverySetupFamilyID == nil)
+    precondition(detached.remoteSyncService.pinCalls == 0 && !detached.hasCompletedOnboarding)
+
+    let changed = Harness()
+    changed.remoteSyncService.registration.pairingState = Pair(familyID: UUID())
+    let changedPlan = try await changed.prepareRecoveredSetup()
+    precondition(changedPlan == nil && changed.returnedToRecovery && changed.remoteSyncService.pinCalls == 0)
+
+    let offline = Harness()
+    let retainedID = offline.recoverySetupFamilyID
+    offline.remoteSyncService.failInspection = true
+    do { _ = try await offline.prepareRecoveredSetup(); fatalError("Offline must not clear pairing") }
+    catch { }
+    precondition(offline.recoverySetupFamilyID == retainedID && !offline.cleared)
+    offline.remoteSyncService.failInspection = false
+    let retryPlan = try await offline.prepareRecoveredSetup()
+    precondition(retryPlan == [.install])
+    precondition(offline.remoteSyncService.inspections == 2)
+    let cancelledScope = Harness()
+    cancelledScope.remoteSyncService.afterInspection = { cancelledScope.recoverySetupFamilyID = nil }
+    do { _ = try await cancelledScope.prepareRecoveredSetup(); fatalError("Stale lookup must not continue") }
+    catch { precondition(cancelledScope.remoteSyncService.pinCalls == 0 && !cancelledScope.cleared) }
     print("Recovery setup: 256 step combinations and actual preparation success/failure/scope/expiry checks passed")
 }
 try await run()

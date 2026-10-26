@@ -19,6 +19,16 @@ struct RecoverySetupView: View {
                         Button("setup.refresh") { Task { await prepare() } }
                             .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
                             .disabled(loading)
+                        Button("setup.back") {
+                            Task {
+                                loading = true
+                                await appState.returnToFamilyRecovery()
+                                loading = false
+                            }
+                        }
+                        .buttonStyle(OnboardingSecondaryButtonStyle(tint: AppTheme.neonBlue))
+                        .disabled(loading)
+                        if loading { ProgressView() }
                     } else {
                         ProgressView()
                         Text("recovery.checking")
@@ -37,7 +47,7 @@ struct RecoverySetupView: View {
         failed = false
         defer { loading = false }
         do {
-            let plan = try await appState.prepareRecoveredSetup()
+            guard let plan = try await appState.prepareRecoveredSetup() else { return }
             guard !Task.isCancelled else { return }
             if plan.isEmpty { appState.completeOnboarding() }
             else { steps = plan }

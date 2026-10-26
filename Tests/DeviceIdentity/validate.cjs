@@ -50,7 +50,12 @@ execFileSync(path.join(temp, 'tests'), { stdio: 'inherit' });
 const recoveryMethods = app.slice(app.indexOf('    func checkInstallationRecovery('),
   app.indexOf('    private func prepareRecoveryPinEntry()'));
 assert.ok(recoveryMethods.length > 1000);
-const recoverySource = read('Tests/DeviceIdentity/recovery-cases.swift').replace('// ACTUAL_RECOVERY_METHODS', recoveryMethods);
+const returnMethod = app.slice(app.indexOf('    func returnToFamilyRecovery()'), app.indexOf('    /// Explicit, bounded recovery reads.'));
+assert.ok(returnMethod.length > 300);
+assert.doesNotMatch(returnMethod, /unlinkDevices|clearPairing|saveDeviceSecret|saveDeviceInstallID/);
+const recoverySource = read('Tests/DeviceIdentity/recovery-cases.swift')
+  .replace('// ACTUAL_RECOVERY_METHODS', recoveryMethods)
+  .replace('// ACTUAL_RETURN_METHOD', returnMethod);
 fs.writeFileSync(path.join(temp, 'main.swift'), recoverySource);
 execFileSync('xcrun', ['swiftc', '-module-cache-path', path.join(temp, 'cache'), path.join(temp, 'main.swift'), '-o', path.join(temp, 'recovery-tests')], { stdio: 'inherit' });
 execFileSync(path.join(temp, 'recovery-tests'), { stdio: 'inherit' });
@@ -61,3 +66,17 @@ assert.match(view, /alert\("recovery.reset"/);
 assert.match(view, /appState.recoveredDeviceRole == \.child/);
 assert.match(app, /recoveryPinFamilyID == familyID else \{ return \.unavailable \}/);
 assert.match(app, /try await remoteSyncService.fetchParentPin\(\)/);
+const choose = app.slice(app.indexOf('    func chooseDeviceRole('), app.indexOf('    func clearPairing('));
+assert.match(choose, /pendingSetupFamilyID == nil/, 'Synchronous role selection must not bypass pending reset');
+assert.match(view, /await appState.selectInstallationRole\(\.parent\)/);
+assert.match(view, /await appState.selectInstallationRole\(\.child\)/);
+assert.match(view, /\.disabled\(appState.isChoosingDeviceRole\)/);
+const edge = read('supabase/functions/parental-control-sync/index.ts');
+const resetStart = edge.indexOf('if (action === "reset_pending_setup")');
+assert.ok(resetStart > edge.indexOf('const authed = await requireDevice(req)'));
+assert.ok(resetStart < edge.indexOf('const access = await accessSnapshot'));
+assert.match(edge.slice(resetStart, edge.indexOf('const access = await accessSnapshot')), /p_device: authed.deviceId/);
+const resetSQL = read('supabase/migrations/202610260001_reset_pending_setup.sql');
+assert.match(resetSQL, /families where id=p_family for update/);
+assert.match(resetSQL, /family_id=p_family and id<>p_device/);
+assert.doesNotMatch(resetSQL, /(?:update|delete from) public.pc_access_owners/i);

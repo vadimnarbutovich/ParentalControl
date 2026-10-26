@@ -1,12 +1,14 @@
 import Foundation
 
 enum DeviceRole { case parent, child }
-struct DevicePairingState: Equatable { let familyID: UUID }
+struct DevicePairingState: Equatable { let familyID: UUID; var isLinked = true }
 struct Registration { let pairingState: DevicePairingState?; let deviceRole: DeviceRole? }
 enum Failure: Error { case offline }
 final class Credentials {
     var secret: String? = "retained-secret"
     func loadDeviceSecret() -> String? { secret }
+    var role: DeviceRole?
+    func saveDeviceRole(_ role: DeviceRole?) { self.role = role }
 }
 @MainActor final class Remote {
     var result = Registration(pairingState: nil, deviceRole: nil)
@@ -14,9 +16,20 @@ final class Credentials {
     var failUnlink = false
     var inspections = 0
     var unlinks: [UUID?] = []
+    var resets: [UUID] = []
+    var failReset = false
+    var resetAllowed = true
+    func resetPendingSetup(expectedFamilyID: UUID, role: DeviceRole) async throws -> Bool {
+        resets.append(expectedFamilyID)
+        await Task.yield()
+        if failReset { throw Failure.offline }
+        return resetAllowed
+    }
+    func invalidateRegistration() {}
     func inspectDeviceRegistration() async throws -> Registration {
         inspections += 1
         await Task.yield()
+        try Task.checkCancellation()
         if failInspection { throw Failure.offline }
         return result
     }
@@ -31,6 +44,9 @@ final class Credentials {
     let remoteSyncService = Remote()
     var recoveredFamily: DevicePairingState?
     var recoveredDeviceRole: DeviceRole?
+    var pendingSetupFamilyID: UUID?
+    var isChoosingDeviceRole = false
+    var roleSelectionFailed = false
     var isCheckingInstallationRecovery = false
     var installationRecoveryFailed = false
     var isResettingRecoveredFamily = false
@@ -41,11 +57,15 @@ final class Credentials {
     var isParentModeActive = false
     var remoteStatusMessage: String?
     var recoverySetupFamilyID: UUID?
+    var hasCompletedOnboarding = false
+    var remotePollingTask: Task<Void, Never>?
+    var parentPairingWaitTask: Task<Void, Never>?
     func setRecoverySetupFamily(_ familyID: UUID?) { recoverySetupFamilyID = familyID }
     var cleared = 0
     func chooseDeviceRole(_ role: DeviceRole) { deviceRole = role }
     func clearPairing() { cleared += 1; isParentModeActive = false }
     // ACTUAL_RECOVERY_METHODS
+    // ACTUAL_RETURN_METHOD
 }
 
 @MainActor func runRecoveryChecks() async {
@@ -67,10 +87,60 @@ final class Credentials {
     await parent.checkInstallationRecovery(retry: true)
     precondition(parent.remoteSyncService.inspections == 1)
 
+    await parent.returnToFamilyRecovery()
+    precondition(parent.deviceRole == nil && parent.storage.role == nil)
+    precondition(parent.recoverySetupFamilyID == nil && parent.recoveredFamily == family)
+    precondition(parent.remoteSyncService.unlinks.isEmpty && parent.storage.secret == "retained-secret")
+    parent.restoreRecoveredFamily()
+    precondition(parent.deviceRole == .parent && parent.recoverySetupFamilyID == family.familyID)
+    parent.remoteSyncService.failInspection = true
+    await parent.returnToFamilyRecovery()
+    precondition(parent.installationRecoveryFailed && !parent.isCheckingInstallationRecovery)
+    precondition(parent.deviceRole == nil && parent.remoteSyncService.unlinks.isEmpty)
+    parent.remoteSyncService.failInspection = false
+    await parent.checkInstallationRecovery(retry: true)
+    precondition(parent.recoveredFamily == family && !parent.installationRecoveryFailed)
+    parent.restoreRecoveredFamily()
+    let leavingScreen = Task { await parent.returnToFamilyRecovery() }
+    leavingScreen.cancel()
+    await leavingScreen.value
+    precondition(parent.recoveredFamily == family && !parent.installationRecoveryFailed)
+
+    let pending = RecoveryHarness()
+    pending.remoteSyncService.result = Registration(
+        pairingState: DevicePairingState(familyID: UUID(), isLinked: false), deviceRole: .parent)
+    await pending.checkInstallationRecovery()
+    precondition(pending.deviceRole == nil && pending.recoveredFamily == nil)
+    let pendingID = pending.pendingSetupFamilyID!
+    precondition(pending.remoteSyncService.resets.isEmpty)
+    pending.remoteSyncService.failReset = true
+    await pending.selectInstallationRole(.child)
+    precondition(pending.roleSelectionFailed && pending.deviceRole == nil && pending.pendingSetupFamilyID == pendingID)
+    pending.remoteSyncService.failReset = false
+    async let pick1: Void = pending.selectInstallationRole(.child)
+    async let pick2: Void = pending.selectInstallationRole(.parent)
+    _ = await (pick1, pick2)
+    precondition(pending.remoteSyncService.resets.count == 2) // failed + single successful choice
+    precondition(pending.deviceRole != nil && pending.pendingSetupFamilyID == nil && !pending.roleSelectionFailed)
+    precondition(pending.recoverySetupFamilyID == nil && pending.cleared == 1)
+    precondition(pending.remoteSyncService.unlinks.isEmpty)
+    precondition(pending.storage.secret == "retained-secret")
+
+    let joinedDuringSelection = RecoveryHarness()
+    joinedDuringSelection.pendingSetupFamilyID = family.familyID
+    joinedDuringSelection.remoteSyncService.resetAllowed = false
+    joinedDuringSelection.remoteSyncService.result = Registration(pairingState: family, deviceRole: .parent)
+    await joinedDuringSelection.selectInstallationRole(.child)
+    precondition(joinedDuringSelection.deviceRole == nil && joinedDuringSelection.recoveredFamily == family)
+    precondition(joinedDuringSelection.pendingSetupFamilyID == nil && joinedDuringSelection.cleared == 0)
+    precondition(joinedDuringSelection.remoteSyncService.unlinks.isEmpty)
+
     let fresh = RecoveryHarness()
     fresh.storage.secret = nil
     await fresh.checkInstallationRecovery()
     precondition(fresh.remoteSyncService.inspections == 0)
+    await fresh.selectInstallationRole(.parent)
+    precondition(fresh.deviceRole == .parent && fresh.remoteSyncService.resets.isEmpty)
     let clearedOnServer = RecoveryHarness()
     await clearedOnServer.checkInstallationRecovery()
     precondition(clearedOnServer.recoveredFamily == nil && !clearedOnServer.installationRecoveryFailed)

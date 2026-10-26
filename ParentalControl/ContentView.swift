@@ -58,6 +58,8 @@ private struct FamilyRecoveryView: View {
         appState.isCheckingInstallationRecovery || appState.isResettingRecoveredFamily
     }
 
+    private var hasLinkedFamily: Bool { appState.recoveredFamily?.isLinked == true }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -65,7 +67,8 @@ private struct FamilyRecoveryView: View {
                     .font(.system(size: 64))
                     .foregroundStyle(AppTheme.neonBlue)
                     .accessibilityHidden(true)
-                Text(appState.isCheckingInstallationRecovery || appState.recoveredFamily == nil ? "recovery.checking" : "recovery.title")
+                Text(appState.isCheckingInstallationRecovery || appState.recoveredFamily == nil
+                     ? "recovery.checking" : (hasLinkedFamily ? "recovery.title" : "setup.pairing.title"))
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .accessibilityAddTraits(.isHeader)
                 if appState.installationRecoveryFailed {
@@ -76,9 +79,10 @@ private struct FamilyRecoveryView: View {
                     }
                     .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
                 } else if appState.recoveredFamily != nil {
-                    Text("recovery.message")
+                    Text(hasLinkedFamily ? "recovery.message"
+                         : (appState.recoveredDeviceRole == .parent ? "setup.link.parent" : "setup.link.child"))
                         .foregroundStyle(.white.opacity(0.75))
-                    Button("recovery.restore") { appState.restoreRecoveredFamily() }
+                    Button(hasLinkedFamily ? "recovery.restore" : "onboarding.cta.next") { appState.restoreRecoveredFamily() }
                         .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
                     Button("recovery.reset") {
                         if appState.recoveredDeviceRole == .child { showsPin = true }
@@ -141,11 +145,18 @@ private struct RoleSelectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     VStack(spacing: 14) {
                         roleCard("role.select.parent", image: "onboardingParents", tint: AppTheme.neonBlue) {
-                            appState.chooseDeviceRole(.parent)
+                            Task { await appState.selectInstallationRole(.parent) }
                         }
                         roleCard("role.select.child", image: "onboardingChildren", tint: AppTheme.neonGreen) {
-                            appState.chooseDeviceRole(.child)
+                            Task { await appState.selectInstallationRole(.child) }
                         }
+                    }
+                    .disabled(appState.isChoosingDeviceRole)
+                    if appState.isChoosingDeviceRole { ProgressView().tint(.white) }
+                    if appState.roleSelectionFailed {
+                        Text("recovery.error")
+                            .foregroundStyle(AppTheme.neonOrange)
+                            .multilineTextAlignment(.center)
                     }
                 }
                 .frame(maxWidth: 560)

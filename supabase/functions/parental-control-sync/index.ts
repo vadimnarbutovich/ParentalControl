@@ -74,6 +74,18 @@ Deno.serve(async (req: Request) => {
 
     const authed = await requireDevice(req);
 
+    // Setup recovery is authenticated but never requires a paid entitlement.
+    // The transaction refuses to reset a family that already has another phone.
+    if (action === "reset_pending_setup") {
+      const familyID = asUUIDString(payload.expectedFamilyID);
+      const role = asString(payload.role);
+      if (!familyID || (role !== "parent" && role !== "child")) return errorResponse("Invalid setup request", 400);
+      const { data, error } = await supabase.rpc("pc_reset_pending_setup", {
+        p_device: authed.deviceId, p_family: familyID, p_role: role,
+      });
+      return error ? errorResponse("Cannot reset pending setup", 503) : okResponse({ reset: data === true });
+    }
+
     if (["access_status", "purchase_identity", "verify_purchase", "release_control", "resume_control"].includes(action)) {
       const result = await accessAction(supabase, authed.device, action, payload,
         Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "");

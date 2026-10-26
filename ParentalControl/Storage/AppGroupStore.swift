@@ -391,8 +391,8 @@ final class AppGroupStore {
         return DeviceRole(rawValue: raw)
     }
 
-    func saveDeviceRole(_ role: DeviceRole) {
-        store.set(role.rawValue, forKey: StorageKey.deviceRole)
+    func saveDeviceRole(_ role: DeviceRole?) {
+        store.set(role?.rawValue, forKey: StorageKey.deviceRole)
     }
 
     func loadPairingState() -> DevicePairingState? {

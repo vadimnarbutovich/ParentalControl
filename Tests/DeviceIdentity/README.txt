@@ -4,7 +4,8 @@ Behavior
 - Keychain retains only install ID + secret. Legacy JSON containing a role
   remains readable, but the role is ignored and not written into new backups.
 - A reinstall checks retained credentials once without creating/updating rows.
-  No family: role selection. Existing family: Restore link / Set up again.
+  No family or parent-only pending setup: role selection. Linked family:
+  Restore link / Set up again.
   Failed lookup: explicit Retry, never an implicit new family or background loop.
   An update preserves the existing App Group role, onboarding and pairing.
 - Registration accepts a new role only for an authenticated, unpaired device.
@@ -23,6 +24,13 @@ Behavior
 - Registration role support deployed in v24; recovery inspection and fenced
   unlink deployed in v25. Readback matched local sources. No schema or family
   data migration was performed. Other deployed dependencies are unchanged.
+- Pending-setup reset added in v26 with pc_reset_pending_setup. No startup
+  deletion: only an explicit role choice sends this authenticated operation.
+  Family row locking and membership checks prevent resetting a link acquired
+  meanwhile. Both role choices retain credentials and the access owner (demo,
+  purchase and RevenueCat identity). A lost response can be retried safely.
+  The additive migration does not alter existing family/device data. SQL tests
+  in pending-setup.sql use synthetic IDs and roll back all fixture records.
 
 Checks
 node Tests/DeviceIdentity/validate.cjs
@@ -49,3 +57,8 @@ Hardware acceptance
 7. Cancel the confirmation/PIN: no unlink. Offline lookup/reset: show retry and
    keep the choice, not a success. Lost unlink response: retry must be safe.
 8. A missing child PIN requires the parent phone, not an unprotected reset.
+9. Parent-only code + reinstall: show role selection, not parent onboarding.
+   Choose Child as well as Parent. Offline choice stays on this screen with an
+   error; it must not save the new role until the server confirms the reset.
+10. Join the child while role selection is open: choosing either role must
+    return to linked-family recovery, never delete the newly linked family.

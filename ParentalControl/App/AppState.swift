@@ -140,6 +140,9 @@ final class AppState: ObservableObject {
     @Published private(set) var deviceRole: DeviceRole?
     @Published private(set) var recoveredFamily: DevicePairingState?
     @Published private(set) var recoveredDeviceRole: DeviceRole?
+    @Published private(set) var pendingSetupFamilyID: UUID?
+    @Published private(set) var isChoosingDeviceRole = false
+    @Published private(set) var roleSelectionFailed = false
     @Published private(set) var isCheckingInstallationRecovery = false
     @Published private(set) var installationRecoveryFailed = false
     @Published private(set) var isResettingRecoveredFamily = false
@@ -497,7 +500,8 @@ final class AppState: ObservableObject {
 
     func chooseDeviceRole(_ role: DeviceRole) {
         guard !isCheckingInstallationRecovery, recoveredFamily == nil,
-              !installationRecoveryFailed, !isResettingRecoveredFamily else { return }
+              !installationRecoveryFailed, !isResettingRecoveredFamily,
+              pendingSetupFamilyID == nil else { return }
         guard deviceRole != role else { return }
         setRecoverySetupFamily(nil)
         remoteSyncService.invalidateRegistration()
@@ -921,9 +925,31 @@ final class AppState: ObservableObject {
         UserDefaults.standard.set(familyID?.uuidString, forKey: "parentalcontrol.recoverySetupFamilyID")
     }
 
+    /// Leave a failed recovery without unlinking or changing device credentials.
+    /// The authenticated lookup will offer restore/reset again (or role selection
+    /// if the family has actually been removed). Child reset still requires PIN.
+    func returnToFamilyRecovery() async {
+        guard recoverySetupFamilyID != nil, !hasCompletedOnboarding else { return }
+        isCheckingInstallationRecovery = true
+        remotePollingTask?.cancel()
+        remotePollingTask = nil
+        parentPairingWaitTask?.cancel()
+        parentPairingWaitTask = nil
+        remoteSyncService.invalidateRegistration()
+        setRecoverySetupFamily(nil)
+        storage.saveDeviceRole(nil)
+        deviceRole = nil
+        recoveredFamily = nil
+        recoveredDeviceRole = nil
+        // Replacing RecoverySetupView cancels its .task. The new screen's
+        // bounded lookup must survive that navigation, not become an offline error.
+        await Task { await self.checkInstallationRecovery(retry: true) }.value
+    }
+
     /// Explicit, bounded recovery reads. Never treat a failed fetch as missing
     /// settings and never save a default PIN/budget while inspecting the family.
-    func prepareRecoveredSetup() async throws -> [OnboardingStep] {
+    /// nil means navigation was redirected; it must NOT complete onboarding.
+    func prepareRecoveredSetup() async throws -> [OnboardingStep]? {
         guard let familyID = recoverySetupFamilyID, let role = deviceRole else {
             throw CancellationError()
         }
@@ -931,7 +957,30 @@ final class AppState: ObservableObject {
             !Task.isCancelled && recoverySetupFamilyID == familyID && deviceRole == role &&
                 pairingState?.familyID == familyID && pairingState?.isLinked == true
         }
-        if pairingState == nil { await bootstrapRemoteIfNeeded() }
+        // Recheck even when a local pair exists: it may be a pending code, or
+        // have been unlinked since the recovery prompt. A failed lookup must
+        // not be interpreted as a missing family.
+        let registration = try await remoteSyncService.inspectDeviceRegistration()
+        guard !Task.isCancelled, recoverySetupFamilyID == familyID, deviceRole == role else {
+            throw CancellationError()
+        }
+        guard let family = registration.pairingState else {
+            clearPairing()
+            return nil
+        }
+        guard family.familyID == familyID, registration.deviceRole == role else {
+            await returnToFamilyRecovery()
+            return nil
+        }
+        pairingState = family
+        storage.savePairingState(family)
+        if role == .parent { parentPairingCode = family.pairingCode }
+        guard family.isLinked else {
+            // Also repair the persisted recovery route from older builds.
+            // Only an explicit role choice may discard this pending code.
+            await returnToFamilyRecovery()
+            return nil
+        }
         guard stillCurrent() else { throw CancellationError() }
         await refreshPermissionStatuses()
         guard stillCurrent() else { throw CancellationError() }
@@ -976,6 +1025,7 @@ final class AppState: ObservableObject {
         installationRecoveryCheckInFlight = true
         isCheckingInstallationRecovery = true
         installationRecoveryFailed = false
+        roleSelectionFailed = false
         recoveryPinFamilyID = nil
         recoveryPinAuthorizedFamilyID = nil
         isParentModeActive = false
@@ -991,9 +1041,19 @@ final class AppState: ObservableObject {
                     installationRecoveryFailed = true
                     return
                 }
-                recoveredDeviceRole = role
-                recoveredFamily = family
+                if !family.isLinked && role == .parent {
+                    // A parent-only code is setup in progress, not a linked
+                    // family to restore. Retain it until an explicit role choice.
+                    pendingSetupFamilyID = family.familyID
+                    recoveredDeviceRole = nil
+                    recoveredFamily = nil
+                } else {
+                    pendingSetupFamilyID = nil
+                    recoveredDeviceRole = role
+                    recoveredFamily = family
+                }
             } else {
+                pendingSetupFamilyID = nil
                 recoveredFamily = nil
                 recoveredDeviceRole = nil
             }
@@ -1002,10 +1062,39 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Only an explicit role choice may discard a confirmed pending setup.
+    /// The server rechecks atomically: a child joining meanwhile prevents reset.
+    func selectInstallationRole(_ role: DeviceRole) async {
+        guard deviceRole == nil, !isChoosingDeviceRole,
+              !isCheckingInstallationRecovery, !installationRecoveryFailed,
+              recoveredFamily == nil, !isResettingRecoveredFamily else { return }
+        isChoosingDeviceRole = true
+        roleSelectionFailed = false
+        defer { isChoosingDeviceRole = false }
+        if let familyID = pendingSetupFamilyID {
+            do {
+                let reset = try await remoteSyncService.resetPendingSetup(expectedFamilyID: familyID, role: role)
+                guard deviceRole == nil, pendingSetupFamilyID == familyID else { return }
+                guard reset else {
+                    // Family changed or acquired a child. No destructive action
+                    // occurred; show authenticated restore/reset choices instead.
+                    await checkInstallationRecovery(retry: true)
+                    return
+                }
+                pendingSetupFamilyID = nil
+                clearPairing()
+            } catch {
+                roleSelectionFailed = true
+                return
+            }
+        }
+        chooseDeviceRole(role)
+    }
+
     func restoreRecoveredFamily() {
         guard !isCheckingInstallationRecovery, !isResettingRecoveredFamily,
               !installationRecoveryFailed, let role = recoveredDeviceRole,
-              let family = recoveredFamily else { return }
+              let family = recoveredFamily, family.isLinked else { return }
         recoveredFamily = nil
         recoveredDeviceRole = nil
         recoveryPinFamilyID = nil
@@ -1013,7 +1102,7 @@ final class AppState: ObservableObject {
         isParentModeActive = false
         // Keep setup incomplete: permissions/selection may have been removed.
         chooseDeviceRole(role)
-        setRecoverySetupFamily(family.familyID)
+        if family.isLinked { setRecoverySetupFamily(family.familyID) }
     }
 
     func resetRecoveredFamily() async {
@@ -3982,6 +4071,14 @@ private final class ParentalRemoteSyncService {
             action: "unlink_devices",
             payload: Payload(installID: installID, expectedFamilyID: expectedFamilyID)
         )
+    }
+
+    func resetPendingSetup(expectedFamilyID: UUID, role: DeviceRole) async throws -> Bool {
+        struct Payload: Encodable { let expectedFamilyID: UUID; let role: String }
+        struct Response: Decodable { let reset: Bool }
+        let response: Response = try await call(action: "reset_pending_setup",
+            payload: Payload(expectedFamilyID: expectedFamilyID, role: role.rawValue))
+        return response.reset
     }
 
     func fetchPendingCommands() async throws -> [RemoteFocusCommand] {
