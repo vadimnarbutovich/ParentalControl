@@ -11,11 +11,9 @@ struct OnboardingFlowView: View {
 
     /// Replay preserves existing pairing, permissions, limits and PIN.
     var onReplayFinished: (() -> Void)? = nil
+    var recoverySteps: [OnboardingStep]? = nil
 
-    private enum Step: String {
-        case parentIntro, childIntro, install, notifications, screenTime, location
-        case pairing, pin, apps, protection, limit, finish
-    }
+    private typealias Step = OnboardingStep
     private enum Sheet: String, Identifiable {
         case share, pin, apps, protection, limit
         var id: String { rawValue }
@@ -29,11 +27,13 @@ struct OnboardingFlowView: View {
     @State private var showsPinEntry = false
     @State private var enteredParentModeForSetup = false
     @State private var didReportFlow = false
+    @State private var recoveryRoute: [Step]?
 
     private var isParent: Bool { appState.deviceRole == .parent }
     private var isLinked: Bool { appState.pairingState?.isLinked == true }
     private var steps: [Step] {
-        isParent
+        if let route = recoveryRoute ?? recoverySteps, !route.isEmpty { return route }
+        return isParent
             ? [.parentIntro, .notifications, .install, .pairing, .pin, .limit, .finish]
             : [.childIntro, .pairing, .screenTime, .notifications, .location, .pin, .apps, .protection, .finish]
     }
@@ -164,7 +164,7 @@ struct OnboardingFlowView: View {
                 "mode": onReplayFinished == nil ? "first_launch" : "replay", "step": step.rawValue
             ])
             // Only one explicit refresh on entry. No extra timers on either phone.
-            if step == .pin || step == .limit { await appState.refreshSetupStatus() }
+            if recoverySteps == nil && (step == .pin || step == .limit) { await appState.refreshSetupStatus() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -329,7 +329,9 @@ struct OnboardingFlowView: View {
     }
 
     private var installDescription: AttributedString {
-        let text = L10n.f("setup.install.body", AppStoreLinks.shareURL.absoluteString)
+        let text = recoverySteps != nil
+            ? L10n.f("recovery.install.body", AppStoreLinks.shareURL.absoluteString, L10n.tr("recovery.restore"))
+            : L10n.f("setup.install.body", AppStoreLinks.shareURL.absoluteString)
         return (try? AttributedString(
             markdown: text,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
@@ -445,6 +447,7 @@ struct OnboardingFlowView: View {
     }
 
     private var primaryActionKey: String {
+        if step == .install && recoverySteps != nil { return "recovery.install.continue" }
         if step == .finish { return "setup.finish.action" }
         if canAdvance { return "onboarding.cta.next" }
         if isPermissionStep {
@@ -513,7 +516,12 @@ struct OnboardingFlowView: View {
             guard isLinked else { go(to: .pairing); return }
             if isParent { activeSheet = .pin }
             else if appState.parentPinIsSet { showsPinEntry = true }
-            else { runOperation { await appState.refreshSetupStatus() } }
+            else {
+                runOperation {
+                    if recoverySteps != nil { await appState.refreshChildParentPinIfNeeded() }
+                    else { await appState.refreshSetupStatus() }
+                }
+            }
         case .apps:
             guard isLinked else { go(to: .pairing); return }
             guard screenTimeService.isAuthorized else { go(to: .screenTime); return }
@@ -548,6 +556,13 @@ struct OnboardingFlowView: View {
 
     private func go(to target: Step) {
         if let index = steps.firstIndex(of: target) { stepIndex = index }
+        else if recoverySteps != nil {
+            // A prerequisite can be revoked after planning (e.g. in Settings).
+            // Insert only on an explicit action, then return to the current page.
+            var route = steps
+            route.insert(target, at: stepIndex)
+            recoveryRoute = route
+        }
     }
 
     private func advance() {

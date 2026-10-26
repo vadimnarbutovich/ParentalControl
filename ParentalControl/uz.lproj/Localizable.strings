@@ -633,3 +633,8 @@
 "recovery.error" = "Amalni yakunlab bo‘lmadi. Internet aloqasini tekshirib, qayta urinib ko‘ring.";
 "recovery.confirm" = "Ikki telefon o‘rtasidagi ulanish uziladi va bu oilaning sozlamalari, jadvallari hamda vazifalari o‘chiriladi. Telefonlarni qayta ulash kerak bo‘ladi. Xaridlar tarixi va ishlatilgan sinov muddati saqlanadi.";
 "recovery.child_hint" = "Qayta sozlash uchun ota-onaning PIN-kodi kerak. Uni bilmasangiz, qurilmalarni ota-onaning telefonidan uzing.";
+"access.banner.setup.title" = "Sozlashni yakunlang";
+"access.banner.setup.parent.body" = "Farzandingiz telefonida sozlashni yakunlang. Boshqaruv avtomatik ravishda yoqiladi.";
+"access.banner.setup.child.body" = "Ota-onangdan ikkala telefonda ham sozlashni yakunlashni so‘ra.";
+"recovery.install.body" = "Ilova bolaning telefonidan ham o‘chirilgan bo‘lsa, uni qayta o‘rnatish uchun [havolani yuboring](%@) yoki QR kodni skanerlang. So‘ng bolaning telefonida ilovani ochib, «%@» bandini tanlang.";
+"recovery.install.continue" = "O‘rnatilgan — davom etish";

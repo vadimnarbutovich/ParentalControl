@@ -690,3 +690,8 @@
 "recovery.error" = "Die Aktion konnte nicht abgeschlossen werden. Prüfe die Internetverbindung und versuche es erneut.";
 "recovery.confirm" = "Die Verbindung zwischen beiden Handys wird getrennt. Einstellungen, Zeitpläne und Aufgaben dieser Familie werden gelöscht. Anschließend musst du die Handys erneut verbinden. Dein Kaufverlauf und die bereits genutzte Demozeit bleiben erhalten.";
 "recovery.child_hint" = "Für die Neueinrichtung brauchst du die Eltern-PIN. Falls du sie nicht kennst, trenne die Verbindung auf dem Handy des Elternteils.";
+"access.banner.setup.title" = "Einrichtung abschließen";
+"access.banner.setup.parent.body" = "Schließe die Einrichtung auf dem Handy deines Kindes ab. Die Steuerung wird dann automatisch verfügbar.";
+"access.banner.setup.child.body" = "Bitte deine Eltern, die Einrichtung auf beiden Handys abzuschließen.";
+"recovery.install.body" = "Wenn die App auch vom Handy Ihres Kindes gelöscht wurde, [senden Sie den Link](%@) oder scannen Sie den QR-Code, um sie erneut zu installieren. Öffnen Sie dann die App auf dem Handy Ihres Kindes und wählen Sie „%@“.";
+"recovery.install.continue" = "Bereits installiert — weiter";

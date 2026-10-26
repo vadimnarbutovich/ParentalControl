@@ -690,3 +690,8 @@
 "recovery.error" = "無法完成操作。請檢查網路連線後再試一次。";
 "recovery.confirm" = "兩部手機將解除連結，此家庭的設定、排程和任務將被刪除。您需要重新配對手機。購買紀錄和已使用的示範試用時間會保留。";
 "recovery.child_hint" = "重新設定需要家長的 PIN 碼。如果您不知道 PIN 碼，請在家長的手機上解除連結。";
+"access.banner.setup.title" = "完成設定";
+"access.banner.setup.parent.body" = "請在孩子的手機上完成設定，之後即可自動啟用管理功能。";
+"access.banner.setup.child.body" = "請家長完成兩部手機的設定。";
+"recovery.install.body" = "如果孩子手機上的 App 也已刪除，請[傳送連結](%@)或掃描 QR 碼重新安裝。接著在孩子的手機上開啟 App，選擇「%@」。";
+"recovery.install.continue" = "已安裝 — 繼續";

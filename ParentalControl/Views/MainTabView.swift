@@ -526,6 +526,7 @@ private struct ParentDashboardView: View {
 
     private var isCommandButtonEnabled: Bool {
         guard appState.pairingState?.isLinked == true else { return false }
+        guard !FamilyAccessStore.isSettingUp else { return false }
         // An expired family can tap to purchase even when no fresh runtime exists.
         if !appState.isFamilyAccessAllowed { return true }
         return !appState.remoteCommandInFlight &&
@@ -533,6 +534,7 @@ private struct ParentDashboardView: View {
     }
 
     private var shouldShowDisabledVisualState: Bool {
+        if FamilyAccessStore.isSettingUp { return true }
         if !appState.isFamilyAccessAllowed { return false }
         return appState.remoteCommandInFlight ||
         appState.parentResolvedFocusActive == nil ||

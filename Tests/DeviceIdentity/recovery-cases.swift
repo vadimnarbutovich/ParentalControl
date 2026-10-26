@@ -40,6 +40,8 @@ final class Credentials {
     var recoveryPinAuthorizedFamilyID: UUID?
     var isParentModeActive = false
     var remoteStatusMessage: String?
+    var recoverySetupFamilyID: UUID?
+    func setRecoverySetupFamily(_ familyID: UUID?) { recoverySetupFamilyID = familyID }
     var cleared = 0
     func chooseDeviceRole(_ role: DeviceRole) { deviceRole = role }
     func clearPairing() { cleared += 1; isParentModeActive = false }
@@ -60,6 +62,7 @@ final class Credentials {
     precondition(parent.remoteSyncService.inspections == 1)
     parent.restoreRecoveredFamily()
     precondition(parent.deviceRole == .parent && parent.recoveredFamily == nil)
+    precondition(parent.recoverySetupFamilyID == family.familyID)
     precondition(parent.cleared == 0 && parent.remoteSyncService.unlinks.isEmpty)
     await parent.checkInstallationRecovery(retry: true)
     precondition(parent.remoteSyncService.inspections == 1)

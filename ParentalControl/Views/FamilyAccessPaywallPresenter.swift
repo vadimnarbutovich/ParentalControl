@@ -20,7 +20,8 @@ private struct FamilyAccessPaywallPresenter: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: FamilyAccessStore.purchaseRequired)
                 .receive(on: RunLoop.main)) { _ in
                 guard appState.deviceRole == .parent,
-                      FamilyAccessPresentation.stack.presenter == id else { return }
+                      FamilyAccessPresentation.stack.presenter == id,
+                      !FamilyAccessStore.isSettingUp else { return }
                 isPresented = true
             }
             .fullScreenCover(isPresented: $isPresented) {

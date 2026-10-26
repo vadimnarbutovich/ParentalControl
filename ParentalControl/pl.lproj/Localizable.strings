@@ -633,3 +633,8 @@
 "recovery.error" = "Nie udało się wykonać działania. Sprawdź połączenie z internetem i spróbuj ponownie.";
 "recovery.confirm" = "Oba telefony zostaną rozłączone, a ustawienia, harmonogramy i zadania tej rodziny usunięte. Telefony trzeba będzie połączyć ponownie. Historia zakupów i wykorzystany czas demonstracyjny zostaną zachowane.";
 "recovery.child_hint" = "Do ponownej konfiguracji potrzebny jest PIN rodzica. Jeśli go nie znasz, rozłącz urządzenia na telefonie rodzica.";
+"access.banner.setup.title" = "Dokończ konfigurację";
+"access.banner.setup.parent.body" = "Dokończ konfigurację na telefonie dziecka. Funkcje kontroli będą dostępne automatycznie.";
+"access.banner.setup.child.body" = "Poproś rodzica o dokończenie konfiguracji na obu telefonach.";
+"recovery.install.body" = "Jeśli aplikacja została usunięta również z telefonu dziecka, [wyślij link](%@) lub zeskanuj kod QR, aby zainstalować ją ponownie. Następnie otwórz aplikację na telefonie dziecka i wybierz „%@”.";
+"recovery.install.continue" = "Już zainstalowana — dalej";

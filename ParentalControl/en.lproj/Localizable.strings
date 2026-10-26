@@ -694,3 +694,8 @@
 "recovery.error" = "Couldn’t complete the action. Check your internet connection and try again.";
 "recovery.confirm" = "This will unlink both phones and delete this family’s settings, schedules and tasks. You’ll need to pair the phones again. Your purchase history and used demo time will be kept.";
 "recovery.child_hint" = "To set up again, enter the parent’s PIN. If you don’t have it, unlink the devices on the parent’s phone.";
+"access.banner.setup.title" = "Finishing setup";
+"access.banner.setup.parent.body" = "Complete setup on your child’s phone. Controls will become available automatically.";
+"access.banner.setup.child.body" = "Ask your parent to finish setting up both phones.";
+"recovery.install.body" = "If the app was also deleted from your child’s phone, [send the link](%@) or scan the QR code to reinstall it. Then open the app on that phone and choose “%@”.";
+"recovery.install.continue" = "Already installed — continue";

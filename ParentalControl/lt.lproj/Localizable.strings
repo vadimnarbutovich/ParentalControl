@@ -633,3 +633,8 @@
 "recovery.error" = "Nepavyko užbaigti veiksmo. Patikrinkite interneto ryšį ir bandykite dar kartą.";
 "recovery.confirm" = "Abu telefonai bus atsieti, o šios šeimos nustatymai, tvarkaraščiai ir užduotys bus ištrinti. Telefonus reikės susieti iš naujo. Pirkimų istorija ir jau panaudotas bandomasis laikas bus išsaugoti.";
 "recovery.child_hint" = "Norint nustatyti iš naujo, reikia tėvų PIN kodo. Jei jo nežinote, atsiekite įrenginius tėvų telefone.";
+"access.banner.setup.title" = "Užbaikite sąranką";
+"access.banner.setup.parent.body" = "Užbaikite sąranką vaiko telefone. Valdymo funkcijos taps prieinamos automatiškai.";
+"access.banner.setup.child.body" = "Paprašyk tėvų užbaigti sąranką abiejuose telefonuose.";
+"recovery.install.body" = "Jei programėlė buvo ištrinta ir iš vaiko telefono, [nusiųskite nuorodą](%@) arba nuskaitykite QR kodą, kad ją įdiegtumėte iš naujo. Tada vaiko telefone atidarykite programėlę ir pasirinkite „%@“.";
+"recovery.install.continue" = "Jau įdiegta — tęsti";

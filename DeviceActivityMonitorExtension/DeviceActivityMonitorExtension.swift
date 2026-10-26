@@ -9,6 +9,7 @@ import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
+import OSLog
 
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let appGroupId = "group.mycompny.parentalcontrol"
@@ -177,28 +178,106 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
               let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) else { return }
         // Manual focus and monitoring pause have priority. Named schedule shields are independent.
         if budgetTemporarilyBlocked(defaults) { return }
+        let context = budgetContext(defaults)
+        guard context.selection == data else { return }
+        func contextIsCurrent() -> Bool {
+            defaults.synchronize()
+            return FamilyAccessStore.allowed && DailyBudgetStore.shared.isEnabled &&
+                defaults.string(forKey: "parentalcontrol.deviceRole") == "child" &&
+                budgetContext(defaults) == context && !budgetTemporarilyBlocked(defaults)
+        }
+        func current(_ expected: DailyBudgetState) -> Bool {
+            contextIsCurrent() && (try? DailyBudgetStore.shared.current()) == expected
+        }
         guard let state = try? DailyBudgetStore.shared.current() else {
-            applyShield(selection: selection) // Do not unlock on corrupt/missing shared state.
-            centerStopMonitoring()
+            // A corrupt/missing budget is still fail-closed, but a recovered
+            // snapshot must not be overwritten by this obsolete error path.
+            func stillMissing() -> Bool {
+                contextIsCurrent() && (try? DailyBudgetStore.shared.current()) == nil
+            }
+            guard stillMissing() else { return }
+            recordBudgetDiagnostic("shield.budget_unavailable")
+            applyShield(selection: selection, ifCurrent: stillMissing)
+            if stillMissing() { centerStopMonitoring() }
             return
         }
         if state.availableSeconds == 0 {
-            applyShield(selection: selection)
+            guard current(state) else { return }
+            recordBudgetDiagnostic("shield.budget_exhausted")
+            applyShield(selection: selection, ifCurrent: { current(state) })
+            guard current(state) else { return }
             centerStopMonitoring()
             defaults.set(0, forKey: thresholdKey)
         } else {
             let center = DeviceActivityCenter()
             if restartUsage || state.monitorEvent == nil || !center.activities.contains(activityName) {
-                guard startNextChunkMonitoring(selection: selection, availableSeconds: state.availableSeconds, defaults: defaults) else {
-                    guard !budgetTemporarilyBlocked(defaults),
-                          let current = try? DailyBudgetStore.shared.current(),
-                          current.policy.revision == state.policy.revision else { return }
-                    applyShield(selection: selection)
+                let threshold = max(1, min(preferredChunkSeconds(for: state.availableSeconds), state.availableSeconds))
+                let schedule = DeviceActivitySchedule(
+                    intervalStart: DateComponents(hour: 0, minute: 0),
+                    intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: true,
+                    warningTime: DateComponents(minute: 5))
+                let event = DeviceActivityEvent(applications: selection.applicationTokens,
+                    categories: selection.categoryTokens, webDomains: selection.webDomainTokens,
+                    threshold: DateComponents(second: threshold), includesPastActivity: false)
+                guard !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty ||
+                        !selection.webDomainTokens.isEmpty else { return }
+                let outcome = BudgetMonitorRearm.run(expected: state,
+                    read: { try DailyBudgetStore.shared.current() },
+                    contextIsCurrent: contextIsCurrent,
+                    arm: { try DailyBudgetStore.shared.arm(threshold: threshold, matching: state) },
+                    stop: { center.stopMonitoring([self.activityName]) },
+                    start: { try center.startMonitoring(self.activityName, during: schedule,
+                        events: [DeviceActivityEvent.Name($0): event]) })
+                switch outcome {
+                case .superseded:
+                    recordBudgetDiagnostic("monitor.superseded")
+                    // The newer updater owns enforcement. Do not stop its monitor,
+                    // clear its shield, or manufacture a restrictive fallback.
+                    return
+                case .failed(let expected, let code):
+                    guard current(expected) else { return }
+                    recordBudgetDiagnostic("shield.monitor_failed", errorCode: code)
+                    applyShield(selection: selection, ifCurrent: { current(expected) })
+                    return
+                case .started(let expected):
+                    guard current(expected) else { return }
+                    defaults.set(threshold, forKey: thresholdKey)
+                    defaults.set(threshold, forKey: lastThresholdValueKey)
+                    defaults.set(Int(Date().timeIntervalSince1970), forKey: lastStartMonitoringTimestampKey)
+                    incrementCounter(monitoringRestartCountKey)
+                    clearShield(ifCurrent: { current(expected) })
                     return
                 }
             }
-            clearShield()
+            clearShield(ifCurrent: { current(state) })
         }
+    }
+
+    private struct BudgetContext: Equatable {
+        let selection: Data?
+        let pairing: Data?
+        let focus: Data?
+        let focusRevision: Int
+        let paused: Bool
+    }
+
+    private func budgetContext(_ defaults: UserDefaults) -> BudgetContext {
+        let pairing = defaults.data(forKey: "parentalcontrol.pairingState")
+        let object = pairing.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+        let family = (object?["familyID"] as? String).flatMap(UUID.init(uuidString:))
+        return BudgetContext(selection: defaults.data(forKey: selectionKey), pairing: pairing,
+            focus: defaults.data(forKey: RemoteControlGate.snapshotKey),
+            focusRevision: family.map { defaults.integer(forKey: RemoteControlGate.revisionKey($0)) } ?? 0,
+            paused: defaults.bool(forKey: "parentalcontrol.isDeviceActivityMonitoringPaused"))
+    }
+
+    private func recordBudgetDiagnostic(_ stage: String, errorCode: Int? = nil) {
+        // One bounded local record, no app tokens, family IDs or network calls.
+        var record: [String: Any] = ["stage": stage, "timestamp": Date().timeIntervalSince1970]
+        if let errorCode { record["errorCode"] = errorCode }
+        UserDefaults(suiteName: appGroupId)?.set(record, forKey: "parentalcontrol.budgetMonitorDiagnostic")
+        Logger(subsystem: "mycompny.ParentalControl", category: "BudgetMonitor")
+            .notice("Budget monitor stage=\(stage, privacy: .public) errorCode=\(errorCode ?? 0, privacy: .public)")
     }
 
     private func saveBalance(_ balance: StoredBalance, defaults: UserDefaults) {
@@ -209,18 +288,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         defaults.synchronize()
     }
 
-    private func applyShield(selection: FamilyActivitySelection) {
-        if FamilyAccessEnforcement.releaseIfNeeded() { return }
+    private func applyShield(selection: FamilyActivitySelection, ifCurrent: () -> Bool = { true }) {
+        if FamilyAccessEnforcement.releaseIfNeeded() || !ifCurrent() { return }
         let settingsStore = ManagedSettingsStore()
         settingsStore.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
-        if FamilyAccessEnforcement.releaseIfNeeded() { return }
+        if FamilyAccessEnforcement.releaseIfNeeded() || !ifCurrent() { return }
         settingsStore.shield.applicationCategories = selection.categoryTokens.isEmpty ? nil : .specific(selection.categoryTokens)
-        if FamilyAccessEnforcement.releaseIfNeeded() { return }
+        if FamilyAccessEnforcement.releaseIfNeeded() || !ifCurrent() { return }
         settingsStore.shield.webDomains = selection.webDomainTokens.isEmpty ? nil : selection.webDomainTokens
         _ = FamilyAccessEnforcement.releaseIfNeeded()
     }
 
-    private func clearShield() {
+    private func clearShield(ifCurrent: () -> Bool = { true }) {
         // startMonitoring can return after a newer manual block arrived.
         // Never clear the default store based on the pre-IPC snapshot.
         guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
@@ -230,6 +309,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             guard let state = try? DailyBudgetStore.shared.current(), state.availableSeconds > 0 else { return }
         }
         let settingsStore = ManagedSettingsStore()
+        guard ifCurrent() else { return }
         settingsStore.clearAllSettings()
     }
 

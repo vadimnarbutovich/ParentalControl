@@ -690,3 +690,8 @@
 "recovery.error" = "No se pudo completar la acción. Comprueba tu conexión a internet e inténtalo de nuevo.";
 "recovery.confirm" = "Se desvincularán los dos teléfonos y se eliminarán los ajustes, horarios y tareas de esta familia. Tendrás que volver a vincularlos. Se conservarán el historial de compras y el tiempo de demostración utilizado.";
 "recovery.child_hint" = "Para configurarlo de nuevo, introduce el PIN del adulto. Si no lo sabes, desvincula los dispositivos desde el teléfono del adulto.";
+"access.banner.setup.title" = "Completar la configuración";
+"access.banner.setup.parent.body" = "Completa la configuración en el teléfono de tu hijo. Los controles se habilitarán automáticamente.";
+"access.banner.setup.child.body" = "Pide a tus padres que terminen de configurar los dos teléfonos.";
+"recovery.install.body" = "Si también eliminaste la app del teléfono de tu hijo, [envía el enlace](%@) o escanea el código QR para volver a instalarla. Después, abre la app en su teléfono y selecciona «%@».";
+"recovery.install.continue" = "Ya está instalada — continuar";

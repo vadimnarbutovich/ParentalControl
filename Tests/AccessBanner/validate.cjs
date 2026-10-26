@@ -32,3 +32,78 @@ assert.ok(!/refreshFamilyAccess|retryPendingPurchaseConfirmation|\.task|Timer|re
 assert.match(read('ru.lproj/Localizable.strings'), /"access.banner.child.body" = "Попроси родителя подключить Premium в своём телефоне\.";/);
 assert.match(read('ru.lproj/Localizable.strings'), /"paywall.legal.restore" = "Восстановить";/);
 console.log('Access banner layout, actions and copy checks passed');
+
+// Exercise the actual action gate: setup denies commands without prompting a
+// purchase; expiry still prompts, and allowed access remains unaffected.
+const app = read('App/AppState.swift');
+const gate = app.slice(app.indexOf('    @discardableResult\n    func requireFamilyAccess()'),
+    app.indexOf('    func refreshFamilyAccess('));
+assert.ok(gate.includes('func requireFamilyConfigurationAccess()'));
+const { mkdtempSync, writeFileSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const { execFileSync } = require('node:child_process');
+const temp = mkdtempSync(resolve(tmpdir(), 'parental-setup-gate-'));
+const swift = `import Foundation
+enum DeviceRole { case parent, child }
+enum FamilyAccessStore {
+    static var allowed = false
+    static var isSettingUp = false
+    static let purchaseRequired = Foundation.Notification.Name("purchase")
+}
+enum NotificationCenter {
+    static let \`default\` = Recorder()
+    final class Recorder {
+        var count = 0
+        func post(name: Foundation.Notification.Name, object: Any?) { count += 1 }
+    }
+}
+final class AppState {
+    var deviceRole: DeviceRole = .parent
+${gate}
+}
+let app = AppState()
+for role in [DeviceRole.parent, .child] {
+    app.deviceRole = role
+    for setup in [false, true] {
+        FamilyAccessStore.isSettingUp = setup
+        for allowed in [false, true] {
+            FamilyAccessStore.allowed = allowed
+            NotificationCenter.default.count = 0
+            precondition(app.requireFamilyAccess() == allowed)
+            precondition(NotificationCenter.default.count == (!allowed && !setup && role == .parent ? 1 : 0))
+            NotificationCenter.default.count = 0
+            precondition(app.requireFamilyConfigurationAccess() == (setup || allowed))
+            precondition(NotificationCenter.default.count == (!allowed && !setup && role == .parent ? 1 : 0))
+        }
+    }
+}
+print("Setup/expired/active command and configuration gates passed")
+`;
+writeFileSync(resolve(temp, 'main.swift'), swift);
+execFileSync('xcrun', ['swiftc', '-module-cache-path', resolve(temp, 'cache'), resolve(temp, 'main.swift'), '-o', resolve(temp, 'tests')], { stdio: 'inherit' });
+execFileSync(resolve(temp, 'tests'), { stdio: 'inherit' });
+assert.match(read('Views/FamilyAccessPaywallPresenter.swift'), /!FamilyAccessStore.isSettingUp else \{ return \}/,
+    'Queued automatic requests must not open a paywall during setup');
+assert.match(app, /paidMutations.contains\(action\), storage.loadDeviceRole\(\) == \.parent,\s*!FamilyAccessStore.isSettingUp/g);
+const posts = [...app.matchAll(/NotificationCenter.default.post\(name: FamilyAccessStore.purchaseRequired/g)];
+assert.equal(posts.length, 3);
+for (const post of posts) {
+    assert.ok(app.slice(post.index - 100, post.index).includes('!FamilyAccessStore.isSettingUp'),
+        'Every automatic purchase notification must exclude setup');
+}
+const dashboard = read('Views/MainTabView.swift');
+assert.match(dashboard, /private var isCommandButtonEnabled: Bool \{\s*guard appState.pairingState\?\.isLinked == true else \{ return false \}\s*guard !FamilyAccessStore.isSettingUp else \{ return false \}/);
+assert.match(dashboard, /private var shouldShowDisabledVisualState: Bool \{\s*if FamilyAccessStore.isSettingUp \{ return true \}/);
+assert.match(read('Views/SettingsView.swift'), /showPaywall = true/, 'Manual Premium entry remains available');
+assert.match(banner, /statusConfirmed: appState.isFamilyAccessStatusConfirmedForBanner/);
+assert.match(app, /@Published private var accessBannerSession = FamilyAccessBannerSession\(\)/);
+assert.match(app, /func appDidBecomeActive\(\) \{\s*accessBannerSession.enterForeground\(\)/);
+assert.match(app, /func appDidEnterBackground\(\) \{\s*accessBannerSession.enterBackground\(\)/);
+const refresh = app.slice(app.indexOf('    func refreshFamilyAccess('), app.indexOf('    func adoptFamilyAccess()'));
+assert.match(refresh, /try await remoteSyncService.accessStatus\(ready: ready\)\s*accessBannerSession.confirm\(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope\)/);
+assert.equal((refresh.match(/remoteSyncService.accessStatus\(/g) || []).length, 1, 'Reuse the single existing status request');
+assert.ok(!refresh.includes('enterBackground()'), 'Ordinary polling must not hide a confirmed banner');
+assert.ok(!refresh.split('} catch {')[1].includes('accessBannerSession.confirm'), 'Network errors cannot confirm expiry');
+const adoption = app.slice(app.indexOf('    func adoptFamilyAccess()'), app.indexOf('    static let didReceiveRemotePayloadNotification'));
+assert.match(adoption, /let allowed = FamilyAccessStore.allowed/);
+assert.ok(!adoption.includes('accessBannerSession'), 'Visual suppression must not change enforcement');

@@ -16,6 +16,14 @@ enum PermissionReminderKind: Hashable {
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var isFamilyAccessAllowed = FamilyAccessStore.allowed
+    @Published private var accessBannerSession = FamilyAccessBannerSession()
+    private var accessBannerScope: FamilyAccessBannerSession.Scope? {
+        guard let pairingState, let childID = pairingState.childDeviceID else { return nil }
+        return .init(familyID: pairingState.familyID, childID: childID)
+    }
+    var isFamilyAccessStatusConfirmedForBanner: Bool {
+        accessBannerSession.isConfirmed(for: accessBannerScope)
+    }
     private var lastAccessCheck: Date?
     private var accessCheckInFlight = false
     private var purchaseRecoveryUntil: Date?
@@ -25,7 +33,7 @@ final class AppState: ObservableObject {
     @discardableResult
     func requireFamilyAccess() -> Bool {
         guard FamilyAccessStore.allowed else {
-            if deviceRole == .parent {
+            if deviceRole == .parent, !FamilyAccessStore.isSettingUp {
                 NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
             }
             return false
@@ -45,6 +53,8 @@ final class AppState: ObservableObject {
         guard force || lastAccessCheck.map({ Date().timeIntervalSince($0) >= interval }) != false else { return }
         accessCheckInFlight = true
         lastAccessCheck = Date()
+        let bannerToken = accessBannerSession.requestToken
+        let bannerScope = accessBannerScope
         defer { accessCheckInFlight = false; adoptFamilyAccess() }
         if let service = subscriptionService,
            PendingPurchaseRecovery.shouldRetry(awaiting: service.isAwaitingServerConfirmation,
@@ -57,7 +67,13 @@ final class AppState: ObservableObject {
         let ready = hasCompletedOnboarding && (deviceRole == .parent ||
             (screenTimeService.isAuthorized && (!screenTimeService.selection.applicationTokens.isEmpty ||
                 !screenTimeService.selection.categoryTokens.isEmpty || !screenTimeService.selection.webDomainTokens.isEmpty)))
-        try? await remoteSyncService.accessStatus(ready: ready)
+        do {
+            try await remoteSyncService.accessStatus(ready: ready)
+            accessBannerSession.confirm(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope)
+        } catch {
+            // No new evidence of expiry. Keep the banner hidden on first load,
+            // or retain an already confirmed banner during a later network error.
+        }
     }
 
     func adoptFamilyAccess() {
@@ -120,6 +136,7 @@ final class AppState: ObservableObject {
     @Published var focusDurationMinutes = 15
     @Published var focusStartError: String?
     @Published private(set) var hasCompletedOnboarding = false
+    @Published private(set) var recoverySetupFamilyID = UserDefaults.standard.string(forKey: "parentalcontrol.recoverySetupFamilyID").flatMap(UUID.init(uuidString:))
     @Published private(set) var deviceRole: DeviceRole?
     @Published private(set) var recoveredFamily: DevicePairingState?
     @Published private(set) var recoveredDeviceRole: DeviceRole?
@@ -464,6 +481,7 @@ final class AppState: ObservableObject {
     }
 
     func completeOnboarding() {
+        setRecoverySetupFamily(nil)
         storage.saveHasCompletedOnboarding(true)
         storage.saveDidRequestInitialPermissions(true)
         hasCompletedOnboarding = true
@@ -481,6 +499,7 @@ final class AppState: ObservableObject {
         guard !isCheckingInstallationRecovery, recoveredFamily == nil,
               !installationRecoveryFailed, !isResettingRecoveredFamily else { return }
         guard deviceRole != role else { return }
+        setRecoverySetupFamily(nil)
         remoteSyncService.invalidateRegistration()
         resetParentCommandWatch()
         clearLocalManualBlockIntent()
@@ -518,6 +537,7 @@ final class AppState: ObservableObject {
     }
 
     func clearPairing() {
+        setRecoverySetupFamily(nil)
         remoteSyncService.invalidateRegistration()
         remotePollingTask?.cancel()
         remotePollingTask = nil
@@ -896,6 +916,56 @@ final class AppState: ObservableObject {
 
     // MARK: - Parent mode (PIN access on child device)
 
+    private func setRecoverySetupFamily(_ familyID: UUID?) {
+        recoverySetupFamilyID = familyID
+        UserDefaults.standard.set(familyID?.uuidString, forKey: "parentalcontrol.recoverySetupFamilyID")
+    }
+
+    /// Explicit, bounded recovery reads. Never treat a failed fetch as missing
+    /// settings and never save a default PIN/budget while inspecting the family.
+    func prepareRecoveredSetup() async throws -> [OnboardingStep] {
+        guard let familyID = recoverySetupFamilyID, let role = deviceRole else {
+            throw CancellationError()
+        }
+        func stillCurrent() -> Bool {
+            !Task.isCancelled && recoverySetupFamilyID == familyID && deviceRole == role &&
+                pairingState?.familyID == familyID && pairingState?.isLinked == true
+        }
+        if pairingState == nil { await bootstrapRemoteIfNeeded() }
+        guard stillCurrent() else { throw CancellationError() }
+        await refreshPermissionStatuses()
+        guard stillCurrent() else { throw CancellationError() }
+        let pin = try await remoteSyncService.fetchParentPin()
+        guard stillCurrent() else { throw CancellationError() }
+        applyParentPinFromBackend(hashBase64: pin?.hashBase64, saltBase64: pin?.saltBase64,
+                                  updatedAt: pin?.updatedAt)
+        guard !parentPinNeedsRefresh, !parentPinUnavailable else {
+            throw NSError(domain: "RecoverySetup", code: 1)
+        }
+        // ready:false cannot restart the demo or complete setup. Expired access
+        // must not prevent restoring a phone or send it into paid polling.
+        try await remoteSyncService.accessStatus(ready: false)
+        guard stillCurrent() else { throw CancellationError() }
+        adoptFamilyAccess()
+        let configurationAllowed = FamilyAccessStore.allowed || FamilyAccessStore.isSettingUp
+        var budgetExists = true
+        if role == .parent && configurationAllowed {
+            let poll = try await remoteSyncService.parentPoll()
+            guard stillCurrent() else { throw CancellationError() }
+            guard let budget = poll.budget else { throw NSError(domain: "RecoverySetup", code: 2) }
+            receiveParentBudget(budget)
+            budgetExists = parentBudgetStatus?.policy != nil
+        }
+        guard stillCurrent() else { throw CancellationError() }
+        return RecoverySetupPlan.steps(isParent: role == .parent,
+            notifications: isNotificationAuthorized, screenTime: screenTimeService.isAuthorized,
+            location: childLocationAuthorizationStatus == .authorizedAlways,
+            pinConfigured: parentPinIsSet,
+            appsSelected: !screenTimeService.selection.applicationTokens.isEmpty ||
+                !screenTimeService.selection.categoryTokens.isEmpty || !screenTimeService.selection.webDomainTokens.isEmpty,
+            configurationAllowed: configurationAllowed, budgetExists: budgetExists)
+    }
+
     /// One read on reinstall; ordinary updates never enter this flow.
     /// A failed lookup cannot silently turn into a new-family setup.
     func checkInstallationRecovery(retry: Bool = false) async {
@@ -935,7 +1005,7 @@ final class AppState: ObservableObject {
     func restoreRecoveredFamily() {
         guard !isCheckingInstallationRecovery, !isResettingRecoveredFamily,
               !installationRecoveryFailed, let role = recoveredDeviceRole,
-              recoveredFamily != nil else { return }
+              let family = recoveredFamily else { return }
         recoveredFamily = nil
         recoveredDeviceRole = nil
         recoveryPinFamilyID = nil
@@ -943,6 +1013,7 @@ final class AppState: ObservableObject {
         isParentModeActive = false
         // Keep setup incomplete: permissions/selection may have been removed.
         chooseDeviceRole(role)
+        setRecoverySetupFamily(family.familyID)
     }
 
     func resetRecoveredFamily() async {
@@ -2902,6 +2973,7 @@ final class AppState: ObservableObject {
     }
 
     func appDidBecomeActive() {
+        accessBannerSession.enterForeground()
         refreshLocalParentPinStatus()
         storage.saveMainAppIsActive(true)
         withControlStateLock { adoptNotificationControlState() }
@@ -2941,6 +3013,7 @@ final class AppState: ObservableObject {
     }
 
     func appDidEnterBackground() {
+        accessBannerSession.enterBackground()
         storage.saveMainAppIsActive(false)
         sharedStateTask?.cancel()
         sharedStateTask = nil
@@ -4282,7 +4355,8 @@ private final class ParentalRemoteSyncService {
     ) async throws -> T {
         if !FamilyAccessStore.allowed && !FamilyAccessStore.recoveryActions.contains(action)
             && !(FamilyAccessStore.isSettingUp && FamilyAccessStore.setupActions.contains(action)) {
-            if FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
+            if FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent,
+               !FamilyAccessStore.isSettingUp {
                 NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
             }
             throw NSError(domain: "ParentalAccess", code: 402,
@@ -4315,7 +4389,8 @@ private final class ParentalRemoteSyncService {
             }
             FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
                 requestWall: requestWall, requestUptime: requestUptime)
-            if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent {
+            if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent,
+               !FamilyAccessStore.isSettingUp {
                 NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)
             }
             guard (200...299).contains(http.statusCode) else {

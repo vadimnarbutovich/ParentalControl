@@ -690,3 +690,8 @@
 "recovery.error" = "L’action n’a pas pu être effectuée. Vérifiez votre connexion Internet et réessayez.";
 "recovery.confirm" = "Les deux téléphones seront dissociés. Les réglages, horaires et tâches de cette famille seront supprimés. Vous devrez associer à nouveau les téléphones. L’historique des achats et la durée de démonstration déjà utilisée seront conservés.";
 "recovery.child_hint" = "Pour reconfigurer ce téléphone, saisissez le code PIN du parent. Si vous ne le connaissez pas, dissociez les appareils depuis le téléphone du parent.";
+"access.banner.setup.title" = "Finaliser la configuration";
+"access.banner.setup.parent.body" = "Terminez la configuration sur le téléphone de votre enfant. Les commandes seront alors disponibles automatiquement.";
+"access.banner.setup.child.body" = "Demande à ton parent de terminer la configuration des deux téléphones.";
+"recovery.install.body" = "Si l’app a aussi été supprimée du téléphone de votre enfant, [envoyez le lien](%@) ou scannez le QR code pour la réinstaller. Ouvrez ensuite l’app sur son téléphone et choisissez « %@ ».";
+"recovery.install.continue" = "Déjà installée — continuer";

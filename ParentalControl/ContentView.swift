@@ -24,6 +24,8 @@ struct ContentView: View {
                     if appState.hasCompletedOnboarding {
                         MainTabView()
                             .environmentObject(subscriptionService)
+                    } else if let familyID = appState.recoverySetupFamilyID {
+                        RecoverySetupView().id(familyID)
                     } else {
                         OnboardingFlowView()
                             .id(role)
