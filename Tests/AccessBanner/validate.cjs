@@ -7,7 +7,56 @@ const banner = read('Views/FamilyAccessBannerView.swift');
 const background = read('Design/AppBackgroundView.swift');
 assert.match(content, /AppBackgroundContainer \{\s+VStack\(spacing: 0\)/);
 assert.match(background, /\.environment\(\\.appBackgroundCanvas, canvas\)/);
-assert.match(background, /let canvas = sharedCanvas \?\? localFrame/, 'Standalone sheets keep a local background fallback');
+assert.match(background, /var usesSharedCanvas = false/, 'Sheets/covers must not inherit the presenting canvas by default');
+assert.match(background, /func appScreenBackground\(usesSharedCanvas: Bool = false\)/);
+assert.match(background, /if usesSharedCanvas, let canvas = sharedCanvas/,
+    'Only explicitly shared backgrounds read global coordinates');
+const localBackground = background.slice(background.indexOf('            } else {'), background.indexOf('    private var artwork:'));
+assert.match(localBackground, /\n\s+artwork\n/);
+assert.doesNotMatch(localBackground, /GeometryReader|\.frame\(|\.offset\(|\.drawingGroup\(|\.clipped\(/,
+    'Local artwork must fill sheets directly, without a cropped offscreen texture');
+assert.match(read('Views/BlockListView.swift'), /AppBackgroundView\(usesSharedCanvas: !selectionOnly\)/,
+    'Onboarding sheet fills its own bounds; main-tab block list retains the shared canvas');
+// Keep an explicit inventory: future modal screens are local by default, and
+// existing main-screen surfaces still align with the fixed Premium banner.
+function section(file, from, until) {
+    const source = read(file);
+    const start = source.indexOf(from);
+    const end = until ? source.indexOf(until, start + from.length) : source.length;
+    assert.ok(start >= 0 && end > start, `Missing audited section: ${file} / ${from}`);
+    return source.slice(start, end);
+}
+for (const [file, from, until] of [
+    ['Views/MainTabView.swift', 'struct MainTabView:', 'private struct ParentModeExitBanner:'],
+    ['Views/MainTabView.swift', 'private struct ParentDashboardView:', 'private struct AdjustTimeSheet:'],
+    ['Views/TasksTabView.swift', 'struct TasksTabView:', 'struct TaskEditorView:'],
+    ['Views/SettingsView.swift', 'struct SettingsView:', 'private struct PermissionsSettingsSheet:'],
+    ['Views/StatisticsView.swift', 'var body: some View', 'private var summarySheet:'],
+    ['Views/DashboardView.swift', 'struct DashboardView:'],
+    ['Views/MapTabView.swift', 'struct MapTabView:'],
+    ['Views/SchedulesTabView.swift', 'struct SchedulesTabView:'],
+    ['Views/ChildTasksView.swift', 'private struct ChildTaskDetailView:', 'struct CameraPicker:'],
+]) {
+    assert.match(section(file, from, until), /(?:AppBackgroundView|appScreenBackground)\(usesSharedCanvas: true\)/,
+        `Preserve the shared main-screen background: ${file} / ${from}`);
+}
+for (const [file, from, until] of [
+    ['Views/MainTabView.swift', 'private struct AdjustTimeSheet:'],
+    ['Views/MainTabView.swift', 'struct ParentModeEntryView:', 'private struct ParentDashboardView:'],
+    ['Views/SettingsView.swift', 'private struct PermissionsSettingsSheet:'],
+    ['Views/TasksTabView.swift', 'struct TaskEditorView:'],
+    ['Views/StatisticsView.swift', 'private var summarySheet:'],
+    ['Views/DailyBudgetView.swift', 'struct DailyLimitSheet:'],
+    ['Views/ScheduleEditorView.swift', 'struct ScheduleEditorView:'],
+    ['Views/RemovalProtectionView.swift', 'struct RemovalProtectionView:'],
+    ['Views/PaywallView.swift', 'struct PaywallView:'],
+    ['Views/Onboarding/OnboardingPresentation.swift', 'struct OnboardingPageLayout'],
+]) {
+    const modal = section(file, from, until);
+    assert.match(modal, /(?:AppBackgroundView|appScreenBackground)\(\)/);
+    assert.doesNotMatch(modal, /usesSharedCanvas: true/,
+        `Modal must not sample the presenting screen: ${file} / ${from}`);
+}
 assert.match(background, /\.frame\(width: canvas.width, height: canvas.height\)/);
 const canvasFrame = background.indexOf('.frame(width: canvas.width, height: canvas.height)');
 const canvasRaster = background.indexOf('.drawingGroup(opaque: true)', canvasFrame);
@@ -15,7 +64,8 @@ const canvasOffset = background.indexOf('.offset(x: canvas.minX', canvasFrame);
 assert.ok(canvasFrame < canvasRaster && canvasRaster < canvasOffset,
     'Rasterize the full background before offset/clipping to avoid the iOS 18 banner seam');
 assert.match(background, /\.offset\(x: canvas.minX - localFrame.minX,\s+y: canvas.minY - localFrame.minY\)/);
-assert.match(background, /\.clipped\(\)\s+\.ignoresSafeArea\(\)\s+\.allowsHitTesting\(false\)/);
+assert.match(background, /\.clipped\(\)\s+\} else/);
+assert.match(background, /\.ignoresSafeArea\(\)\s+\.allowsHitTesting\(false\)/);
 assert.match(read('Views/MainTabView.swift'), /tabs\s+\.overlay\(alignment: \.top\) \{\s+if !appState.isFamilyAccessAllowed/);
 assert.ok(!read('Views/MainTabView.swift').includes('tabs\n                .mask'), 'Top-edge blending must not clip the tab bar');
 assert.match(content, /VStack\(spacing: 0\) \{\s+PermissionReminderBannerView\(\)/);

@@ -147,7 +147,7 @@ private struct ChildTaskDetailView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView()
+            AppBackgroundView(usesSharedCanvas: true)
             if let task {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

@@ -14,7 +14,7 @@ struct TasksTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 TimelineView(.periodic(from: .now, by: 30)) { context in
                     taskList(at: context.date)
                 }

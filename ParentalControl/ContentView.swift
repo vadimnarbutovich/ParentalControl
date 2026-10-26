@@ -155,7 +155,7 @@ private struct RoleSelectionView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(AppBackgroundView())
+        .background(AppBackgroundView(usesSharedCanvas: true))
         .preferredColorScheme(.dark)
     }
 

@@ -13,7 +13,7 @@ struct MapTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 content
             }
             .navigationTitle("map.title")

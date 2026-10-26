@@ -41,7 +41,7 @@ struct MainTabView: View {
                     if !appState.isFamilyAccessAllowed {
                         // Blend clipped card glows into the shared background.
                         // Only paint the top edge; never clip the tab bar's safe area.
-                        AppBackgroundView()
+                        AppBackgroundView(usesSharedCanvas: true)
                             .frame(height: 12)
                             .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
                             .allowsHitTesting(false)
@@ -670,7 +670,7 @@ private struct ParentDashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if appState.pairingState?.isLinked == true {

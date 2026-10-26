@@ -46,7 +46,7 @@ struct StatisticsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .appScreenBackground()
+            .appScreenBackground(usesSharedCanvas: true)
             .onAppear {
                 visible = true
                 screenTimeService.refreshAuthorizationStatus()
