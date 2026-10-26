@@ -625,3 +625,11 @@
 "access.banner.child_verification.body" = "Poproś rodzica o sprawdzenie Premium na jego telefonie.";
 "access.banner.choose_plan" = "Wybierz plan";
 "access.banner.check_status" = "Sprawdź status";
+"recovery.title" = "Ten telefon jest już połączony z rodziną";
+"recovery.message" = "Przywróć połączenie, aby kontynuować, lub skonfiguruj telefon od nowa.";
+"recovery.restore" = "Przywróć połączenie";
+"recovery.reset" = "Skonfiguruj od nowa";
+"recovery.checking" = "Sprawdzanie połączenia z rodziną…";
+"recovery.error" = "Nie udało się wykonać działania. Sprawdź połączenie z internetem i spróbuj ponownie.";
+"recovery.confirm" = "Oba telefony zostaną rozłączone, a ustawienia, harmonogramy i zadania tej rodziny usunięte. Telefony trzeba będzie połączyć ponownie. Historia zakupów i wykorzystany czas demonstracyjny zostaną zachowane.";
+"recovery.child_hint" = "Do ponownej konfiguracji potrzebny jest PIN rodzica. Jeśli go nie znasz, rozłącz urządzenia na telefonie rodzica.";

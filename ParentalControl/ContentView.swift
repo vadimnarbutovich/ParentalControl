@@ -18,7 +18,9 @@ struct ContentView: View {
                 if appState.hasCompletedOnboarding, appState.deviceRole != nil {
                     FamilyAccessBannerView()
                 }
-                if let role = appState.deviceRole {
+                if appState.isCheckingInstallationRecovery || appState.recoveredFamily != nil || appState.installationRecoveryFailed {
+                    FamilyRecoveryView()
+                } else if let role = appState.deviceRole {
                     if appState.hasCompletedOnboarding {
                         MainTabView()
                             .environmentObject(subscriptionService)
@@ -41,6 +43,76 @@ struct ContentView: View {
         }
         .onChange(of: subscriptionService.isSubscriptionStatusKnown) { _, isKnown in
             appState.enforcePremiumFeatures(isPro: subscriptionService.isPro, isStatusKnown: isKnown)
+        }
+    }
+}
+
+private struct FamilyRecoveryView: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var showsPin = false
+    @State private var confirmsReset = false
+
+    private var busy: Bool {
+        appState.isCheckingInstallationRecovery || appState.isResettingRecoveredFamily
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(systemName: "link.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppTheme.neonBlue)
+                    .accessibilityHidden(true)
+                Text(appState.isCheckingInstallationRecovery || appState.recoveredFamily == nil ? "recovery.checking" : "recovery.title")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
+                if appState.installationRecoveryFailed {
+                    Text("recovery.error")
+                        .foregroundStyle(.white.opacity(0.75))
+                    Button("reports.retry") {
+                        Task { await appState.checkInstallationRecovery(retry: true) }
+                    }
+                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+                } else if appState.recoveredFamily != nil {
+                    Text("recovery.message")
+                        .foregroundStyle(.white.opacity(0.75))
+                    Button("recovery.restore") { appState.restoreRecoveredFamily() }
+                        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
+                    Button("recovery.reset") {
+                        if appState.recoveredDeviceRole == .child { showsPin = true }
+                        else { confirmsReset = true }
+                    }
+                    .buttonStyle(OnboardingSecondaryButtonStyle(tint: AppTheme.neonBlue))
+                    if appState.recoveredDeviceRole == .child {
+                        Text("recovery.child_hint")
+                            .font(.footnote)
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                }
+                if busy { ProgressView().tint(.white) }
+            }
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 48)
+            .frame(maxWidth: .infinity)
+            .disabled(busy)
+        }
+        .scrollIndicators(.hidden)
+        .fullScreenCover(isPresented: $showsPin, onDismiss: {
+            if appState.isParentModeActive { confirmsReset = true }
+        }) {
+            ParentModeEntryView(isPresented: $showsPin)
+        }
+        .alert("recovery.reset", isPresented: $confirmsReset) {
+            Button("common.cancel", role: .cancel) { appState.exitParentMode() }
+            Button("recovery.reset", role: .destructive) {
+                Task { await appState.resetRecoveredFamily() }
+            }
+        } message: {
+            Text("recovery.confirm")
         }
     }
 }

@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "부모님께 부모님 휴대폰에서 Premium을 확인해 달라고 부탁해 주세요.";
 "access.banner.choose_plan" = "요금제 선택";
 "access.banner.check_status" = "상태 확인";
+"recovery.title" = "이 휴대전화는 이미 가족과 연결되어 있어요";
+"recovery.message" = "연결을 복원해 계속하거나 휴대전화를 새로 설정하세요.";
+"recovery.restore" = "연결 복원";
+"recovery.reset" = "새로 설정";
+"recovery.checking" = "가족 연결 확인 중…";
+"recovery.error" = "작업을 완료하지 못했어요. 인터넷 연결을 확인하고 다시 시도하세요.";
+"recovery.confirm" = "두 휴대전화의 연결이 해제되고 이 가족의 설정, 일정, 과제가 삭제돼요. 휴대전화를 다시 연결해야 해요. 구매 내역과 이미 사용한 데모 체험 시간은 유지돼요.";
+"recovery.child_hint" = "새로 설정하려면 부모님의 PIN이 필요해요. PIN을 모르면 부모님 휴대전화에서 연결을 해제하세요.";

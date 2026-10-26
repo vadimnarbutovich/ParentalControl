@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "請家長在他們的手機上查看 Premium 狀態。";
 "access.banner.choose_plan" = "選擇方案";
 "access.banner.check_status" = "查看狀態";
+"recovery.title" = "這部手機已連結至一個家庭";
+"recovery.message" = "恢復連結以繼續使用，或重新設定這部手機。";
+"recovery.restore" = "恢復連結";
+"recovery.reset" = "重新設定";
+"recovery.checking" = "正在檢查家庭連結…";
+"recovery.error" = "無法完成操作。請檢查網路連線後再試一次。";
+"recovery.confirm" = "兩部手機將解除連結，此家庭的設定、排程和任務將被刪除。您需要重新配對手機。購買紀錄和已使用的示範試用時間會保留。";
+"recovery.child_hint" = "重新設定需要家長的 PIN 碼。如果您不知道 PIN 碼，請在家長的手機上解除連結。";

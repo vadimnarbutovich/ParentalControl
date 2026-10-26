@@ -7,7 +7,8 @@ enum DeviceIdentityKeychain {
     struct Identity: Codable, Equatable {
         let installID: String
         let secret: String
-        let role: String?
+        // Role belongs to this installation, not the persistent credentials.
+        // Codable ignores the legacy "role" field when reading older backups.
     }
     private static let service = "mycompny.ParentalControl.deviceIdentity"
     private static var query: [String: Any] {

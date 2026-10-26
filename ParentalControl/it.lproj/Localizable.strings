@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "Chiedi a un genitore di controllare Premium sul suo telefono.";
 "access.banner.choose_plan" = "Scegli un piano";
 "access.banner.check_status" = "Verifica lo stato";
+"recovery.title" = "Questo telefono è già collegato a una famiglia";
+"recovery.message" = "Ripristina il collegamento per continuare oppure configura di nuovo il telefono.";
+"recovery.restore" = "Ripristina collegamento";
+"recovery.reset" = "Configura di nuovo";
+"recovery.checking" = "Verifica del collegamento familiare…";
+"recovery.error" = "Impossibile completare l’operazione. Controlla la connessione a Internet e riprova.";
+"recovery.confirm" = "I due telefoni verranno scollegati e le impostazioni, gli orari e le attività di questa famiglia verranno eliminati. Dovrai collegare di nuovo i telefoni. La cronologia degli acquisti e il tempo di prova già utilizzato saranno conservati.";
+"recovery.child_hint" = "Per una nuova configurazione serve il PIN del genitore. Se non lo conosci, scollega i dispositivi dal telefono del genitore.";

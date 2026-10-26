@@ -625,3 +625,11 @@
 "access.banner.child_verification.body" = "Roagă un părinte să verifice Premium pe telefonul său.";
 "access.banner.choose_plan" = "Alege un plan";
 "access.banner.check_status" = "Verifică starea";
+"recovery.title" = "Acest telefon este deja conectat la o familie";
+"recovery.message" = "Restabilește conexiunea pentru a continua sau configurează din nou telefonul.";
+"recovery.restore" = "Restabilește conexiunea";
+"recovery.reset" = "Configurează din nou";
+"recovery.checking" = "Se verifică legătura cu familia…";
+"recovery.error" = "Acțiunea nu a putut fi finalizată. Verifică conexiunea la internet și încearcă din nou.";
+"recovery.confirm" = "Cele două telefoane vor fi deconectate, iar setările, programele și sarcinile acestei familii vor fi șterse. Va trebui să conectezi din nou telefoanele. Istoricul achizițiilor și timpul de demonstrație deja folosit vor fi păstrate.";
+"recovery.child_hint" = "Pentru o nouă configurare este necesar PIN-ul părintelui. Dacă nu îl știi, deconectează dispozitivele de pe telefonul părintelui.";

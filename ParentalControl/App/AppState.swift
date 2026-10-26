@@ -121,6 +121,15 @@ final class AppState: ObservableObject {
     @Published var focusStartError: String?
     @Published private(set) var hasCompletedOnboarding = false
     @Published private(set) var deviceRole: DeviceRole?
+    @Published private(set) var recoveredFamily: DevicePairingState?
+    @Published private(set) var recoveredDeviceRole: DeviceRole?
+    @Published private(set) var isCheckingInstallationRecovery = false
+    @Published private(set) var installationRecoveryFailed = false
+    @Published private(set) var isResettingRecoveredFamily = false
+    private var didCheckInstallationRecovery = false
+    private var installationRecoveryCheckInFlight = false
+    private var recoveryPinFamilyID: UUID?
+    private var recoveryPinAuthorizedFamilyID: UUID?
     @Published private(set) var pairingState: DevicePairingState?
     @Published var pairingCodeInput: String = ""
     @Published private(set) var parentPairingCode: String?
@@ -332,6 +341,7 @@ final class AppState: ObservableObject {
         }
         self.hasCompletedOnboarding = onboardingDone
         self.deviceRole = storage.loadDeviceRole()
+        self.isCheckingInstallationRecovery = storage.loadDeviceRole() == nil && storage.loadDeviceSecret() != nil
         self.pairingState = storage.loadPairingState()
         self.blockSchedules = storage.loadBlockSchedules()
         self.childTasks = storage.loadChildTasks()
@@ -468,6 +478,8 @@ final class AppState: ObservableObject {
     }
 
     func chooseDeviceRole(_ role: DeviceRole) {
+        guard !isCheckingInstallationRecovery, recoveredFamily == nil,
+              !installationRecoveryFailed, !isResettingRecoveredFamily else { return }
         guard deviceRole != role else { return }
         remoteSyncService.invalidateRegistration()
         resetParentCommandWatch()
@@ -884,17 +896,120 @@ final class AppState: ObservableObject {
 
     // MARK: - Parent mode (PIN access on child device)
 
+    /// One read on reinstall; ordinary updates never enter this flow.
+    /// A failed lookup cannot silently turn into a new-family setup.
+    func checkInstallationRecovery(retry: Bool = false) async {
+        guard deviceRole == nil, storage.loadDeviceSecret() != nil,
+              !installationRecoveryCheckInFlight, !isResettingRecoveredFamily,
+              retry || !didCheckInstallationRecovery else { return }
+        didCheckInstallationRecovery = true
+        installationRecoveryCheckInFlight = true
+        isCheckingInstallationRecovery = true
+        installationRecoveryFailed = false
+        recoveryPinFamilyID = nil
+        recoveryPinAuthorizedFamilyID = nil
+        isParentModeActive = false
+        defer {
+            installationRecoveryCheckInFlight = false
+            isCheckingInstallationRecovery = false
+        }
+        do {
+            let registration = try await remoteSyncService.inspectDeviceRegistration()
+            guard deviceRole == nil else { return }
+            if let family = registration.pairingState {
+                guard let role = registration.deviceRole else {
+                    installationRecoveryFailed = true
+                    return
+                }
+                recoveredDeviceRole = role
+                recoveredFamily = family
+            } else {
+                recoveredFamily = nil
+                recoveredDeviceRole = nil
+            }
+        } catch {
+            installationRecoveryFailed = true
+        }
+    }
+
+    func restoreRecoveredFamily() {
+        guard !isCheckingInstallationRecovery, !isResettingRecoveredFamily,
+              !installationRecoveryFailed, let role = recoveredDeviceRole,
+              recoveredFamily != nil else { return }
+        recoveredFamily = nil
+        recoveredDeviceRole = nil
+        recoveryPinFamilyID = nil
+        recoveryPinAuthorizedFamilyID = nil
+        isParentModeActive = false
+        // Keep setup incomplete: permissions/selection may have been removed.
+        chooseDeviceRole(role)
+    }
+
+    func resetRecoveredFamily() async {
+        guard !isCheckingInstallationRecovery, !isResettingRecoveredFamily,
+              !installationRecoveryFailed, let family = recoveredFamily,
+              let role = recoveredDeviceRole,
+              role == .parent || recoveryPinAuthorizedFamilyID == family.familyID else { return }
+        isResettingRecoveredFamily = true
+        defer { isResettingRecoveredFamily = false }
+        do {
+            // Same unlink operation as Settings, fenced to the displayed family.
+            // Keep the device credentials and access owner; do not restart demo.
+            try await remoteSyncService.unlinkDevices(expectedFamilyID: family.familyID)
+            clearPairing()
+            recoveredFamily = nil
+            recoveredDeviceRole = nil
+            recoveryPinFamilyID = nil
+            recoveryPinAuthorizedFamilyID = nil
+            remoteStatusMessage = nil
+        } catch {
+            installationRecoveryFailed = true
+            recoveryPinAuthorizedFamilyID = nil
+            isParentModeActive = false
+        }
+    }
+
+    private func prepareRecoveryPinEntry() async {
+        guard recoveredDeviceRole == .child, let familyID = recoveredFamily?.familyID,
+              !isRecoveringParentPin, !isResettingRecoveredFamily else { return }
+        if recoveryPinFamilyID == familyID { return }
+        isRecoveringParentPin = true
+        parentPinNeedsRefresh = true
+        parentPinUnavailable = true
+        defer { isRecoveringParentPin = false }
+        do {
+            let response = try await remoteSyncService.fetchParentPin()
+            guard deviceRole == nil, recoveredFamily?.familyID == familyID,
+                  let response, let updatedAt = response.updatedAt,
+                  let metadata = ParentPinMetadata.fromBackend(hashBase64: response.hashBase64,
+                      saltBase64: response.saltBase64, updatedAt: updatedAt),
+                  parentPinService.saveMetadata(metadata) else { return }
+            recoveryPinFamilyID = familyID
+            parentPinNeedsRefresh = false
+            refreshLocalParentPinStatus()
+        } catch {
+            // No cached/missing PIN bypass: restore the link or use the parent phone.
+            parentPinUnavailable = true
+        }
+    }
+
     /// Вызывается ребёнком при тапе по таб-кнопке «Родитель» и вводе 4-значного PIN.
     /// Возвращает результат верификации (см. `ParentPinEntryResult`); при `.success` уже выставлен
     /// `isParentModeActive = true`. UI на этот же `@Published` повесит появление вкладок
     /// `Блокировка`/`Настройки` и красной плашки «Выход».
     func enterParentMode(pin: String) -> ParentPinEntryResult {
+        if deviceRole == nil, let familyID = recoveredFamily?.familyID {
+            guard recoveredDeviceRole == .child, recoveryPinFamilyID == familyID else { return .unavailable }
+        }
         refreshLocalParentPinStatus()
         guard !parentPinUnavailable, !parentPinNeedsRefresh else { return .unavailable }
         let result = parentPinService.verifyPin(pin)
         switch result {
         case .success:
             isParentModeActive = true
+            if deviceRole == nil, recoveredDeviceRole == .child {
+                recoveryPinAuthorizedFamilyID = recoveredFamily?.familyID
+            }
             parentPinLockoutEnd = nil
         case .lockedOut(let until):
             parentPinLockoutEnd = until
@@ -921,6 +1036,7 @@ final class AppState: ObservableObject {
 
     /// Закрывает родительский режим (тап по красной плашке «Выход»). Идемпотентно.
     func exitParentMode() {
+        recoveryPinAuthorizedFamilyID = nil
         guard isParentModeActive else { return }
         isParentModeActive = false
     }
@@ -1095,6 +1211,10 @@ final class AppState: ObservableObject {
     /// Only a deliberate Parent Mode entry may repair a missing cache, including after expiry.
     /// Persist the family-scoped cooldown so repeated taps/restarts cannot create a request loop.
     func prepareParentPinEntry() async {
+        if deviceRole == nil, recoveredDeviceRole == .child {
+            await prepareRecoveryPinEntry()
+            return
+        }
         refreshLocalParentPinStatus()
         guard deviceRole == .child, pairingState?.isLinked == true,
               let familyID = pairingState?.familyID, !parentPinIsSet,
@@ -1571,9 +1691,20 @@ final class AppState: ObservableObject {
     }
 
     private func bootstrapRemoteIfNeeded() async {
-        guard let role = deviceRole else { return }
+        guard let role = deviceRole else {
+            await checkInstallationRecovery()
+            return
+        }
         do {
             let bootstrap = try await remoteSyncService.registerDevice(role: role)
+            guard deviceRole == role else { return }
+            if let registeredRole = bootstrap.deviceRole, registeredRole != role {
+                // A retained identity may still belong to a family after reinstall.
+                // Never reinterpret a linked child as its parent (or vice versa).
+                // Restart setup using the authenticated server role.
+                chooseDeviceRole(registeredRole)
+                return
+            }
             if let serverPair = bootstrap.pairingState {
                 let familyChanged = pairingState?.familyID != serverPair.familyID
                 pairingState = serverPair
@@ -3349,6 +3480,7 @@ private struct ParentChildDailyStatsDTO: Codable {
 private struct RegisterDeviceResponseDTO: Codable {
     let deviceSecret: String
     let pairingState: DevicePairingState?
+    let deviceRole: DeviceRole?
 }
 
 private struct PendingCommandDTO: Codable {
@@ -3577,6 +3709,14 @@ private final class ParentalRemoteSyncService {
         return response
     }
 
+    func inspectDeviceRegistration() async throws -> RegisterDeviceResponseDTO {
+        struct Payload: Encodable {
+            let installID: String
+            let inspectOnly = true
+        }
+        return try await call(action: "register_device", payload: Payload(installID: installID))
+    }
+
     func generatePairingCode() async throws -> DevicePairingState {
         struct Payload: Encodable { let installID: String }
         return try await call(action: "generate_pairing_code", payload: Payload(installID: installID))
@@ -3763,11 +3903,11 @@ private final class ParentalRemoteSyncService {
 
     /// Любое связанное устройство → backend: полная отвязка семьи (оба устройства отсоединяются,
     /// семья помечается неактивной). После — оба устройства очистят локальную связку.
-    func unlinkDevices() async throws {
-        struct Payload: Encodable { let installID: String }
+    func unlinkDevices(expectedFamilyID: UUID? = nil) async throws {
+        struct Payload: Encodable { let installID: String; let expectedFamilyID: UUID? }
         let _: EmptyResponse = try await call(
             action: "unlink_devices",
-            payload: Payload(installID: installID)
+            payload: Payload(installID: installID, expectedFamilyID: expectedFamilyID)
         )
     }
 

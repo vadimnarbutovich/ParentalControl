@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "请家长在他们的手机上查看 Premium 状态。";
 "access.banner.choose_plan" = "选择方案";
 "access.banner.check_status" = "查看状态";
+"recovery.title" = "这部手机已关联一个家庭";
+"recovery.message" = "恢复关联以继续使用，或重新设置这部手机。";
+"recovery.restore" = "恢复关联";
+"recovery.reset" = "重新设置";
+"recovery.checking" = "正在检查家庭关联…";
+"recovery.error" = "未能完成操作。请检查网络连接后重试。";
+"recovery.confirm" = "两部手机将解除关联，此家庭的设置、日程和任务将被删除。您需要重新配对手机。购买记录和已使用的演示试用时间会保留。";
+"recovery.child_hint" = "重新设置需要家长的 PIN 码。如果您不知道 PIN 码，请在家长的手机上解除关联。";

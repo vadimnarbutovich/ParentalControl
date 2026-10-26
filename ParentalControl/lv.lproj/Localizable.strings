@@ -625,3 +625,11 @@
 "access.banner.child_verification.body" = "Palūdz vecākiem pārbaudīt Premium savā tālrunī.";
 "access.banner.choose_plan" = "Izvēlēties plānu";
 "access.banner.check_status" = "Pārbaudīt statusu";
+"recovery.title" = "Šis tālrunis jau ir saistīts ar ģimeni";
+"recovery.message" = "Atjaunojiet savienojumu, lai turpinātu, vai iestatiet tālruni no jauna.";
+"recovery.restore" = "Atjaunot savienojumu";
+"recovery.reset" = "Iestatīt no jauna";
+"recovery.checking" = "Tiek pārbaudīts savienojums ar ģimeni…";
+"recovery.error" = "Darbību neizdevās pabeigt. Pārbaudiet interneta savienojumu un mēģiniet vēlreiz.";
+"recovery.confirm" = "Abi tālruņi tiks atsaistīti, un šīs ģimenes iestatījumi, grafiki un uzdevumi tiks dzēsti. Tālruņi būs jāsavieno vēlreiz. Pirkumu vēsture un jau izmantotais izmēģinājuma laiks tiks saglabāti.";
+"recovery.child_hint" = "Lai iestatītu no jauna, nepieciešams vecāka PIN kods. Ja to nezināt, atsaistiet ierīces vecāka tālrunī.";

@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "Bitte deine Eltern, Premium auf ihrem Handy zu prüfen.";
 "access.banner.choose_plan" = "Tarif wählen";
 "access.banner.check_status" = "Status prüfen";
+"recovery.title" = "Dieses Handy ist bereits mit einer Familie verbunden";
+"recovery.message" = "Stelle die Verbindung wieder her oder richte das Handy neu ein.";
+"recovery.restore" = "Verbindung wiederherstellen";
+"recovery.reset" = "Neu einrichten";
+"recovery.checking" = "Familienverbindung wird geprüft…";
+"recovery.error" = "Die Aktion konnte nicht abgeschlossen werden. Prüfe die Internetverbindung und versuche es erneut.";
+"recovery.confirm" = "Die Verbindung zwischen beiden Handys wird getrennt. Einstellungen, Zeitpläne und Aufgaben dieser Familie werden gelöscht. Anschließend musst du die Handys erneut verbinden. Dein Kaufverlauf und die bereits genutzte Demozeit bleiben erhalten.";
+"recovery.child_hint" = "Für die Neueinrichtung brauchst du die Eltern-PIN. Falls du sie nicht kennst, trenne die Verbindung auf dem Handy des Elternteils.";

@@ -682,3 +682,11 @@
 "access.banner.child_verification.body" = "Pide a tu padre o madre que compruebe Premium en su teléfono.";
 "access.banner.choose_plan" = "Elegir un plan";
 "access.banner.check_status" = "Comprobar estado";
+"recovery.title" = "Este teléfono ya está vinculado a una familia";
+"recovery.message" = "Restablece el vínculo para continuar o configura el teléfono de nuevo.";
+"recovery.restore" = "Restablecer vínculo";
+"recovery.reset" = "Configurar de nuevo";
+"recovery.checking" = "Comprobando el vínculo familiar…";
+"recovery.error" = "No se pudo completar la acción. Comprueba tu conexión a internet e inténtalo de nuevo.";
+"recovery.confirm" = "Se desvincularán los dos teléfonos y se eliminarán los ajustes, horarios y tareas de esta familia. Tendrás que volver a vincularlos. Se conservarán el historial de compras y el tiempo de demostración utilizado.";
+"recovery.child_hint" = "Para configurarlo de nuevo, introduce el PIN del adulto. Si no lo sabes, desvincula los dispositivos desde el teléfono del adulto.";

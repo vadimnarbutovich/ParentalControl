@@ -212,7 +212,7 @@ Deno.serve(async (req: Request) => {
       case "fetch_parent_pro":
         return await fetchParentPro(authed.deviceId);
       case "unlink_devices":
-        return await unlinkDevices(authed.deviceId);
+        return await unlinkDevices(authed.deviceId, payload);
       // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
       // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
       case "child_poll":
@@ -277,25 +277,38 @@ async function handleAccessWebhook(req: Request): Promise<Response> {
 async function registerDevice(req: Request, payload: Json): Promise<Response> {
   const installID = asString(payload.installID);
   const role = asString(payload.role);
+  const inspectOnly = payload.inspectOnly === true;
   const providedSecret = req.headers.get("x-device-secret") ?? "";
   if (req.headers.get("x-device-install-id") !== installID || !/^[A-Fa-f0-9-]{64,128}$/.test(providedSecret)) {
     return errorResponse("Valid device credentials are required", 401);
   }
-  if (!installID || (role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
+  if (!installID || (!inspectOnly && role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
 
   const { data: existing, error: existingError } = await supabase
     .from("devices")
-    .select("id, device_secret, family_id")
+    .select("id, device_secret, family_id, role")
     .eq("install_id", installID)
     .maybeSingle();
   if (existingError) return errorResponse(existingError.message, 400);
 
   if (existing) {
     if (existing.device_secret !== providedSecret) return errorResponse("Invalid device credentials", 401);
+    if (!inspectOnly && !existing.family_id && existing.role !== role) {
+      // Reinstall may choose a different role only AFTER unlinking. Keep the
+      // same device/owner identity, so this cannot restart a demo or purchase.
+      // Fence a concurrent pairing or role change rather than overwrite it.
+      const { data: changed, error: changeError } = await supabase.from("devices")
+        .update({ role }).eq("id", existing.id).eq("role", existing.role)
+        .is("family_id", null).select("id").maybeSingle();
+      if (changeError) return errorResponse(changeError.message, 400);
+      if (!changed) return errorResponse("Device pairing changed; retry registration", 409);
+      return okResponse({ deviceSecret: existing.device_secret, pairingState: null, deviceRole: role });
+    }
     const pairingState = existing.family_id ? await fetchPairingState(existing.family_id) : null;
-    return okResponse({ deviceSecret: existing.device_secret, pairingState });
+    return okResponse({ deviceSecret: existing.device_secret, pairingState, deviceRole: existing.role });
   }
 
+  if (inspectOnly) return okResponse({ deviceSecret: providedSecret, pairingState: null, deviceRole: null });
   // The client saves this secret before its first request, so retries are safe.
   const deviceSecret = providedSecret;
   const { error: insertError } = await supabase
@@ -303,7 +316,7 @@ async function registerDevice(req: Request, payload: Json): Promise<Response> {
     .insert({ install_id: installID, role, device_secret: deviceSecret });
   if (insertError) return errorResponse(insertError.message, 400);
 
-  return okResponse({ deviceSecret, pairingState: null });
+  return okResponse({ deviceSecret, pairingState: null, deviceRole: role });
 }
 
 async function generatePairingCode(deviceId: string): Promise<Response> {
@@ -372,8 +385,13 @@ async function joinPairingCode(deviceId: string, payload: Json): Promise<Respons
 /// устройство. Ребёнка будим silent push'ом (ДО отсоединения, иначе apns-токен по семье не найти);
 /// второе устройство окончательно очистит локальное состояние при следующем `registerDevice`
 /// (вернёт `pairingState: null`).
-async function unlinkDevices(deviceId: string): Promise<Response> {
+async function unlinkDevices(deviceId: string, payload: Json = {}): Promise<Response> {
   const device = await getDevice(deviceId);
+  const expectedFamilyID = asUUIDString(payload.expectedFamilyID);
+  if (payload.expectedFamilyID != null && !expectedFamilyID) return errorResponse("Invalid family ID", 400);
+  // Retry after a lost success response is safe; never unlink a different family.
+  if (expectedFamilyID && !device.family_id) return okResponse({ ok: true });
+  if (expectedFamilyID && device.family_id !== expectedFamilyID) return errorResponse("Device pairing changed", 409);
   if (!device.family_id) return errorResponse("Device is not paired", 400);
   const familyID = device.family_id;
 
