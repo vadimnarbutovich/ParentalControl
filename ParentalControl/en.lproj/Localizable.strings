@@ -692,7 +692,7 @@
 "recovery.reset" = "Set up again";
 "recovery.checking" = "Checking family link…";
 "recovery.error" = "Couldn’t complete the action. Check your internet connection and try again.";
-"recovery.confirm" = "This will unlink both phones and delete this family’s settings, schedules and tasks. You’ll need to pair the phones again. Your purchase history and used demo time will be kept.";
+"recovery.confirm" = "This will unlink both phones and delete this family’s settings, schedules and tasks. You’ll need to pair the phones again. Your subscription will be kept.";
 "recovery.child_hint" = "To set up again, enter the parent’s PIN. If you don’t have it, unlink the devices on the parent’s phone.";
 "access.banner.setup.title" = "Finishing setup";
 "access.banner.setup.parent.body" = "Complete setup on your child’s phone. Controls will become available automatically.";

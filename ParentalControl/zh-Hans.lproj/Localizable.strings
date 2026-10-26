@@ -688,7 +688,7 @@
 "recovery.reset" = "重新设置";
 "recovery.checking" = "正在检查家庭关联…";
 "recovery.error" = "未能完成操作。请检查网络连接后重试。";
-"recovery.confirm" = "两部手机将解除关联，此家庭的设置、日程和任务将被删除。您需要重新配对手机。购买记录和已使用的演示试用时间会保留。";
+"recovery.confirm" = "两部手机将解除关联，此家庭的设置、日程和任务将被删除。您需要重新配对手机。您的订阅会保留。";
 "recovery.child_hint" = "重新设置需要家长的 PIN 码。如果您不知道 PIN 码，请在家长的手机上解除关联。";
 "access.banner.setup.title" = "完成设置";
 "access.banner.setup.parent.body" = "请在孩子的手机上完成设置，随后即可自动启用管理功能。";

@@ -631,7 +631,7 @@
 "recovery.reset" = "Configurează din nou";
 "recovery.checking" = "Se verifică legătura cu familia…";
 "recovery.error" = "Acțiunea nu a putut fi finalizată. Verifică conexiunea la internet și încearcă din nou.";
-"recovery.confirm" = "Cele două telefoane vor fi deconectate, iar setările, programele și sarcinile acestei familii vor fi șterse. Va trebui să conectezi din nou telefoanele. Istoricul achizițiilor și timpul de demonstrație deja folosit vor fi păstrate.";
+"recovery.confirm" = "Cele două telefoane vor fi deconectate, iar setările, programele și sarcinile acestei familii vor fi șterse. Va trebui să conectezi din nou telefoanele. Abonamentul tău va fi păstrat.";
 "recovery.child_hint" = "Pentru o nouă configurare este necesar PIN-ul părintelui. Dacă nu îl știi, deconectează dispozitivele de pe telefonul părintelui.";
 "access.banner.setup.title" = "Finalizează configurarea";
 "access.banner.setup.parent.body" = "Finalizează configurarea pe telefonul copilului. Funcțiile de control vor deveni disponibile automat.";

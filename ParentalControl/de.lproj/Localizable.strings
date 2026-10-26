@@ -688,7 +688,7 @@
 "recovery.reset" = "Neu einrichten";
 "recovery.checking" = "Familienverbindung wird geprüft…";
 "recovery.error" = "Die Aktion konnte nicht abgeschlossen werden. Prüfe die Internetverbindung und versuche es erneut.";
-"recovery.confirm" = "Die Verbindung zwischen beiden Handys wird getrennt. Einstellungen, Zeitpläne und Aufgaben dieser Familie werden gelöscht. Anschließend musst du die Handys erneut verbinden. Dein Kaufverlauf und die bereits genutzte Demozeit bleiben erhalten.";
+"recovery.confirm" = "Die Verbindung zwischen beiden Handys wird getrennt. Einstellungen, Zeitpläne und Aufgaben dieser Familie werden gelöscht. Anschließend musst du die Handys erneut verbinden. Dein Abonnement bleibt erhalten.";
 "recovery.child_hint" = "Für die Neueinrichtung brauchst du die Eltern-PIN. Falls du sie nicht kennst, trenne die Verbindung auf dem Handy des Elternteils.";
 "access.banner.setup.title" = "Einrichtung abschließen";
 "access.banner.setup.parent.body" = "Schließe die Einrichtung auf dem Handy deines Kindes ab. Die Steuerung wird dann automatisch verfügbar.";

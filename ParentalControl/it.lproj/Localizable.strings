@@ -688,7 +688,7 @@
 "recovery.reset" = "Configura di nuovo";
 "recovery.checking" = "Verifica del collegamento familiare…";
 "recovery.error" = "Impossibile completare l’operazione. Controlla la connessione a Internet e riprova.";
-"recovery.confirm" = "I due telefoni verranno scollegati e le impostazioni, gli orari e le attività di questa famiglia verranno eliminati. Dovrai collegare di nuovo i telefoni. La cronologia degli acquisti e il tempo di prova già utilizzato saranno conservati.";
+"recovery.confirm" = "I due telefoni verranno scollegati e le impostazioni, gli orari e le attività di questa famiglia verranno eliminati. Dovrai collegare di nuovo i telefoni. Il tuo abbonamento verrà mantenuto.";
 "recovery.child_hint" = "Per una nuova configurazione serve il PIN del genitore. Se non lo conosci, scollega i dispositivi dal telefono del genitore.";
 "access.banner.setup.title" = "Completa la configurazione";
 "access.banner.setup.parent.body" = "Completa la configurazione sul telefono di tuo figlio. I controlli saranno disponibili automaticamente.";

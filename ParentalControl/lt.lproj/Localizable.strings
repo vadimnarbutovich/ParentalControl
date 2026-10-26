@@ -631,7 +631,7 @@
 "recovery.reset" = "Nustatyti iš naujo";
 "recovery.checking" = "Tikrinamas ryšys su šeima…";
 "recovery.error" = "Nepavyko užbaigti veiksmo. Patikrinkite interneto ryšį ir bandykite dar kartą.";
-"recovery.confirm" = "Abu telefonai bus atsieti, o šios šeimos nustatymai, tvarkaraščiai ir užduotys bus ištrinti. Telefonus reikės susieti iš naujo. Pirkimų istorija ir jau panaudotas bandomasis laikas bus išsaugoti.";
+"recovery.confirm" = "Abu telefonai bus atsieti, o šios šeimos nustatymai, tvarkaraščiai ir užduotys bus ištrinti. Telefonus reikės susieti iš naujo. Jūsų prenumerata bus išsaugota.";
 "recovery.child_hint" = "Norint nustatyti iš naujo, reikia tėvų PIN kodo. Jei jo nežinote, atsiekite įrenginius tėvų telefone.";
 "access.banner.setup.title" = "Užbaikite sąranką";
 "access.banner.setup.parent.body" = "Užbaikite sąranką vaiko telefone. Valdymo funkcijos taps prieinamos automatiškai.";

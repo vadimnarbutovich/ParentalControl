@@ -631,7 +631,7 @@
 "recovery.reset" = "Qayta sozlash";
 "recovery.checking" = "Oilaga ulanish tekshirilmoqda…";
 "recovery.error" = "Amalni yakunlab bo‘lmadi. Internet aloqasini tekshirib, qayta urinib ko‘ring.";
-"recovery.confirm" = "Ikki telefon o‘rtasidagi ulanish uziladi va bu oilaning sozlamalari, jadvallari hamda vazifalari o‘chiriladi. Telefonlarni qayta ulash kerak bo‘ladi. Xaridlar tarixi va ishlatilgan sinov muddati saqlanadi.";
+"recovery.confirm" = "Ikki telefon o‘rtasidagi ulanish uziladi va bu oilaning sozlamalari, jadvallari hamda vazifalari o‘chiriladi. Telefonlarni qayta ulash kerak bo‘ladi. Obunangiz saqlanadi.";
 "recovery.child_hint" = "Qayta sozlash uchun ota-onaning PIN-kodi kerak. Uni bilmasangiz, qurilmalarni ota-onaning telefonidan uzing.";
 "access.banner.setup.title" = "Sozlashni yakunlang";
 "access.banner.setup.parent.body" = "Farzandingiz telefonida sozlashni yakunlang. Boshqaruv avtomatik ravishda yoqiladi.";
