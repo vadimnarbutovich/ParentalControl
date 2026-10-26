@@ -3,33 +3,37 @@ import Foundation
 import RevenueCat
 import Security
 
-/// Конфиг гейтинга подписки. Pro привязан к УСТРОЙСТВУ РОДИТЕЛЯ: родитель покупает подписку,
-/// а его статус (через backend `families.parent_is_pro`) определяет ограничения и на родителе,
-/// и на ребёнке. Ребёнок свой RevenueCat для гейтинга НЕ использует — берёт статус родителя.
-enum SubscriptionConfig {
-    /// Временный dev-флаг: пока фичи под подпиской не определены, держим Pro разблокированным,
-    /// чтобы гейтинг не мешал разработке. Когда определимся со списком платных фич и захотим
-    /// включить реальные ограничения — поставить `false`. Вся инфраструктура (родитель шлёт
-    /// статус → backend → ребёнок применяет) работает независимо от этого флага.
-    static let developmentForceProUnlocked = true
-}
-
 @MainActor
 final class SubscriptionService: ObservableObject {
-    /// Эффективный Pro-статус, по которому гейтятся фичи в UI. На родителе — собственный entitlement
-    /// (или dev-override), на ребёнке — присланный статус родителя (`applyParentProStatus`).
+    /// Effective UI access follows the server-verified family lease, including demo.
+    /// SDK entitlement and legacy parent_is_pro cannot grant server access.
     @Published private(set) var isPro: Bool = true
     /// Реальный entitlement ИМЕННО этого устройства из RevenueCat (на родителе — основа гейтинга,
     /// на ребёнке обычно `false` и не используется). Источник для отправки статуса на backend.
     @Published private(set) var hasActiveEntitlement: Bool = false
+    @Published private(set) var hasLifetimeAccess: Bool = false
+    @Published private(set) var purchaseConfirmationState: PurchaseConfirmationState = .idle
+    var hasServerConfirmedPurchase: Bool { purchaseConfirmationState == .confirmed }
+    var isAwaitingServerConfirmation: Bool { purchaseConfirmationState == .awaiting }
+    @Published private(set) var paywallAccess = PaywallAccessPresentation(
+        hasPaidAccess: false, productIdentifier: nil, awaitingConfirmation: false)
+    /// Descriptive metadata only. Keep the last product even when the SDK's clock
+    /// expires it offline; only the family receipt decides whether access is paid.
+    private var entitlementProductIdentifier: String?
     /// Присланный с backend Pro-статус родителя (только на ребёнке). `nil` — ещё не синхронизирован.
     private var parentProOverride: Bool?
     /// Вызывается при изменении реального entitlement этого устройства. Родитель подписывается,
     /// чтобы отправить новый статус на backend (`set_parent_pro`). `[weak]`-замыкание в `AppState`.
     var onEntitlementChange: ((Bool) -> Void)?
+    var prepareServerPurchase: (() async throws -> String)?
+    var verifyServerPurchase: (() async throws -> Bool)?
+    var recheckServerPurchase: (() async throws -> Bool)?
+    var resolveServerPurchaseIdentity: (() async throws -> String)?
+    private var identityInitialization: Task<Void, Never>?
     /// `true` после первого получения `CustomerInfo` из RevenueCat (кэш, сеть или стрим), либо если SDK не настроен — чтобы не мигал Pro-бейдж до проверки подписки.
     @Published private(set) var isSubscriptionStatusKnown: Bool = false
     @Published private(set) var currentOffering: Offering?
+    @Published private(set) var annualTrialEligible = false
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var lastErrorMessage: String?
     /// После первой попытки `loadOfferings` (для paywall-диагностики, если текст ошибки не подтянулся из строк).
@@ -44,6 +48,7 @@ final class SubscriptionService: ObservableObject {
     private var refreshCoalescedTask: Task<Void, Never>?
 
     init() {
+        recomputeIsPro()
         let key = RevenueCatConfig.publicSDKKey
         guard !key.isEmpty else {
             lastErrorMessage = Self.localizedPaywallError(
@@ -73,7 +78,7 @@ final class SubscriptionService: ObservableObject {
             }
         }
 
-        Task {
+        identityInitialization = Task {
             await identifyStableUserIfNeeded(stableAppUserID)
             await refreshAll()
         }
@@ -107,6 +112,25 @@ final class SubscriptionService: ObservableObject {
         refreshCoalescedTask = nil
     }
 
+    /// Older installations saved the legacy SDK user, but purchases use the
+    /// authenticated server owner. Resolve that owner once on opening the paywall,
+    /// then retain it in Keychain for subsequent launches (including offline).
+    func refreshForPaywall() async {
+        guard isConfigured else { await refreshAll(); return }
+        await identityInitialization?.value
+        if !PurchaseCustomerIdentity.isCanonical(Purchases.shared.appUserID),
+           let resolveServerPurchaseIdentity {
+            do {
+                try await identifyPurchaseOwner(try await resolveServerPurchaseIdentity())
+            } catch {
+                // No new access and no fabricated plan on failure. Cached server
+                // access remains authoritative; a later explicit refresh can retry.
+                Self.debugLog("Could not resolve paywall purchase owner")
+            }
+        }
+        await refreshAll()
+    }
+
     func refreshCustomerInfo() async {
         guard isConfigured else { return }
         do {
@@ -122,6 +146,7 @@ final class SubscriptionService: ObservableObject {
     }
 
     func loadOfferings() async {
+        annualTrialEligible = false
         guard isConfigured else {
             offeringsLoadFinished = true
             if lastErrorMessage == nil {
@@ -136,10 +161,7 @@ final class SubscriptionService: ObservableObject {
         defer { offeringsLoadFinished = true }
         do {
             let offerings: Offerings = try await fetchOfferings()
-            let selected: Offering? = {
-                if let id = offerings.all[RevenueCatConfig.offeringIdentifier] { return id }
-                return offerings.current
-            }()
+            let selected = offerings.all[RevenueCatConfig.offeringIdentifier]
             currentOffering = selected
 
             let packageCount = selected?.availablePackages.count ?? 0
@@ -152,13 +174,23 @@ final class SubscriptionService: ObservableObject {
                     key: "paywall.error.no_offering",
                     fallback: "Нет набора подписок (offering). Проверьте в RevenueCat offering «default» и публичный ключ."
                 )
-            } else if weeklyPackage() == nil || annualPackage() == nil {
+            } else if ProPurchasePlan.allCases.contains(where: { package(for: $0) == nil }) {
                 lastErrorMessage = Self.localizedPaywallError(
                     key: "paywall.error.store_products_unavailable",
-                    fallback: "App Store не вернул обе подписки (StoreKit). Проверьте Sandbox, bundle mycompny.ParentalControl, ID продуктов в ASC и RevenueCat. Пакетов с ценой: \(packageCount)."
+                    fallback: "Не удалось загрузить все варианты покупки. Проверьте интернет и повторите попытку."
                 )
             } else {
                 lastErrorMessage = nil
+            }
+            if let product = package(for: .annual)?.storeProduct,
+               let intro = product.introductoryDiscount,
+               ProPurchasePlan.annual.offersThreeDayTrial(
+                   isEligible: true, isFreeTrial: intro.paymentMode == .freeTrial,
+                   durationDays: intro.subscriptionPeriod.unit == .day ? intro.subscriptionPeriod.value : nil,
+                   numberOfPeriods: intro.numberOfPeriods
+               ) {
+                let eligibility = await Purchases.shared.checkTrialOrIntroDiscountEligibility(product: product)
+                annualTrialEligible = eligibility == .eligible
             }
         } catch let error as OfferingsLoadError {
             currentOffering = nil
@@ -221,32 +253,57 @@ final class SubscriptionService: ObservableObject {
         #endif
     }
 
-    /// Пакет weekly (trial задаётся в App Store Connect).
-    func weeklyPackage() -> Package? {
-        let o = currentOffering
-        if let w = o?.weekly { return w }
-        return o?.package(identifier: RevenueCatConfig.weeklyPackageIdentifier)
-    }
-
-    /// Годовой пакет.
-    func annualPackage() -> Package? {
-        let o = currentOffering
-        if let a = o?.annual { return a }
-        return o?.package(identifier: RevenueCatConfig.annualPackageIdentifier)
+    /// Reject mismatched products rather than showing another app's or plan's price.
+    func package(for plan: ProPurchasePlan) -> Package? {
+        guard let package = currentOffering?.package(identifier: plan.packageIdentifier),
+              package.storeProduct.productIdentifier == plan.productIdentifier else { return nil }
+        return package
     }
 
     @discardableResult
     func purchase(_ package: Package) async -> Bool {
-        guard isConfigured else { return false }
+        if isAwaitingServerConfirmation { return await retryPendingPurchaseConfirmation() }
+        guard isConfigured, !isLoading,
+              let selectedPlan = ProPurchasePlan.allCases.first(where: {
+                  $0.productIdentifier == package.storeProduct.productIdentifier
+                    && $0.packageIdentifier == package.identifier
+              }) else { return false }
+        let plan = selectedPlan.rawValue
+        AppAnalytics.report("purchase_started", parameters: ["plan": plan])
         isLoading = true
+        lastErrorMessage = nil
         defer { isLoading = false }
         do {
+            try await preparePurchaseIdentity()
+            // An Apple purchase already exists: retry server verification, never charge again.
+            if hasActiveEntitlement && (hasLifetimeAccess || !FamilyAccessStore.allowed || isAwaitingServerConfirmation
+                || entitlementProductIdentifier == selectedPlan.productIdentifier) {
+                return await confirmServerPurchase()
+            }
             let result = try await Purchases.shared.purchase(package: package)
+            if result.userCancelled {
+                AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "cancelled"])
+                return false
+            }
             updatePro(from: result.customerInfo)
+            guard hasActiveEntitlement else {
+                lastErrorMessage = Self.localizedPaywallError(
+                    key: "paywall.error.generic", fallback: "Не удалось подтвердить покупку. Попробуйте восстановить покупки."
+                )
+                AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "failed"])
+                return false
+            }
+            guard await confirmServerPurchase() else {
+                AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "pending_verification"])
+                return false
+            }
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "success"])
             return true
         } catch ErrorCode.purchaseCancelledError {
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "cancelled"])
             return false
         } catch {
+            AppAnalytics.report("purchase_result", parameters: ["plan": plan, "result": "failed"])
             lastErrorMessage = Self.userFacingErrorMessage(from: error)
             return false
         }
@@ -254,6 +311,7 @@ final class SubscriptionService: ObservableObject {
 
     @discardableResult
     func restorePurchases() async -> RestoreResult {
+        guard !isLoading else { return .failed(nil) }
         guard isConfigured else {
             return .failed(
                 Self.localizedPaywallError(
@@ -262,14 +320,24 @@ final class SubscriptionService: ObservableObject {
                 )
             )
         }
+        AppAnalytics.report("restore_started")
         isLoading = true
+        lastErrorMessage = nil
         defer { isLoading = false }
         do {
+            try await preparePurchaseIdentity()
             let info = try await Purchases.shared.restorePurchases()
             updatePro(from: info)
             let restored = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+            if restored {
+                guard await confirmServerPurchase() else { return .pendingVerification }
+            }
+            AppAnalytics.report("restore_result", parameters: [
+                "result": restored ? "restored" : "no_active_subscription"
+            ])
             return restored ? .restored : .noActiveSubscription
         } catch {
+            AppAnalytics.report("restore_result", parameters: ["result": "failed"])
             lastErrorMessage = Self.userFacingErrorMessage(from: error)
             return .failed(lastErrorMessage)
         }
@@ -277,12 +345,44 @@ final class SubscriptionService: ObservableObject {
 
     private func updatePro(from info: CustomerInfo) {
         isSubscriptionStatusKnown = true
+        entitlementProductIdentifier = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.productIdentifier
         let active = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
+        hasLifetimeAccess = active
+            && info.entitlements[RevenueCatConfig.entitlementIdentifier]?.productIdentifier
+                == ProPurchasePlan.lifetime.productIdentifier
         let changed = active != hasActiveEntitlement
         hasActiveEntitlement = active
+        if !active { purchaseConfirmationState.receivedInactiveSDKEntitlement() }
         recomputeIsPro()
         // Уведомляем подписчика (родитель → backend) только при реальном изменении статуса.
         if changed { onEntitlementChange?(active) }
+    }
+
+    /// Retrying verification never invokes StoreKit purchase/restore or needs offerings.
+    @discardableResult
+    func retryPendingPurchaseConfirmation(automatic: Bool = false) async -> Bool {
+        guard isAwaitingServerConfirmation, !isLoading else { return false }
+        isLoading = true
+        defer { isLoading = false }
+        let confirmed = await confirmServerPurchase(automatic: automatic)
+        return confirmed
+    }
+
+    private func confirmServerPurchase(automatic: Bool = false) async -> Bool {
+        defer { recomputeIsPro() }
+        do {
+            let verifier = automatic ? recheckServerPurchase : verifyServerPurchase
+            if try await verifier?() == true {
+                purchaseConfirmationState.recordVerification(true)
+                lastErrorMessage = nil
+                return true
+            }
+        } catch {
+            // StoreKit may already have charged. A transport failure is not a failed purchase.
+        }
+        purchaseConfirmationState.recordVerification(false)
+        lastErrorMessage = L10n.tr("paywall.purchase.pending_verification")
+        return false
     }
 
     /// Child-сторона: применяет Pro-статус родителя, присланный backend'ом. Источник правды
@@ -293,17 +393,43 @@ final class SubscriptionService: ObservableObject {
         recomputeIsPro()
     }
 
-    /// Пересчёт эффективного `isPro`: dev-флаг > статус родителя (на ребёнке) > свой entitlement.
+    /// Refresh effective access after a shared lease changes or expires.
+    func refreshAccessState() { recomputeIsPro() }
+
     private func recomputeIsPro() {
-        let effective: Bool
-        if SubscriptionConfig.developmentForceProUnlocked {
-            effective = true
-        } else if let override = parentProOverride {
-            effective = override
-        } else {
-            effective = hasActiveEntitlement
-        }
+        // Server rollout/lease decides access, never a client-supplied isPro.
+        let effective = FamilyAccessStore.allowed
         if isPro != effective { isPro = effective }
+        let presentation = PaywallAccessPresentation(
+            hasPaidAccess: effective && FamilyAccessStore.receipt?.lease.state == .paid,
+            productIdentifier: entitlementProductIdentifier,
+            awaitingConfirmation: isAwaitingServerConfirmation)
+        if paywallAccess != presentation { paywallAccess = presentation }
+    }
+
+    private func preparePurchaseIdentity() async throws {
+        await identityInitialization?.value
+        guard let prepareServerPurchase else { throw NSError(domain: "ParentalAccess", code: 503) }
+        let identity = try await prepareServerPurchase()
+        try await identifyPurchaseOwner(identity)
+    }
+
+    private func identifyPurchaseOwner(_ identity: String) async throws {
+        guard PurchaseCustomerIdentity.isCanonical(identity) else {
+            throw NSError(domain: "ParentalAccess", code: 502)
+        }
+        if Purchases.shared.appUserID != identity {
+            let result = try await Purchases.shared.logIn(identity)
+            updatePro(from: result.customerInfo)
+            annualTrialEligible = false
+            await loadOfferings()
+        }
+        // A successful login must survive restart/reinstall. Otherwise startup
+        // logs back into the legacy sb- profile, which may have no purchases.
+        let key = "parentalcontrol.revenuecat.app_user_id"
+        if KeychainStore.read(key: key) != identity {
+            _ = KeychainStore.save(value: identity, key: key)
+        }
     }
 
     /// Логиним стабильный app user id, чтобы профиль не терялся при переустановке приложения.
@@ -338,6 +464,7 @@ final class SubscriptionService: ObservableObject {
 
 enum RestoreResult {
     case restored
+    case pendingVerification
     case noActiveSubscription
     case failed(String?)
 }
@@ -358,8 +485,11 @@ private enum KeychainStore {
             kSecAttrAccount as String: key,
         ]
 
-        SecItemDelete(query as CFDictionary)
-
+        // Preserve the previous identity if Keychain is temporarily unavailable.
+        let status = SecItemUpdate(query as CFDictionary,
+                                   [kSecValueData as String: data] as CFDictionary)
+        if status == errSecSuccess { return true }
+        guard status == errSecItemNotFound else { return false }
         var addQuery = query
         addQuery[kSecValueData as String] = data
 

@@ -1,78 +1,188 @@
-# Yandex AppMetrica — ParentalControl
+# AppMetrica — ParentalControl
 
-## 1) Подключение
+Актуализировано: 20 октября 2026. Схема событий: **2**.
 
-1. Консоль: https://appmetrica.yandex.ru — приложение iOS ParentalControl, API Key.
-2. **SPM:** `https://github.com/appmetrica/appmetrica-sdk-ios.git`, продукт `AppMetricaCore`, таргет `ParentalControl`.
-3. **Ключ:** константа `metricaAPIKey` в [`ParentalControl/Analytics/AppAnalytics.swift`](ParentalControl/Analytics/AppAnalytics.swift) (как в HabitsTracker — `AppMetricaConfiguration(apiKey:)` в коде).
-4. Активация: `AppAnalytics.activateMetricaIfNeeded()` вызывается один раз при появлении корня (`ParentalControlApp` → `ContentView.onAppear`).
-5. Отправка событий: `AppAnalytics.report(_:parameters:)` → `AppMetrica.reportEvent`.
+## Подключение и разделение приложений
 
-## 2) События и параметры
+- Приложение iOS: **ParentalControl**, Bundle ID `mycompny.ParentalControl`, App Store ID `6820971713`.
+- Отдельный SDK API key, предоставленный владельцем из кабинета AppMetrica: `9edea000-9fd2-4da0-9b68-845eedb8bf86`.
+- Ключ хранится в [AppAnalytics.swift](ParentalControl/Analytics/AppAnalytics.swift). Это публичный ключ SDK, не OAuth-токен управления.
+- SDK подключён через SPM: `AppMetricaCore`, зафиксированная версия 5.16.0. Обновление SDK в эту задачу не входит.
+- Ранее ParentalControl использовал тот же ключ, что ScreenBlocker. Теперь старый ключ явно запрещён проверкой конфигурации. При пустом/некорректном ключе или другом Bundle ID SDK не активируется.
+- Активация происходит при запуске основного приложения; повторные вызовы безопасны. В расширения уведомлений, геолокации, Screen Time и виджеты аналитика не добавляется.
+- Уже отправленные события в ScreenBlocker автоматически не переносятся и не удаляются. Старые установленные сборки продолжат отправлять туда до обновления. Для сравнения истории используйте фильтры приложения/версии, доступные в кабинете; не удаляйте весь проект ScreenBlocker.
+- Создание отдельной карточки и её настройки выполняет владелец в кабинете. Код с новым ключом проверяется сборкой; фактический приём событий требует проверки на устройстве и в кабинете.
 
-### Нижняя панель (Tab bar)
+## Сборки и общие параметры
 
-- `main_tab_select` — пользователь переключил вкладку
-  - `tab`: `home` | `statistics` | `blocklist` | `settings` (соответствует Главная, Статистика, Блокировка, Настройки)
+Каждое наше событие содержит:
 
-### Главный экран (дашборд)
+| Поле | Значения |
+|---|---|
+| `app` | `parental_control` |
+| `schema_version` | `2` |
+| `role` | `unselected`, `parent`, `child` — роль телефона, не человека |
+| `parent_mode` | `true` / `false` — открыт ли защищённый родительский режим |
+| `distribution` | `debug`, `sandbox`, `release` |
 
-- `dashboard_earn_card_tap` — тап по карточке в блоке «Заработать минуты`
-  - `kind`: `steps` | `squat` | `pushup`
-- `dashboard_focus_control_tap` — старт/стоп фокусировки
-  - `action`: `start` | `end`
-  - при `start`: `duration_minutes`: Int (выбранная длительность)
-- `dashboard_pro_badge_tap` — тап по бейджу Pro (до открытия paywall)
+**Debug:** SDK не активируется, события печатаются только в консоли после фильтрации. Флаг `HIDE_DEBUG_UI` не включает отправку.
 
-### Статистика
+**Release:** SDK отправляет события. `sandbox` определяется по квитанции `sandboxReceipt` (обычно TestFlight/песочница). Если квитанции нет, значение `release`; это не доказательство установки из App Store. Для чистых отчётов дополнительно фильтруйте номера тестовых сборок.
 
-- `statistics_calendar_open` — кнопка календаря в шапке
-- `statistics_day_chip_tap` — тап по дню в полоске недели
-  - `date_key`: String, `yyyy-MM-dd` (start of day, текущий календарь)
-- `statistics_segment_tap` — переключение «Активность» / «Использование»
-  - `segment`: `activity` | `app_usage`
+`app`, `schema_version`, `distribution` также задаются в окружении SDK для автоматических событий. Установки, сессии и технические сведения SDK — не то же самое, что перечисленные ниже пользовательские события.
 
-### Список блокировки
+## Конфиденциальность и нагрузка
 
-- `blocklist_pick_apps_tap` — «Выбрать приложения»
-- `blocklist_picker_dismissed` — закрытие системного пикера (без имён приложений)
-  - `apps_count`, `categories_count`, `domains_count`: Int
-- `blocklist_monitoring_slide` — жест слайдера мониторинга
-  - `action`: `pause` | `resume`
+Контракт разрешённых событий и параметров: [AnalyticsSchema.swift](ParentalControl/Analytics/AnalyticsSchema.swift).
 
-### Настройки
+- Неизвестные события отбрасываются. Неизвестные поля, произвольные строки и значения вне разрешённых диапазонов не отправляются.
+- Не отправляем PIN/хэши PIN, код связи, family/device/command/task ID, координаты, названия и описания заданий/расписаний, выбранные приложения/домены/токены Screen Time, содержимое отчётов использования, точные выбранные даты, email, сырые ошибки/ответы сервера.
+- Передаются категории действий, результаты, количество выбранных элементов и заданное родителем время. Имена приложений и реальные данные использования не передаются.
+- Отключены геолокация AppMetrica, фоновая геолокация, IDFA, автоматическое отслеживание deep links и покупок. Наше определение местоположения для родителя не меняется.
+- Не задаём `userProfileID` и не связываем профили родителя и ребёнка в AppMetrica.
+- SDK всё равно обрабатывает технические идентификаторы, сведения об устройстве/приложении и сессиях. Аналитика не называется полностью анонимной. Настройки SDK, политика и App Privacy должны соответствовать друг другу; технические проверки не заменяют правовую оценку аналитики на детских устройствах.
+- Не создаём события на каждый polling-тик, push, повтор команды или изменение статистики. Нет дополнительных запросов к Supabase для аналитики, ручной отправки буфера на каждый тап и ожидания ответа AppMetrica в бизнес-операциях.
 
-- `settings_premium_tap` — строка премиума / разблокировки
-- `settings_conversion_open` — «Количество упражнений за минуту»
-- `settings_midnight_reset_toggle` — свитч «Сброс баланса в полночь»
-  - `enabled`: Bool
-- `settings_onboarding_replay_tap` — показать онбординг снова
-- `settings_feedback_tap` — обратная связь (почта)
-- `settings_rate_app_tap` — оценить в App Store
-- `settings_share_app_tap` — поделиться приложением
-- `settings_permissions_open` — открытие листа разрешений (**только DEBUG**)
+## Каталог событий
 
-### Лист конверсии (внутри настроек)
+Общие поля выше не повторяются. «Успех сервера» не означает, что телефон ребёнка уже применил изменение. Отсутствие результата после запроса также не всегда означает ошибку: приложение могли закрыть.
 
-- `conversion_apply_defaults_tap` — «Значения по умолчанию»
-- `conversion_save_tap` — «Сохранить»
-  - `valid`: Bool (все три поля распарсились как положительные целые)
-  - при наличии: `steps_per_minute`, `squats_per_minute`, `pushups_per_minute`: Int
+### Начало работы, разрешения и связь
 
-### Paywall
+| Событие | Когда | Дополнительные поля |
+|---|---|---|
+| `role_selected` | Пользователь изменил/выбрал роль телефона | `role` |
+| `onboarding_flow_shown` | Первый показ экземпляра онбординга | `mode`: `first_launch` / `replay` |
+| `onboarding_step_shown` | Вход на шаг, в том числе при возврате назад | `mode`, `step` |
+| `onboarding_step_continue` | Переход дальше или завершение | `step`, `ready`: выполнено ли условие шага |
+| `onboarding_closed` | Завершение последнего шага | `mode` |
+| `onboarding_share_app` | Открытие системного «Поделиться» из настройки | — |
+| `onboarding_permission_request` | Нажатие запроса разрешения в онбординге | `permission` |
+| `permission_request_result` | Возврат из процедуры запроса разрешения | `permission`, `granted` |
+| `pairing_code_request` | Ответ на создание родительского кода | `result`: `success` / `failed` |
+| `pairing_join` | Ответ на присоединение ребёнка по коду | `result`: `success` / `failed` |
+| `devices_unlink` | Ответ на явную отвязку устройств | `result`: `success` / `failed` |
 
-- `paywall_open` — экран подписки показан
-  - `source`: String — см. `PaywallOpenSource` (`settings`, `dashboard_badge`, `limited_feature`)
-- `paywall_cta_tap` — основная кнопка покупки
-  - `cta_type`: `continue` | `start_trial` (совпадает с подписью CTA: trial при weekly + introductory offer)
+`step`: `parentIntro`, `childIntro`, `install`, `notifications`, `screenTime`, `location`, `pairing`, `pin`, `apps`, `protection`, `limit`, `finish`.
 
-### Онбординг
+`ready=false` означает продолжение без выполненного условия, а не обязательно ошибку: например, пользователь отложил необязательную настройку.
 
-- `onboarding_flow_shown` — появление потока
-  - `mode`: `first_launch` | `replay`
-- `onboarding_closed` — пользователь завершил онбординг (нижняя кнопка «Начнём» на финале или картинка ButtonGo; при повторном просмотре из настроек — закрытие реплея)
-  - `mode`: `first_launch` | `replay`
+`permission`: `notifications`, `screenTime`, `location`. Для местоположения `granted` означает **Always**, нужное для фоновых запросов. When In Use и последующий Always могут дать два события. iOS может отложить диалог Always: значение отражает состояние на момент возврата, а не окончательный отказ. Возврат из системных настроек сам по себе не создаёт событие запроса.
 
-## 3) TODO / расширение
+### Родительский режим и PIN
 
-- **`paywall_open.source`:** при добавлении ограничений для бесплатных пользователей завести новые значения источника (и кейсы в `PaywallOpenSource`), передавать их при открытии paywall с гейтов. Сейчас заглушка: `limited_feature`.
+| Событие | Когда | Поля |
+|---|---|---|
+| `parent_mode_enter` | Результат проверки PIN при входе | `result`: `success`, `wrong_pin`, `locked_out`, `not_configured` |
+| `parent_mode_exit_tap` | Нажатие выхода из защищённого режима | — |
+| `parent_pin_change` | Ответ сервера на установку/изменение или очистку PIN | `action`: `set` / `clear`; `result`: `success` / `failed` |
+
+Событие очистки с `failed` не утверждает, что локальный PIN сохранён: текущая бизнес-логика очищает локальные данные до ответа сервера. Механизм PIN/отвязки в этой задаче не переписывался.
+
+### Блокировка и дневной бюджет
+
+| Событие | Когда | Поля |
+|---|---|---|
+| `remote_block_request` | Принято действие родителя; начато ожидание | `action`: `block` / `unblock` |
+| `remote_block_result` | Завершилось активное ожидание команды | `action`; `result`: `success`, `failed`, `timeout`, `cancelled` |
+| `blocklist_manual_block` | Локальная ручная блокировка на устройстве ребёнка | `action`: `block` / `unblock` |
+| `daily_budget_saved` | Сервер принял дневной лимит/изменение времени | `kind`: `limit` / `adjustment`; `seconds`; `limit_mode`: `every_day` / `weekdays` |
+| `daily_budget_save_failed` | Ошибка сохранения бюджета | `kind`: `limit` / `adjustment` |
+
+`remote_block_result.success` следует существующему механизму подтверждения состояния, а не факту получения push или ответу на постановку команды. Повторные опросы активного ожидания не создают повторных результатов. `timeout` — истекло ожидание родителя, команда может примениться позднее. При завершении процесса/сбросе связки результат может отсутствовать.
+
+`daily_budget_saved` **не является подтверждением применения на ребёнке**. `seconds` — запрошенный лимит либо поправка в секундах (в UI минуты), не статистика потребления. Недельный массив, день и ревизии не отправляются. Начальный лимит тоже может создать это событие.
+
+### Расписания, задания, местоположение
+
+| Событие | Когда | Поля |
+|---|---|---|
+| `schedule_change` | Локальное сохранение, переключение или удаление расписания | `action`: `save` / `toggle` / `delete`; `is_new` при сохранении; `enabled` при сохранении/переключении |
+| `schedule_sync_result` | Ответ сервера на отправку/удаление расписания | `action`: `save` / `delete`; `result`: `success` / `failed` |
+| `task_action` | Ответ сервера на действие с заданием | `action`: `create`, `edit`, `delete`, `submit`, `approve`; `result`: `success` / `failed` |
+| `location_request` | Родитель начал запрос местоположения | — |
+| `location_request_result` | Завершение запроса местоположения | `result`: `success`, `failed`, `timeout`, `unavailable`, `cancelled` |
+
+Сохранение расписания на сервере не подтверждает установку блокировки на ребёнке. Подтверждение задания сервером не равно подтверждению снятия щита.
+
+Успех местоположения фиксируется только после получения подходящей свежей точки. Координаты, точность, время точки, ID и код серверной ошибки в аналитику не передаются. Запрос может запускаться при входе на карту, а не только кнопкой обновления.
+
+### Навигация, выбор приложений, статистика
+
+| Событие | Когда | Поля |
+|---|---|---|
+| `main_tab_select` | Изменение выбранной вкладки | `tab`: `home`, `schedule`, `map`, `statistics`, `tasks`, `blocklist`, `settings`, `parentEntry` |
+| `dashboard_pairing_connect_tap` | Кнопка связи на главном экране | — |
+| `dashboard_pro_badge_tap` | Нажатие Pro на главном экране | — |
+| `blocklist_pick_apps_tap` | Открытие выбора приложений | — |
+| `blocklist_picker_dismissed` | Закрытие пикера | `apps_count`, `categories_count`, `domains_count`; либо `action=blocked_limit` |
+| `statistics_calendar_open` | Открытие календаря | — |
+| `statistics_day_select` | Изменение выбранного дня | — |
+| `statistics_summary_open` | Открытие сводки | — |
+
+`main_tab_select` включает программный возврат с `parentEntry`; это не точный счётчик физических нажатий. Количество выбранных элементов ограничено диапазоном 0…10000. Сами элементы никогда не отправляются.
+
+### Защита от удаления и настройки
+
+| Событие | Когда | Поля |
+|---|---|---|
+| `removal_protection_open` | Открытие настройки защиты | `source`: `settings` / `onboarding` |
+| `removal_protection_enable` | Результат включения защиты | `result`: `success` / `failed` |
+| `removal_protection_disable` | Успешный отзыв защиты | — |
+| `settings_premium_tap` | Нажатие строки подписки | — |
+| `settings_language_tap` | Открытие выбора языка, не подтверждение смены | — |
+| `settings_permissions_open` | Открытие диагностического листа разрешений | Только локальный Debug |
+| `settings_pin_change_tap` | Открытие изменения PIN | — |
+| `settings_pin_clear_tap` | Нажатие очистки PIN | — |
+| `settings_pin_set_tap` | Открытие создания PIN | — |
+| `settings_onboarding_replay_tap` | Повторное открытие настройки | — |
+| `settings_rate_app_tap` | Переход к оценке приложения | — |
+| `settings_share_app_tap` | Открытие «Поделиться» | — |
+| `settings_feedback_tap` | Нажатие обратной связи | — |
+
+Нажатие «Поделиться», оценить или написать не подтверждает отправку, оценку или письмо.
+
+### Подписки
+
+| Событие | Когда | Поля |
+|---|---|---|
+| `paywall_open` | Показ экрана подписки | `source`: `settings`, `dashboard_badge`, `limited_feature` |
+| `paywall_cta_tap` | Нажатие CTA | `cta_type`: `continue` / `start_trial` |
+| `purchase_started` | Начало покупки доступного пакета | `plan`: `monthly`, `annual`, `lifetime`, `other` |
+| `purchase_result` | Результат покупки из RevenueCat | `plan`; `result`: `success`, `cancelled`, `failed` |
+| `restore_started` | Начало восстановления | — |
+| `restore_result` | Результат восстановления | `result`: `restored`, `no_active_subscription`, `failed` |
+
+CTA `start_trial` соответствует предлагаемой кнопке и не доказывает право на trial или его начало. Успешная покупка — результат SDK, не отчёт о выручке. Продления, возвраты, цены, чеки и идентификаторы транзакций здесь не учитываются; источник коммерческой истины — RevenueCat/App Store Connect.
+
+В проекте остаётся существующий `SubscriptionConfig.developmentForceProUnlocked = true`. Он не менялся этой задачей. Поэтому сейчас воронка paywall может быть непоказательной; решение о платных ограничениях требуется отдельно.
+
+## Рекомендуемые отчёты
+
+1. Онбординг по роли и `mode=first_launch`: показ → шаги → завершение; отдельно пропущенные шаги.
+2. Связывание: успешное создание кода и присоединение. Это агрегаты разных устройств, не сквозная воронка конкретной семьи.
+3. Надёжность управления: результаты блокировки и запросов местоположения; отдельно таймауты.
+4. Использование функций: лимиты, расписания, создание/отправка/подтверждение заданий.
+5. Покупки: источник paywall → начало покупки → результат; тестовые сборки исключать.
+
+Не выводить количество семей из числа устройств/пользователей SDK: родитель и ребёнок не объединяются аналитическим идентификатором. События отправляются с задержкой, без сети буферизуются SDK; это не транзакционный аудит.
+
+## Проверка перед публикацией
+
+Из корня проекта:
+
+```sh
+xcrun swiftc ParentalControl/Analytics/AnalyticsSchema.swift Tests/Analytics/main.swift -o /tmp/parental-analytics-tests
+/tmp/parental-analytics-tests
+node Tests/Analytics/validate.cjs
+```
+
+1. Debug: выполнить действия, увидеть `[AppAnalytics/local]`; SDK не активируется.
+2. Установить новую TestFlight-сборку **на оба телефона**.
+3. В отдельной карточке ParentalControl выполнить и найти: `main_tab_select`, `remote_block_request/result`, `daily_budget_saved`, `task_action`, `location_request/result`.
+4. Проверить `app=parental_control`, `schema_version=2`, роли и номер сборки; для TestFlight ожидать `sandbox`, если квитанция доступна.
+5. Проверить отменённую покупку/восстановление в песочнице; отмена не должна отображаться как успех.
+6. Убедиться, что новые события этой сборки не попадают в ScreenBlocker. Старые сборки предварительно обновить.
+7. Проверить соответствие App Privacy и политики реальной конфигурации SDK. ATT-диалог и рекламное отслеживание этой задачей не добавляются.
+
+Официальная документация: [настройка SDK](https://appmetrica.yandex.com/docs/en/sdk/ios/analytics/swift/AppMetricaConfiguration), [API SDK](https://appmetrica.yandex.com/docs/en/sdk/ios/analytics/swift/AppMetrica).

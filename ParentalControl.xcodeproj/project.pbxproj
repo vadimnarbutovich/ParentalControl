@@ -36,6 +36,13 @@
 		DA2030000000000000000002 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */; };
 		DA2030000000000000000003 /* ParentalControl/Services/ScheduleControlStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000012 /* ParentalControl/Services/ScheduleControlStore.swift */; };
 		DA2030000000000000000004 /* ParentalControl/Services/ScheduleControlEnforcer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2030000000000000000013 /* ParentalControl/Services/ScheduleControlEnforcer.swift */; };
+		DA2100000000000000000011 /* ParentalControl/Models/FamilyAccessLease.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000001 /* ParentalControl/Models/FamilyAccessLease.swift */; };
+		DA2100000000000000000012 /* ParentalControl/Services/FamilyAccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000002 /* ParentalControl/Services/FamilyAccessStore.swift */; };
+		DA2100000000000000000013 /* ParentalControl/Services/FamilyAccessEnforcement.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000003 /* ParentalControl/Services/FamilyAccessEnforcement.swift */; };
+		DA2100000000000000000014 /* ParentalControl/Services/RemoteControlGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */; };
+		DA2100000000000000000021 /* ParentalControl/Models/FamilyAccessLease.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000001 /* ParentalControl/Models/FamilyAccessLease.swift */; };
+		DA2100000000000000000022 /* ParentalControl/Services/FamilyAccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000002 /* ParentalControl/Services/FamilyAccessStore.swift */; };
+		DA2100000000000000000023 /* ParentalControl/Services/FamilyAccessEnforcement.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2100000000000000000003 /* ParentalControl/Services/FamilyAccessEnforcement.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -146,6 +153,9 @@
 		DA2030000000000000000011 /* ParentalControl/Models/ScheduleControlPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/ScheduleControlPlan.swift; sourceTree = SOURCE_ROOT; };
 		DA2030000000000000000012 /* ParentalControl/Services/ScheduleControlStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlStore.swift; sourceTree = SOURCE_ROOT; };
 		DA2030000000000000000013 /* ParentalControl/Services/ScheduleControlEnforcer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/ScheduleControlEnforcer.swift; sourceTree = SOURCE_ROOT; };
+		DA2100000000000000000001 /* ParentalControl/Models/FamilyAccessLease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Models/FamilyAccessLease.swift; sourceTree = SOURCE_ROOT; };
+		DA2100000000000000000002 /* ParentalControl/Services/FamilyAccessStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/FamilyAccessStore.swift; sourceTree = SOURCE_ROOT; };
+		DA2100000000000000000003 /* ParentalControl/Services/FamilyAccessEnforcement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalControl/Services/FamilyAccessEnforcement.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -377,6 +387,9 @@
 			isa = PBXGroup;
 			children = (
 				DA1100010000000000000002 /* ParentalControl/Models/DailyBudget.swift */,
+				DA2100000000000000000001 /* ParentalControl/Models/FamilyAccessLease.swift */,
+				DA2100000000000000000002 /* ParentalControl/Services/FamilyAccessStore.swift */,
+				DA2100000000000000000003 /* ParentalControl/Services/FamilyAccessEnforcement.swift */,
 				DA1100020000000000000002 /* ParentalControl/Services/BackgroundUsageUploader.swift */,
 				DA2010000000000000000003 /* ParentalControl/Services/RemoteControlGate.swift */,
 				DA2020000000000000000003 /* ParentalControl/Services/ControlSystemWorker.swift */,
@@ -733,6 +746,10 @@
 			files = (
 				DA1100010000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
 				DA1100020000000000000001 /* ParentalControl/Services/BackgroundUsageUploader.swift in Sources */,
+				DA2100000000000000000011 /* ParentalControl/Models/FamilyAccessLease.swift in Sources */,
+				DA2100000000000000000012 /* ParentalControl/Services/FamilyAccessStore.swift in Sources */,
+				DA2100000000000000000013 /* ParentalControl/Services/FamilyAccessEnforcement.swift in Sources */,
+				DA2100000000000000000014 /* ParentalControl/Services/RemoteControlGate.swift in Sources */,
 				DA2030000000000000000002 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -778,6 +795,9 @@
 			files = (
 				DA2010000000000000000001 /* ParentalControl/Models/DailyBudget.swift in Sources */,
 				DA2010000000000000000002 /* ParentalControl/Services/RemoteControlGate.swift in Sources */,
+				DA2100000000000000000021 /* ParentalControl/Models/FamilyAccessLease.swift in Sources */,
+				DA2100000000000000000022 /* ParentalControl/Services/FamilyAccessStore.swift in Sources */,
+				DA2100000000000000000023 /* ParentalControl/Services/FamilyAccessEnforcement.swift in Sources */,
 				DA2020000000000000000001 /* ParentalControl/Services/ControlSystemWorker.swift in Sources */,
 				DA2020000000000000000002 /* ParentalControl/Services/ScreenTimeEnforcer.swift in Sources */,
 				DA2030000000000000000001 /* ParentalControl/Models/ScheduleControlPlan.swift in Sources */,
@@ -1273,7 +1293,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1283,7 +1303,7 @@
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always location access lets this device respond to a parent’s location request in the background. Location is checked only on request, not continuously.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets your parent see this device on the map when they request an update.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
+				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_KrCdjMXWpMntCfiZHePfqlqHZyC;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1321,7 +1341,7 @@
 				CODE_SIGN_ENTITLEMENTS = ParentalControl/ParentalControl.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = 2L786WC7SM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1331,7 +1351,7 @@
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Always location access lets this device respond to a parent’s location request in the background. Location is checked only on request, not continuously.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets your parent see this device on the map when they request an update.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_VkzwWAHFBmJXNVJvjQIOgKcXvbM;
+				INFOPLIST_KEY_RevenueCatPublicSDKKey = appl_KrCdjMXWpMntCfiZHePfqlqHZyC;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

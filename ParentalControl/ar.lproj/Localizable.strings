@@ -9,7 +9,7 @@
 "map.just_now" = "الآن";
 "map.accuracy" = "الدقة: ±%d م";
 "map.refresh.timeout" = "لم يرسل هاتف طفلك موقعه بعد. تحقق من الاتصال بالإنترنت وحاول مرة أخرى لاحقًا.";
-"map.refresh.push_not_ready" = "افتح التطبيق المحدّث على هاتف طفلك واسمح بالوصول إلى الموقع «دائمًا»، ثم أعد المحاولة.";
+"map.refresh.push_not_ready" = "افتح التطبيق على هاتف طفلك واسمح بالوصول إلى الموقع «دائمًا»، ثم أعد المحاولة.";
 "map.unpaired.title" = "الهاتف غير مرتبط";
 "map.unpaired.subtitle" = "اربط هاتف طفلك من الإعدادات لتتمكن من رؤية موقعه.";
 
@@ -284,34 +284,28 @@
 "settings.subscription.status.free" = "الترقية إلى بريميوم";
 
 "paywall.title.brand" = "بريميوم";
-"paywall.subtitle" = "استخدم تطبيقاتك المفضلة بفوائد لصحتك";
-"paywall.feature.unlimited_apps" = "عدد غير محدود من التطبيقات";
-"paywall.feature.advanced_config" = "إيقاف مؤقت سريع للمراقبة";
-"paywall.feature.quick_break" = "الاحتفاظ برصيد اليوم السابق";
+"paywall.badge.three_days_free" = "3 أيام مجانًا";
+"paywall.badge.savings_format" = "وفّر ≈%d%%";
+"paywall.badge.savings_hint" = "مقارنةً بدفع الاشتراك الشهري لمدة 12 شهرًا";
+"paywall.subtitle" = "ساعد طفلك على استخدام الهاتف بوعي وتوازن.";
 "paywall.plan.yearly" = "الخطة السنوية";
-"paywall.plan.weekly" = "الخطة الأسبوعية";
-"paywall.badge.save" = "وفّر ٨٠٪";
 "paywall.error.iap_fallback_console" = "تعذّر تحميل الاشتراكات. في وحدة تحكم Xcode، ابحث عن [ParentalControl][IAP] لعدد الحزم ومعرّفات المنتجات. تحقق من Sandbox والحزمة ومعرّفات المنتجات المتطابقة في ASC و RevenueCat.";
 "paywall.error.generic" = "تعذّر إتمام طلب الاشتراك. يرجى المحاولة مرة أخرى.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat غير مهيأ في هذا البناء: مفتاح RevenueCatPublicSDKKey مفقود في Info.plist.";
 "paywall.error.no_offering" = "لا يوجد عرض اشتراك من RevenueCat. تحقق من عرض «default» ومفتاح SDK العام لتطبيقك.";
 "paywall.error.offerings_timeout" = "تعذّر تحميل الاشتراكات في الوقت المحدد. تحقق من الشبكة وحاول مرة أخرى.";
 "paywall.price.loading" = "جارٍ تحميل الأسعار…";
-"paywall.price.weekly_intro_format" = "%lld %@ مجاناً، ثم %@ أسبوعياً";
-"paywall.price.per_week_format" = "%@ أسبوعياً";
 "paywall.price.per_year_format" = "%@ سنوياً";
 "paywall.cta.start_trial" = "ابدأ التجربة المجانية";
 "paywall.cta.continue" = "متابعة";
-"paywall.no_payment_now" = "لا دفع الآن";
 "paywall.legal.privacy" = "الخصوصية";
 "paywall.legal.restore" = "استعادة";
 "paywall.legal.terms" = "الشروط";
 "paywall.legal.subscription_disclaimer" = "يتجدد الاشتراك تلقائياً ما لم يتم إيقاف التجديد التلقائي قبل ٢٤ ساعة على الأقل من نهاية الفترة الحالية. يمكنك إدارة الاشتراكات في إعدادات حساب Apple ID.";
 "paywall.close" = "إغلاق";
-"paywall.close.wait" = "يرجى الانتظار...";
 "paywall.restore.checking" = "جارٍ التحقق من المشتريات…";
 "paywall.restore.result.restored" = "تمت استعادة المشتريات";
-"paywall.restore.result.none" = "لم يتم العثور على مشتريات فعّالة";
+"paywall.restore.result.none" = "لم يتم العثور على اشتراك نشط أو شراء مدى الحياة.";
 "paywall.restore.result.failed" = "تعذّر استعادة المشتريات. يرجى المحاولة مرة أخرى.";
 "paywall.period.day" = "يوم";
 "paywall.period.week" = "أسبوع";
@@ -495,7 +489,7 @@
 "budget.minutes" = "دقيقة";
 "budget.rules" = "يتجدد الحد كل يوم. لا يُرحّل الوقت المتبقي أو الدقائق الإضافية لليوم التالي. اختيار 0 دقيقة يعني عدم تخصيص وقت يومي أساسي.";
 "budget.first_activation" = "سيحل هذا الحد محل الرصيد السابق. سيُحتسب الوقت المستخدم اليوم، ولن يُضاف الرصيد المتبقي القديم. سيُحفظ السجل.";
-"budget.child_update" = "افتح التطبيق المحدّث على هاتف طفلك وانتظر اتصاله.";
+"budget.child_update" = "افتح التطبيق على هاتف طفلك وانتظر اتصاله.";
 "budget.save" = "حفظ";
 "budget.save_error" = "تعذّر الحفظ. تحقق من الاتصال وحاول مجددًا. إذا تغيّر الإعداد، فأعد فتحه.";
 "budget.apply_error" = "تعذّر تفعيل الحد اليومي. تحقق من إذن مدة استخدام الجهاز وأعد فتح التطبيق.";
@@ -601,7 +595,7 @@
 "budget.weekly.apply" = "تطبيق";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "الاشتراكات غير متاحة مؤقتًا في App Store لهذا الإصدار. حاول لاحقًا.";
+"paywall.error.store_products_unavailable" = "تعذّر تحميل بعض خيارات الشراء. تحقق من الاتصال وأعد المحاولة.";
 "remote.notification.time_reset" = "أعاد ولي أمرك ضبط الوقت المكتسب";
 "parent.dashboard.start_focus" = "حظر الآن";
 "parent.dashboard.command_latency" = "مدة التنفيذ: %d ث";
@@ -653,3 +647,38 @@
 "parent.dashboard.syncing_button" = "جارٍ المزامنة…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "حدود يومية للتطبيقات المختارة";
+"paywall.feature.schedules" = "فترات راحة للنوم والدراسة";
+"paywall.feature.tasks" = "وقت إضافي مقابل إنجاز المهام";
+"paywall.feature.location" = "موقع طفلك";
+"paywall.plan.monthly" = "شهري";
+"paywall.plan.lifetime" = "مدى الحياة";
+"paywall.price.per_month_format" = "%@ شهريًا";
+"paywall.price.once_format" = "%@ · دفعة واحدة";
+"paywall.price.annual_trial_format" = "3 أيام مجانًا، ثم %@ سنويًا";
+"paywall.legal.lifetime_disclaimer" = "شراء لمرة واحدة. بدون اشتراك أو تجديد تلقائي.";
+"paywall.retry" = "إعادة المحاولة";
+"access.paused" = "تم إيقاف التحكم مؤقتًا. تحقّق من إمكانية الوصول أو استعد المشتريات على هاتف ولي الأمر.";
+"paywall.purchase.pending_verification" = "عملية الشراء بانتظار تأكيد الخادم. لا حاجة للدفع مرة أخرى. اضغط على «المحاولة مجددًا» أو استعد المشتريات لاحقًا.";
+"settings.premium.available" = "Premium متاح";
+"parent_mode.entry.unavailable" = "رمز PIN غير متاح مؤقتًا. افتح قفل هذا الهاتف وحاول لاحقًا مع الاتصال بالإنترنت. إذا استمرت المشكلة، اطلب المساعدة من أحد الوالدين.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "الاشتراك الشهري نشط";
+"paywall.status.annual" = "الاشتراك السنوي نشط";
+"paywall.status.lifetime" = "الوصول مدى الحياة مفعّل";
+"paywall.plan.current" = "الخطة الحالية";
+"settings.premium.paid_active" = "Premium مفعّل";
+"tasks.child.access_paused" = "إرسال التقارير متوقف مؤقتًا. اطلب من أحد والديك التحقق من إمكانية الوصول في تطبيقه.";
+"access.banner.inactive.title" = "Premium غير مفعّل";
+"access.banner.paused.title" = "التحكم متوقف مؤقتًا";
+"access.banner.pending.title" = "جارٍ تأكيد الشراء";
+"access.banner.verification.title" = "لم يتم تأكيد حالة Premium";
+"access.banner.parent.body" = "فعّل Premium لمواصلة إدارة هاتف طفلك.";
+"access.banner.child.body" = "اطلب من أحد والديك تفعيل Premium على هاتفه.";
+"access.banner.pending.body" = "لا تحتاج إلى الدفع مجددًا. يمكنك التحقق من الحالة في شاشة Premium.";
+"access.banner.verification.body" = "افتح Premium للتحقق من اشتراكك أو استعادة مشترياتك.";
+"access.banner.child_verification.body" = "اطلب من أحد والديك التحقق من Premium على هاتفه.";
+"access.banner.choose_plan" = "اختيار خطة";
+"access.banner.check_status" = "التحقق من الحالة";

@@ -28,6 +28,7 @@ struct OnboardingFlowView: View {
     @State private var activeSheet: Sheet?
     @State private var showsPinEntry = false
     @State private var enteredParentModeForSetup = false
+    @State private var didReportFlow = false
 
     private var isParent: Bool { appState.deviceRole == .parent }
     private var isLinked: Bool { appState.pairingState?.isLinked == true }
@@ -159,6 +160,9 @@ struct OnboardingFlowView: View {
         .interactiveDismissDisabled(busy)
         .task { await appState.refreshPermissionStatuses() }
         .task(id: step) {
+            AppAnalytics.report("onboarding_step_shown", parameters: [
+                "mode": onReplayFinished == nil ? "first_launch" : "replay", "step": step.rawValue
+            ])
             // Only one explicit refresh on entry. No extra timers on either phone.
             if step == .pin || step == .limit { await appState.refreshSetupStatus() }
         }
@@ -197,6 +201,8 @@ struct OnboardingFlowView: View {
             ParentModeEntryView(isPresented: $showsPinEntry).environmentObject(appState)
         }
         .onAppear {
+            guard !didReportFlow else { return }
+            didReportFlow = true
             AppAnalytics.report("onboarding_flow_shown", parameters: [
                 "mode": onReplayFinished == nil ? "first_launch" : "replay",
                 "role": isParent ? "parent" : "child"
@@ -525,6 +531,9 @@ struct OnboardingFlowView: View {
         guard isLinked else { go(to: .pairing); return }
         guard appState.parentPinIsSet else { go(to: .pin); return }
         guard appState.isParentModeActive else { showsPinEntry = true; return }
+        if sheet == .protection {
+            AppAnalytics.report("removal_protection_open", parameters: ["source": "onboarding"])
+        }
         activeSheet = sheet
     }
 
@@ -542,6 +551,7 @@ struct OnboardingFlowView: View {
     }
 
     private func advance() {
+        AppAnalytics.report("onboarding_step_continue", parameters: ["step": step.rawValue, "ready": canAdvance])
         if stepIndex + 1 < steps.count { stepIndex += 1 }
         else {
             AppAnalytics.report("onboarding_closed", parameters: [

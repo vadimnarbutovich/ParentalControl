@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Security
+import os
 
 /// Результат проверки PIN на стороне ребёнка.
 enum ParentPinEntryResult: Equatable {
@@ -12,14 +13,68 @@ enum ParentPinEntryResult: Equatable {
     case lockedOut(until: Date)
     /// PIN ещё не задан родителем (нет кэшированного хэша).
     case notConfigured
+    case unavailable
 }
 
 /// Метаданные PIN, общие для child и parent. Хранятся в Keychain, шлются между устройствами
 /// только в виде хэш+соль (исходный PIN не покидает устройство, где введён).
-struct ParentPinMetadata: Equatable {
+struct ParentPinMetadata: Equatable, Codable {
     let hash: Data
     let salt: Data
     let updatedAt: Date
+}
+
+enum ParentPinStorageState: Equatable {
+    case available(ParentPinMetadata)
+    case missing
+    case unavailable
+    case corrupted
+}
+
+enum ParentPinRecoveryPolicy {
+    static func shouldAttempt(state: ParentPinStorageState, requiresRefresh: Bool,
+                              lastAttempt: Date?, now: Date) -> Bool {
+        if case .unavailable = state { return false }
+        if case .available = state, !requiresRefresh { return false }
+        if let lastAttempt, now.timeIntervalSince(lastAttempt) < 300 { return false }
+        return true
+    }
+}
+
+/// Injectable boundary for regression tests; never logs data or PIN-derived values.
+struct ParentPinKeychain {
+    var read: (String) -> (OSStatus, Data?)
+    var write: (String, Data) -> OSStatus
+    var delete: (String) -> OSStatus
+
+    private static func query(_ account: String) -> [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: "mycompny.parentalcontrol.parent_pin",
+         kSecAttrAccount as String: account]
+    }
+
+    static let live = ParentPinKeychain(read: { account in
+        var query = query(account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        return (status, item as? Data)
+    }, write: { account, data in
+        let query = query(account)
+        let update = [kSecValueData as String: data]
+        let status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
+        guard status == errSecItemNotFound else { return status }
+        var addition = query
+        addition[kSecValueData as String] = data
+        addition[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        let added = SecItemAdd(addition as CFDictionary, nil)
+        // A concurrent writer may have inserted the item. Never delete it.
+        return added == errSecDuplicateItem
+            ? SecItemUpdate(query as CFDictionary, update as CFDictionary) : added
+    }, delete: { account in
+        SecItemDelete(query(account) as CFDictionary)
+    })
 }
 
 /// Сервис управления родительским PIN-кодом для входа в «родительский режим» на устройстве ребёнка.
@@ -42,6 +97,7 @@ final class ParentPinService {
 
     /// Account-ключи в Keychain — все под одним `service`-ом для удобства управления.
     private enum Account: String, CaseIterable {
+        case record = "parent_pin_record_v1"
         case hash = "parent_pin_hash"
         case salt = "parent_pin_salt"
         case updatedAt = "parent_pin_updated_at"
@@ -49,8 +105,15 @@ final class ParentPinService {
         case lockedUntil = "parent_pin_locked_until"
     }
 
-    private let keychainService = "mycompny.parentalcontrol.parent_pin"
+    private struct Record: Codable {
+        let version: Int
+        let metadata: ParentPinMetadata? // nil is a durable deletion, not a fallback to legacy keys.
+    }
+    private let keychain: ParentPinKeychain
+    private let log = Logger(subsystem: "mycompny.ParentalControl", category: "ParentPIN")
     private let iso8601 = ISO8601DateFormatter()
+
+    init(keychain: ParentPinKeychain = .live) { self.keychain = keychain }
 
     // MARK: - Hashing
 
@@ -82,33 +145,65 @@ final class ParentPinService {
 
     /// Сохраняет хэш+соль+updatedAt в Keychain. Перезаписывает предыдущие значения.
     /// Также сбрасывает счётчик неверных попыток (логично — PIN изменился, начинаем с чистого листа).
-    func saveMetadata(_ metadata: ParentPinMetadata) {
-        writeData(metadata.hash, for: .hash)
-        writeData(metadata.salt, for: .salt)
-        writeString(iso8601.string(from: metadata.updatedAt), for: .updatedAt)
-        resetFailedAttempts()
+    @discardableResult
+    func saveMetadata(_ metadata: ParentPinMetadata) -> Bool {
+        guard metadata.hash.count == 32, metadata.salt.count == 16 else { return false }
+        let previous = loadMetadata()
+        guard writeRecord(metadata) else { return false }
+        if previous != metadata { resetFailedAttempts() }
+        return true
     }
 
     /// Возвращает кэшированные метаданные, если PIN установлен. `nil` — PIN не сконфигурирован
     /// (либо родитель ещё не задал, либо удалил, либо ребёнок не получил ответ от backend).
     func loadMetadata() -> ParentPinMetadata? {
-        guard
-            let hash = readData(for: .hash),
-            let salt = readData(for: .salt),
-            let updatedAtString = readString(for: .updatedAt),
-            let updatedAt = iso8601.date(from: updatedAtString)
-        else {
-            return nil
+        if case .available(let metadata) = storageState() { return metadata }
+        return nil
+    }
+
+    func storageState() -> ParentPinStorageState {
+        let (status, data) = keychain.read(Account.record.rawValue)
+        if status == errSecSuccess {
+            guard let data, let record = try? JSONDecoder().decode(Record.self, from: data),
+                  record.version == 1 else { return .corrupted }
+            guard let metadata = record.metadata else { return .missing }
+            guard metadata.hash.count == 32, metadata.salt.count == 16 else { return .corrupted }
+            return .available(metadata)
         }
-        return ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)
+        guard status == errSecItemNotFound else {
+            report("read", status)
+            return .unavailable
+        }
+        // Migrate complete legacy records without removing them before a successful write.
+        let legacy = [Account.hash, .salt, .updatedAt].map { keychain.read($0.rawValue) }
+        if let error = legacy.first(where: { $0.0 != errSecSuccess && $0.0 != errSecItemNotFound }) {
+            report("read_legacy", error.0)
+            return .unavailable
+        }
+        if legacy.allSatisfy({ $0.0 == errSecItemNotFound }) { return .missing }
+        guard let hash = legacy[0].1, hash.count == 32,
+              let salt = legacy[1].1, salt.count == 16,
+              let dateData = legacy[2].1, let dateString = String(data: dateData, encoding: .utf8),
+              let date = iso8601.date(from: dateString) else { return .corrupted }
+        let metadata = ParentPinMetadata(hash: hash, salt: salt, updatedAt: date)
+        _ = writeRecord(metadata) // A failed migration leaves the valid legacy record usable.
+        return .available(metadata)
+    }
+
+    private func writeRecord(_ metadata: ParentPinMetadata?) -> Bool {
+        guard let data = try? JSONEncoder().encode(Record(version: 1, metadata: metadata)),
+              writeData(data, for: .record) else { return false }
+        for account in [Account.hash, .salt, .updatedAt] { deleteItem(account: account) }
+        return true
     }
 
     /// Полностью удаляет PIN из Keychain (хэш, соль, updatedAt, счётчики). Вызывается, когда
     /// родитель явно удалил PIN или когда устройство сменило роль/family.
-    func clearMetadata() {
-        for account in Account.allCases {
-            deleteItem(account: account)
-        }
+    @discardableResult
+    func clearMetadata() -> Bool {
+        guard writeRecord(nil) else { return false }
+        resetFailedAttempts()
+        return true
     }
 
     /// `true`, если в Keychain есть валидный хэш+соль (PIN можно проверить).
@@ -122,8 +217,11 @@ final class ParentPinService {
     /// При успехе сбрасывает счётчик; при неудаче инкрементирует и при превышении лимита
     /// фиксирует `lockedUntil`.
     func verifyPin(_ pin: String) -> ParentPinEntryResult {
-        guard let metadata = loadMetadata() else {
-            return .notConfigured
+        let metadata: ParentPinMetadata
+        switch storageState() {
+        case .available(let value): metadata = value
+        case .missing: return .notConfigured
+        case .unavailable, .corrupted: return .unavailable
         }
         if let lockedUntil = currentLockoutEnd(), lockedUntil > Date() {
             return .lockedOut(until: lockedUntil)
@@ -138,11 +236,11 @@ final class ParentPinService {
         let nextAttempts = currentFailedAttempts() + 1
         if nextAttempts >= Self.maxFailedAttempts {
             let until = Date().addingTimeInterval(Self.lockoutDuration)
-            writeString(String(nextAttempts), for: .failedAttempts)
-            writeString(String(until.timeIntervalSinceReferenceDate), for: .lockedUntil)
+            guard writeString(String(nextAttempts), for: .failedAttempts),
+                  writeString(String(until.timeIntervalSinceReferenceDate), for: .lockedUntil) else { return .unavailable }
             return .lockedOut(until: until)
         }
-        writeString(String(nextAttempts), for: .failedAttempts)
+        guard writeString(String(nextAttempts), for: .failedAttempts) else { return .unavailable }
         return .wrongPin(remainingAttempts: Self.maxFailedAttempts - nextAttempts)
     }
 
@@ -187,36 +285,23 @@ final class ParentPinService {
 
     // MARK: - Keychain CRUD
 
-    private func writeData(_ data: Data, for account: Account) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account.rawValue,
-        ]
-        SecItemDelete(query as CFDictionary)
-        var addQuery = query
-        addQuery[kSecValueData as String] = data
-        // Доступ — только когда устройство разблокировано. PIN не должен быть прочитан при locked state.
-        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        SecItemAdd(addQuery as CFDictionary, nil)
+    @discardableResult
+    private func writeData(_ data: Data, for account: Account) -> Bool {
+        let status = keychain.write(account.rawValue, data)
+        report("write", status)
+        return status == errSecSuccess
     }
 
-    private func writeString(_ string: String, for account: Account) {
+    @discardableResult
+    private func writeString(_ string: String, for account: Account) -> Bool {
         writeData(Data(string.utf8), for: account)
     }
 
     private func readData(for account: Account) -> Data? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account.rawValue,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        let (status, data) = keychain.read(account.rawValue)
+        report("read", status)
         guard status == errSecSuccess else { return nil }
-        return item as? Data
+        return data
     }
 
     private func readString(for account: Account) -> String? {
@@ -225,12 +310,12 @@ final class ParentPinService {
     }
 
     private func deleteItem(account: Account) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account.rawValue,
-        ]
-        SecItemDelete(query as CFDictionary)
+        report("delete", keychain.delete(account.rawValue))
+    }
+
+    private func report(_ operation: String, _ status: OSStatus) {
+        guard status != errSecSuccess, status != errSecItemNotFound else { return }
+        log.error("Keychain \(operation, privacy: .public) failed, status=\(status, privacy: .public)")
     }
 }
 
@@ -242,7 +327,7 @@ extension ParentPinMetadata {
     /// Восстановление из строкового представления (от backend в snapshot).
     static func fromBackend(hashBase64: String, saltBase64: String, updatedAt: Date) -> ParentPinMetadata? {
         guard let hash = Data(base64Encoded: hashBase64),
-              let salt = Data(base64Encoded: saltBase64) else {
+              let salt = Data(base64Encoded: saltBase64), hash.count == 32, salt.count == 16 else {
             return nil
         }
         return ParentPinMetadata(hash: hash, salt: salt, updatedAt: updatedAt)

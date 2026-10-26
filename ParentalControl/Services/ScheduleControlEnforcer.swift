@@ -11,6 +11,7 @@ nonisolated enum ScheduleControlEnforcer {
         let snapshot: ScheduleControlStore.Snapshot
         let activeIDs: Set<UUID>
         func isCurrent() -> Bool {
+            guard FamilyAccessStore.allowed else { return false }
             guard (try? ScheduleControlStore.snapshot()) == snapshot,
                   let plan = try? ScheduleControlPlan(data: snapshot.schedules) else { return false }
             return plan.activeIDs() == activeIDs
@@ -28,6 +29,10 @@ nonisolated enum ScheduleControlEnforcer {
     }
 
     private static func applyCurrent(_ context: ControlSystemWorker.Context, verifyAccess: Bool) throws -> Receipt {
+        try context.check()
+        if FamilyAccessEnforcement.releaseIfNeeded() { throw ControlSystemWorker.Failure.stale }
+        try FamilyAccessEnforcement.armExpiry()
+        let accessReceipt = FamilyAccessStore.receipt
         let snapshot = try ScheduleControlStore.snapshot()
         guard snapshot.role == "child", snapshot.pairing != nil else { throw ControlSystemWorker.Failure.stale }
         let plan = try ScheduleControlPlan(data: snapshot.schedules)
@@ -40,6 +45,7 @@ nonisolated enum ScheduleControlEnforcer {
         }
         func validate() throws {
             try context.check()
+            guard FamilyAccessStore.allowed, FamilyAccessStore.receipt == accessReceipt else { throw ControlSystemWorker.Failure.stale }
             guard (try ScheduleControlStore.snapshot()) == snapshot, plan.activeIDs() == active
             else { throw ControlSystemWorker.Failure.stale }
         }

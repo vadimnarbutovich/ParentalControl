@@ -14,6 +14,24 @@ struct BlockListView: View {
     @State private var selectionBeforePicker = FamilyActivitySelection()
     @State private var setupSelection = FamilyActivitySelection()
 
+    private var isChildControlPaused: Bool {
+        appState.deviceRole == .child && !appState.isFamilyAccessAllowed
+    }
+
+    // Initial setup still permits choosing apps; an expired subscription does not.
+    private var isChildSelectionPaused: Bool {
+        isChildControlPaused && !FamilyAccessStore.isSettingUp
+    }
+
+    private var pausedControlNotice: some View {
+        Text("access.paused")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -67,18 +85,9 @@ struct BlockListView: View {
                     return
                 }
                 let sel = selectionOnly ? setupSelection : screenTimeService.selection
-                let hasCategories = !sel.categoryTokens.isEmpty
-                let hasDomains = !sel.webDomainTokens.isEmpty
-                let tooManyApps = sel.applicationTokens.count > 1
-                if !subscriptionService.isPro && (tooManyApps || hasCategories || hasDomains) {
-                    var trimmed = FamilyActivitySelection()
-                    if let firstApp = sel.applicationTokens.first {
-                        trimmed.applicationTokens = [firstApp]
-                    }
-                    screenTimeService.selection = trimmed
-                    appState.saveScreenSelection()
+                if !appState.requireFamilyConfigurationAccess() {
+                    screenTimeService.selection = selectionBeforePicker
                     AppAnalytics.report("blocklist_picker_dismissed", parameters: ["action": "blocked_limit"])
-                    showPaywall = true
                     return
                 }
                 AppAnalytics.report(
@@ -159,11 +168,11 @@ struct BlockListView: View {
                 .padding(.top, 2)
             }
 
-            if !subscriptionService.isPro {
+            if !subscriptionService.isPro && appState.deviceRole == .parent {
                 Button {
                     showPaywall = true
                 } label: {
-                    Text("blocklist.free.limit")
+                    Text("settings.premium.unlock_all")
                         .font(.footnote)
                         .foregroundStyle(AppTheme.neonOrange.opacity(0.85))
                         .underline()
@@ -173,12 +182,16 @@ struct BlockListView: View {
             }
 
             Button("blocklist.pick.apps") {
+                guard appState.requireFamilyConfigurationAccess() else { return }
                 AppAnalytics.report("blocklist_pick_apps_tap")
                 if selectionOnly { setupSelection = screenTimeService.selection }
                 showingPicker = true
             }
             .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
+            .disabled(isChildSelectionPaused)
+            .opacity(isChildSelectionPaused ? 0.45 : 1)
             .padding(.top, 4)
+            if isChildSelectionPaused { pausedControlNotice }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -195,11 +208,13 @@ struct BlockListView: View {
                 activeSymbol: "lock.open.fill",
                 activeTint: AppTheme.neonRed,
                 isEnabled: appState.isParentModeActive && appState.pairingState?.isLinked == true
-                    && !appState.isLocalManualBlockSyncing,
+                    && appState.isFamilyAccessAllowed && !appState.isLocalManualBlockSyncing,
                 onActivate: { appState.setLocalManualBlock(active: true) },
                 onDeactivate: { appState.setLocalManualBlock(active: false) }
             )
-            if let notice = appState.localManualBlockNotice {
+            if isChildControlPaused {
+                pausedControlNotice
+            } else if let notice = appState.localManualBlockNotice {
                 Text(notice)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

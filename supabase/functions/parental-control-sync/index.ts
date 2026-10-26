@@ -2,6 +2,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import * as jose from "npm:jose@5.9.6";
 import { sendApnsToDevice } from "../_shared/apns-routing.ts";
+import { accessAction, accessSnapshot, accessAllows, refreshOwner } from "../_shared/access-service.ts";
+import { authenticateWebhook, webhookEvent, renewalNeedsRetry } from "../_shared/access-webhook.ts";
+import { permitsAccessReleaseAck } from "../_shared/access-release-ack.ts";
 
 class DeviceAuthenticationError extends Error {}
 
@@ -58,6 +61,7 @@ const corsHeaders = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (new URL(req.url).searchParams.get("revenuecat_webhook") === "1") return await handleAccessWebhook(req);
 
   try {
     const body = (await req.json()) as ActionRequest;
@@ -70,6 +74,23 @@ Deno.serve(async (req: Request) => {
 
     const authed = await requireDevice(req);
 
+    if (["access_status", "purchase_identity", "verify_purchase", "release_control", "resume_control"].includes(action)) {
+      const result = await accessAction(supabase, authed.device, action, payload,
+        Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "");
+      if ((["verify_purchase", "release_control", "resume_control"].includes(action) ||
+          (action === "access_status" && result.accessChanged === true && authed.device.role === "parent")) && authed.device.family_id) {
+        await notifyChildTasksUpdated(authed.device.family_id, authed.deviceId);
+      }
+      return okResponse(result);
+    }
+    const access = await accessSnapshot(supabase, authed.deviceId);
+    if (!accessAllows(access, action, payload)) {
+      return new Response(JSON.stringify({ error: "access_required", access }), {
+        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const run = async (): Promise<Response> => {
     switch (action) {
       case "register_location_push": {
         if (authed.device.role !== "child") return errorResponse("Child required", 403);
@@ -140,7 +161,7 @@ Deno.serve(async (req: Request) => {
       case "fetch_link_health":
         return await fetchLinkHealth(authed.deviceId);
       case "ack_command":
-        return await ackCommand(authed.deviceId, payload);
+        return await ackCommand(authed.deviceId, payload, access);
       case "upsert_child_day_stats":
         return await upsertChildDayStats(authed.deviceId, payload);
       case "fetch_child_day_stats":
@@ -195,7 +216,7 @@ Deno.serve(async (req: Request) => {
       // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
       // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
       case "child_poll":
-        return await childPoll(authed.device, payload);
+        return await childPoll(authed.device, payload, access.enforced && access.state === "setup");
       case "parent_poll":
         return await parentPoll(authed.device);
       case "upsert_child_runtime_bundle":
@@ -203,12 +224,55 @@ Deno.serve(async (req: Request) => {
       default:
         return errorResponse("Unknown action", 400);
     }
+    };
+    const result = await run();
+    result.headers.set("x-family-access", JSON.stringify(access));
+    return result;
   } catch (error) {
     if (error instanceof DeviceAuthenticationError) return errorResponse("Unauthorized", 401);
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return errorResponse(message, 500);
   }
 });
+
+async function handleAccessWebhook(req: Request): Promise<Response> {
+  if (req.method !== "POST") return new Response(null, { status: 405 });
+  if (!await authenticateWebhook(req.headers.get("authorization"), Deno.env.get("REVENUECAT_WEBHOOK_AUTH") ?? "")) {
+    return new Response(null, { status: 401 });
+  }
+  let event: ReturnType<typeof webhookEvent>;
+  try {
+    const raw = await req.text();
+    if (raw.length > 65536) return new Response(null, { status: 413 });
+    event = webhookEvent(JSON.parse(raw));
+  } catch { return new Response(null, { status: 400 }); }
+  if (event.test) return new Response("ok");
+  const { data: claim, error } = await supabase.rpc("pc_access_claim_event", {
+    p_id: event.id, p_customers: event.customers,
+  });
+  if (error || !claim || claim.busy) return new Response(null, { status: 503 });
+  if (claim.done) return new Response("ok");
+  let success = true;
+  try {
+    for (const owner of claim.owners as { id: string; family_id: string | null }[]) {
+      if (!await refreshOwner(supabase, owner.id, Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "")) {
+        success = false;
+        continue;
+      }
+      if (owner.family_id) await notifyChildTasksUpdated(owner.family_id, owner.id);
+      if (event.renewalExpiresAt) {
+        const { data: verified, error: readError } = await supabase.from("pc_access_owners")
+          .select("purchase_until,lifetime").eq("device_id", owner.id).single();
+        if (readError || !verified || renewalNeedsRetry(event, verified)) success = false;
+      }
+    }
+  } catch { success = false; }
+  const { data: completed, error: finishError } = await supabase.rpc("pc_access_complete_event", {
+    p_id: event.id, p_token: claim.token, p_success: success,
+  });
+  const done = success && !finishError && completed === true;
+  return new Response(done ? "ok" : null, { status: done ? 200 : 503 });
+}
 
 async function registerDevice(req: Request, payload: Json): Promise<Response> {
   const installID = asString(payload.installID);
@@ -266,6 +330,7 @@ async function generatePairingCode(deviceId: string): Promise<Response> {
     if (updateError) return errorResponse(updateError.message, 400);
   }
 
+  if (!familyID) return errorResponse("Pairing unavailable", 503);
   return okResponse(await fetchPairingState(familyID));
 }
 
@@ -394,11 +459,23 @@ async function changeDailyBudget(device: DeviceContext, payload: Json): Promise<
   return okResponse(data);
 }
 
-async function childPoll(device: DeviceContext, payload: Json): Promise<Response> {
+async function childPoll(device: DeviceContext, payload: Json, setupOnly = false): Promise<Response> {
   // Reuse the authenticated row from this request; never cache device/family state across requests.
   const deviceId = device.id;
   if (device.role !== "child" || !device.family_id) return errorResponse("Only paired child can poll", 403);
   const includeParentSettings = payload.includeParentSettings === true;
+
+  if (setupOnly && payload.budgetProtocol === 1) {
+    // Wizard capability handshake, not a usage upload or command acknowledgement.
+    const timezone = asString(payload.budgetTimezone);
+    try { new Intl.DateTimeFormat("en", { timeZone: timezone ?? "" }).format(); }
+    catch { return errorResponse("Invalid budget timezone", 400); }
+    const { error } = await supabase.from("child_runtime_state").upsert({
+      family_id: device.family_id, child_device_id: device.id, budget_protocol: 1,
+      weekly_budget_ready: payload.weeklyBudgetProtocol === 1, budget_timezone: timezone,
+    }, { onConflict: "family_id" });
+    if (error) return errorResponse("Setup capabilities unavailable", 500);
+  }
 
   await expireStalePendingCommands(device.family_id);
   const { data, error } = await supabase.rpc("pc_poll_snapshot", {
@@ -426,12 +503,12 @@ async function childPoll(device: DeviceContext, payload: Json): Promise<Response
   return okResponse({
     budget,
     desired: {
-      shouldFocusActive: desiredRow?.should_focus_active ?? false,
+      shouldFocusActive: !setupOnly && (desiredRow?.should_focus_active ?? false),
       durationSeconds: desiredRow?.desired_duration_seconds ?? null,
       updatedAt: desiredRow?.updated_at ?? new Date(0).toISOString(),
       revision: desiredRow?.revision ?? 0,
     },
-    pendingCommands: (pending ?? []).filter((row: FocusCommandRow) => row.command_type !== "request_location")
+    pendingCommands: (setupOnly ? [] : (pending ?? [])).filter((row: FocusCommandRow) => row.command_type !== "request_location")
       .map((row: FocusCommandRow) => mapCommandForClient(row)),
     parentPin,
     parentPro,
@@ -751,6 +828,7 @@ async function cronRetryStuckCommands(req: Request, payload: Json): Promise<Resp
 
 async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
   if (!(await isAuthorizedCron(req))) return errorResponse("Unauthorized", 401);
+  await maintainAccessLeases();
 
   type ScheduleRow = {
     id: string;
@@ -782,8 +860,14 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
 
   const childCache = new Map<string, { id: string; apns_token: string | null } | null>();
   const parentCache = new Map<string, string | null>();
+  const { data: allowedFamilies, error: accessError } = await supabase.rpc("pc_access_allowed_families", {
+    p_families: [...new Set((rows ?? []).map(r => r.family_id))],
+  });
+  if (accessError) return errorResponse("Access status unavailable", 503);
+  const allowed = new Set(allowedFamilies ?? []);
 
   for (const r of (rows ?? []) as ScheduleRow[]) {
+    if (!allowed.has(r.family_id)) { unchanged += 1; continue; }
     const targetActive = (r.deleted_at == null && r.is_enabled)
       ? isScheduleActiveAt(r, now)
       : false;
@@ -852,6 +936,18 @@ async function cronEvaluateBlockSchedules(req: Request): Promise<Response> {
   }
 
   return okResponse({ started, ended, unchanged, pushFailures, evaluated: rows?.length ?? 0 });
+}
+
+async function maintainAccessLeases(): Promise<void> {
+  const { data, error } = await supabase.rpc("pc_access_claim_maintenance");
+  if (error || !Array.isArray(data)) throw new Error("Access maintenance unavailable");
+  await Promise.all(data.map(async (owner: { id: string; family_id: string }) => {
+    try {
+      await refreshOwner(supabase, owner.id, Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "");
+      await notifyChildTasksUpdated(owner.family_id, owner.id);
+      await supabase.rpc("pc_access_finish_maintenance", { p_owner: owner.id });
+    } catch { /* The claimed slot retries in 15 min; no private data in logs. */ }
+  }));
 }
 
 function isScheduleActiveAt(
@@ -1025,6 +1121,16 @@ async function retryStuckCommandsBatch(options: RetryBatchOptions): Promise<{ re
   let skipped = 0;
 
   for (const command of commands) {
+    const { data: allowed, error: accessError } = await supabase.rpc("pc_access_allowed_families", { p_families: [command.family_id] });
+    if (accessError) throw new Error("Access status unavailable");
+    // A tasks_updated wake only fetches authenticated state. Its retry must
+    // still reach NSE after expiration so it can release shields; it cannot
+    // bypass child_poll's access gate or execute a paid command.
+    if (!(allowed ?? []).includes(command.family_id) && command.command_type !== "tasks_updated") {
+      await supabase.from("focus_commands").update({ status: "failed", error_message: "access_expired" })
+        .eq("id", command.id).in("status", ["queued", "sent"]);
+      skipped += 1; continue;
+    }
     const retries = Number(command.retry_count ?? 0);
     if (retries >= MAX_APNS_RETRY) {
       const { error } = await supabase
@@ -1123,7 +1229,7 @@ async function fetchLinkHealth(deviceId: string): Promise<Response> {
   });
 }
 
-async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
+async function ackCommand(deviceId: string, payload: Json, access: Json): Promise<Response> {
   const commandID = asString(payload.commandID);
   const status = asString(payload.status);
   const errorMessage = asString(payload.errorMessage);
@@ -1137,6 +1243,11 @@ async function ackCommand(deviceId: string, payload: Json): Promise<Response> {
   if (commandError || !command) return errorResponse("Command not found", 404);
   if (command.target_device_id !== deviceId) return errorResponse("Forbidden", 403);
   if (command.command_type === "request_location") return errorResponse("Use location result endpoint", 400);
+  // Reuse the already fetched authenticated snapshot: no additional DB read.
+  // Never treat a denied manual/schedule command as successfully applied.
+  if ("accessReleaseRevision" in payload && !permitsAccessReleaseAck(payload, command.command_type, access)) {
+    return errorResponse("Access release acknowledgement is stale or invalid", 409);
+  }
 
   const patch: Record<string, unknown> = { status, error_message: errorMessage || null };
   if (status === "applied") patch.applied_at = new Date().toISOString();

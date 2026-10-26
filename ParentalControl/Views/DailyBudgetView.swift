@@ -12,12 +12,13 @@ struct DailyBudgetBalanceCard: View {
     var blockSchedules: [BlockSchedule] = []
     var isAwaitingConfirmation = false
     var commandError: String?
+    var isAccessPaused = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
-            balanceContent(isBlocked: isManuallyBlocked || blockSchedules.contains {
+            balanceContent(isBlocked: !isAccessPaused && (isManuallyBlocked || blockSchedules.contains {
                 $0.isActive(at: context.date)
-            })
+            }))
         }
     }
 
@@ -35,7 +36,8 @@ struct DailyBudgetBalanceCard: View {
                     MinutesRingView(progress: CGFloat(min(1, Double(max(0, availableSeconds)) / Double(max(1, budget)))), lineWidth: 16) {
                         VStack(spacing: 2) {
                             if isLoading {
-                                ProgressView().tint(.white)
+                                if isAccessPaused { Text("—").font(.title) }
+                                else { ProgressView().tint(.white) }
                             } else {
                                 Text("\(availableSeconds < 60 ? max(0, availableSeconds) : availableSeconds / 60)")
                                     .font(.system(size: 38, weight: .black, design: .rounded))
@@ -74,7 +76,7 @@ struct DailyBudgetBalanceCard: View {
                     metric("budget.granted", value: grantedSeconds.map { L10n.duration(seconds: $0) })
                 }
             }
-            if isAwaitingConfirmation {
+            if isAwaitingConfirmation && !isAccessPaused {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -108,6 +110,8 @@ struct DailyBudgetBalanceCard: View {
             if let value {
                 Text(value).font(.headline).foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
+            } else if isAccessPaused {
+                Text("—").font(.headline).foregroundStyle(.white)
             } else {
                 ProgressView().controlSize(.small).tint(.white)
             }
@@ -141,7 +145,8 @@ struct DailyLimitSheet: View {
     }
 
     private var canSave: Bool {
-        appState.pairingState?.isLinked == true && appState.parentBudgetStatus?.childReady == true
+        if !appState.isFamilyAccessAllowed { return true }
+        return appState.pairingState?.isLinked == true && appState.parentBudgetStatus?.childReady == true
             && (!isWeekly || appState.parentBudgetStatus?.weeklyChildReady == true)
             && !appState.isBudgetSaving
     }
@@ -193,6 +198,7 @@ struct DailyLimitSheet: View {
                             Text(error).foregroundStyle(AppTheme.neonOrange).fixedSize(horizontal: false, vertical: true)
                         }
                         Button {
+                            guard appState.requireFamilyConfigurationAccess() else { return }
                             if !isWeekly && (originallyWeekly || Set(weeklyMinutes).count > 1) {
                                 confirmsUniform = true
                             } else { save() }
@@ -233,9 +239,11 @@ struct DailyLimitSheet: View {
         .preferredColorScheme(.dark)
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(appState.isBudgetSaving)
+        .familyAccessPaywall()
     }
 
     private func save() {
+        guard appState.requireFamilyConfigurationAccess() else { return }
         guard canSave else { return }
         let total = hours * 60 + minutes
         let week = isWeekly ? weeklyMinutes : nil

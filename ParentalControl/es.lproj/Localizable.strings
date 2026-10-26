@@ -9,7 +9,7 @@
 "map.just_now" = "ahora mismo";
 "map.accuracy" = "Precisión: ±%d m";
 "map.refresh.timeout" = "El teléfono de tu hijo aún no ha enviado su ubicación. Comprueba la conexión a internet e inténtalo más tarde.";
-"map.refresh.push_not_ready" = "Abre la aplicación actualizada en el teléfono de tu hijo y permite el acceso a la ubicación Siempre. Después, vuelve a intentarlo.";
+"map.refresh.push_not_ready" = "Abre la aplicación en el teléfono de tu hijo y permite el acceso a la ubicación Siempre. Después, vuelve a intentarlo.";
 "map.unpaired.title" = "Teléfono no vinculado";
 "map.unpaired.subtitle" = "Vincula el teléfono de tu hijo en Ajustes para ver su ubicación.";
 
@@ -284,34 +284,28 @@
 "settings.subscription.status.free" = "Pasarse a Premium";
 
 "paywall.title.brand" = "Premium";
-"paywall.subtitle" = "Usa tus apps favoritas con beneficios para tu salud";
-"paywall.feature.unlimited_apps" = "Número ilimitado de apps";
-"paywall.feature.advanced_config" = "Pausa rápida de monitorización";
-"paywall.feature.quick_break" = "Conservar saldo del día anterior";
+"paywall.badge.three_days_free" = "3 días gratis";
+"paywall.badge.savings_format" = "AHORRA UN ≈%d%%";
+"paywall.badge.savings_hint" = "En comparación con 12 pagos mensuales";
+"paywall.subtitle" = "Ayuda a tu hijo a usar el teléfono de forma consciente.";
 "paywall.plan.yearly" = "Plan anual";
-"paywall.plan.weekly" = "Plan semanal";
-"paywall.badge.save" = "AHORRA 80 %";
 "paywall.error.iap_fallback_console" = "No se han podido cargar las suscripciones. En la consola de Xcode, busca [ParentalControl][IAP] para el recuento de paquetes e IDs de producto. Comprueba Sandbox, bundle e IDs de producto en ASC vs RevenueCat.";
 "paywall.error.generic" = "No se ha podido completar la solicitud de suscripción. Inténtalo de nuevo.";
 "paywall.error.missing_public_sdk_key" = "RevenueCat no está configurado en esta compilación: falta RevenueCatPublicSDKKey en Info.plist.";
 "paywall.error.no_offering" = "No hay oferta de suscripción de RevenueCat. Comprueba la oferta «default» y la clave pública del SDK de tu app.";
 "paywall.error.offerings_timeout" = "No se han podido cargar las suscripciones a tiempo. Comprueba la conexión e inténtalo de nuevo.";
 "paywall.price.loading" = "Cargando precios…";
-"paywall.price.weekly_intro_format" = "%lld %@ gratis, luego %@ por semana";
-"paywall.price.per_week_format" = "%@ por semana";
 "paywall.price.per_year_format" = "%@ al año";
 "paywall.cta.start_trial" = "Empezar prueba gratuita";
 "paywall.cta.continue" = "Continuar";
-"paywall.no_payment_now" = "SIN PAGO AHORA";
 "paywall.legal.privacy" = "Privacidad";
 "paywall.legal.restore" = "Restaurar";
 "paywall.legal.terms" = "Condiciones";
 "paywall.legal.subscription_disclaimer" = "La suscripción se renueva automáticamente a menos que se desactive la renovación automática con al menos 24 horas de antelación al fin del período actual. Gestiona tus suscripciones en los ajustes de tu Apple ID.";
 "paywall.close" = "Cerrar";
-"paywall.close.wait" = "Espera, por favor...";
 "paywall.restore.checking" = "Comprobando compras…";
 "paywall.restore.result.restored" = "Compras restauradas";
-"paywall.restore.result.none" = "No se han encontrado compras activas";
+"paywall.restore.result.none" = "No se encontró ninguna suscripción activa ni compra de por vida.";
 "paywall.restore.result.failed" = "No se han podido restaurar las compras. Inténtalo de nuevo.";
 "paywall.period.day" = "día";
 "paywall.period.week" = "sem.";
@@ -495,7 +489,7 @@
 "budget.minutes" = "min";
 "budget.rules" = "El límite se renueva cada día. El tiempo restante y los minutos extra no se acumulan. 0 minutos significa que no se concede tiempo diario habitual.";
 "budget.first_activation" = "Este límite sustituye al saldo anterior. Se cuenta el tiempo ya usado hoy; el saldo restante anterior no se suma. El historial se conserva.";
-"budget.child_update" = "Abre la app actualizada en el teléfono de tu hijo y espera a que se conecte.";
+"budget.child_update" = "Abre la app en el teléfono de tu hijo y espera a que se conecte.";
 "budget.save" = "Guardar";
 "budget.save_error" = "No se ha podido guardar. Comprueba la conexión e inténtalo de nuevo. Si el ajuste ha cambiado, vuelve a abrirlo.";
 "budget.apply_error" = "No se ha podido activar el límite. Comprueba el acceso a Tiempo de uso y vuelve a abrir la app.";
@@ -601,7 +595,7 @@
 "budget.weekly.apply" = "Aplicar";
 
 /* Parent controls and remote command status. */
-"paywall.error.store_products_unavailable" = "Las suscripciones no están disponibles temporalmente en el App Store para esta versión. Inténtalo más tarde.";
+"paywall.error.store_products_unavailable" = "No se pudieron cargar algunas opciones de compra. Comprueba tu conexión e inténtalo de nuevo.";
 "remote.notification.time_reset" = "Tu padre o madre ha restablecido el tiempo ganado";
 "parent.dashboard.start_focus" = "Bloquear ahora";
 "parent.dashboard.command_latency" = "Tiempo de aplicación: %d s";
@@ -653,3 +647,38 @@
 "parent.dashboard.syncing_button" = "Sincronizando…";
 "remote.notification.title" = "ParentalControl";
 "dashboard.active_schedule.range" = "%1$@ — %2$@";
+
+// Purchase plans and parental-control paywall.
+"paywall.feature.limits" = "Límites diarios para las apps elegidas";
+"paywall.feature.schedules" = "Pausas para dormir y estudiar";
+"paywall.feature.tasks" = "Tiempo extra por completar tareas";
+"paywall.feature.location" = "La ubicación de tu hijo";
+"paywall.plan.monthly" = "Mensual";
+"paywall.plan.lifetime" = "De por vida";
+"paywall.price.per_month_format" = "%@ al mes";
+"paywall.price.once_format" = "%@ · pago único";
+"paywall.price.annual_trial_format" = "3 días gratis, después %@ al año";
+"paywall.legal.lifetime_disclaimer" = "Compra única. Sin suscripción ni renovación automática.";
+"paywall.retry" = "Reintentar";
+"access.paused" = "El control está en pausa. Comprueba el acceso o restaura las compras en el teléfono del padre o la madre.";
+"paywall.purchase.pending_verification" = "Tu compra está pendiente de confirmación del servidor. No tienes que volver a pagar. Inténtalo de nuevo o restaura las compras más tarde.";
+"settings.premium.available" = "Premium disponible";
+"parent_mode.entry.unavailable" = "El PIN no está disponible temporalmente. Desbloquea este teléfono e inténtalo más tarde con conexión a internet. Si el problema persiste, pide ayuda a tu madre o padre.";
+// Confirmed paid access on the paywall.
+"paywall.status.monthly" = "Suscripción mensual activa";
+"paywall.status.annual" = "Suscripción anual activa";
+"paywall.status.lifetime" = "Acceso de por vida activo";
+"paywall.plan.current" = "Plan actual";
+"settings.premium.paid_active" = "Premium activo";
+"tasks.child.access_paused" = "El envío de informes está en pausa. Pide a tu padre o madre que revise el acceso en su aplicación.";
+"access.banner.inactive.title" = "Premium no está activo";
+"access.banner.paused.title" = "Control en pausa";
+"access.banner.pending.title" = "Confirmando la compra";
+"access.banner.verification.title" = "Estado de Premium sin confirmar";
+"access.banner.parent.body" = "Activa Premium para seguir gestionando el teléfono de tu hijo.";
+"access.banner.child.body" = "Pide a tu padre o madre que active Premium en su teléfono.";
+"access.banner.pending.body" = "No necesitas pagar de nuevo. Puedes comprobar el estado en la pantalla de Premium.";
+"access.banner.verification.body" = "Abre Premium para comprobar tu suscripción o restaurar tu compra.";
+"access.banner.child_verification.body" = "Pide a tu padre o madre que compruebe Premium en su teléfono.";
+"access.banner.choose_plan" = "Elegir un plan";
+"access.banner.check_status" = "Comprobar estado";

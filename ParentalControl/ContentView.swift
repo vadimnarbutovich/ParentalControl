@@ -12,21 +12,29 @@ struct ContentView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
 
     var body: some View {
-        Group {
-            if let role = appState.deviceRole {
-                if appState.hasCompletedOnboarding {
-                    MainTabView()
-                        .environmentObject(subscriptionService)
-                } else {
-                    OnboardingFlowView()
-                        .id(role)
+        AppBackgroundContainer {
+            VStack(spacing: 0) {
+                PermissionReminderBannerView()
+                if appState.hasCompletedOnboarding, appState.deviceRole != nil {
+                    FamilyAccessBannerView()
                 }
-            } else {
-                RoleSelectionView()
+                if let role = appState.deviceRole {
+                    if appState.hasCompletedOnboarding {
+                        MainTabView()
+                            .environmentObject(subscriptionService)
+                    } else {
+                        OnboardingFlowView()
+                            .id(role)
+                    }
+                } else {
+                    RoleSelectionView()
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            PermissionReminderBannerView()
+        .familyAccessPaywall(isRoot: true)
+        .onReceive(NotificationCenter.default.publisher(for: FamilyAccessStore.changed)) { _ in
+            appState.adoptFamilyAccess()
         }
         .onChange(of: subscriptionService.isPro) { _, isPro in
             appState.enforcePremiumFeatures(isPro: isPro, isStatusKnown: subscriptionService.isSubscriptionStatusKnown)

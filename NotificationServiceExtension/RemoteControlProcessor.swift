@@ -35,6 +35,7 @@ final class RemoteControlProcessor {
     }
     enum Failure: Error {
         case unavailable, stale, monitoring, http(Int)
+        case accessReleased(Int)
         case policy(NotificationControlSnapshot.Rejection)
         case budgetDisabled, budgetUninitialized, selectionMissing, selectionEmpty, monitoringPaused
         case authorizationNotApproved(Int)
@@ -46,6 +47,7 @@ final class RemoteControlProcessor {
             case .stale: "context_changed"
             case .monitoring: "monitoring_failed"
             case .http(let status): "http_\(status)"
+            case .accessReleased: "access_released"
             case .policy(let reason): reason.rawValue
             case .budgetDisabled: "budget_disabled"
             case .budgetUninitialized: "budget_uninitialized"
@@ -113,7 +115,23 @@ final class RemoteControlProcessor {
         recordDiagnostic("received")
         try checkContext()
         logger.info("Control received id=\(id.uuidString, privacy: .public) type=\(type, privacy: .public)")
-        let poll = try JSONDecoder().decode(NotificationControlSnapshot.self, from: await call("child_poll", ["includeParentSettings": false]))
+        let pollData: Data
+        do {
+            pollData = try await call("child_poll", ["includeParentSettings": false])
+        } catch Failure.accessReleased(let revision) {
+            // This wake carries no task/budget operation once access has expired.
+            // The server independently checks the stored command type and revision.
+            guard type == "tasks_updated" else { throw Failure.http(402) }
+            try checkContext()
+            guard !FamilyAccessStore.allowed,
+                  FamilyAccessStore.receipt?.lease.state == .expired,
+                  FamilyAccessStore.receipt?.lease.revision == revision else { throw Failure.stale }
+            _ = try await call("ack_command", ["commandID": id.uuidString,
+                "status": "applied", "accessReleaseRevision": revision], releaseAcknowledgement: true)
+            recordDiagnostic("access_release_acknowledged")
+            return
+        }
+        let poll = try JSONDecoder().decode(NotificationControlSnapshot.self, from: pollData)
         recordDiagnostic("snapshot_decoded")
         try checkContext()
         guard poll.contains(id: id, type: type) else {
@@ -284,8 +302,10 @@ final class RemoteControlProcessor {
            defaults.data(forKey: RemoteControlGate.pendingKey(family)) != nil { throw Failure.stale }
     }
 
-    private func call(_ action: String, _ payload: [String: Any]) async throws -> Data {
+    private func call(_ action: String, _ payload: [String: Any], releaseAcknowledgement: Bool = false) async throws -> Data {
         try checkContext()
+        let requestWall = Date().timeIntervalSince1970
+        let requestUptime = ProcessInfo.processInfo.systemUptime
         let publicKey = "sb_publishable_urT7eQPRIxyXso8VKA2tHQ_-U0I0CsO"
         var request = URLRequest(url: URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-sync")!)
         request.httpMethod = "POST"
@@ -297,6 +317,31 @@ final class RemoteControlProcessor {
         request.httpBody = try JSONSerialization.data(withJSONObject: ["action": action, "payload": payload])
         let (data, response) = try await session.data(for: request)
         try checkContext()
+        if let http = response as? HTTPURLResponse {
+            FamilyAccessStore.acceptResponse(data, response: http, pairing: pairingData,
+                requestWall: requestWall, requestUptime: requestUptime)
+            // Recovery ACK is allowed without paid access. Do not recursively
+            // release/throw 402 after the server has accepted this acknowledgement.
+            if releaseAcknowledgement {
+                guard action == "ack_command", (200..<300).contains(http.statusCode) else {
+                    throw Failure.http(http.statusCode)
+                }
+                return data
+            }
+            if !FamilyAccessStore.allowed {
+                let released = try await ControlSystemWorker.shared.run(context: execution) { context in
+                    try context.check()
+                    return FamilyAccessEnforcement.releaseIfNeeded()
+                }
+                try checkContext()
+                if action == "child_poll", released, !FamilyAccessStore.allowed,
+                   let revision = NotificationAccessRelease.revision(status: http.statusCode, data: data,
+                        current: FamilyAccessStore.receipt?.lease, family: family) {
+                    throw Failure.accessReleased(revision)
+                }
+                throw Failure.http(402)
+            }
+        }
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw Failure.http((response as? HTTPURLResponse)?.statusCode ?? 0)
         }

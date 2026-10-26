@@ -48,6 +48,8 @@ struct MinuteBalance: Codable, Equatable {
     }
 }
 
+// Retained for decoding old settings and interpreting historical exercise entries.
+// The exercise UI/recording pipeline is retired, not the persisted data format.
 struct ConversionSettings: Codable, Equatable {
     var stepsPerMinute: Int
     var squatsPerMinute: Int
@@ -91,29 +93,6 @@ struct ConversionSettings: Codable, Equatable {
         try container.encode(stepsPerMinute, forKey: .stepsPerMinute)
         try container.encode(squatsPerMinute, forKey: .squatsPerMinute)
         try container.encode(pushUpsPerMinute, forKey: .pushUpsPerMinute)
-    }
-
-    func repsPerMinute(for type: ExerciseType) -> Int {
-        switch type {
-        case .squat:
-            return squatsPerMinute
-        case .pushUp:
-            return pushUpsPerMinute
-        }
-    }
-}
-
-enum ExerciseType: String, Codable, CaseIterable, Identifiable {
-    case squat
-    case pushUp
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .squat: L10n.tr("exercise.type.squat")
-        case .pushUp: L10n.tr("exercise.type.pushup")
-        }
     }
 }
 
