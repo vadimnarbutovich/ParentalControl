@@ -124,8 +124,9 @@ final class RemoteControlProcessor {
             guard type == "tasks_updated" else { throw Failure.http(402) }
             try checkContext()
             guard !FamilyAccessStore.allowed,
-                  FamilyAccessStore.receipt?.lease.state == .expired,
-                  FamilyAccessStore.receipt?.lease.revision == revision else { throw Failure.stale }
+                  let current = FamilyAccessStore.receipt?.lease,
+                  [.expired, .verificationRequired, .demo].contains(current.state),
+                  current.revision == revision else { throw Failure.stale }
             _ = try await call("ack_command", ["commandID": id.uuidString,
                 "status": "applied", "accessReleaseRevision": revision], releaseAcknowledgement: true)
             recordDiagnostic("access_release_acknowledged")
