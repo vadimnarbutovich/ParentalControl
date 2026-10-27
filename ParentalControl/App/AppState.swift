@@ -80,6 +80,7 @@ final class AppState: ObservableObject {
         let allowed = FamilyAccessStore.allowed
         let changed = isFamilyAccessAllowed != allowed
         isFamilyAccessAllowed = allowed
+        if !allowed { parentLocationStatusMessage = nil }
         subscriptionService?.refreshAccessState()
         if deviceRole == .child, changed || !allowed {
             // Existing enforcement worker owns all Screen Time IPC.
@@ -2332,6 +2333,10 @@ final class AppState: ObservableObject {
         guard !Task.isCancelled, !isParentRefreshingChildLocation,
               deviceRole == .parent, let familyID = pairingState?.familyID,
               pairingState?.isLinked == true else { return }
+        guard requireFamilyAccess() else {
+            parentLocationStatusMessage = nil
+            return
+        }
         isParentRefreshingChildLocation = true
         parentLocationRevision += 1
         parentLocationStatusMessage = nil
@@ -2347,10 +2352,11 @@ final class AppState: ObservableObject {
             let deadline = ContinuousClock.now.advanced(by: .seconds(30))
             while ContinuousClock.now < deadline {
                 try await Task.sleep(nanoseconds: 2_000_000_000)
-                guard deviceRole == .parent, pairingState?.familyID == familyID else { return }
+                guard FamilyAccessStore.allowed, deviceRole == .parent,
+                      pairingState?.familyID == familyID else { return }
                 guard let result = try await remoteSyncService.fetchCommandStatus(commandID: command.id, timeout: 8) else { continue }
                 try Task.checkCancellation()
-                guard pairingState?.familyID == familyID else { return }
+                guard FamilyAccessStore.allowed, pairingState?.familyID == familyID else { return }
                 if result.status == .failed {
                     analyticsResult = "failed"
                     parentLocationStatusMessage = locationFailureMessage(code: result.errorMessage)
@@ -2361,7 +2367,7 @@ final class AppState: ObservableObject {
                     // read once, but never present their previous point as a successful refresh.
                     let snapshot = try await remoteSyncService.fetchChildLocation()
                     try Task.checkCancellation()
-                    guard pairingState?.familyID == familyID else { return }
+                    guard FamilyAccessStore.allowed, pairingState?.familyID == familyID else { return }
                     guard let snapshot, snapshot.updatedAt >= command.createdAt,
                           snapshot.capturedAt >= command.createdAt.addingTimeInterval(-30) else {
                         parentLocationStatusMessage = L10n.tr("map.refresh.unavailable")
@@ -2377,7 +2383,8 @@ final class AppState: ObservableObject {
             parentLocationStatusMessage = L10n.tr("map.refresh.timeout")
             analyticsResult = "timeout"
         } catch {
-            guard !Task.isCancelled, pairingState?.familyID == familyID else { return }
+            guard !Task.isCancelled, FamilyAccessStore.allowed,
+                  pairingState?.familyID == familyID else { return }
             analyticsResult = "failed"
             parentLocationStatusMessage = L10n.tr("map.refresh.connection_error")
         }
@@ -2408,6 +2415,12 @@ final class AppState: ObservableObject {
         if childLocationSnapshot == nil, let cached = storage.loadChildLocationSnapshot() {
             childLocationSnapshot = cached
         }
+        // A cached point remains useful, but inactive access is not a location error.
+        // Do not prompt for a purchase just because the map tab was opened.
+        guard FamilyAccessStore.allowed else {
+            parentLocationStatusMessage = nil
+            return
+        }
         let familyID = pairingState?.familyID
         let revision = parentLocationRevision
         isLoadingChildLocation = true
@@ -2415,14 +2428,15 @@ final class AppState: ObservableObject {
         do {
             let snapshot = try await remoteSyncService.fetchChildLocation()
             try Task.checkCancellation()
-            guard pairingState?.familyID == familyID, revision == parentLocationRevision,
+            guard FamilyAccessStore.allowed, pairingState?.familyID == familyID, revision == parentLocationRevision,
                   !isParentRefreshingChildLocation else { return }
             if let snapshot, snapshot.updatedAt >= (childLocationSnapshot?.updatedAt ?? .distantPast) {
                 childLocationSnapshot = snapshot
                 storage.saveChildLocationSnapshot(snapshot)
             }
         } catch {
-            guard !Task.isCancelled, pairingState?.familyID == familyID, revision == parentLocationRevision,
+            guard !Task.isCancelled, FamilyAccessStore.allowed,
+                  pairingState?.familyID == familyID, revision == parentLocationRevision,
                   !isParentRefreshingChildLocation else { return }
             parentLocationStatusMessage = L10n.tr("map.refresh.connection_error")
         }
