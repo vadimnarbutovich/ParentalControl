@@ -145,6 +145,18 @@ for (const post of posts) {
         'Every automatic purchase notification must exclude setup');
 }
 const dashboard = read('Views/MainTabView.swift');
+const limitCard = section('Views/MainTabView.swift', '                            Button {\n                                guard appState.requireFamilyAccess()', '                            if let error = appState.budgetError');
+assert.match(limitCard, /guard appState.requireFamilyAccess\(\) else \{ return \}/,
+    'Inactive access still opens the paywall instead of the limit editor');
+assert.match(limitCard, /if let policy = appState.parentBudgetStatus\?\.policy/,
+    'Known limits remain visible independently of Premium');
+assert.match(limitCard, /else if appState.hasLoadedParentBudget \{\s*Text\("budget.not_set"\)/,
+    'A confirmed missing limit is distinct from an unknown value');
+assert.match(limitCard, /else if appState.isFamilyAccessAllowed \{\s*ProgressView\(\).controlSize\(\.small\).tint\(\.white\)\s*\} else \{\s*Text\("—"\)/,
+    'Unknown paused limit has a neutral placeholder, not a spinner or subscription message');
+assert.doesNotMatch(limitCard, /Text\("access.paused"\)/);
+assert.match(limitCard, /\.disabled\(appState.isFamilyAccessAllowed &&/,
+    'The inactive-access card remains tappable');
 assert.match(dashboard, /private var isCommandButtonEnabled: Bool \{\s*guard appState.pairingState\?\.isLinked == true else \{ return false \}\s*guard !FamilyAccessStore.isSettingUp else \{ return false \}/);
 assert.match(dashboard, /private var shouldShowDisabledVisualState: Bool \{\s*if FamilyAccessStore.isSettingUp \{ return true \}/);
 assert.match(read('Views/SettingsView.swift'), /showPaywall = true/, 'Manual Premium entry remains available');

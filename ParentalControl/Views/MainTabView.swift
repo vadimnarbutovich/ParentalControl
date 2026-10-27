@@ -709,7 +709,7 @@ private struct ParentDashboardView: View {
                                         } else if appState.isFamilyAccessAllowed {
                                             ProgressView().controlSize(.small).tint(.white)
                                         } else {
-                                            Text("access.paused")
+                                            Text("—")
                                         }
                                     }
                                     Spacer(minLength: 8)
