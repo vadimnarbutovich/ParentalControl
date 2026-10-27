@@ -165,9 +165,9 @@ Deno.serve(async (req: Request) => {
       case "fetch_pending_commands":
         return await fetchPendingCommands(authed.deviceId);
       case "fetch_desired_focus_state":
-        return await fetchDesiredFocusState(authed.deviceId);
+        return await fetchDesiredFocusState(authed.device);
       case "fetch_command_status":
-        return await fetchCommandStatus(authed.deviceId, payload);
+        return await fetchCommandStatus(authed.device, payload);
       case "retry_stuck_commands":
         return await retryStuckCommands(authed.deviceId, payload);
       case "fetch_link_health":
@@ -196,15 +196,15 @@ Deno.serve(async (req: Request) => {
       case "request_child_location":
         return await requestChildLocation(authed.deviceId);
       case "fetch_child_location":
-        return await fetchChildLocation(authed.deviceId);
+        return await fetchChildLocation(authed.device);
       case "list_block_schedules":
-        return await listBlockSchedules(authed.deviceId);
+        return await listBlockSchedules(authed.device);
       case "upsert_block_schedule":
         return await upsertBlockSchedule(authed.deviceId, payload);
       case "delete_block_schedule":
         return await deleteBlockSchedule(authed.deviceId, payload);
       case "list_child_tasks":
-        return await listChildTasks(authed.deviceId);
+        return await listChildTasks(authed.device);
       case "upsert_child_task":
         return await upsertChildTask(authed.deviceId, payload);
       case "delete_child_task":
@@ -507,7 +507,7 @@ async function childPoll(device: DeviceContext, payload: Json, setupOnly = false
     if (error) return errorResponse("Setup capabilities unavailable", 500);
   }
 
-  await expireStalePendingCommands(device.family_id);
+  // The snapshot RPC expires this family's stale commands in the same transaction.
   const { data, error } = await supabase.rpc("pc_poll_snapshot", {
     p_device: deviceId, p_role: "child", p_include_parent_settings: includeParentSettings,
   });
@@ -552,7 +552,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can poll", 403);
   const familyID = parent.family_id;
 
-  await expireStalePendingCommands(familyID);
+  // Preserve expiration/health semantics without a separate REST PATCH per poll.
   const { data, error } = await supabase.rpc("pc_poll_snapshot", {
     p_device: parent.id, p_role: "parent", p_include_parent_settings: false,
   });
@@ -777,8 +777,7 @@ async function fetchPendingCommands(deviceId: string): Promise<Response> {
   return okResponse((data ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)));
 }
 
-async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function fetchDesiredFocusState(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -796,11 +795,10 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
   });
 }
 
-async function fetchCommandStatus(deviceId: string, payload: Json): Promise<Response> {
+async function fetchCommandStatus(requester: DeviceContext, payload: Json): Promise<Response> {
   const commandID = asString(payload.commandID);
   if (!commandID) return errorResponse("commandID is required", 400);
 
-  const requester = await getDevice(deviceId);
   if (!requester.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -1452,8 +1450,7 @@ async function requestChildLocation(deviceId: string): Promise<Response> {
 }
 
 
-async function fetchChildLocation(deviceId: string): Promise<Response> {
-  const parent = await getDevice(deviceId);
+async function fetchChildLocation(parent: DeviceContext): Promise<Response> {
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can fetch location", 403);
 
   const { data, error } = await supabase
@@ -1510,8 +1507,7 @@ function mapBlockScheduleForClient(row: BlockScheduleRow) {
   };
 }
 
-async function listBlockSchedules(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function listBlockSchedules(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -1631,8 +1627,7 @@ function mapChildTaskForClient(row: ChildTaskRow) {
   };
 }
 
-async function listChildTasks(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function listChildTasks(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
