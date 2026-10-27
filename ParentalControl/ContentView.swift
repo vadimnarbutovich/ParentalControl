@@ -12,17 +12,19 @@ struct ContentView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
 
     var body: some View {
+        let accessBanner = appState.familyAccessBannerPresentation(
+            awaitingPurchase: subscriptionService.isAwaitingServerConfirmation)
         AppBackgroundContainer {
             VStack(spacing: 0) {
                 PermissionReminderBannerView()
                 if appState.hasCompletedOnboarding, appState.deviceRole != nil {
-                    FamilyAccessBannerView()
+                    FamilyAccessBannerView(presentation: accessBanner)
                 }
                 if appState.isCheckingInstallationRecovery || appState.recoveredFamily != nil || appState.installationRecoveryFailed {
                     FamilyRecoveryView()
                 } else if let role = appState.deviceRole {
                     if appState.hasCompletedOnboarding {
-                        MainTabView()
+                        MainTabView(showsAccessBanner: accessBanner != .hidden)
                             .environmentObject(subscriptionService)
                     } else if let familyID = appState.recoverySetupFamilyID {
                         RecoverySetupView().id(familyID)

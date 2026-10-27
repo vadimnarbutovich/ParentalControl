@@ -2,15 +2,7 @@ import SwiftUI
 
 struct FamilyAccessBannerView: View {
     @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var subscriptionService: SubscriptionService
-
-    private var presentation: FamilyAccessBannerPresentation {
-        .resolve(allowed: appState.isFamilyAccessAllowed,
-                 isParent: appState.deviceRole == .parent,
-                 awaitingPurchase: subscriptionService.isAwaitingServerConfirmation,
-                 leaseState: FamilyAccessStore.receipt?.lease.state,
-                 statusConfirmed: appState.isFamilyAccessStatusConfirmedForBanner)
-    }
+    let presentation: FamilyAccessBannerPresentation
 
     var body: some View {
         let state = presentation

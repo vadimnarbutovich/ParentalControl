@@ -18,6 +18,7 @@ private enum MainTab: String, CaseIterable {
 
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
+    var showsAccessBanner = false
     @State private var selectedTab: MainTab = .home
     /// Презентация экрана ввода PIN на ребёнке (тап по табу «Родитель»).
     @State private var isPinEntryPresented = false
@@ -38,7 +39,7 @@ struct MainTabView: View {
             }
             tabs
                 .overlay(alignment: .top) {
-                    if !appState.isFamilyAccessAllowed {
+                    if showsAccessBanner {
                         // Blend clipped card glows into the shared background.
                         // Only paint the top edge; never clip the tab bar's safe area.
                         AppBackgroundView(usesSharedCanvas: true)

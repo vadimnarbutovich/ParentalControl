@@ -7,13 +7,13 @@ nonisolated enum FamilyAccessBannerPresentation: Equatable {
     enum Action { case paywall }
 
     static func resolve(allowed: Bool, isParent: Bool, awaitingPurchase: Bool,
-                        leaseState: FamilyAccessLease.State?, statusConfirmed: Bool) -> Self {
+                        leaseState: FamilyAccessLease.State?, confirmedState: FamilyAccessLease.State?) -> Self {
         guard !allowed else { return .hidden }
-        if leaseState == .setup { return isParent ? .parentSetup : .childSetup }
+        if (confirmedState ?? leaseState) == .setup { return isParent ? .parentSetup : .childSetup }
         if isParent && awaitingPurchase { return .purchasePending }
         // Cached denial and a local demo-clock failure are not fresh confirmation
         // of expiry. Show no placeholder while the existing status request runs.
-        guard statusConfirmed, leaseState == .expired else { return .hidden }
+        guard confirmedState == .expired || confirmedState == .verificationRequired else { return .hidden }
         return isParent ? .parentPaused : .childPaused
     }
 
@@ -69,15 +69,28 @@ nonisolated struct FamilyAccessBannerSession {
     private(set) var requestToken = UUID()
     private var isForeground = true
     private var confirmedScope: Scope?
+    private var confirmedLease: FamilyAccessLease?
 
-    func isConfirmed(for scope: Scope?) -> Bool {
-        isForeground && scope != nil && confirmedScope == scope
+    func confirmedState(for scope: Scope?, currentLease: FamilyAccessLease?) -> FamilyAccessLease.State? {
+        guard isForeground, let scope, confirmedScope == scope,
+              let lease = confirmedLease else { return nil }
+        // A delayed status reply must not describe an older purchase or pairing.
+        if let current = currentLease {
+            guard current.familyID == scope.familyID, current.pairingID == scope.childID else { return nil }
+            let demoEnded = current.state == .demo && lease.revision == current.revision
+                && (lease.state == .expired || lease.state == .verificationRequired)
+                && current.controlUntilMs.map { lease.issuedAtMs >= $0 } == true
+            guard lease == current || lease.mayReplace(current, family: scope.familyID, pairing: scope.childID)
+                    || demoEnded else { return nil }
+        }
+        return lease.state
     }
 
     mutating func enterBackground() {
         isForeground = false
         requestToken = UUID()
         confirmedScope = nil
+        confirmedLease = nil
     }
 
     mutating func enterForeground() {
@@ -85,8 +98,15 @@ nonisolated struct FamilyAccessBannerSession {
         isForeground = true
     }
 
-    mutating func confirm(token: UUID, scope: Scope?, currentScope: Scope?) {
+    mutating func confirm(token: UUID, scope: Scope?, currentScope: Scope?, lease: FamilyAccessLease?) {
         guard isForeground, token == requestToken, let scope, scope == currentScope else { return }
+        guard let lease, lease.isValid(family: scope.familyID, pairing: scope.childID) else { return }
+        if confirmedScope == scope, let previous = confirmedLease {
+            guard lease.revision >= previous.revision, lease.issuedAtMs >= previous.issuedAtMs else { return }
+        }
         confirmedScope = scope
+        // Presentation evidence only. In particular, natural demo expiry can
+        // keep the same revision while receipt storage retains the demo lease.
+        confirmedLease = lease
     }
 }

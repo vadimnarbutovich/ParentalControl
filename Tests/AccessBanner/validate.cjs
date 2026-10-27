@@ -66,10 +66,13 @@ assert.ok(canvasFrame < canvasRaster && canvasRaster < canvasOffset,
 assert.match(background, /\.offset\(x: canvas.minX - localFrame.minX,\s+y: canvas.minY - localFrame.minY\)/);
 assert.match(background, /\.clipped\(\)\s+\} else/);
 assert.match(background, /\.ignoresSafeArea\(\)\s+\.allowsHitTesting\(false\)/);
-assert.match(read('Views/MainTabView.swift'), /tabs\s+\.overlay\(alignment: \.top\) \{\s+if !appState.isFamilyAccessAllowed/);
+assert.match(read('Views/MainTabView.swift'), /tabs\s+\.overlay\(alignment: \.top\) \{\s+if showsAccessBanner/);
+assert.match(content, /FamilyAccessBannerView\(presentation: accessBanner\)/);
+assert.match(content, /MainTabView\(showsAccessBanner: accessBanner != \.hidden\)/,
+    'The blend strip exists only when the same presentation actually renders a banner');
 assert.ok(!read('Views/MainTabView.swift').includes('tabs\n                .mask'), 'Top-edge blending must not clip the tab bar');
 assert.match(content, /VStack\(spacing: 0\) \{\s+PermissionReminderBannerView\(\)/);
-assert.ok(content.indexOf('FamilyAccessBannerView()') < content.indexOf('MainTabView()'), 'Banner reserves space before TabView');
+assert.ok(content.indexOf('FamilyAccessBannerView(') < content.indexOf('MainTabView('), 'Banner reserves space before TabView');
 assert.ok(!content.includes('.safeAreaInset(edge: .top'), 'Do not rely on an inset propagated through TabView');
 assert.match(content, /appState.hasCompletedOnboarding, appState.deviceRole != nil/);
 assert.match(content, /\.familyAccessPaywall\(isRoot: true\)/);
@@ -145,15 +148,63 @@ const dashboard = read('Views/MainTabView.swift');
 assert.match(dashboard, /private var isCommandButtonEnabled: Bool \{\s*guard appState.pairingState\?\.isLinked == true else \{ return false \}\s*guard !FamilyAccessStore.isSettingUp else \{ return false \}/);
 assert.match(dashboard, /private var shouldShowDisabledVisualState: Bool \{\s*if FamilyAccessStore.isSettingUp \{ return true \}/);
 assert.match(read('Views/SettingsView.swift'), /showPaywall = true/, 'Manual Premium entry remains available');
-assert.match(banner, /statusConfirmed: appState.isFamilyAccessStatusConfirmedForBanner/);
+assert.match(content, /appState.familyAccessBannerPresentation\(/);
+assert.match(app, /confirmedState: accessBannerSession.confirmedState\(for: accessBannerScope, currentLease: lease\)/);
 assert.match(app, /@Published private var accessBannerSession = FamilyAccessBannerSession\(\)/);
 assert.match(app, /func appDidBecomeActive\(\) \{\s*accessBannerSession.enterForeground\(\)/);
 assert.match(app, /func appDidEnterBackground\(\) \{\s*accessBannerSession.enterBackground\(\)/);
 const refresh = app.slice(app.indexOf('    func refreshFamilyAccess('), app.indexOf('    func adoptFamilyAccess()'));
-assert.match(refresh, /try await remoteSyncService.accessStatus\(ready: ready\)\s*accessBannerSession.confirm\(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope\)/);
+assert.match(refresh, /let lease = try await remoteSyncService.accessStatus\(ready: ready\)\s*accessBannerSession.confirm\(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope, lease: lease\)/);
 assert.equal((refresh.match(/remoteSyncService.accessStatus\(/g) || []).length, 1, 'Reuse the single existing status request');
 assert.ok(!refresh.includes('enterBackground()'), 'Ordinary polling must not hide a confirmed banner');
 assert.ok(!refresh.split('} catch {')[1].includes('accessBannerSession.confirm'), 'Network errors cannot confirm expiry');
 const adoption = app.slice(app.indexOf('    func adoptFamilyAccess()'), app.indexOf('    static let didReceiveRemotePayloadNotification'));
 assert.match(adoption, /let allowed = FamilyAccessStore.allowed/);
 assert.ok(!adoption.includes('accessBannerSession'), 'Visual suppression must not change enforcement');
+
+// Decode real access_status bodies through the production method. This method
+// is also used during setup, where enforced:false legitimately has no lease.
+const statusMethod = app.slice(app.indexOf('    @discardableResult\n    func accessStatus('), app.indexOf('    func purchaseIdentity()'));
+assert.ok(statusMethod.length > 500);
+writeFileSync(resolve(temp, 'Status.swift'), `import Foundation
+final class StatusClient {
+    var data = Data()
+    var calls = 0
+    func call<T: Decodable, P: Encodable>(action: String, payload: P, timeout: Int) async throws -> T {
+        precondition(action == "access_status" && timeout == 15)
+        calls += 1
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+${statusMethod}
+}
+@main struct Test {
+    static func main() async throws {
+        let client = StatusClient()
+        let family = UUID(), child = UUID()
+        for state in [FamilyAccessLease.State.setup, .demo, .paid, .expired, .verificationRequired] {
+            let lease = FamilyAccessLease(protocolVersion: 1, familyID: family, pairingID: child,
+                revision: 7, issuedAtMs: 1000, controlUntilMs: state == .paid || state == .demo ? 2000 : nil,
+                nextCheckAtMs: 1100, state: state)
+            var access = try JSONSerialization.jsonObject(with: JSONEncoder().encode(lease)) as! [String: Any]
+            access["enforced"] = true
+            client.data = try JSONSerialization.data(withJSONObject: ["access": access, "accessChanged": false])
+            let received = try await client.accessStatus(ready: true)
+            precondition(received == lease)
+        }
+        client.data = Data(#"{"access":{"enforced":false}}"#.utf8)
+        let disabled = try await client.accessStatus(ready: false)
+        precondition(disabled == nil)
+        client.data = Data(#"{"access":{"enforced":true,"state":"verification_required"}}"#.utf8)
+        do {
+            _ = try await client.accessStatus(ready: true)
+            preconditionFailure("Malformed response must not confirm expiry")
+        } catch is DecodingError { }
+        precondition(client.calls == 7, "Exactly one request per check, no extra retry")
+        print("Actual access-status response decoding passed for all states, disabled enforcement and malformed response")
+    }
+}
+`);
+execFileSync('xcrun', ['swiftc', '-parse-as-library', '-module-cache-path', resolve(temp, 'cache'),
+    resolve(__dirname, '../../ParentalControl/Models/FamilyAccessLease.swift'), resolve(temp, 'Status.swift'),
+    '-o', resolve(temp, 'status-tests')], { stdio: 'inherit' });
+execFileSync(resolve(temp, 'status-tests'), { stdio: 'inherit' });

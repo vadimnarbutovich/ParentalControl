@@ -21,8 +21,11 @@ final class AppState: ObservableObject {
         guard let pairingState, let childID = pairingState.childDeviceID else { return nil }
         return .init(familyID: pairingState.familyID, childID: childID)
     }
-    var isFamilyAccessStatusConfirmedForBanner: Bool {
-        accessBannerSession.isConfirmed(for: accessBannerScope)
+    func familyAccessBannerPresentation(awaitingPurchase: Bool) -> FamilyAccessBannerPresentation {
+        let lease = FamilyAccessStore.receipt?.lease
+        return .resolve(allowed: isFamilyAccessAllowed, isParent: deviceRole == .parent,
+                        awaitingPurchase: awaitingPurchase, leaseState: lease?.state,
+                        confirmedState: accessBannerSession.confirmedState(for: accessBannerScope, currentLease: lease))
     }
     private var lastAccessCheck: Date?
     private var accessCheckInFlight = false
@@ -68,8 +71,8 @@ final class AppState: ObservableObject {
             (screenTimeService.isAuthorized && (!screenTimeService.selection.applicationTokens.isEmpty ||
                 !screenTimeService.selection.categoryTokens.isEmpty || !screenTimeService.selection.webDomainTokens.isEmpty)))
         do {
-            try await remoteSyncService.accessStatus(ready: ready)
-            accessBannerSession.confirm(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope)
+            let lease = try await remoteSyncService.accessStatus(ready: ready)
+            accessBannerSession.confirm(token: bannerToken, scope: bannerScope, currentScope: accessBannerScope, lease: lease)
         } catch {
             // No new evidence of expiry. Keep the banner hidden on first load,
             // or retain an already confirmed banner during a later network error.
@@ -4536,9 +4539,22 @@ private final class ParentalRemoteSyncService {
         return try decoder.decode(T.self, from: data)
     }
 
-    func accessStatus(ready: Bool) async throws {
+    @discardableResult
+    func accessStatus(ready: Bool) async throws -> FamilyAccessLease? {
         struct Payload: Encodable { let ready: Bool; let protocolVersion = 1 }
-        let _: EmptyResponse = try await call(action: "access_status", payload: Payload(ready: ready), timeout: 15)
+        struct Response: Decodable {
+            let lease: FamilyAccessLease?
+            enum CodingKeys: String, CodingKey { case access }
+            enum AccessKeys: String, CodingKey { case enforced }
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let access = try container.superDecoder(forKey: .access)
+                let flags = try access.container(keyedBy: AccessKeys.self)
+                lease = try flags.decode(Bool.self, forKey: .enforced) ? FamilyAccessLease(from: access) : nil
+            }
+        }
+        let response: Response = try await call(action: "access_status", payload: Payload(ready: ready), timeout: 15)
+        return response.lease
     }
     func purchaseIdentity() async throws -> String {
         struct Response: Decodable { let customerID: String }
