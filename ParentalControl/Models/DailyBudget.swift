@@ -102,6 +102,42 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
         return f.string(from: date)
     }
 
+    private func isRecoverable(for family: String, day: String, throughRevision: Int) -> Bool {
+        guard UUID(uuidString: family) != nil, policy.familyID == family else { return false }
+        return self.day == day && policy.revision > 0 && policy.revision <= throughRevision
+            && policy.hasValidLimits && (0...691200).contains(usedSeconds)
+            && (-604800...604800).contains(extraSeconds)
+            && (cappedAdjustmentsVersion == nil || cappedAdjustmentsVersion == 1)
+    }
+
+    /// Used only when local storage is absent. Restore this day's accounted
+    /// balance, not the previous installation's monitor events or clock anchors.
+    static func restoring(_ policy: DailyBudgetPolicy, day: String, legacyUsedToday: Int,
+                          reported: DailyBudgetState?) -> Self {
+        if let reported, reported.isRecoverable(for: policy.familyID, day: day, throughRevision: policy.revision) {
+            var state = Self(policy: reported.policy, day: day,
+                             usedSeconds: max(max(0, legacyUsedToday), reported.usedSeconds),
+                             extraSeconds: reported.extraSeconds,
+                             cappedAdjustmentsVersion: reported.cappedAdjustmentsVersion)
+            // Retain the applied revision and capped withdrawals. Replaying all
+            // operations against today's final usage could withdraw time twice.
+            state.apply(policy)
+            return state
+        }
+        var state = Self(policy: policy.resolved(for: day), day: day, usedSeconds: max(0, legacyUsedToday),
+                         extraSeconds: policy.extraDay == day ? policy.extraSeconds : 0)
+        state.initializeOperations()
+        return state
+    }
+
+    /// Server usage is cumulative, never a delta. Repeated/older responses cannot
+    /// reduce local usage, overwrite applied adjustments, or restore another day.
+    mutating func restoreReportedUsage(_ reported: DailyBudgetState?, throughRevision: Int) {
+        guard let reported,
+              reported.isRecoverable(for: policy.familyID, day: day, throughRevision: throughRevision) else { return }
+        usedSeconds = max(usedSeconds, reported.usedSeconds)
+    }
+
     mutating func advance(to today: String) {
         // Moving the clock backwards must not grant another daily allowance.
         guard today > day else { return }
@@ -233,7 +269,8 @@ nonisolated final class DailyBudgetStore {
     }
 
     @discardableResult
-    func apply(_ policy: DailyBudgetPolicy, legacyUsedToday: Int) throws -> DailyBudgetState {
+    func apply(_ policy: DailyBudgetPolicy, legacyUsedToday: Int,
+               reportedState: DailyBudgetState? = nil) throws -> DailyBudgetState {
         guard UUID(uuidString: policy.familyID) != nil,
               policy.hasValidLimits, policy.revision > 0,
               (-604800...604800).contains(policy.extraSeconds) else { throw StoreError.corrupt }
@@ -244,6 +281,9 @@ nonisolated final class DailyBudgetStore {
                 guard existing.policy.familyID == policy.familyID else { throw StoreError.corrupt }
                 if today > existing.day { try archive(existing, in: dir) }
                 existing.advance(to: today)
+                // Reconcile before new withdrawals are capped against available
+                // time. All readers/writers share this same short file lock.
+                existing.restoreReportedUsage(reportedState, throughRevision: max(existing.policy.revision, policy.revision))
                 existing.apply(policy)
                 state = existing
             } else {
@@ -251,9 +291,8 @@ nonisolated final class DailyBudgetStore {
                 if let data = defaults?.data(forKey: "parentalcontrol.balance") {
                     try data.write(to: dir.appendingPathComponent(policy.familyID + "-legacy-balance.json"), options: .atomic)
                 }
-                state = DailyBudgetState(policy: policy.resolved(for: today), day: today, usedSeconds: max(0, legacyUsedToday),
-                    extraSeconds: policy.extraDay == today ? policy.extraSeconds : 0)
-                state.initializeOperations()
+                state = DailyBudgetState.restoring(policy, day: today, legacyUsedToday: legacyUsedToday,
+                                                  reported: reportedState)
             }
             // Persisting desired policy is not proof that Screen Time accepted it.
             // A monitor callback must not report a new revision before enforcement.
@@ -297,7 +336,8 @@ nonisolated final class DailyBudgetStore {
         }
     }
 
-    /// Only actual DeviceActivity usage can increment usedSeconds.
+    /// Only actual DeviceActivity callbacks record new usage; recovery restores
+    /// an already-recorded cumulative counter, never a new consumption event.
     func consume(event: String, now: Date = Date()) throws -> DailyBudgetState? {
         try locked { dir in
             guard var state = try read(dir) else { return nil }

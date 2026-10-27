@@ -895,11 +895,11 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func applyDailyBudgetPolicy(_ policy: DailyBudgetPolicy?) {
-        withControlStateLock { applyDailyBudgetPolicyLocked(policy) }
+    private func applyDailyBudgetPolicy(_ policy: DailyBudgetPolicy?, reportedState: DailyBudgetState?) {
+        withControlStateLock { applyDailyBudgetPolicyLocked(policy, reportedState: reportedState) }
     }
 
-    private func applyDailyBudgetPolicyLocked(_ policy: DailyBudgetPolicy?) {
+    private func applyDailyBudgetPolicyLocked(_ policy: DailyBudgetPolicy?, reportedState: DailyBudgetState?) {
         guard deviceRole == .child, let policy,
               pairingState?.familyID.uuidString.lowercased() == policy.familyID.lowercased() else { return }
         do {
@@ -909,7 +909,8 @@ final class AppState: ObservableObject {
                 .reduce(0) { $0 + abs($1.deltaSeconds) }
             let previous = dailyBudget
             dailyBudget = try DailyBudgetStore.shared.apply(policy,
-                legacyUsedToday: max(0, balance.totalSpentSeconds - baseline - administrative))
+                legacyUsedToday: max(0, balance.totalSpentSeconds - baseline - administrative),
+                reportedState: reportedState)
             balance = storage.loadBalance()
             if previous?.budgetSeconds != dailyBudget?.budgetSeconds || previous?.day != dailyBudget?.day {
                 screenTimeService.stopDeviceActivityMonitoring()
@@ -2098,7 +2099,7 @@ final class AppState: ObservableObject {
                 subscriptionService?.applyParentProStatus(proValue)
             }
             guard withControlStateLock({ adoptNotificationControlState() }) else { return }
-            applyDailyBudgetPolicy(poll.budget?.policy)
+            applyDailyBudgetPolicy(poll.budget?.policy, reportedState: poll.budget?.state)
             await applyDesiredFocusState(poll.desired)
             var budgetReady = await confirmChildEnforcement()
             guard pairingState?.familyID == requestedFamily else { return }

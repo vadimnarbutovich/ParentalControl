@@ -192,7 +192,7 @@ final class RemoteControlProcessor {
             // or shield. Use the real midnight budget monitor, not a dummy activity.
             // Even an existing activity must be registered again: merely finding its
             // name is not evidence that authorization is still valid.
-            budget = try DailyBudgetStore.shared.apply(policy, legacyUsedToday: 0)
+            budget = try DailyBudgetStore.shared.apply(policy, legacyUsedToday: 0, reportedState: poll.budget?.state)
             if active {
                 let encoder = JSONEncoder()
                 encoder.dateEncodingStrategy = .iso8601
