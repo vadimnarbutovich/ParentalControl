@@ -74,6 +74,18 @@ Deno.serve(async (req: Request) => {
 
     const authed = await requireDevice(req);
 
+    // Setup recovery is authenticated but never requires a paid entitlement.
+    // The transaction refuses to reset a family that already has another phone.
+    if (action === "reset_pending_setup") {
+      const familyID = asUUIDString(payload.expectedFamilyID);
+      const role = asString(payload.role);
+      if (!familyID || (role !== "parent" && role !== "child")) return errorResponse("Invalid setup request", 400);
+      const { data, error } = await supabase.rpc("pc_reset_pending_setup", {
+        p_device: authed.deviceId, p_family: familyID, p_role: role,
+      });
+      return error ? errorResponse("Cannot reset pending setup", 503) : okResponse({ reset: data === true });
+    }
+
     if (["access_status", "purchase_identity", "verify_purchase", "release_control", "resume_control"].includes(action)) {
       const result = await accessAction(supabase, authed.device, action, payload,
         Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "");
@@ -153,9 +165,9 @@ Deno.serve(async (req: Request) => {
       case "fetch_pending_commands":
         return await fetchPendingCommands(authed.deviceId);
       case "fetch_desired_focus_state":
-        return await fetchDesiredFocusState(authed.deviceId);
+        return await fetchDesiredFocusState(authed.device);
       case "fetch_command_status":
-        return await fetchCommandStatus(authed.deviceId, payload);
+        return await fetchCommandStatus(authed.device, payload);
       case "retry_stuck_commands":
         return await retryStuckCommands(authed.deviceId, payload);
       case "fetch_link_health":
@@ -184,15 +196,15 @@ Deno.serve(async (req: Request) => {
       case "request_child_location":
         return await requestChildLocation(authed.deviceId);
       case "fetch_child_location":
-        return await fetchChildLocation(authed.deviceId);
+        return await fetchChildLocation(authed.device);
       case "list_block_schedules":
-        return await listBlockSchedules(authed.deviceId);
+        return await listBlockSchedules(authed.device);
       case "upsert_block_schedule":
         return await upsertBlockSchedule(authed.deviceId, payload);
       case "delete_block_schedule":
         return await deleteBlockSchedule(authed.deviceId, payload);
       case "list_child_tasks":
-        return await listChildTasks(authed.deviceId);
+        return await listChildTasks(authed.device);
       case "upsert_child_task":
         return await upsertChildTask(authed.deviceId, payload);
       case "delete_child_task":
@@ -212,7 +224,7 @@ Deno.serve(async (req: Request) => {
       case "fetch_parent_pro":
         return await fetchParentPro(authed.deviceId);
       case "unlink_devices":
-        return await unlinkDevices(authed.deviceId);
+        return await unlinkDevices(authed.deviceId, payload);
       // Combined endpoints (экономия Edge Function Invocations): объединяют несколько
       // GET/write-вызовов в один. Логика зеркалит существующие handler'ы 1:1.
       case "child_poll":
@@ -277,25 +289,38 @@ async function handleAccessWebhook(req: Request): Promise<Response> {
 async function registerDevice(req: Request, payload: Json): Promise<Response> {
   const installID = asString(payload.installID);
   const role = asString(payload.role);
+  const inspectOnly = payload.inspectOnly === true;
   const providedSecret = req.headers.get("x-device-secret") ?? "";
   if (req.headers.get("x-device-install-id") !== installID || !/^[A-Fa-f0-9-]{64,128}$/.test(providedSecret)) {
     return errorResponse("Valid device credentials are required", 401);
   }
-  if (!installID || (role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
+  if (!installID || (!inspectOnly && role !== "parent" && role !== "child")) return errorResponse("installID and role are required", 400);
 
   const { data: existing, error: existingError } = await supabase
     .from("devices")
-    .select("id, device_secret, family_id")
+    .select("id, device_secret, family_id, role")
     .eq("install_id", installID)
     .maybeSingle();
   if (existingError) return errorResponse(existingError.message, 400);
 
   if (existing) {
     if (existing.device_secret !== providedSecret) return errorResponse("Invalid device credentials", 401);
+    if (!inspectOnly && !existing.family_id && existing.role !== role) {
+      // Reinstall may choose a different role only AFTER unlinking. Keep the
+      // same device/owner identity, so this cannot restart a demo or purchase.
+      // Fence a concurrent pairing or role change rather than overwrite it.
+      const { data: changed, error: changeError } = await supabase.from("devices")
+        .update({ role }).eq("id", existing.id).eq("role", existing.role)
+        .is("family_id", null).select("id").maybeSingle();
+      if (changeError) return errorResponse(changeError.message, 400);
+      if (!changed) return errorResponse("Device pairing changed; retry registration", 409);
+      return okResponse({ deviceSecret: existing.device_secret, pairingState: null, deviceRole: role });
+    }
     const pairingState = existing.family_id ? await fetchPairingState(existing.family_id) : null;
-    return okResponse({ deviceSecret: existing.device_secret, pairingState });
+    return okResponse({ deviceSecret: existing.device_secret, pairingState, deviceRole: existing.role });
   }
 
+  if (inspectOnly) return okResponse({ deviceSecret: providedSecret, pairingState: null, deviceRole: null });
   // The client saves this secret before its first request, so retries are safe.
   const deviceSecret = providedSecret;
   const { error: insertError } = await supabase
@@ -303,7 +328,7 @@ async function registerDevice(req: Request, payload: Json): Promise<Response> {
     .insert({ install_id: installID, role, device_secret: deviceSecret });
   if (insertError) return errorResponse(insertError.message, 400);
 
-  return okResponse({ deviceSecret, pairingState: null });
+  return okResponse({ deviceSecret, pairingState: null, deviceRole: role });
 }
 
 async function generatePairingCode(deviceId: string): Promise<Response> {
@@ -372,8 +397,13 @@ async function joinPairingCode(deviceId: string, payload: Json): Promise<Respons
 /// устройство. Ребёнка будим silent push'ом (ДО отсоединения, иначе apns-токен по семье не найти);
 /// второе устройство окончательно очистит локальное состояние при следующем `registerDevice`
 /// (вернёт `pairingState: null`).
-async function unlinkDevices(deviceId: string): Promise<Response> {
+async function unlinkDevices(deviceId: string, payload: Json = {}): Promise<Response> {
   const device = await getDevice(deviceId);
+  const expectedFamilyID = asUUIDString(payload.expectedFamilyID);
+  if (payload.expectedFamilyID != null && !expectedFamilyID) return errorResponse("Invalid family ID", 400);
+  // Retry after a lost success response is safe; never unlink a different family.
+  if (expectedFamilyID && !device.family_id) return okResponse({ ok: true });
+  if (expectedFamilyID && device.family_id !== expectedFamilyID) return errorResponse("Device pairing changed", 409);
   if (!device.family_id) return errorResponse("Device is not paired", 400);
   const familyID = device.family_id;
 
@@ -477,7 +507,7 @@ async function childPoll(device: DeviceContext, payload: Json, setupOnly = false
     if (error) return errorResponse("Setup capabilities unavailable", 500);
   }
 
-  await expireStalePendingCommands(device.family_id);
+  // The snapshot RPC expires this family's stale commands in the same transaction.
   const { data, error } = await supabase.rpc("pc_poll_snapshot", {
     p_device: deviceId, p_role: "child", p_include_parent_settings: includeParentSettings,
   });
@@ -522,7 +552,7 @@ async function parentPoll(parent: DeviceContext): Promise<Response> {
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can poll", 403);
   const familyID = parent.family_id;
 
-  await expireStalePendingCommands(familyID);
+  // Preserve expiration/health semantics without a separate REST PATCH per poll.
   const { data, error } = await supabase.rpc("pc_poll_snapshot", {
     p_device: parent.id, p_role: "parent", p_include_parent_settings: false,
   });
@@ -747,8 +777,7 @@ async function fetchPendingCommands(deviceId: string): Promise<Response> {
   return okResponse((data ?? []).map((row) => mapCommandForClient(row as FocusCommandRow)));
 }
 
-async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function fetchDesiredFocusState(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -766,11 +795,10 @@ async function fetchDesiredFocusState(deviceId: string): Promise<Response> {
   });
 }
 
-async function fetchCommandStatus(deviceId: string, payload: Json): Promise<Response> {
+async function fetchCommandStatus(requester: DeviceContext, payload: Json): Promise<Response> {
   const commandID = asString(payload.commandID);
   if (!commandID) return errorResponse("commandID is required", 400);
 
-  const requester = await getDevice(deviceId);
   if (!requester.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -1422,8 +1450,7 @@ async function requestChildLocation(deviceId: string): Promise<Response> {
 }
 
 
-async function fetchChildLocation(deviceId: string): Promise<Response> {
-  const parent = await getDevice(deviceId);
+async function fetchChildLocation(parent: DeviceContext): Promise<Response> {
   if (parent.role !== "parent" || !parent.family_id) return errorResponse("Only paired parent can fetch location", 403);
 
   const { data, error } = await supabase
@@ -1480,8 +1507,7 @@ function mapBlockScheduleForClient(row: BlockScheduleRow) {
   };
 }
 
-async function listBlockSchedules(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function listBlockSchedules(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase
@@ -1601,8 +1627,7 @@ function mapChildTaskForClient(row: ChildTaskRow) {
   };
 }
 
-async function listChildTasks(deviceId: string): Promise<Response> {
-  const device = await getDevice(deviceId);
+async function listChildTasks(device: DeviceContext): Promise<Response> {
   if (!device.family_id) return errorResponse("Device is not paired", 403);
 
   const { data, error } = await supabase

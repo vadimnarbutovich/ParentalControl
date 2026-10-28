@@ -35,6 +35,7 @@ async function runAck(options: { target?: string; type?: string; state?: string;
 }
 test("real ACK handler completes release, preserves retry on errors and remains backwards compatible", async () => {
   assert.deepEqual(await runAck(), { code: 200, reads: 1, writes: 1, status: "applied" });
+  assert.deepEqual(await runAck({ state: "verification_required" }), { code: 200, reads: 1, writes: 1, status: "applied" });
   assert.deepEqual(await runAck({ target: "other" }), { code: 403, reads: 1, writes: 0, status: "sent" });
   assert.deepEqual(await runAck({ type: "start_focus" }), { code: 409, reads: 1, writes: 0, status: "sent" });
   assert.deepEqual(await runAck({ state: "paid" }), { code: 409, reads: 1, writes: 0, status: "sent" });
@@ -46,15 +47,21 @@ test("real ACK handler completes release, preserves retry on errors and remains 
     { code: 200, reads: 1, writes: 1, status: "applied" });
 });
 
-test("only the matching expired tasks wake can acknowledge release", () => {
-  assert.equal(permitsAccessReleaseAck(payload, "tasks_updated", access), true);
+test("only a matching server-denied tasks wake can acknowledge release", () => {
+  for (const state of ["expired", "verification_required"]) {
+  const denied = { ...access, state };
+  assert.equal(permitsAccessReleaseAck(payload, "tasks_updated", denied), true);
   for (const type of ["start_focus", "end_focus", "request_location", "schedule_start", "schedule_end", ""]) {
-    assert.equal(permitsAccessReleaseAck(payload, type, access), false);
+    assert.equal(permitsAccessReleaseAck(payload, type, denied), false);
   }
   for (const revision of [undefined, null, "4", 0, -1, 4.5, 5, NaN, Infinity]) {
-    assert.equal(permitsAccessReleaseAck({ ...payload, accessReleaseRevision: revision }, "tasks_updated", access), false);
+    assert.equal(permitsAccessReleaseAck({ ...payload, accessReleaseRevision: revision }, "tasks_updated", denied), false);
   }
-  for (const state of ["paid", "demo", "setup", "verification_required", undefined]) {
+  for (const deadline of [0, 1, Date.now() + 60000, "invalid"]) {
+    assert.equal(permitsAccessReleaseAck(payload, "tasks_updated", { ...denied, controlUntilMs: deadline }), false);
+  }
+  }
+  for (const state of ["paid", "demo", "setup", undefined, "unknown"]) {
     assert.equal(permitsAccessReleaseAck(payload, "tasks_updated", { ...access, state }), false);
   }
   assert.equal(permitsAccessReleaseAck(payload, "tasks_updated", { ...access, enforced: false }), false);
@@ -77,7 +84,9 @@ test("NSE ACK follows successful bounded release and context checks, not a gener
   const source = readFileSync(new URL("../../NotificationServiceExtension/RemoteControlProcessor.swift", import.meta.url), "utf8");
   assert.match(source, /catch Failure.accessReleased\(let revision\)/);
   assert.match(source, /guard type == "tasks_updated" else \{ throw Failure.http\(402\) \}/);
-  assert.match(source, /FamilyAccessStore.receipt\?\.lease.revision == revision else \{ throw Failure.stale \}/);
+  assert.match(source, /let current = FamilyAccessStore.receipt\?\.lease/);
+  assert.match(source, /\[\.expired, \.verificationRequired, \.demo\].contains\(current.state\)/);
+  assert.match(source, /current.revision == revision else \{ throw Failure.stale \}/);
   assert.match(source, /let released = try await ControlSystemWorker.shared.run/);
   assert.match(source, /return FamilyAccessEnforcement.releaseIfNeeded\(\)\s*\}\s*try checkContext\(\)/);
   assert.match(source, /action == "child_poll", released, !FamilyAccessStore.allowed/);

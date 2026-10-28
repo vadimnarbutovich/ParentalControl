@@ -35,7 +35,7 @@ struct BlockListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: !selectionOnly)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

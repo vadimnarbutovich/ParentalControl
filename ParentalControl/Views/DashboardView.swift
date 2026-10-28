@@ -19,7 +19,7 @@ struct DashboardView: View {
         let daily = appState.dailyStats()
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if childNeedsPairing {

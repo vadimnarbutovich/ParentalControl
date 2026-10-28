@@ -625,3 +625,16 @@
 "access.banner.child_verification.body" = "Paprašyk tėvų patikrinti Premium savo telefone.";
 "access.banner.choose_plan" = "Pasirinkti planą";
 "access.banner.check_status" = "Tikrinti būseną";
+"recovery.title" = "Šis telefonas jau susietas su šeima";
+"recovery.message" = "Atkurkite ryšį ir tęskite arba nustatykite telefoną iš naujo.";
+"recovery.restore" = "Atkurti ryšį";
+"recovery.reset" = "Nustatyti iš naujo";
+"recovery.checking" = "Tikrinamas ryšys su šeima…";
+"recovery.error" = "Nepavyko užbaigti veiksmo. Patikrinkite interneto ryšį ir bandykite dar kartą.";
+"recovery.confirm" = "Abu telefonai bus atsieti, o šios šeimos nustatymai, tvarkaraščiai ir užduotys bus ištrinti. Telefonus reikės susieti iš naujo. Jūsų prenumerata bus išsaugota.";
+"recovery.child_hint" = "Norint nustatyti iš naujo, reikia tėvų PIN kodo. Jei jo nežinote, atsiekite įrenginius tėvų telefone.";
+"access.banner.setup.title" = "Užbaikite sąranką";
+"access.banner.setup.parent.body" = "Užbaikite sąranką vaiko telefone. Valdymo funkcijos taps prieinamos automatiškai.";
+"access.banner.setup.child.body" = "Paprašyk tėvų užbaigti sąranką abiejuose telefonuose.";
+"recovery.install.body" = "Jei programėlė buvo ištrinta ir iš vaiko telefono, [nusiųskite nuorodą](%@) arba nuskaitykite QR kodą, kad ją įdiegtumėte iš naujo. Tada vaiko telefone atidarykite programėlę ir pasirinkite „%@“.";
+"recovery.install.continue" = "Jau įdiegta — tęsti";

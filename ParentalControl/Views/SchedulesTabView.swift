@@ -15,7 +15,7 @@ struct SchedulesTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         header

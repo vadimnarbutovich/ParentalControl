@@ -13,7 +13,7 @@ struct MapTabView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 content
             }
             .navigationTitle("map.title")
@@ -28,6 +28,9 @@ struct MapTabView: View {
             recenterCameraIfPossible(animated: true)
         }
         .onDisappear { refreshTask?.cancel() }
+        .onChange(of: appState.isFamilyAccessAllowed) { _, allowed in
+            if !allowed { refreshTask?.cancel() }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { refreshTask?.cancel() }
         }
@@ -122,7 +125,7 @@ struct MapTabView: View {
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.75))
             }
-            if let message = appState.parentLocationStatusMessage {
+            if appState.isFamilyAccessAllowed, let message = appState.parentLocationStatusMessage {
                 Text(message)
                     .font(.footnote)
                     .foregroundStyle(AppTheme.neonOrange)
@@ -151,7 +154,7 @@ struct MapTabView: View {
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
-            if let message = appState.parentLocationStatusMessage {
+            if appState.isFamilyAccessAllowed, let message = appState.parentLocationStatusMessage {
                 Text(message)
                     .font(.footnote)
                     .foregroundStyle(AppTheme.neonOrange)

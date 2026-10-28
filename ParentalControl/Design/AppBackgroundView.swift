@@ -26,29 +26,38 @@ struct AppBackgroundContainer<Content: View>: View {
                                 height: frame.height + insets.top + insets.bottom)
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackgroundView())
+                .background(AppBackgroundView(usesSharedCanvas: true))
                 .environment(\.appBackgroundCanvas, canvas)
         }
     }
 }
 
 struct AppBackgroundView: View {
+    /// Local by default: sheets/covers inherit Environment values but not the
+    /// presenting screen's coordinate space. Only main-screen surfaces opt in
+    /// to the shared canvas for seamless rendering beneath pinned banners.
+    var usesSharedCanvas = false
     @Environment(\.appBackgroundCanvas) private var sharedCanvas
 
     var body: some View {
-        GeometryReader { proxy in
-            let localFrame = proxy.frame(in: .global)
-            let canvas = sharedCanvas ?? localFrame
-            artwork
-                .frame(width: canvas.width, height: canvas.height)
-                // Rasterize the full canvas before sampling it. On iOS 18,
-                // clipped gradient layers otherwise leave a seam below the banner.
-                .drawingGroup(opaque: true)
-                .offset(x: canvas.minX - localFrame.minX,
-                        y: canvas.minY - localFrame.minY)
+        Group {
+            if usesSharedCanvas, let canvas = sharedCanvas {
+                GeometryReader { proxy in
+                    let localFrame = proxy.frame(in: .global)
+                    artwork
+                        .frame(width: canvas.width, height: canvas.height)
+                        // Rasterize before sampling to avoid the iOS 18 banner seam.
+                        .drawingGroup(opaque: true)
+                        .offset(x: canvas.minX - localFrame.minX,
+                                y: canvas.minY - localFrame.minY)
+                }
+                .clipped()
+            } else {
+                // A local background fills its container directly. Do not
+                // capture the sheet's animated bounds in an offscreen texture.
+                artwork
+            }
         }
-        // Clip the sampled artwork, not the screen's controls or scroll view.
-        .clipped()
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -94,8 +103,8 @@ struct AppBackgroundView: View {
 }
 
 extension View {
-    func appScreenBackground() -> some View {
-        background(AppBackgroundView())
+    func appScreenBackground(usesSharedCanvas: Bool = false) -> some View {
+        background(AppBackgroundView(usesSharedCanvas: usesSharedCanvas))
     }
 }
 

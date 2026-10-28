@@ -54,6 +54,26 @@ Before export, also align extension CFBundleVersion with the host: the unsigned
 build currently warns about extension builds 1/2 versus host build 4.
 
 Hardware acceptance (both supported test iPhones, without Xcode debugger)
+Demo-denial ACK follow-up (2026-10-27)
+- Server denial verification_required with no control deadline is now eligible
+  for the same tasks_updated release acknowledgement as expired. This is NOT
+  a network failure and does not grant access or acknowledge a paid command.
+- Natural demo expiry can keep the purchase revision unchanged. When the store
+  retains its old demo receipt, accept the release proof only for the same family,
+  child and revision, with a valid authenticated 402 denial issued at/after the
+  original demo deadline. Do not replace the receipt or change mayReplace policy.
+- The bounded system worker must still successfully release restrictions; context,
+  current revision and !allowed are rechecked before ACK. Paid/newer receipts,
+  setup, malformed responses, early denials and unrelated commands stay rejected.
+- Server still validates command target/type and current access revision; terminal
+  commands are not resurrected. No additional DB read, timer, purchase verification
+  or notification. Ordinary command retries and cached paid/offline access unchanged.
+- 42 executable Swift ACK checks and 57 subscription + 9 read-efficiency Node
+  tests passed. Repeat the device expiry check on a NEW CHILD BUILD; a server-only
+  update cannot make an old extension send the missing acknowledgement.
+- Do not reset the real demo or rewrite the previous failed command for the test.
+  Arrange a new short test only when the user is ready; install over existing data.
+
 Access-expiry ACK regression (2026-10-25)
 - A confirmed expired child_poll response releases shields through the bounded
   system worker, then acknowledges only tasks_updated with accessReleaseRevision.

@@ -391,8 +391,8 @@ final class AppGroupStore {
         return DeviceRole(rawValue: raw)
     }
 
-    func saveDeviceRole(_ role: DeviceRole) {
-        store.set(role.rawValue, forKey: StorageKey.deviceRole)
+    func saveDeviceRole(_ role: DeviceRole?) {
+        store.set(role?.rawValue, forKey: StorageKey.deviceRole)
     }
 
     func loadPairingState() -> DevicePairingState? {
@@ -423,8 +423,7 @@ final class AppGroupStore {
     func saveDeviceSecret(_ value: String?) {
         store.set(value, forKey: StorageKey.deviceSecret)
         if let id = store.string(forKey: StorageKey.deviceInstallID), let value, !value.isEmpty {
-            DeviceIdentityKeychain.save(.init(installID: id, secret: value,
-                role: store.string(forKey: StorageKey.deviceRole)))
+            DeviceIdentityKeychain.save(.init(installID: id, secret: value))
         }
     }
 
@@ -436,9 +435,8 @@ final class AppGroupStore {
               let saved = DeviceIdentityKeychain.read() else { return }
         store.set(saved.installID, forKey: StorageKey.deviceInstallID)
         store.set(saved.secret, forKey: StorageKey.deviceSecret)
-        if store.string(forKey: StorageKey.deviceRole) == nil, let role = saved.role {
-            store.set(role, forKey: StorageKey.deviceRole)
-        }
+        // Do not restore the role: a reinstallation starts at role selection.
+        // An ordinary update keeps the role and pairing already in App Group.
     }
 
     func loadAPNSToken() -> String? {

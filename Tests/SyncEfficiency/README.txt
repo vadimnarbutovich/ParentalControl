@@ -1,5 +1,65 @@
 Sync efficiency, 2026-10-24
 
+Server follow-up, 2026-10-27 (no new iOS build required)
+- pc_poll_snapshot now expires only its authenticated device's family queue
+  before reading the snapshot, in one transaction. Volatility is now VOLATILE.
+  Parent/child poll handlers no longer issue a separate REST expiration PATCH.
+  Same TTL, statuses, error code, response fields, ordering and result limits.
+  Legacy command/retry/link-health cleanup remains in place.
+- Five read-only handlers reuse the device already authenticated in this HTTP
+  request: desired state, command status, child location, schedules and tasks.
+  Role/family/command-owner checks remain. No cross-request identity cache.
+  Registration, pairing, unlink, mutations and runtime uploads keep rechecks.
+- After a normal maintenance wake, non-paid demos are scheduled at the original
+  trial_started_at + 24 hours, not another 15-minute retry. Confirmed-expired
+  nonbuyers still park at infinity. No real trial start/deadline was edited.
+  Finish locks owner before pair (same order as purchase update trigger), so a
+  concurrent purchase either wins first or reschedules after the finish.
+- No push-suppression heuristic was added. Every actual maintenance execution
+  still refreshes and notifies the child before finishing. This retains paid
+  renewals, uncertain previously-paid checks, expiry delivery and retry behavior.
+  Redundant demo wakes disappear through scheduling, not dropped notifications.
+- Cron frequency, payment verifier/webhooks, receipt schema, APNs retries,
+  command ACKs, local Screen Time handling and all logging settings unchanged.
+
+Deployment and verification
+- Applied poll_expiration_in_snapshot and demo_maintenance_deadline migrations.
+  Both were guarded by isolated SQL fixture assertions within the migration
+  transaction; fixtures roll back on success and failure. No fixture rows remain.
+- parental-control-sync v27 is ACTIVE; deployed source matches local files.
+  Existing custom authentication and verify_jwt=false preserved. Shared verifier,
+  webhook and APNs routing files byte-identical to v26; balance function unchanged.
+- 9 new read/authorization/compatibility tests and 70 existing Node tests passed.
+  Deno checks passed for both Edge entry points; sync integration guards passed.
+- Live SQL checks passed: poll-expiration.sql, demo-maintenance.sql, server.sql
+  and SubscriptionAccess/continuity.sql (rolled back). Includes role mismatch,
+  family isolation, terminal/live commands, no-op updates, demo, renewal,
+  unknown-paid state, lifetime, confirmed negative and service-only privileges.
+- At 07:43 UTC: still 1 family / 2 devices, 0 fixture families, 0 stale pending
+  commands. No newly introduced security-advisor findings.
+- No manual reschedule/backfill: an already-claimed demo slot finishes normally
+  on its next wake, then adopts the exact original demo deadline.
+
+Run new checks
+node --test Tests/SyncEfficiency/server-reads.test.cjs
+node --experimental-strip-types --test Tests/SubscriptionAccess/*.test.ts Tests/DeviceIdentity/registration.test.cjs Tests/LocationPush/apns-routing.test.ts
+npx --yes deno@2.5.4 check supabase/functions/parental-control-sync/index.ts supabase/functions/parental-control-balance-sync/index.ts
+
+Remaining acceptance on existing installed builds
+- Parent: refresh dashboard/map/tasks/schedules; block/unblock/add time.
+- Child app closed: schedule start/end; demo expiry releases apps and pauses
+  parent controls. Purchase/restore and renewals must retain previous behavior.
+- Compare logs during an equivalent active test; the saved REST call is one per
+  poll and one per affected read, NOT all database calls or Edge invocations.
+  Whole-project Log Ingestion savings are not yet measured.
+
+Rollback order (only if needed)
+- Restore Edge v26 first (it issues the expiration PATCH); the new RPC is still
+  compatible. Then restore the snapshot function from 202610120001 if necessary.
+- Restore ONLY pc_access_finish_maintenance from 202610220002 if necessary.
+  Never replay that whole historical migration: it also mutates owner receipts.
+- No tables/columns/data were removed and no credentials/identities were reset.
+
 Scope
 - Schedule cron keeps its minute cadence, credentials and handler. It invokes
   Edge only for allowed schedule transitions OR due access maintenance.

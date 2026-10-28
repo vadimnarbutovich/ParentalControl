@@ -12,16 +12,22 @@ struct ContentView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
 
     var body: some View {
+        let accessBanner = appState.familyAccessBannerPresentation(
+            awaitingPurchase: subscriptionService.isAwaitingServerConfirmation)
         AppBackgroundContainer {
             VStack(spacing: 0) {
                 PermissionReminderBannerView()
                 if appState.hasCompletedOnboarding, appState.deviceRole != nil {
-                    FamilyAccessBannerView()
+                    FamilyAccessBannerView(presentation: accessBanner)
                 }
-                if let role = appState.deviceRole {
+                if appState.isCheckingInstallationRecovery || appState.recoveredFamily != nil || appState.installationRecoveryFailed {
+                    FamilyRecoveryView()
+                } else if let role = appState.deviceRole {
                     if appState.hasCompletedOnboarding {
-                        MainTabView()
+                        MainTabView(showsAccessBanner: accessBanner != .hidden)
                             .environmentObject(subscriptionService)
+                    } else if let familyID = appState.recoverySetupFamilyID {
+                        RecoverySetupView().id(familyID)
                     } else {
                         OnboardingFlowView()
                             .id(role)
@@ -41,6 +47,80 @@ struct ContentView: View {
         }
         .onChange(of: subscriptionService.isSubscriptionStatusKnown) { _, isKnown in
             appState.enforcePremiumFeatures(isPro: subscriptionService.isPro, isStatusKnown: isKnown)
+        }
+    }
+}
+
+private struct FamilyRecoveryView: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var showsPin = false
+    @State private var confirmsReset = false
+
+    private var busy: Bool {
+        appState.isCheckingInstallationRecovery || appState.isResettingRecoveredFamily
+    }
+
+    private var hasLinkedFamily: Bool { appState.recoveredFamily?.isLinked == true }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(systemName: "link.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppTheme.neonBlue)
+                    .accessibilityHidden(true)
+                Text(appState.isCheckingInstallationRecovery || appState.recoveredFamily == nil
+                     ? "recovery.checking" : (hasLinkedFamily ? "recovery.title" : "setup.pairing.title"))
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
+                if appState.installationRecoveryFailed {
+                    Text("recovery.error")
+                        .foregroundStyle(.white.opacity(0.75))
+                    Button("reports.retry") {
+                        Task { await appState.checkInstallationRecovery(retry: true) }
+                    }
+                    .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonBlue))
+                } else if appState.recoveredFamily != nil {
+                    Text(hasLinkedFamily ? "recovery.message"
+                         : (appState.recoveredDeviceRole == .parent ? "setup.link.parent" : "setup.link.child"))
+                        .foregroundStyle(.white.opacity(0.75))
+                    Button(hasLinkedFamily ? "recovery.restore" : "onboarding.cta.next") { appState.restoreRecoveredFamily() }
+                        .buttonStyle(NeonPrimaryButtonStyle(tint: AppTheme.neonGreen))
+                    Button("recovery.reset") {
+                        if appState.recoveredDeviceRole == .child { showsPin = true }
+                        else { confirmsReset = true }
+                    }
+                    .buttonStyle(OnboardingSecondaryButtonStyle(tint: AppTheme.neonBlue))
+                    if appState.recoveredDeviceRole == .child {
+                        Text("recovery.child_hint")
+                            .font(.footnote)
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                }
+                if busy { ProgressView().tint(.white) }
+            }
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 48)
+            .frame(maxWidth: .infinity)
+            .disabled(busy)
+        }
+        .scrollIndicators(.hidden)
+        .fullScreenCover(isPresented: $showsPin, onDismiss: {
+            if appState.isParentModeActive { confirmsReset = true }
+        }) {
+            ParentModeEntryView(isPresented: $showsPin)
+        }
+        .alert("recovery.reset", isPresented: $confirmsReset) {
+            Button("common.cancel", role: .cancel) { appState.exitParentMode() }
+            Button("recovery.reset", role: .destructive) {
+                Task { await appState.resetRecoveredFamily() }
+            }
+        } message: {
+            Text("recovery.confirm")
         }
     }
 }
@@ -67,11 +147,18 @@ private struct RoleSelectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     VStack(spacing: 14) {
                         roleCard("role.select.parent", image: "onboardingParents", tint: AppTheme.neonBlue) {
-                            appState.chooseDeviceRole(.parent)
+                            Task { await appState.selectInstallationRole(.parent) }
                         }
                         roleCard("role.select.child", image: "onboardingChildren", tint: AppTheme.neonGreen) {
-                            appState.chooseDeviceRole(.child)
+                            Task { await appState.selectInstallationRole(.child) }
                         }
+                    }
+                    .disabled(appState.isChoosingDeviceRole)
+                    if appState.isChoosingDeviceRole { ProgressView().tint(.white) }
+                    if appState.roleSelectionFailed {
+                        Text("recovery.error")
+                            .foregroundStyle(AppTheme.neonOrange)
+                            .multilineTextAlignment(.center)
                     }
                 }
                 .frame(maxWidth: 560)
@@ -81,7 +168,7 @@ private struct RoleSelectionView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(AppBackgroundView())
+        .background(AppBackgroundView(usesSharedCanvas: true))
         .preferredColorScheme(.dark)
     }
 

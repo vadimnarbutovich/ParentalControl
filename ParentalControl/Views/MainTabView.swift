@@ -18,6 +18,7 @@ private enum MainTab: String, CaseIterable {
 
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
+    var showsAccessBanner = false
     @State private var selectedTab: MainTab = .home
     /// Презентация экрана ввода PIN на ребёнке (тап по табу «Родитель»).
     @State private var isPinEntryPresented = false
@@ -38,10 +39,10 @@ struct MainTabView: View {
             }
             tabs
                 .overlay(alignment: .top) {
-                    if !appState.isFamilyAccessAllowed {
+                    if showsAccessBanner {
                         // Blend clipped card glows into the shared background.
                         // Only paint the top edge; never clip the tab bar's safe area.
-                        AppBackgroundView()
+                        AppBackgroundView(usesSharedCanvas: true)
                             .frame(height: 12)
                             .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
                             .allowsHitTesting(false)
@@ -526,6 +527,7 @@ private struct ParentDashboardView: View {
 
     private var isCommandButtonEnabled: Bool {
         guard appState.pairingState?.isLinked == true else { return false }
+        guard !FamilyAccessStore.isSettingUp else { return false }
         // An expired family can tap to purchase even when no fresh runtime exists.
         if !appState.isFamilyAccessAllowed { return true }
         return !appState.remoteCommandInFlight &&
@@ -533,6 +535,7 @@ private struct ParentDashboardView: View {
     }
 
     private var shouldShowDisabledVisualState: Bool {
+        if FamilyAccessStore.isSettingUp { return true }
         if !appState.isFamilyAccessAllowed { return false }
         return appState.remoteCommandInFlight ||
         appState.parentResolvedFocusActive == nil ||
@@ -668,7 +671,7 @@ private struct ParentDashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackgroundView()
+                AppBackgroundView(usesSharedCanvas: true)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if appState.pairingState?.isLinked == true {
@@ -706,7 +709,7 @@ private struct ParentDashboardView: View {
                                         } else if appState.isFamilyAccessAllowed {
                                             ProgressView().controlSize(.small).tint(.white)
                                         } else {
-                                            Text("access.paused")
+                                            Text("—")
                                         }
                                     }
                                     Spacer(minLength: 8)
