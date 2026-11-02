@@ -1,0 +1,32 @@
+Parental Control — dedicated Search Results images, 2026-10-30
+
+Russian: ru/search-3840x2560.png
+English: en/search-3840x2560.png
+
+Final files: PNG, RGB, no alpha; 3840 x 2560 pixels, 3:2.
+Generated with built-in image_gen at 1536 x 1024, then resized using sips.
+Generation prompts: prompts.txt. Generated originals preserved next to exports.
+Source: ../en/search-5244x2950.png (the latest noStars artwork).
+Russian wording matched ../ru/search-5244x2950.png.
+
+Changed only composition/aspect ratio for a dedicated search placement, with safe outer
+background margins. Preserved mother/son, cyan shield, lavender phone, soft mint background,
+gold laurels and care caption. No stars or trust claims restored.
+All prior Search assets and all Header assets are untouched. App code is unchanged.
+Local visual inspection and dimensions/alpha checks passed.
+No upload, review submission, or publication was performed.
+
+Assign only to Search Results, separately for the appropriate locale. Do not enable
+Use header asset in search results. Leave Header unchanged.
+Verify both files in App Store Connect Search Results preview before publishing:
+Apple's actual device/localization framing has not been tested in this task.
+
+If the app is already approved, creative assets may be submitted independently via Asset Library.
+After approval, select them for the published version's Search Results placement and Publish.
+If the app still has no approved version, follow Apple's first-version submission requirements;
+these files do not alter or resolve any outstanding app-review entitlement issue.
+
+Specifications:
+https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications
+Submission:
+https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-assets-from-asset-library
