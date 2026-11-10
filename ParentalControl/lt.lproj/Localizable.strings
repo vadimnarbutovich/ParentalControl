@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "Paprašyk tėvų užbaigti sąranką abiejuose telefonuose.";
 "recovery.install.body" = "Jei programėlė buvo ištrinta ir iš vaiko telefono, [nusiųskite nuorodą](%@) arba nuskaitykite QR kodą, kad ją įdiegtumėte iš naujo. Tada vaiko telefone atidarykite programėlę ir pasirinkite „%@“.";
 "recovery.install.continue" = "Jau įdiegta — tęsti";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "Šeimos ID";
+"settings.family_id.copy" = "Kopijuoti ID";
+"settings.family_id.unavailable" = "Šiame įrenginyje nėra šeimos.";

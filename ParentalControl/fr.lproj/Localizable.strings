@@ -695,3 +695,8 @@
 "access.banner.setup.child.body" = "Demande à ton parent de terminer la configuration des deux téléphones.";
 "recovery.install.body" = "Si l’app a aussi été supprimée du téléphone de votre enfant, [envoyez le lien](%@) ou scannez le QR code pour la réinstaller. Ouvrez ensuite l’app sur son téléphone et choisissez « %@ ».";
 "recovery.install.continue" = "Déjà installée — continuer";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID de la famille";
+"settings.family_id.copy" = "Copier l’ID";
+"settings.family_id.unavailable" = "Aucune famille n’est configurée sur cet appareil.";

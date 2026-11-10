@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "Помоли родителя си да завърши настройката на двата телефона.";
 "recovery.install.body" = "Ако приложението е изтрито и от телефона на детето, [изпратете връзката](%@) или сканирайте QR кода, за да го инсталирате отново. След това отворете приложението на телефона на детето и изберете „%@“.";
 "recovery.install.continue" = "Вече е инсталирано — напред";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID на семейството";
+"settings.family_id.copy" = "Копиране на ID";
+"settings.family_id.unavailable" = "На това устройство няма семейство.";

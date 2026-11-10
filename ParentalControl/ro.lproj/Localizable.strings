@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "Roagă un părinte să finalizeze configurarea pe ambele telefoane.";
 "recovery.install.body" = "Dacă aplicația a fost ștearsă și de pe telefonul copilului, [trimite linkul](%@) sau scanează codul QR pentru a o reinstala. Apoi deschide aplicația pe telefonul copilului și alege „%@”.";
 "recovery.install.continue" = "Deja instalată — continuă";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID familie";
+"settings.family_id.copy" = "Copiază ID";
+"settings.family_id.unavailable" = "Nu există nicio familie pe acest dispozitiv.";

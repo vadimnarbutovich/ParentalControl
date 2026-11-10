@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "სთხოვე მშობელს, ორივე ტელეფონზე დაასრულოს დაყენება.";
 "recovery.install.body" = "თუ აპი ბავშვის ტელეფონიდანაც წაიშალა, [გააგზავნეთ ბმული](%@) ან დაასკანერეთ QR კოდი მის ხელახლა დასაყენებლად. შემდეგ გახსენით აპი ბავშვის ტელეფონზე და აირჩიეთ „%@“.";
 "recovery.install.continue" = "უკვე დაყენებულია — გაგრძელება";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ოჯახის ID";
+"settings.family_id.copy" = "ID-ის კოპირება";
+"settings.family_id.unavailable" = "ამ მოწყობილობაზე ოჯახი არ არის.";

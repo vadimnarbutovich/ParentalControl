@@ -699,3 +699,8 @@
 "access.banner.setup.child.body" = "Ask your parent to finish setting up both phones.";
 "recovery.install.body" = "If the app was also deleted from your child’s phone, [send the link](%@) or scan the QR code to reinstall it. Then open the app on that phone and choose “%@”.";
 "recovery.install.continue" = "Already installed — continue";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "Family ID";
+"settings.family_id.copy" = "Copy ID";
+"settings.family_id.unavailable" = "This device has no family.";

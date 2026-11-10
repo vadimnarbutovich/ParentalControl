@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "Ата-анаңнан екі телефонда да баптауды аяқтауын сұра.";
 "recovery.install.body" = "Қолданба баланың телефонынан да жойылса, оны қайта орнату үшін [сілтемені жіберіңіз](%@) немесе QR кодын сканерлеңіз. Содан кейін баланың телефонында қолданбаны ашып, «%@» тармағын таңдаңыз.";
 "recovery.install.continue" = "Орнатылған — жалғастыру";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "Отбасы ID-і";
+"settings.family_id.copy" = "ID-ді көшіру";
+"settings.family_id.unavailable" = "Бұл құрылғыда отбасы жоқ.";

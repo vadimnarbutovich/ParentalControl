@@ -638,3 +638,8 @@
 "access.banner.setup.child.body" = "Ota-onangdan ikkala telefonda ham sozlashni yakunlashni so‘ra.";
 "recovery.install.body" = "Ilova bolaning telefonidan ham o‘chirilgan bo‘lsa, uni qayta o‘rnatish uchun [havolani yuboring](%@) yoki QR kodni skanerlang. So‘ng bolaning telefonida ilovani ochib, «%@» bandini tanlang.";
 "recovery.install.continue" = "O‘rnatilgan — davom etish";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "Oila ID raqami";
+"settings.family_id.copy" = "ID nusxalash";
+"settings.family_id.unavailable" = "Bu qurilmada oila mavjud emas.";

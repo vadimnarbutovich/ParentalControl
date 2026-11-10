@@ -699,3 +699,8 @@
 "access.banner.setup.child.body" = "Попроси родителя завершить настройку на обоих телефонах.";
 "recovery.install.body" = "Если приложение удалили и с телефона ребёнка, [отправьте ссылку](%@) или отсканируйте QR-код, чтобы установить его снова. Затем откройте приложение на телефоне ребёнка и выберите «%@».";
 "recovery.install.continue" = "Уже установлено — продолжить";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID семьи";
+"settings.family_id.copy" = "Скопировать ID";
+"settings.family_id.unavailable" = "На этом устройстве нет семьи.";

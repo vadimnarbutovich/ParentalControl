@@ -695,3 +695,8 @@
 "access.banner.setup.child.body" = "请家长完成两部手机的设置。";
 "recovery.install.body" = "如果孩子手机上的应用也已删除，请[发送链接](%@)或扫描二维码重新安装。然后在孩子的手机上打开应用，选择“%@”。";
 "recovery.install.continue" = "已安装 — 继续";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "家庭 ID";
+"settings.family_id.copy" = "复制 ID";
+"settings.family_id.unavailable" = "此设备尚未设置家庭。";
