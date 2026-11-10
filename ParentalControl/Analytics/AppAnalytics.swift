@@ -11,8 +11,6 @@ enum PaywallOpenSource: String {
 @MainActor
 enum AppAnalytics {
     private static var didActivate = false
-    private static var role = "unselected"
-    private static var parentMode = false
 
     /// Public SDK key of the separate ParentalControl project. Never use an OAuth token here.
     private static let metricaAPIKey = "9edea000-9fd2-4da0-9b68-845eedb8bf86"
@@ -23,12 +21,6 @@ enum AppAnalytics {
         #else
         return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" ? "sandbox" : "release"
         #endif
-    }
-
-    static func updateContext(role: String?, parentMode: Bool) {
-        let candidate = role ?? "unselected"
-        self.role = ["parent", "child"].contains(candidate) ? candidate : "unselected"
-        self.parentMode = parentMode
     }
 
     /// Однократная активация SDK.
@@ -50,7 +42,7 @@ enum AppAnalytics {
         configuration.revenueAutoTrackingEnabled = false
         configuration.areLogsEnabled = false
         configuration.appEnvironment = [
-            "app": "parental_control", "schema_version": "2", "distribution": distribution
+            "app": "parental_control", "schema_version": "3", "distribution": distribution
         ]
         AppMetrica.activate(with: configuration)
         didActivate = true
@@ -58,19 +50,16 @@ enum AppAnalytics {
     }
 
     static func report(_ name: String, parameters: [String: Any]? = nil) {
-        guard var safe = AnalyticsSchema.sanitized(name, parameters: parameters) else { return }
-        safe["app"] = "parental_control"
-        safe["schema_version"] = 2
-        safe["role"] = role
-        safe["parent_mode"] = parentMode
-        safe["distribution"] = distribution
+        // Event payload contains only fields declared for this specific action.
+        // Technical build information belongs to SDK environment, not each payload.
+        guard let safe = AnalyticsSchema.sanitized(name, parameters: parameters) else { return }
         #if DEBUG
         // Sanitized names/parameters only. No SDK initialization or network traffic in Debug.
         print("[AppAnalytics/local] \(name) \(safe)")
         #else
         activateMetricaIfNeeded()
         guard didActivate else { return }
-        AppMetrica.reportEvent(name: name, parameters: safe)
+        AppMetrica.reportEvent(name: name, parameters: safe.isEmpty ? nil : safe)
         #endif
     }
 }

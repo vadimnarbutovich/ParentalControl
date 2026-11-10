@@ -41,6 +41,11 @@ for (const property of ['locationTracking', 'accurateLocationTracking', 'allowsB
   assert(analytics.includes(`configuration.${property} = false`), property);
 }
 assert(!analytics.includes('sendEventsBuffer'), 'Do not flush each event');
+assert(!analytics.includes('updateContext'), 'No implicit mutable event context');
+const report = analytics.slice(analytics.indexOf('static func report('));
+assert(!/safe\s*\[[^\]]+\]\s*=/.test(report), 'No fields appended after schema filtering');
+assert(report.includes('parameters: safe.isEmpty ? nil : safe'), 'Empty events sent without parameters');
+assert(analytics.includes('"schema_version": "3"'), 'Technical version retained only in SDK environment');
 const state = read('ParentalControl/App/AppState.swift');
 const polling = state.slice(state.indexOf('private func startRemotePollingIfNeeded()'),
   state.indexOf('private func processPendingRemoteCommandsIfNeeded()'));

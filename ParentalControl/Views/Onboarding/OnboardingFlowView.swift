@@ -161,7 +161,8 @@ struct OnboardingFlowView: View {
         .task { await appState.refreshPermissionStatuses() }
         .task(id: step) {
             AppAnalytics.report("onboarding_step_shown", parameters: [
-                "mode": onReplayFinished == nil ? "first_launch" : "replay", "step": step.rawValue
+                "mode": onReplayFinished == nil ? "first_launch" : "replay", "step": step.rawValue,
+                "role": isParent ? "parent" : "child"
             ])
             // Only one explicit refresh on entry. No extra timers on either phone.
             if recoverySteps == nil && (step == .pin || step == .limit) { await appState.refreshSetupStatus() }
@@ -566,7 +567,9 @@ struct OnboardingFlowView: View {
     }
 
     private func advance() {
-        AppAnalytics.report("onboarding_step_continue", parameters: ["step": step.rawValue, "ready": canAdvance])
+        AppAnalytics.report("onboarding_step_continue", parameters: [
+            "step": step.rawValue, "ready": canAdvance, "role": isParent ? "parent" : "child"
+        ])
         if stepIndex + 1 < steps.count { stepIndex += 1 }
         else {
             AppAnalytics.report("onboarding_closed", parameters: [

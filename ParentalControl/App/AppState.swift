@@ -513,7 +513,6 @@ final class AppState: ObservableObject {
         clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
         deviceRole = role
-        AppAnalytics.updateContext(role: role.rawValue, parentMode: false)
         AppAnalytics.report("role_selected", parameters: ["role": role.rawValue])
         restoreParentBudgetCache()
         isParentChildStateResolved = role != .parent
@@ -882,8 +881,11 @@ final class AppState: ObservableObject {
             guard pairingState?.familyID == requestedFamily else { return false }
             receiveParentBudget(saved)
             budgetChangeIntent = nil
-            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds,
-                "limit_mode": saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"])
+            var analyticsParameters: [String: Any] = ["kind": kind, "seconds": seconds]
+            if kind == "limit" {
+                analyticsParameters["limit_mode"] = saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"
+            }
+            AppAnalytics.report("daily_budget_saved", parameters: analyticsParameters)
             return true
         } catch {
             AppAnalytics.report("daily_budget_save_failed", parameters: ["kind": kind])
@@ -1194,7 +1196,6 @@ final class AppState: ObservableObject {
         case .notConfigured: analyticsResult = "not_configured"
         case .unavailable: analyticsResult = "unavailable"
         }
-        AppAnalytics.updateContext(role: deviceRole?.rawValue, parentMode: isParentModeActive)
         AppAnalytics.report("parent_mode_enter", parameters: ["result": analyticsResult])
         return result
     }

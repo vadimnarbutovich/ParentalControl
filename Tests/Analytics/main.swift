@@ -50,4 +50,26 @@ for plan in ["annual", "monthly", "lifetime"] {
 }
 check(AnalyticsSchema.sanitized("purchase_started", parameters: ["plan": "weekly"])?.isEmpty == true,
       "Reject removed weekly plan")
+let context: [String: Any] = ["app": "parental_control", "schema_version": 3,
+    "distribution": "release", "role": "child", "parent_mode": true]
+let roleEvents: Set<String> = ["role_selected", "onboarding_flow_shown", "onboarding_step_shown",
+    "onboarding_step_continue", "onboarding_closed", "onboarding_permission_request"]
+for name in AnalyticsSchema.events.keys {
+    let payload = AnalyticsSchema.sanitized(name, parameters: context)!
+    check(payload.count == (roleEvents.contains(name) ? 1 : 0), "\(name): no unrelated context")
+}
+check(AnalyticsSchema.sanitized("settings_rate_app_tap", parameters: nil)?.isEmpty == true,
+      "Simple taps need no payload")
+let tab = AnalyticsSchema.sanitized("main_tab_select", parameters: context.merging(["tab": "map"]) { _, new in new })!
+check(tab.count == 1 && tab["tab"] as? String == "map", "Navigation contains only the destination")
+check(AnalyticsSchema.sanitized("onboarding_step_shown", parameters: ["role": "parent"])?["role"] as? String == "parent",
+      "Onboarding keeps the explicitly supplied role")
+for name in ["purchase_result", "restore_result"] {
+    check(AnalyticsSchema.sanitized(name, parameters: ["result": "pending_verification"])?["result"] as? String == "pending_verification",
+          "\(name): retain pending verification")
+}
+check(AnalyticsSchema.sanitized("parent_mode_enter", parameters: ["result": "unavailable"])?["result"] as? String == "unavailable",
+      "Retain unavailable PIN outcome")
+check(AnalyticsSchema.sanitized("remote_block_result", parameters: ["result": "pending_verification"])?.isEmpty == true,
+      "Purchase-only outcome cannot leak into command results")
 print("PASS: \(checks) analytics configuration and privacy checks")

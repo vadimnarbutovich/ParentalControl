@@ -33,8 +33,8 @@ enum AnalyticsSchema {
     static let events: [String: [String: Rule]] = [
         "role_selected": ["role": role],
         "onboarding_flow_shown": ["mode": mode, "role": role],
-        "onboarding_step_shown": ["mode": mode, "step": step],
-        "onboarding_step_continue": ["step": step, "ready": .boolean],
+        "onboarding_step_shown": ["mode": mode, "step": step, "role": role],
+        "onboarding_step_continue": ["step": step, "ready": .boolean, "role": role],
         "onboarding_closed": ["mode": mode, "role": role],
         "onboarding_share_app": [:],
         "onboarding_permission_request": ["permission": permission, "role": role],
@@ -42,7 +42,7 @@ enum AnalyticsSchema {
         "pairing_code_request": ["result": result],
         "pairing_join": ["result": result],
         "devices_unlink": ["result": result],
-        "parent_mode_enter": ["result": .choice(["success", "wrong_pin", "locked_out", "not_configured"])],
+        "parent_mode_enter": ["result": .choice(["success", "wrong_pin", "locked_out", "not_configured", "unavailable"])],
         "parent_mode_exit_tap": [:],
         "parent_pin_change": ["action": .choice(["set", "clear"]), "result": result],
         "main_tab_select": ["tab": .choice(["home", "tasks", "schedule", "map", "statistics", "blocklist", "settings", "parentEntry"])],
@@ -83,9 +83,10 @@ enum AnalyticsSchema {
         "paywall_open": ["source": .choice(["settings", "dashboard_badge", "limited_feature"])],
         "paywall_cta_tap": ["cta_type": .choice(["continue", "start_trial"])],
         "purchase_started": ["plan": .choice(["monthly", "annual", "lifetime", "other"])],
-        "purchase_result": ["plan": .choice(["monthly", "annual", "lifetime", "other"]), "result": result],
+        "purchase_result": ["plan": .choice(["monthly", "annual", "lifetime", "other"]),
+            "result": .choice(["success", "failed", "cancelled", "pending_verification"])],
         "restore_started": [:],
-        "restore_result": ["result": .choice(["restored", "no_active_subscription", "failed"])]
+        "restore_result": ["result": .choice(["restored", "no_active_subscription", "failed", "pending_verification"])]
     ]
 
     static func sanitized(_ name: String, parameters: [String: Any]?) -> [String: Any]? {
