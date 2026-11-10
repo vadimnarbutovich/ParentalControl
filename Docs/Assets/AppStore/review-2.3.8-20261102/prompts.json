@@ -1,0 +1,91 @@
+{
+  "out": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/review-2.3.8-20261102",
+  "genBase": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/",
+  "entries": [
+    {
+      "file": "en/02-dashboard-1206x2622.png",
+      "source": "exec-004dd5df-5de9-407a-93c8-28144ea98d3a.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas."
+    },
+    {
+      "file": "ru/02-dashboard-1206x2622.png",
+      "source": "exec-420547ea-f1ad-434e-9354-a7a8ac46a29d.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Edit this finished image. In the first headline line \"Помогайте семье\", change ONLY the lowercase Cyrillic letter \"а\" after \"г\" to a clean SINGLE-STOREY rounded а glyph: a closed oval bowl plus straight right-hand stem. No upper hook, no open aperture, no notch, no pale slit. Match neighboring teal color, weight, height and baseline. Keep all wording exactly. Move the entire three-line headline block DOWN25pixels to balance top/bottom spacing within existing header. Phone and entire rest of image absolutely unchanged. Same portrait canvas ratio."
+    },
+    {
+      "file": "en/05-location-1206x2622.png",
+      "source": "exec-b8686903-7072-4678-8aec-48b5f92f736e.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas."
+    },
+    {
+      "file": "ru/05-location-1206x2622.png",
+      "source": "exec-7de22050-8450-4d5c-9ffb-166597a166e1.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas."
+    },
+    {
+      "file": "en/header-3840x1646.png",
+      "source": "exec-aaee8a34-2e89-4d45-8461-14a682cff23f.png",
+      "width": 3840,
+      "height": 1646,
+      "prompt": "Edit only the gold caption between the golden laurels in this finished very wide App Store header. Replace \"With care for your child\" with exactly \"With care for your family\", two centered lines \"With care\" and \"for your family\", same gold 3D lettering. Keep \"Parental control. Made simple.\" exactly unchanged. Preserve everything else: the mother and son, their faces, phone, shield, pedestal, laurels, pale mint/cyan flowing background. Preserve exact original composition, element scale and positions, and generous outer safe margins. Do not zoom in or crop. Wide aspect ratio 3840:1646. No added elements, no stars, opaque."
+    },
+    {
+      "file": "ru/header-3840x1646.png",
+      "source": "exec-9e9d1a27-4b4e-4e20-8f4d-741b83fa2660.png",
+      "width": 3840,
+      "height": 1646,
+      "prompt": "Edit only the golden Russian caption between laurels. Replace it with exactly \"С заботой о вашей семье\", arranged as \"С заботой\" / \"о вашей семье\", same gold dimensional typography. Keep the main headline \"Родительский контроль\" / \"Просто и понятно\" unchanged. Preserve all imagery, people, shield, pedestal, flowing mint cyan background, laurels, original scale, positions and outer safe margins. No crop or zoom, no added stars. Wide App Store header aspect ratio 3840:1646, opaque."
+    },
+    {
+      "file": "en/cover-1206x2622.png",
+      "source": "exec-fc437d1f-4dfe-4934-999e-824ec82c9c25.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Use case:text-localization. Edit target supplied portrait cover. Replace ONLY the gold caption between laurels near bottom with exactly \"With care\" / \"for your family\", on two centered lines in same gold lettering style. Preserve every other element: main headline, mother and son, faces, phone, shield, pedestal, laurels, mint background. Same positions, scale and portrait1206:2622 proportions. No stars or new elements."
+    },
+    {
+      "file": "ru/cover-1206x2622.png",
+      "source": "exec-d064b148-bdc1-4c65-a56b-abb02c6b4439.png",
+      "width": 1206,
+      "height": 2622,
+      "prompt": "Use case:text-localization. Edit target supplied portrait cover. Replace ONLY the gold caption between laurels near bottom with exactly \"С заботой\" / \"о вашей семье\", on two centered lines in same gold lettering style. Preserve every other element: main headline, mother and son, faces, phone, shield, pedestal, laurels, mint background. Same positions, scale and portrait1206:2622 proportions. No stars or new elements."
+    },
+    {
+      "file": "en/search-3840x2560.png",
+      "source": "exec-d25cdc57-7b93-4162-b054-50ca7b2f0af6.png",
+      "width": 3840,
+      "height": 2560,
+      "prompt": "Use case:text-localization. Edit target supplied LANDSCAPE App Store search creative. Replace ONLY gold caption between laurels with exactly \"With care\" / \"for your family\", two centered lines, same gold font. Preserve main headline exactly as in input. Preserve mother and son, shield, pedestal, laurels, background ribbons, colors. Keep EXACT original element positions, scale, and generous outer safe margins so no cropping occurs. LANDSCAPE3:2 canvas3840:2560. No zoom, no added elements/stars."
+    },
+    {
+      "file": "ru/search-3840x2560.png",
+      "source": "exec-cf14a63d-8e8e-45f9-abad-d14d0795ee43.png",
+      "width": 3840,
+      "height": 2560,
+      "prompt": "Use case:text-localization. Edit target supplied LANDSCAPE App Store search creative. Replace ONLY gold caption between laurels with exactly \"С заботой\" / \"о вашей семье\", two centered lines, same gold font. Preserve main headline exactly as in input. Preserve mother and son, shield, pedestal, laurels, background ribbons, colors. Keep EXACT original element positions, scale, and generous outer safe margins so no cropping occurs. LANDSCAPE3:2 canvas3840:2560. No zoom, no added elements/stars."
+    }
+  ],
+  "prompts": {
+    "en_dash_prompt": "Edit only the marketing text ABOVE the phone in this existing finished App Store screenshot. Replace the existing large headline with exactly: \"Help your family use their phones mindfully\". Arrange 3 centered balanced lines: \"Help your family\" in the same large bold teal font, \"use their phones\" and \"mindfully\" in the same bold dark navy font. Completely remove the small subtitle \"More balance. Less screen time\" and restore the pale mint background behind it. Use the existing headline area plus the freed subtitle area to give the headline comfortable spacing, keep a clear gap above the phone. Preserve the entire phone, every UI pixel, numeric value, label, badge, background ribbons, shadows, placement and scale as faithfully as possible; do not redesign, redraw or change any UI. The small badge on the phone is NOT the subtitle: keep it. No new labels. Same portrait aspect ratio 1206:2622, opaque image.",
+    "ru_dash_prompt": "Use case: text-localization. Edit the existing Russian App Store artwork only in the marketing text ABOVE the phone. Replace the headline with EXACT Russian text \"Помогайте семье пользоваться телефоном осознанно\". Use 3 centered lines: \"Помогайте семье\" in the same very bold teal typography, \"пользоваться телефоном\" and \"осознанно\" in bold dark navy; keep legibility and comfortable margins. Completely REMOVE small subtitle \"Больше баланса / Меньше экранного времени\", leaving the pale mint background. Keep a clear gap between heading and phone. Preserve phone position and size, every UI label and number, buttons, icons, badge, background cyan ribbons and shadows. The floating white badge is NOT a subtitle; preserve it. No extra captions or elements. Same portrait aspect ratio 1206:2622, opaque.",
+    "en_map_prompt": "Use case: text-localization. Edit only marketing wording ABOVE the phone in this App Store artwork. Replace the large headline with exactly \"Know where your loved ones are\" arranged in 3 centered bold lines: \"Know where\" in teal, \"your loved ones\" in dark navy, \"are\" in dark navy; make these visually balanced within the original top text region. Remove the small subtitle \"Check your child's location from your phone.\" completely, restoring its pale mint background. No small subtitle. Preserve the phone at exactly the existing position and scale, keep the entire phone screen, all map labels, UI text including Child location, character marker, numbers, buttons and icons unchanged. Preserve pale mint/cyan ribbon background and shadows, no redesign or new elements. Clear space between heading and phone. Portrait 1206:2622 opaque.",
+    "ru_map_prompt": "Use case: text-localization. Edit only marketing words ABOVE the phone in this existing Russian App Store artwork. Replace large headline with exact text \"Знайте, где ваши близкие\" on two centered lines: \"Знайте, где\" in same very bold teal typography; \"ваши близкие\" in bold dark navy. Remove the small subtitle \"Узнавайте местоположение ребёнка со своего телефона\" completely and seamlessly restore pale mint background. No subtitle. Preserve the entire phone position, size, all UI text including Местоположение ребёнка, all map labels, map features, character marker, numbers, buttons and icons. Preserve pale mint/cyan ribbons and shadows. Do not redraw or redesign the interface, no new elements. Comfortable gap between headline and phone. Same 1206:2622 portrait aspect ratio, opaque.",
+    "en_dash_v2_prompt": "Use case: text-localization. Edit target: supplied App Store screenshot. Improve ONLY marketing headline typography and placement. Exact text in 3 centered lines: \"Help your family\" / \"use their phones\" / \"mindfully\". First line teal, others navy. Enlarge heading approximately 10%, use almost full width with equal safe left/right margins ~4%. Center entire text block vertically in space ABOVE phone: equal visible gap from canvas top to letters and from last letters to phone top (about 35-40px in supplied 851px wide image). Reduce the excessive blank gap below headline. Crisp solid heavy sans-serif glyphs, clear word spacing, no notches/cutouts. No small subtitle. Preserve phone position/scale, full UI text, all numbers, background ribbons, badge and everything below headline exactly. Portrait ratio1206:2622, opaque.",
+    "en_dash_v3_prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas.",
+    "ru_dash_v3_prompt": "Edit ONLY the top headline in supplied image, leaving phone and everything else exactly in place. Keep exact canvas851x1848 aspect (1206:2622). DO NOT shrink or lower phone. Replace headline with same wording in THREE lines: \"Помогайте семье\" / \"пользоваться телефоном\" / \"осознанно\". First line teal, rest navy. Enlarge first line to fill92% width, enlarge second line to92% width and third line same font size as first. Text block top at40px, last baseline around300px, phone top stays342px. Thus block centered vertically between top edge and phone with similar gap above/below. Clean heavy Cyrillic glyphs without decorative cutouts: particularly а in Помогайте should be fully solid, smooth continuous outline with only its normal counter. Remove the fleck interrupting а in current image. All remaining image identical, no small subtitle, no extra bottom padding.",
+    "ru_dash_v4_prompt": "Typography repair only. Supplied image is edit target. Replace the ENTIRE first headline line \"Помогайте семье\" with the same text in a DIFFERENT font: standard Arial Bold or Helvetica Bold, solid teal, NOT the existing stylized geometric display font. Existing Cyrillic а has a pale slit cutting its upper-left outer stroke; this is wrong. Use normal smooth conventional Cyrillic Arial а. Re-render all letters of that first line with normal glyphs and obvious spaces. Keep line almost full width, bold and large. Move ALL THREE headline lines downward by30pixels within existing mint header so text block is centered between image top and phone, even top/bottom margins. Keep exact words, remaining dark navy lines, phone pixel position/scale, UI and everything else unchanged. No added canvas. Same851x1848 aspect.",
+    "ru_dash_v5_prompt": "Edit this finished image. In the first headline line \"Помогайте семье\", change ONLY the lowercase Cyrillic letter \"а\" after \"г\" to a clean SINGLE-STOREY rounded а glyph: a closed oval bowl plus straight right-hand stem. No upper hook, no open aperture, no notch, no pale slit. Match neighboring teal color, weight, height and baseline. Keep all wording exactly. Move the entire three-line headline block DOWN25pixels to balance top/bottom spacing within existing header. Phone and entire rest of image absolutely unchanged. Same portrait canvas ratio.",
+    "en_map_v2_prompt": "Edit this screenshot. Two exact changes only. 1) Above phone enlarge and rebalance headline into THREE centered lines \"Know where\" / \"your loved\" / \"ones are\". First line teal, remaining navy. Large bold clean sans serif lettering, headline width90% of canvas, evenly distribute headline within original top region, top and bottom clear gaps about30px on supplied851px wide image. No small subtitle. 2) Replace white title INSIDE phone from \"Child location\" to exactly \"Location\", same font/size/position. Preserve phone size and position, all map content, map text, marker, bottom UI, background and shadows. Keep same original portrait aspect ratio1206:2622; do not add canvas below or change proportions.",
+    "en_map_v3_prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas.",
+    "ru_map_v2_prompt": "Edit target supplied Russian App Store screenshot. Only two text edits. 1) Make top headline larger and vertically centered in available space above phone. Exact TWO lines \"Знайте, где\" in teal / \"ваши близкие\" in navy. Very large bold clean sans-serif glyphs, second line fills92% width with4% margins. Move down slightly and enlarge so top visible gap and gap above phone are equal, about50px each on this851px wide image. No subtitle. 2) Inside phone replace \"Местоположение ребёнка\" with exactly \"Местоположение\" in same white UI font, centered same position. Preserve entire phone position and size, all other map/UI text, all map details, marker, buttons and background unchanged. Keep original portrait aspect ratio1206:2622, no extra canvas.",
+    "ru_map_v3_prompt": "Precise layout edit only. Move the entire large marketing headline block ABOVE the phone DOWN by 25 pixels on this851px-wide image, without resizing any letters or changing any words or line breaks. Purpose: equal visual whitespace above headline and below headline before phone. Fill vacated background seamlessly. Preserve phone pixel position, size, all UI labels including Location or Местоположение, map and every other element exactly. Keep same851:1848 portrait aspect ratio, no added canvas."
+  }
+}

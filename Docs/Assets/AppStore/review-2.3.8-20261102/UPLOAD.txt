@@ -1,0 +1,20 @@
+ParentalControl — review 2.3.8 — 2026-11-02
+LOCAL ASSETS ONLY. No App Store Connect writes or review submission performed.
+
+en/ and ru/ contain complete image sets.
+Screenshots: 1206 x 2622. Header: 3840 x 1646. Search: 3840 x 2560.
+All edited PNG files are opaque (no alpha).
+Dashboard and location: larger centered marketing headlines; no small subtitles.
+Location title inside screenshot: Location / Местоположение.
+Russian Помогайте uses a closed single-storey а without broken contour.
+Cover, header, search: With care for your family / С заботой о вашей семье.
+Schedule and tasks are byte-identical copies of the original assets (see unchanged.json).
+Keep their current order in App Store Connect; English and Russian currently differ.
+Upload search separately; do not reuse header for search.
+
+metadata-proposal.json: suggested name/subtitle edits, NOT applied.
+prompts.json: built-in image_gen prompts and provenance.
+originals/: generated originals before technical resize. Not upload assets.
+
+These are image edits only; application code and localization resources were not changed.
+Inspect App Store Connect placement previews after selecting new creative assets.
