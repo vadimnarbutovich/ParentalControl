@@ -31,6 +31,7 @@ nonisolated enum BudgetMonitorRearm {
             original.monitorEvent = initial.monitorEvent
             original.monitorThreshold = initial.monitorThreshold
             original.monitorStartedAt = initial.monitorStartedAt
+            original.monitorPlan = initial.monitorPlan
             guard original == initial else { return .superseded }
             expected = armed
             guard current() else { return .superseded }

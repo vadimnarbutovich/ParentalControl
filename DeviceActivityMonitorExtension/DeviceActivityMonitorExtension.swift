@@ -100,9 +100,13 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             do {
                 guard let current = try DailyBudgetStore.shared.current() else { return }
                 if current.monitorEvent == nil { enforceDailyBudget(restartUsage: true); return }
-                guard current.monitorEvent == event.rawValue else { return }
-                _ = try DailyBudgetStore.shared.consume(event: event.rawValue)
-                enforceDailyBudget(restartUsage: true)
+                guard current.threshold(for: event.rawValue) != nil else { return }
+                guard let consumed = try DailyBudgetStore.shared.consume(event: event.rawValue),
+                      consumed.usedSeconds != current.usedSeconds || consumed.monitorEvent != current.monitorEvent else { return }
+                Logger(subsystem: "mycompny.ParentalControl", category: "BudgetMonitor")
+                    .info("Usage threshold=\(current.threshold(for: event.rawValue) ?? 0, privacy: .public) delta=\(consumed.usedSeconds - current.usedSeconds, privacy: .public) remaining=\(consumed.availableSeconds, privacy: .public) windowEnded=\(consumed.monitorEvent == nil, privacy: .public)")
+                // Intermediate cumulative events keep the same system monitor alive.
+                enforceDailyBudget()
                 BackgroundUsageUploader.shared.scheduleFromMonitor()
             } catch { enforceDailyBudget() }
             return
@@ -214,20 +218,24 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                 let threshold = max(1, min(preferredChunkSeconds(for: state.availableSeconds), state.availableSeconds))
                 let schedule = DeviceActivitySchedule(
                     intervalStart: DateComponents(hour: 0, minute: 0),
-                    intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: true,
-                    warningTime: DateComponents(minute: 5))
-                let event = DeviceActivityEvent(applications: selection.applicationTokens,
-                    categories: selection.categoryTokens, webDomains: selection.webDomainTokens,
-                    threshold: DateComponents(second: threshold), includesPastActivity: false)
+                    intervalEnd: DateComponents(hour: 23, minute: 59, second: 59), repeats: true)
+                let plan = BudgetUsagePlan.make(used: state.usedSeconds, available: state.availableSeconds)
                 guard !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty ||
                         !selection.webDomainTokens.isEmpty else { return }
                 let outcome = BudgetMonitorRearm.run(expected: state,
                     read: { try DailyBudgetStore.shared.current() },
                     contextIsCurrent: contextIsCurrent,
-                    arm: { try DailyBudgetStore.shared.arm(threshold: threshold, matching: state) },
+                    arm: { try DailyBudgetStore.shared.arm(threshold: threshold, matching: state, cumulative: true) },
                     stop: { center.stopMonitoring([self.activityName]) },
-                    start: { try center.startMonitoring(self.activityName, during: schedule,
-                        events: [DeviceActivityEvent.Name($0): event]) })
+                    start: { generation in
+                        let events = Dictionary(uniqueKeysWithValues: plan.events(generation: generation).map {
+                            (DeviceActivityEvent.Name($0.name), DeviceActivityEvent(
+                                applications: selection.applicationTokens, categories: selection.categoryTokens,
+                                webDomains: selection.webDomainTokens, threshold: DateComponents(second: $0.seconds),
+                                includesPastActivity: false))
+                        })
+                        try center.startMonitoring(self.activityName, during: schedule, events: events)
+                    })
                 switch outcome {
                 case .superseded:
                     recordBudgetDiagnostic("monitor.superseded")

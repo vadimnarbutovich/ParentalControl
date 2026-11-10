@@ -197,7 +197,8 @@ nonisolated enum ScreenTimeEnforcer {
             return try complete(monitoring: false)
         }
 
-        struct Signature: Codable {
+        struct Signature: Encodable {
+            let accountingVersion = 2
             let selection: Data?
             let day: String?
             let seconds: Int
@@ -217,16 +218,21 @@ nonisolated enum ScreenTimeEnforcer {
             // arm() holds only its own short data lock, never over startMonitoring.
             try validate()
             let event = stamp.budgetEnabled
-                ? try DailyBudgetStore.shared.arm(threshold: threshold, matching: state.budget) : "parentalcontrol.usageBudget"
+                ? try DailyBudgetStore.shared.arm(threshold: threshold, matching: state.budget, cumulative: true) : "parentalcontrol.usageBudget"
             if stamp.budgetEnabled { expectedEvent = event }
             try system { center.stopMonitoring([usage]) }
             do {
                 try system {
-                    try center.startMonitoring(usage, during: dailySchedule, events: [
-                        DeviceActivityEvent.Name(event): DeviceActivityEvent(applications: state.selection.applicationTokens,
-                            categories: state.selection.categoryTokens, webDomains: state.selection.webDomainTokens,
-                            threshold: DateComponents(second: threshold), includesPastActivity: false)
-                    ])
+                    let registrations = stamp.budgetEnabled
+                        ? BudgetUsagePlan.make(used: stamp.usedSeconds, available: stamp.available).events(generation: event)
+                        : [(name: event, seconds: threshold)]
+                    let events = Dictionary(uniqueKeysWithValues: registrations.map {
+                        (DeviceActivityEvent.Name($0.name), DeviceActivityEvent(
+                            applications: state.selection.applicationTokens, categories: state.selection.categoryTokens,
+                            webDomains: state.selection.webDomainTokens, threshold: DateComponents(second: $0.seconds),
+                            includesPastActivity: false))
+                    })
+                    try center.startMonitoring(usage, during: dailySchedule, events: events)
                 }
             } catch {
                 // A late / failed registration cannot be treated as a healthy monitor.

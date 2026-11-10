@@ -77,6 +77,31 @@ nonisolated struct DailyBudgetOperation: Codable, Equatable {
     let seconds: Int
 }
 
+/// One bounded generation of cumulative usage events. All thresholds share the
+/// same system start time; delayed callbacks must not restart that clock.
+nonisolated struct BudgetUsagePlan: Codable, Equatable {
+    let baselineUsedSeconds: Int
+    let thresholds: [Int]
+
+    static func make(used: Int, available: Int) -> Self {
+        let end = min(600, max(1, available))
+        let step = available < 60 ? 10 : 30
+        var thresholds = Array(stride(from: step, to: end, by: step))
+        thresholds.append(end)
+        return Self(baselineUsedSeconds: used, thresholds: thresholds)
+    }
+
+    var isValid: Bool {
+        (0...691200).contains(baselineUsedSeconds) && !thresholds.isEmpty &&
+        thresholds.count <= 20 && thresholds.allSatisfy { (1...600).contains($0) } &&
+        zip(thresholds, thresholds.dropFirst()).allSatisfy { $0 < $1 }
+    }
+
+    func events(generation: String) -> [(name: String, seconds: Int)] {
+        thresholds.map { (generation + "." + String($0), $0) }
+    }
+}
+
 nonisolated struct DailyBudgetState: Codable, Equatable {
     var policy: DailyBudgetPolicy
     var day: String
@@ -87,11 +112,51 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
     var monitorEvent: String?
     var monitorThreshold: Int = 0
     var monitorStartedAt: TimeInterval = 0
+    var monitorPlan: BudgetUsagePlan?
     var cappedAdjustmentsVersion: Int?
     var budgetSeconds: Int { max(0, policy.limitSeconds + extraSeconds) }
     var availableSeconds: Int { max(0, budgetSeconds - usedSeconds) }
     var earnedSeconds: Int? { policy.extraDay == day ? policy.earnedSeconds : 0 }
     var grantedSeconds: Int? { policy.extraDay == day ? policy.grantedSeconds : 0 }
+
+    func threshold(for event: String) -> Int? {
+        guard let generation = monitorEvent else { return nil }
+        if let monitorPlan {
+            return monitorPlan.events(generation: generation).first { $0.name == event }?.seconds
+        }
+        // Accept the outstanding event from a pre-upgrade, single-chunk monitor.
+        return event == generation ? monitorThreshold : nil
+    }
+
+    mutating func armMonitor(event: String, threshold: Int, cumulative: Bool, now: Date) {
+        monitorEvent = event
+        monitorThreshold = min(max(1, threshold), availableSeconds)
+        monitorStartedAt = now.timeIntervalSince1970
+        monitorPlan = cumulative ? BudgetUsagePlan.make(used: usedSeconds, available: availableSeconds) : nil
+    }
+
+    /// Count only usage reported by iOS, never the wall time between callbacks.
+    /// A higher cumulative threshold subsumes earlier, duplicate or missing events.
+    mutating func recordMonitorUsage(event: String, now: Date) {
+        guard Self.dayKey(now) == day, let seconds = threshold(for: event), seconds > 0,
+              now.timeIntervalSince1970 - monitorStartedAt >= Double(seconds) * 0.7 else { return }
+        if let plan = monitorPlan {
+            let target = min(budgetSeconds, plan.baselineUsedSeconds + seconds)
+            let terminal = seconds == plan.thresholds.last || availableSeconds == 0
+            guard target > usedSeconds || terminal else { return }
+            usedSeconds = max(usedSeconds, target)
+            if terminal || availableSeconds == 0 {
+                monitorEvent = nil
+                monitorThreshold = 0
+                monitorPlan = nil
+            }
+        } else {
+            usedSeconds += min(seconds, availableSeconds)
+            monitorEvent = nil
+            monitorThreshold = 0
+        }
+        lastConsumptionAt = now.timeIntervalSince1970
+    }
 
     static func dayKey(_ date: Date = Date(), timeZone: TimeZone = .current) -> String {
         let f = DateFormatter()
@@ -149,6 +214,7 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
         lastConsumptionAt = 0
         monitorEvent = nil
         monitorThreshold = 0
+        monitorPlan = nil
     }
 
     mutating func apply(_ next: DailyBudgetPolicy) {
@@ -235,7 +301,8 @@ nonisolated final class DailyBudgetStore {
               state.policy.hasValidLimits,
               (-604800...604800).contains(state.extraSeconds),
               (0...691200).contains(state.usedSeconds),
-              (0...30).contains(state.monitorThreshold) else { throw StoreError.corrupt }
+              (0...30).contains(state.monitorThreshold),
+              state.monitorPlan.map({ $0.isValid && state.monitorEvent != nil }) ?? true else { throw StoreError.corrupt }
         return state
     }
 
@@ -318,7 +385,7 @@ nonisolated final class DailyBudgetStore {
     }
 
     /// Each monitor generation has its own event name: delayed callbacks cannot spend twice.
-    func arm(threshold: Int, matching expected: DailyBudgetState? = nil) throws -> String {
+    func arm(threshold: Int, matching expected: DailyBudgetState? = nil, cumulative: Bool = false) throws -> String {
         try locked { dir in
             guard var state = try read(dir), state.availableSeconds > 0 else { throw StoreError.unavailable }
             if let expected {
@@ -328,9 +395,7 @@ nonisolated final class DailyBudgetStore {
                 else { throw StoreError.unavailable }
             }
             let event = "parentalcontrol.usageBudget." + UUID().uuidString
-            state.monitorEvent = event
-            state.monitorThreshold = min(max(1, threshold), state.availableSeconds)
-            state.monitorStartedAt = Date().timeIntervalSince1970
+            state.armMonitor(event: event, threshold: threshold, cumulative: cumulative, now: Date())
             try write(state, in: dir)
             return event
         }
@@ -349,13 +414,9 @@ nonisolated final class DailyBudgetStore {
                 try write(state, in: dir)
                 return state
             }
-            guard event == state.monitorEvent else { return state }
-            let seconds = state.monitorThreshold
-            guard seconds > 0, now.timeIntervalSince1970 - state.monitorStartedAt >= Double(seconds) * 0.7 else { return state }
-            state.usedSeconds += min(seconds, state.availableSeconds)
-            state.lastConsumptionAt = now.timeIntervalSince1970
-            state.monitorEvent = nil
-            state.monitorThreshold = 0
+            let previous = state
+            state.recordMonitorUsage(event: event, now: now)
+            guard state != previous else { return state }
             try write(state, in: dir)
             return state
         }

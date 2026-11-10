@@ -26,6 +26,7 @@ final class Harness {
                 self.state?.monitorEvent = "owned"
                 self.state?.monitorThreshold = 30
                 self.state?.monitorStartedAt = 2
+                self.state?.monitorPlan = BudgetUsagePlan.make(used: initial.usedSeconds, available: initial.availableSeconds)
                 return "owned"
             }, stop: {
                 self.stops += 1
