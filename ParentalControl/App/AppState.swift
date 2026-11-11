@@ -881,7 +881,7 @@ final class AppState: ObservableObject {
             guard pairingState?.familyID == requestedFamily else { return false }
             receiveParentBudget(saved)
             budgetChangeIntent = nil
-            var analyticsParameters: [String: Any] = ["kind": kind, "seconds": seconds]
+            var analyticsParameters: [String: Any] = ["kind": kind, "minutes": seconds / 60]
             if kind == "limit" {
                 analyticsParameters["limit_mode"] = saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"
             }
@@ -3473,7 +3473,7 @@ final class AppState: ObservableObject {
         let schedule = template.makeSchedule()
         guard requireFamilyAccess() else { return schedule }
         AppAnalytics.report("schedule_change", parameters: [
-            "action": "save", "is_new": true, "enabled": schedule.isEnabled
+            "action": "save", "is_new": true, "enabled": schedule.isEnabled, "title": schedule.name
         ])
         var list = blockSchedules
         list.insert(schedule, at: 0)
@@ -3490,7 +3490,7 @@ final class AppState: ObservableObject {
         guard requireFamilyAccess() else { return false }
         AppAnalytics.report("schedule_change", parameters: [
             "action": "save", "is_new": !blockSchedules.contains(where: { $0.id == schedule.id }),
-            "enabled": schedule.isEnabled
+            "enabled": schedule.isEnabled, "title": schedule.name
         ])
         var updated = schedule
         updated.updatedAt = Date()
@@ -3628,7 +3628,11 @@ final class AppState: ObservableObject {
             childTasks.removeAll { $0.id == id }
             if let result, result.isVisible(at: Date()) { childTasks.insert(result, at: 0) }
             storage.saveChildTasks(childTasks)
-            AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "success"])
+            var analyticsParameters: [String: Any] = ["action": analyticsAction, "result": "success"]
+            if (analyticsAction == "create" || analyticsAction == "edit"), let result {
+                analyticsParameters["title"] = result.title
+            }
+            AppAnalytics.report("task_action", parameters: analyticsParameters)
             return true
         } catch {
             AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "failed"])

@@ -42,7 +42,7 @@ enum AppAnalytics {
         configuration.revenueAutoTrackingEnabled = false
         configuration.areLogsEnabled = false
         configuration.appEnvironment = [
-            "app": "parental_control", "schema_version": "3", "distribution": distribution
+            "app": "parental_control", "schema_version": "5", "distribution": distribution
         ]
         AppMetrica.activate(with: configuration)
         didActivate = true

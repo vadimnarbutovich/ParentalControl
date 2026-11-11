@@ -1,12 +1,14 @@
 import Foundation
 
-/// Closed, low-cardinality event contract. Unknown events/fields never leave the app.
-/// No identifiers, user text, coordinates, app tokens, exact dates or raw errors.
+/// Closed event contract. Unknown events/fields never leave the app.
+/// User text is limited to titles on schedule saves and successful task create/edit.
+/// No family identifiers, descriptions, coordinates, app tokens or raw errors.
 enum AnalyticsSchema {
     enum Rule {
         case choice(Set<String>)
         case integer(ClosedRange<Int>)
         case boolean
+        case title
 
         func accepts(_ value: Any) -> Bool {
             switch self {
@@ -15,6 +17,9 @@ enum AnalyticsSchema {
                 guard type(of: value) == Int.self, let number = value as? Int else { return false }
                 return range.contains(number)
             case .boolean: return type(of: value) == Bool.self
+            case .title:
+                guard let title = value as? String else { return false }
+                return !title.isEmpty && title.count <= 200
             }
         }
     }
@@ -57,11 +62,11 @@ enum AnalyticsSchema {
         "remote_block_request": ["action": .choice(["block", "unblock"])],
         "remote_block_result": ["action": .choice(["block", "unblock"]), "result": result],
         "daily_budget_saved": ["kind": .choice(["limit", "adjustment"]),
-            "seconds": .integer(-86400...86400), "limit_mode": .choice(["every_day", "weekdays"])],
+            "minutes": .integer(-1440...1440), "limit_mode": .choice(["every_day", "weekdays"])],
         "daily_budget_save_failed": ["kind": .choice(["limit", "adjustment"])],
-        "schedule_change": ["action": scheduleAction, "enabled": .boolean, "is_new": .boolean],
+        "schedule_change": ["action": scheduleAction, "enabled": .boolean, "is_new": .boolean, "title": .title],
         "schedule_sync_result": ["action": .choice(["save", "delete"]), "result": result],
-        "task_action": ["action": taskAction, "result": result],
+        "task_action": ["action": taskAction, "result": result, "title": .title],
         "location_request": [:],
         "location_request_result": ["result": result],
         "statistics_calendar_open": [:],
@@ -91,7 +96,17 @@ enum AnalyticsSchema {
 
     static func sanitized(_ name: String, parameters: [String: Any]?) -> [String: Any]? {
         guard let rules = events[name] else { return nil }
-        return (parameters ?? [:]).filter { key, value in rules[key]?.accepts(value) == true }
+        var values = parameters ?? [:]
+        let action = values["action"] as? String
+        let includesTitle = (name == "schedule_change" && action == "save") ||
+            (name == "task_action" && ["create", "edit"].contains(action ?? "") &&
+             values["result"] as? String == "success")
+        if includesTitle, let title = values["title"] as? String {
+            values["title"] = String(title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
+        } else {
+            values.removeValue(forKey: "title")
+        }
+        return values.filter { key, value in rules[key]?.accepts(value) == true }
     }
 
     static func isAllowedKey(_ key: String, bundleID: String?) -> Bool {
