@@ -52,6 +52,6 @@ test("purchase and restore cannot succeed using optional verifier or SDK flag al
   assert.match(source, /verifyServerPurchase: \(\(\) async throws -> Bool\)\?/);
   assert.match(source, /let verifier = automatic \? recheckServerPurchase : verifyServerPurchase/);
   assert.match(source, /if try await verifier\?\(\) == true/);
-  assert.match(source, /guard await confirmServerPurchase\(\) else \{ return \.pendingVerification \}/);
+  assert.match(source, /guard await confirmServerPurchase\(\) else \{\s*AppAnalytics\.report\("restore_result", parameters: \["result": "pending_verification"\]\)\s*return \.pendingVerification\s*\}/);
   assert.ok(source.includes('L10n.tr("paywall.purchase.pending_verification")'));
 });

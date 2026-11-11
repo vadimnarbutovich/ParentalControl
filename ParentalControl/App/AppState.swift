@@ -50,7 +50,7 @@ final class AppState: ObservableObject {
 
     func refreshFamilyAccess(force: Bool = false) async {
         guard pairingState?.isLinked == true, !accessCheckInFlight else { return }
-        let renewalCheckDue = FamilyAccessStore.receipt?.needsRefresh(uptime: ProcessInfo.processInfo.systemUptime) == true
+        let renewalCheckDue = FamilyAccessStore.receipt?.needsRefresh(continuousTime: FamilyAccessClock.now) == true
         let interval: TimeInterval = FamilyAccessStore.isSettingUp || purchaseRecoveryUntil.map({ $0 > Date() }) == true ? 15 :
             (renewalCheckDue ? 30 : (FamilyAccessStore.isEnrolled ? 900 : 60))
         guard force || lastAccessCheck.map({ Date().timeIntervalSince($0) >= interval }) != false else { return }
@@ -4498,13 +4498,13 @@ private final class ParentalRemoteSyncService {
         let operation = { @MainActor [self] () async throws -> Data in
             // One receipt anchor per actual HTTP request, not per waiter.
             let requestWall = Date().timeIntervalSince1970
-            let requestUptime = ProcessInfo.processInfo.systemUptime
+            let requestContinuousTime = FamilyAccessClock.now
             let (data, response) = try await session.data(for: preparedRequest)
             guard let http = response as? HTTPURLResponse else {
                 throw SyncError.invalidServerResponse
             }
             FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
-                requestWall: requestWall, requestUptime: requestUptime)
+                requestWall: requestWall, requestContinuousTime: requestContinuousTime)
             if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent,
                !FamilyAccessStore.isSettingUp {
                 NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)

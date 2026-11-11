@@ -1,0 +1,85 @@
+ParentalControl — overnight usage failure, 2026-11-11 (Europe/Minsk)
+
+User observation: selected apps used 05:45–06:00 without launching host;
+no shield, then host showed ten minutes remaining.
+
+Sources (local only; do not upload raw archives/preferences):
+/tmp/parental-midnight-20261111.logarchive
+/tmp/parental-midnight-events-20261111.ndjson
+/tmp/parental-midnight-system-20261111.ndjson
+/private/tmp/parental-demo-clock-repro/{main.swift,input.json,check}
+
+Timeline:
+23:16:28.971 UsageTrackingAgent delivered generation 41E14560... threshold .30.
+23:16:28.978 monitor received threshold, immediately cleared default shield
+and named schedule shield. No Usage threshold debit log follows.
+23:16:29.017 accessExpiry interval ended; monitor cleared settings again.
+23:16:59.982 usage interval ended.
+23:17:30.980 dailyBudget interval ended.
+No dailyBudget start or usage threshold callback found during 05:45–06:00.
+06:01:10.462 host launched.
+06:01:10.764 host logged refreshChildTasks: management paused/access required.
+06:01:11.390 dailyBudget interval started again.
+06:01:42.397 stale monitor attempt was safely superseded.
+06:02:15.811 threshold 30, delta 30, remaining 570.
+06:02:45.798 threshold 60, delta 30, remaining 540.
+Same log boot UUID spans night and morning; no reboot needed to explain failure.
+
+Confirmed implementation defect:
+ReceivedFamilyAccessLease.canControl compares elapsed Date time with elapsed
+ProcessInfo.systemUptime and returns false if abs(difference) > 5 seconds.
+Apple defines systemUptime as time the system has been awake since restart.
+Deep sleep advances wall time but not that awake clock. A valid demo becomes
+locally disallowed. FamilyAccessEnforcement.releaseIfNeeded then clears shields
+and stops usage, dailyBudget, expiry and schedule monitors. With those monitors
+stopped, morning use cannot trigger the daily rollover path. Host launch fetches
+an authenticated receipt and rearms; usage starts from there.
+
+Reproduced on the production model and current on-device demo receipt:
+requestWallTime=1794366176.4222069
+requestUptime=373665.40473662503
+At the final timed SYNC sample (~06:10:46):
+wall elapsed=469.743 sec; awake elapsed=320.667 sec; difference=149.076 sec.
+Lease state demo and server deadline still in future (Nov 11 20:15:56 Minsk).
+Actual canControl result=false. Model comparison using a sleep-inclusive elapsed
+value returns true. timed mach samples use 24 MHz on this phone; neighbouring
+awake samples and the stored systemUptime agree. Other timed samples across the
+night also show large wall/awake differences.
+
+Evidence boundary:
+The receipt in effect at 23:16 was overwritten by morning refresh and is not
+available. Logs do not label which canControl guard failed then. Therefore exact
+23:16 guard attribution is an inference, supported by the reproduced defect,
+access-release behavior and the morning paused state, not a saved old receipt.
+This is not evidence that the daily rollover itself fails with valid access.
+Existing 61 rollover model checks did not cover the real sleep clock boundary.
+
+Paid access returns before this demo-clock check; this specific defect applies
+to demo receipts. It is not a general assertion about all paid/offline behavior.
+
+Proposed fix scope:
+Use a sleep-inclusive monotonic clock for demo receipt acquisition, validation,
+refresh timing and expiry arming across host and extensions. Version/migrate
+persisted clock anchors; never reinterpret old awake-clock values as continuous
+ones. Preserve hard server deadline, stale response checks and handling of reboot
+and wall-clock changes. Add sleep/expiry regression tests and repeat hardware
+night test. Do not remove the actual expiry guard or enable unlimited demo.
+
+No application code or server data changed during this investigation.
+
+Follow-up fix (2026-11-11, after user approval):
+- Shared mach_continuous_time clock in FamilyAccessLease.swift; request anchors
+  captured before HTTP in host and NSE. Access gate and expiry timer share the
+  remaining-demo calculation. Actual expiry and clock/replay guards preserved.
+- Local receipt clockVersion=2. Old demo anchors require authenticated refresh;
+  old paid receipts remain usable offline. Versioned expiry-monitor signature
+  rearms old timers even with unchanged server revision/deadline.
+- 77 model/presentation, 14 real store-migration, 42 release-ACK and 57 integration
+  checks passed. Full unsigned Release build for iOS and all extensions passed.
+- No server, polling, budget-accounting or command-delivery changes. Not installed
+  on device. Actual overnight acceptance remains pending; open child app online
+  once after updating to migrate the demo receipt, then repeat background test.
+
+Apple references:
+https://developer.apple.com/documentation/foundation/processinfo/systemuptime
+https://developer.apple.com/documentation/kernel/1646199-mach_continuous_time
