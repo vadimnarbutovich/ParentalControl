@@ -1,0 +1,124 @@
+Usage stalls after extra minutes — 2026-11-13, Europe/Minsk
+
+User: without launching child host on the new day, selected apps blocked after
+10 minutes. Parent added time and apps unlocked, but the parent's counter stopped.
+No host launch or reinstallation was requested during evidence collection.
+
+Evidence (local, raw files must not be published):
+/tmp/parental-after-extra-20261113.logarchive
+/private/tmp/parental-after-extra-events-20261113.ndjson
+/private/tmp/parental-after-extra-group-20261113.plist (chmod 600; contains secrets)
+/private/tmp/parental-after-extra-repro/{events.json,main.swift,check}
+
+Timeline, Minsk:
+- Generation 4C1923D1... delivered all 20 thresholds from 08:27:53.501849
+  to 08:37:18.088326. At 08:37:18.110106 monitor logged budget exhaustion.
+- 08:37:46 parent added 3600 sec (policy rev19), applied ACK 08:37:49.
+  New generation 762C1F00... delivered threshold30 at 08:38:20.581487.
+- 08:38:34 parent added 300 sec (rev20), applied ACK 08:38:36.
+- 08:39:07 parent added 300 sec (rev21), applied ACK 08:39:10.
+  New generation 1248D5F4-7D9F-4F15-B2A4-4A382A9255DD armed at
+  epoch1794548348.529663. All 20 thresholds (30...600) delivered between
+  08:39:08.796359 and 08:39:08.864288: only 0.267...0.335 sec after arm.
+  UsageTrackingAgent reports e.g. threshold90 has -617.766 sec remaining,
+  then caches threshold adjustment708.074638 starting 08:39:08.921742.
+  No further threshold notifications for this generation in the archive,
+  whose filtered records end at 09:02:41.370724.
+
+Read-only server snapshot during investigation:
+- Demo active, deadline13 Nov22:05:40 Minsk, access rev64; not the sleep bug.
+- Daily limit600, granted4200, used630, remaining4170, policy rev21 applied.
+- monitorPlan baseline630 / thresholds30...600, generation1248D5F4...;
+  monitorStartedAt1794548348.529663, lastConsumptionAt1794548300.608302.
+- All three commands applied without error in about 2–3 seconds.
+The 10-minute UI display hides the additional30 sec; first extra-time wake DID
+resume accounting. The final restart lost progress, rather than every extra-time
+command failing or the parent merely showing a stale view.
+
+Device preferences corroborate latest heartbeat threshold1248D5F4....300,
+timestamp1794548348, last start1794548348, armed signature accountingVersion2,
+day2026-11-13, budget4800. Latest diagnostic remains earlier budget_exhausted.
+Direct copy of DailyBudget/current.json was denied by device container policy;
+no workaround attempted. Full current local budget was not independently read.
+
+Confirmed application gap:
+DailyBudgetState.recordMonitorUsage rejects callbacks when elapsed since arm is
+less than threshold*0.7. Correctly, the burst must not debit 10 minutes instantly.
+But it leaves monitorEvent/monitorPlan intact. handleBudgetEvent sees no state
+change and returns, so it neither rearms nor marks recovery needed. System has
+already delivered every threshold; absent new callbacks, consumption cannot
+resume on this generation. Saved active signature also treats it as armed.
+Production model replay using the exact20 recorded callback timestamps confirms:
+state unchanged, used630, remaining4170, generation still armed.
+
+System-side inference: past usage was briefly used before the fresh baseline was
+installed, despite includesPastActivity=false. Negative remaining values followed
+by caching of adjustment708 sec support a registration/baseline race. Apple
+implementation internals and whether this is the same known regression are not
+proven. Official semantics exclude activity before monitoring when false:
+https://developer.apple.com/documentation/deviceactivity/deviceactivityevent/includespastactivity
+Similar early-callback reports (not proof for this exact OS/build):
+https://developer.apple.com/forums/thread/808470
+
+Local fix implemented after user authorization (2026-11-13):
+- ScreenTimeEnforcer preserves a valid registered cumulative window when only
+  total allowance increases. It updates the saved signature without stop/start;
+  the existing endpoint retires normally and the next window includes extras.
+  Withdrawals, selection/day/restart changes, stopped/finished/legacy monitors
+  still rearm. Signature version3 forces one migration from the old version2.
+- An early intermediate event remains ignored. An early terminal event now
+  retires the exhausted notification generation WITHOUT charging its usage.
+  The monitor extension uses its existing fenced coordinator to arm a replacement.
+  Queued old events cannot debit or restart that replacement.
+- Two automatic replacement attempts are allowed. A third consecutive early
+  terminal failure preserves the balance but shields selected apps and stops
+  usage monitoring. This avoids unlimited untracked use and IPC retry loops.
+  NSE/host do not acknowledge an unlock backed by this failed monitor.
+- Retry state survives process restart and same-policy refresh; real accepted
+  usage, a newer parent budget policy or a new day reset it. Parent can change
+  the allowance to retry after persistent failure. Reinstall recovery never
+  restores the previous installation's retry/monitor ownership from the server.
+- DailyBudgetStore.arm now compares the full expected state under the existing
+  file lock, including retry state. No lock spans DeviceActivity IPC.
+- Local diagnostics: monitor.early_terminal / shield.monitor_recovery_exhausted.
+  Recovery without new usage does not schedule an extra upload. No backend,
+  polling, timers, APNs routing, uploader cadence or subscription policy changes.
+
+Validation:
+102 cumulative checks (including recorded burst timing/order and repeated extra
+minutes), 44 rearm/concurrency, 39 reinstall recovery, 61 rollover, 69 notification
+control, 77 access, 14 sleep-clock store, 42 expiry ACK, 11 worker, 44 schedules:
+503 executable Swift checks passed, plus both budget integration guard scripts.
+Unsigned Release generic iOS build, host and all extensions: BUILD SUCCEEDED.
+Build log: /private/tmp/parental-monitor-recovery-build.log
+
+Not installed/deployed by this fix. Physical DeviceActivity delivery remains to
+be verified: install over existing child data, open online once, leave host;
+exhaust 5-10min, add5min, use ~1min, add5min again, and verify continued usage
+and eventual shield without opening host. Also check manual block/unblock and
+repeat the new-day test with active demo/paid access. Server/device state unchanged.
+
+Hardware follow-up — 2026-11-13 around 10:00 Minsk
+User installed the new build and confirmed additions and ongoing consumption.
+Archive: /tmp/parental-extra-recovery-check.logarchive
+Filtered evidence: /private/tmp/parental-extra-recovery-check.ndjson
+Range inspected09:35–10:10; retained records09:36:51–10:06:00.
+- 10:00:24–10:05:31: eleven accepted usage events, thresholds30,60,...330,
+  each delta30, sum330sec. Same generation319FA09F... for every notification.
+  Starting used630 -> final local used960; no duplicate charges in these events.
+- +300sec at10:01:58 and +300sec at10:03:44 retained this generation. Remaining
+  goes4080 ->4350 across threshold90->120 and4260 ->4530 across210->240,
+  exactly +300 minus the next30sec usage. Consumption continues after both.
+- NSE locally_applied10:01:58.528 /10:03:44.555, acknowledged10:02:00.653 /
+  10:03:47.162. Read-only DB focus_commands both applied, no error, created-to-
+  applied2.49 /3.30sec. Current policy23, limit600, extras4800.
+- Server snapshot updated10:05:02, used930/remaining4470, plan baseline630,
+  same generation; this precedes final local threshold330 at10:05:31 by29sec.
+  It is consistent with the uploaded threshold300, not evidence of a new stall.
+- No BudgetMonitor early_terminal/recovery_exhausted/monitor_failed or
+  NotificationControl failure in inspected records. Recovery branch was NOT
+  exercised by this test; avoiding the unnecessary restart worked on hardware.
+- No exhaustion event in this interval: final local remaining4440sec (74min).
+  This confirms repeated additions preserve accounting, not a full allowance
+  exhaustion or 600sec-window handoff. These and new-day behavior on this build
+  still need a suitable longer/small-remaining test. No code/server/device edits.

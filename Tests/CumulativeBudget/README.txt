@@ -1,5 +1,19 @@
 Cumulative child usage accounting — 2026-11-10
 
+Follow-up fix — 2026-11-13
+102 current checks include the recorded early-terminal burst, obsolete callbacks
+after repair, bounded retries across serialization, same/new policy behavior,
+normal consumption after recovery, and exact exhaustion after repeated extras.
+Production BudgetMonitoringSignature is tested for growing/same/shrinking budgets,
+selection/day/restart changes, stopped windows and version2 migration. The
+signature is now version3. Healthy cumulative windows survive budget increases;
+finished/stopped windows and decreases still rearm. Early terminal events retire
+their generation without charging, with at most two automatic replacement attempts.
+After repeated failure, shields preserve the balance; a new budget revision or
+next day permits a retry. No backend calls/timers were added. Physical acceptance
+after extra minutes and at midnight is still required on the updated child build.
+See Docs/Diagnostics/after-extra-20261113.txt for evidence and remaining test steps.
+
 Observed on the child's iPhone 13 Pro, published build 1.0 (14): from 16:35:08
 through 16:44:43 Minsk, nine threshold cycles took 575 seconds, while the
 single-chunk model charged 270 seconds. Exhaustion/shield occurred at 16:48:30.

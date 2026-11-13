@@ -102,6 +102,25 @@ nonisolated struct BudgetUsagePlan: Codable, Equatable {
     }
 }
 
+/// Reuse a cumulative window when only the allowance grows. Replacing it would
+/// discard in-flight usage and expose another registration to early OS callbacks.
+nonisolated struct BudgetMonitoringSignature: Codable, Equatable {
+    var accountingVersion: Int = 3
+    let selection: Data?
+    let day: String?
+    let seconds: Int
+    let restart: String?
+
+    func canReuse(for next: Self, state: DailyBudgetState?, registered: Bool) -> Bool {
+        guard registered, accountingVersion == 3, next.accountingVersion == 3,
+              selection == next.selection, day == next.day, restart == next.restart,
+              seconds <= next.seconds, let state, state.day == next.day,
+              state.budgetSeconds == next.seconds, state.monitorEvent != nil,
+              state.monitorPlan?.isValid == true, !state.monitorRecoveryExhausted else { return false }
+        return true
+    }
+}
+
 nonisolated struct DailyBudgetState: Codable, Equatable {
     var policy: DailyBudgetPolicy
     var day: String
@@ -113,6 +132,10 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
     var monitorThreshold: Int = 0
     var monitorStartedAt: TimeInterval = 0
     var monitorPlan: BudgetUsagePlan?
+    // Optional for old local/server snapshots. Survives extension restarts and
+    // ordinary refreshes; two retries, then restrict instead of allowing untracked use.
+    var monitorRecoveryAttempts: Int?
+    var monitorRecoveryExhausted: Bool { (monitorRecoveryAttempts ?? 0) >= 3 }
     var cappedAdjustmentsVersion: Int?
     var budgetSeconds: Int { max(0, policy.limitSeconds + extraSeconds) }
     var availableSeconds: Int { max(0, budgetSeconds - usedSeconds) }
@@ -138,8 +161,19 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
     /// Count only usage reported by iOS, never the wall time between callbacks.
     /// A higher cumulative threshold subsumes earlier, duplicate or missing events.
     mutating func recordMonitorUsage(event: String, now: Date) {
-        guard Self.dayKey(now) == day, let seconds = threshold(for: event), seconds > 0,
-              now.timeIntervalSince1970 - monitorStartedAt >= Double(seconds) * 0.7 else { return }
+        guard Self.dayKey(now) == day, let seconds = threshold(for: event), seconds > 0 else { return }
+        guard now.timeIntervalSince1970 - monitorStartedAt >= Double(seconds) * 0.7 else {
+            // Intermediate early events can be recovered by a later cumulative
+            // threshold. An early terminal event leaves no future notifications:
+            // retire that generation without charging any of its false usage.
+            if let plan = monitorPlan, seconds == plan.thresholds.last {
+                monitorRecoveryAttempts = min(3, max(0, monitorRecoveryAttempts ?? 0) + 1)
+                monitorEvent = nil
+                monitorThreshold = 0
+                monitorPlan = nil
+            }
+            return
+        }
         if let plan = monitorPlan {
             let target = min(budgetSeconds, plan.baselineUsedSeconds + seconds)
             let terminal = seconds == plan.thresholds.last || availableSeconds == 0
@@ -156,6 +190,7 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
             monitorThreshold = 0
         }
         lastConsumptionAt = now.timeIntervalSince1970
+        monitorRecoveryAttempts = nil
     }
 
     static func dayKey(_ date: Date = Date(), timeZone: TimeZone = .current) -> String {
@@ -215,10 +250,14 @@ nonisolated struct DailyBudgetState: Codable, Equatable {
         monitorEvent = nil
         monitorThreshold = 0
         monitorPlan = nil
+        monitorRecoveryAttempts = nil
     }
 
     mutating func apply(_ next: DailyBudgetPolicy) {
         guard next.familyID == policy.familyID, next.revision >= policy.revision else { return }
+        // A new parent policy can retry a failed monitor. Re-fetching the same
+        // policy must not reset the bounded recovery loop.
+        if next.revision > policy.revision { monitorRecoveryAttempts = nil }
         if next.extraDay == day, let operations = next.operations {
             // Migrate an old signed balance once, without altering usage or replaying
             // already-applied rewards. Only the debt attributable to withdrawals is removed.
@@ -387,12 +426,10 @@ nonisolated final class DailyBudgetStore {
     /// Each monitor generation has its own event name: delayed callbacks cannot spend twice.
     func arm(threshold: Int, matching expected: DailyBudgetState? = nil, cumulative: Bool = false) throws -> String {
         try locked { dir in
-            guard var state = try read(dir), state.availableSeconds > 0 else { throw StoreError.unavailable }
+            guard var state = try read(dir), state.availableSeconds > 0,
+                  !state.monitorRecoveryExhausted else { throw StoreError.unavailable }
             if let expected {
-                guard state.policy.familyID == expected.policy.familyID,
-                      state.policy.revision == expected.policy.revision, state.day == expected.day,
-                      state.usedSeconds == expected.usedSeconds, state.monitorEvent == expected.monitorEvent
-                else { throw StoreError.unavailable }
+                guard state == expected else { throw StoreError.unavailable }
             }
             let event = "parentalcontrol.usageBudget." + UUID().uuidString
             state.armMonitor(event: event, threshold: threshold, cumulative: cumulative, now: Date())

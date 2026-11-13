@@ -103,6 +103,12 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                 guard current.threshold(for: event.rawValue) != nil else { return }
                 guard let consumed = try DailyBudgetStore.shared.consume(event: event.rawValue),
                       consumed.usedSeconds != current.usedSeconds || consumed.monitorEvent != current.monitorEvent else { return }
+                if (consumed.monitorRecoveryAttempts ?? 0) > (current.monitorRecoveryAttempts ?? 0) {
+                    recordBudgetDiagnostic("monitor.early_terminal")
+                    enforceDailyBudget()
+                    // No usage changed: recovery must not generate extra uploads.
+                    return
+                }
                 Logger(subsystem: "mycompny.ParentalControl", category: "BudgetMonitor")
                     .info("Usage threshold=\(current.threshold(for: event.rawValue) ?? 0, privacy: .public) delta=\(consumed.usedSeconds - current.usedSeconds, privacy: .public) remaining=\(consumed.availableSeconds, privacy: .public) windowEnded=\(consumed.monitorEvent == nil, privacy: .public)")
                 // Intermediate cumulative events keep the same system monitor alive.
@@ -203,6 +209,13 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             recordBudgetDiagnostic("shield.budget_unavailable")
             applyShield(selection: selection, ifCurrent: stillMissing)
             if stillMissing() { centerStopMonitoring() }
+            return
+        }
+        if state.monitorRecoveryExhausted {
+            guard current(state) else { return }
+            recordBudgetDiagnostic("shield.monitor_recovery_exhausted")
+            applyShield(selection: selection, ifCurrent: { current(state) })
+            if current(state) { centerStopMonitoring() }
             return
         }
         if state.availableSeconds == 0 {

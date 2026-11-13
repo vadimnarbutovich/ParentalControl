@@ -87,6 +87,7 @@ for mutation: (Harness) -> Void in [
     { $0.state?.usedSeconds = 30 },
     { $0.state?.day = "2026-10-27" },
     { $0.state?.policy.limitSeconds = 0 },
+    { $0.state?.monitorRecoveryAttempts = 3; $0.state?.monitorEvent = nil; $0.state?.monitorPlan = nil },
     { $0.state = nil }
 ] {
     let h = Harness()
@@ -107,4 +108,21 @@ armFailure.armHook = { _ in throw NSError(domain: "disk", code: 13) }
 if case .failed(let expected, let code) = armFailure.run() {
     check(expected == initial && code == 13, "Current storage failure remains distinguishable")
 } else { preconditionFailure("Expected current arm failure") }
+// Recovery uses the same fenced coordinator and retains its retry budget.
+let recoveryStart = ISO8601DateFormatter().date(from: "2026-10-26T09:00:00Z")!
+var recovering = initial
+recovering.armMonitor(event: "broken", threshold: 30, cumulative: true, now: recoveryStart)
+recovering.recordMonitorUsage(event: "broken.600", now: recoveryStart.addingTimeInterval(0.3))
+let recoveryExpected = recovering
+let outcome = BudgetMonitorRearm.run(expected: recoveryExpected, read: { recovering }, contextIsCurrent: { true },
+    arm: {
+        recovering.armMonitor(event: "replacement", threshold: 30, cumulative: true,
+                              now: recoveryStart.addingTimeInterval(0.4))
+        return "replacement"
+    }, stop: {}, start: { _ in })
+if case .started(let armed) = outcome {
+    check(armed.monitorRecoveryAttempts == 1 && armed.usedSeconds == 0, "Rearm preserves recovery count and usage")
+} else { preconditionFailure("Recovery must use the normal rearm coordinator") }
+recovering.recordMonitorUsage(event: "replacement.30", now: recoveryStart.addingTimeInterval(31))
+check(recovering.usedSeconds == 30 && recovering.monitorRecoveryAttempts == nil, "Valid replacement callback restores normal accounting")
 print("Passed \(checks) budget monitor generation checks")
