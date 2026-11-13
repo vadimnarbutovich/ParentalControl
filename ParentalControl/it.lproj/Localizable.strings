@@ -695,3 +695,14 @@
 "access.banner.setup.child.body" = "Chiedi a un genitore di completare la configurazione su entrambi i telefoni.";
 "recovery.install.body" = "Se l’app è stata eliminata anche dal telefono di tuo figlio, [invia il link](%@) o scansiona il codice QR per reinstallarla. Poi apri l’app sul suo telefono e scegli «%@».";
 "recovery.install.continue" = "Già installata — continua";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID famiglia";
+"settings.family_id.copy" = "Copia ID";
+"settings.family_id.unavailable" = "Nessuna famiglia configurata su questo dispositivo.";
+
+// Optional App Store update prompt
+"app_update.title" = "Aggiornamento disponibile";
+"app_update.message" = "È disponibile una nuova versione su App Store.";
+"app_update.update" = "Aggiorna";
+"app_update.later" = "Più tardi";

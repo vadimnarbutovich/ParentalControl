@@ -30,32 +30,101 @@ check(!demo.mayReplace(demo, family: family, pairing: pairing), "Replay preserve
 check(lease(issued: now + 1000).mayReplace(demo, family: family, pairing: pairing), "Fresh snapshot can re-anchor after reboot without extending expiry")
 check(!lease(issued: now + 1000, end: now + 86_401_000).mayReplace(demo, family: family, pairing: pairing), "Same revision cannot extend lease")
 check(!lease(revision: 4, issued: now - 1, end: now + 1000).mayReplace(renewed, family: family, pairing: pairing), "Server clock regression")
-let receipt = ReceivedFamilyAccessLease(lease: demo, requestWallTime: 100000, requestUptime: 100)
-check(!receipt.needsRefresh(uptime: 999), "No premature refresh")
-check(receipt.needsRefresh(uptime: 1000), "Honour server nextCheckAt at exact deadline")
-check(receipt.needsRefresh(uptime: 10), "Reboot requests refresh")
+let receipt = ReceivedFamilyAccessLease(lease: demo, requestWallTime: 100000, requestContinuousTime: 100)
+check(!receipt.needsRefresh(continuousTime: 999), "No premature refresh")
+check(receipt.needsRefresh(continuousTime: 1000), "Honour server nextCheckAt at exact deadline")
+check(receipt.needsRefresh(continuousTime: 10), "Reboot requests refresh")
 let earlyLease = FamilyAccessLease(protocolVersion: 1, familyID: family, pairingID: pairing, revision: 5,
     issuedAtMs: now, controlUntilMs: now + 86_400_000, nextCheckAtMs: now + 30_000, state: .paid)
-let earlyReceipt = ReceivedFamilyAccessLease(lease: earlyLease, requestWallTime: 100000, requestUptime: 100)
-check(earlyReceipt.needsRefresh(uptime: 130), "Early renewal refresh before continuity expires")
-check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 100180, uptime: 280), "Sandbox billing boundary does not interrupt continuity")
-check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 100000 + 86400 * 7, uptime: 604900), "Paid cache survives seven offline days")
-check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 200000, uptime: 10), "Paid cache survives reboot")
-check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 99990, uptime: 180), "Clock drift does not unlock paid child")
+let earlyReceipt = ReceivedFamilyAccessLease(lease: earlyLease, requestWallTime: 100000, requestContinuousTime: 100)
+check(earlyReceipt.needsRefresh(continuousTime: 130), "Early renewal refresh before continuity expires")
+check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 100180, continuousTime: 280), "Sandbox billing boundary does not interrupt continuity")
+check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 100000 + 86400 * 7, continuousTime: 604900), "Paid cache survives seven offline days")
+check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 200000, continuousTime: 10), "Paid cache survives reboot")
+check(earlyReceipt.canControl(family: family, pairing: pairing, wallTime: 99990, continuousTime: 180), "Clock drift does not unlock paid child")
 let revokedLease = lease(revision: 6, issued: now + 1000, end: nil, state: .expired)
 check(revokedLease.mayReplace(earlyLease, family: family, pairing: pairing), "Canonical negative replaces paid cache")
-let revokedReceipt = ReceivedFamilyAccessLease(lease: revokedLease, requestWallTime: 100001, requestUptime: 101)
-check(!revokedReceipt.canControl(family: family, pairing: pairing, wallTime: 100001, uptime: 101), "Canonical negative revokes immediately")
+let revokedReceipt = ReceivedFamilyAccessLease(lease: revokedLease, requestWallTime: 100001, requestContinuousTime: 101)
+check(!revokedReceipt.canControl(family: family, pairing: pairing, wallTime: 100001, continuousTime: 101), "Canonical negative revokes immediately")
 check(!earlyLease.mayReplace(revokedLease, family: family, pairing: pairing), "Late positive response cannot revive expired access")
-check(receipt.canControl(family: family, pairing: pairing, wallTime: 100000, uptime: 100), "Initially active")
-check(receipt.canControl(family: family, pairing: pairing, wallTime: 186399, uptime: 86499), "Before exact expiry")
-check(!receipt.canControl(family: family, pairing: pairing, wallTime: 186400, uptime: 86500), "Exact expiry")
-check(!receipt.canControl(family: family, pairing: pairing, wallTime: 100100, uptime: 10), "Reboot needs revalidation")
-check(!receipt.canControl(family: family, pairing: pairing, wallTime: 95000, uptime: 200), "Clock rollback cannot extend")
-check(!receipt.canControl(family: family, pairing: pairing, wallTime: .nan, uptime: 200), "Invalid clock")
-check(!receipt.canControl(family: family, pairing: UUID(), wallTime: 100000, uptime: 100), "Old family lease not reused after re-pairing")
+check(receipt.canControl(family: family, pairing: pairing, wallTime: 100000, continuousTime: 100), "Initially active")
+check(receipt.canControl(family: family, pairing: pairing, wallTime: 186399, continuousTime: 86499), "Before exact expiry")
+check(!receipt.canControl(family: family, pairing: pairing, wallTime: 186400, continuousTime: 86500), "Exact expiry")
+check(!receipt.canControl(family: family, pairing: pairing, wallTime: 100100, continuousTime: 10), "Reboot needs revalidation")
+check(!receipt.canControl(family: family, pairing: pairing, wallTime: 95000, continuousTime: 200), "Clock rollback cannot extend")
+check(!receipt.canControl(family: family, pairing: pairing, wallTime: .nan, continuousTime: 200), "Invalid clock")
+check(!receipt.canControl(family: family, pairing: UUID(), wallTime: 100000, continuousTime: 100), "Old family lease not reused after re-pairing")
 let roundTrip = try JSONDecoder().decode(ReceivedFamilyAccessLease.self, from: JSONEncoder().encode(receipt))
 check(roundTrip == receipt, "Persisted receipt round trip")
+// Demo clock regression: sleep advances both wall and continuous clocks, even
+// when no process is running and the awake-only clock barely advances.
+for slept in [149.076, 3600.0, 8 * 3600.0, 23 * 3600.0] {
+    let wall = receipt.requestWallTime + slept
+    let continuous = receipt.requestContinuousTime! + slept
+    check(receipt.canControl(family: family, pairing: pairing, wallTime: wall, continuousTime: continuous),
+          "Active demo survives \(slept) seconds including sleep")
+    check(receipt.remainingDemoSeconds(wallTime: wall, continuousTime: continuous) == 86400 - slept,
+          "Expiry monitor uses the same sleep-inclusive remainder")
+}
+check(receipt.needsRefresh(continuousTime: 100 + 8 * 3600), "Overnight sleep also advances refresh deadline")
+check(receipt.remainingDemoSeconds(wallTime: 186400, continuousTime: 86500) == 0,
+      "Demo expires exactly after 24 hours, including sleep")
+check(!receipt.canControl(family: family, pairing: pairing, wallTime: 200000, continuousTime: 100100),
+      "Waking after expiry does not grant a fresh demo")
+check(receipt.remainingDemoSeconds(wallTime: 100120, continuousTime: 220) == 86280,
+      "Slow request or sleep during network transit consumes the original interval")
+check(receipt.remainingDemoSeconds(wallTime: 100469.743, continuousTime: 569.743)! < 85931,
+      "Reproduced elapsed time no longer fails after 149 seconds of sleep")
+check(receipt.remainingDemoSeconds(wallTime: 100469.743, continuousTime: 420.667) == nil,
+      "Clock-domain mismatch remains rejected, not hidden by a larger tolerance")
+check(receipt.remainingDemoSeconds(wallTime: 100000 + 8*3600, continuousTime: 10) == nil,
+      "Reboot invalidates demo until authenticated refresh")
+check(receipt.remainingDemoSeconds(wallTime: 100000 + 8*3600, continuousTime: 200) == nil,
+      "Reboot with uptime past old anchor still fails the wall/clock comparison")
+check(receipt.remainingDemoSeconds(wallTime: 99900, continuousTime: 200) == nil,
+      "Clock rollback does not extend access")
+check(receipt.remainingDemoSeconds(wallTime: 100200, continuousTime: 200) == nil,
+      "Manual forward clock change still requires revalidation")
+for invalid in [Double.nan, Double.infinity, -1] {
+    check(receipt.remainingDemoSeconds(wallTime: 100000, continuousTime: invalid) == nil,
+          "Invalid current clock fails closed")
+    check(receipt.needsRefresh(continuousTime: invalid), "Invalid clock requests refresh")
+}
+
+// Synthesized decoding must recognize missing version/anchor as legacy, rather
+// than using initializer defaults to reinterpret an old awake-time value.
+func legacyReceipt(_ source: ReceivedFamilyAccessLease) throws -> ReceivedFamilyAccessLease {
+    var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(source)) as! [String: Any]
+    json.removeValue(forKey: "clockVersion")
+    json.removeValue(forKey: "requestContinuousTime")
+    json["requestUptime"] = 100
+    return try JSONDecoder().decode(ReceivedFamilyAccessLease.self, from: JSONSerialization.data(withJSONObject: json))
+}
+let legacyDemo = try legacyReceipt(receipt)
+check(legacyDemo.clockVersion == nil && legacyDemo.requestContinuousTime == nil, "Old receipts decode without clock conversion")
+check(legacyDemo.needsRefresh(continuousTime: 100), "Old receipt forces existing authenticated refresh")
+check(!legacyDemo.canControl(family: family, pairing: pairing, wallTime: 100000, continuousTime: 100),
+      "Never grant demo from a legacy clock anchor")
+let legacyPaid = try legacyReceipt(earlyReceipt)
+check(legacyPaid.canControl(family: family, pairing: pairing, wallTime: 200000, continuousTime: 10),
+      "Paid legacy receipt survives migration offline and reboot")
+check(!legacyPaid.canControl(family: UUID(), pairing: pairing, wallTime: 200000, continuousTime: 10),
+      "Legacy paid still bound to family")
+check(!demo.mayReplace(legacyDemo.lease, family: family, pairing: pairing), "Migration never accepts replay as renewal")
+let freshDemo = lease(issued: now + 1000)
+check(freshDemo.mayReplace(legacyDemo.lease, family: family, pairing: pairing), "Fresh same-revision snapshot migrates clock")
+let migrated = ReceivedFamilyAccessLease(lease: freshDemo, requestWallTime: 100001, requestContinuousTime: 500)
+check(migrated.canControl(family: family, pairing: pairing, wallTime: 100001, continuousTime: 500), "Fresh authenticated demo works")
+check(migrated.remainingDemoSeconds(wallTime: 100001, continuousTime: 500) == 86399, "Migration preserves original server deadline")
+var unknownClock = try JSONSerialization.jsonObject(with: JSONEncoder().encode(receipt)) as! [String: Any]
+unknownClock["clockVersion"] = 99
+let futureReceipt = try JSONDecoder().decode(ReceivedFamilyAccessLease.self, from: JSONSerialization.data(withJSONObject: unknownClock))
+check(futureReceipt.needsRefresh(continuousTime: 100), "Unknown clock version requires refresh")
+check(!futureReceipt.canControl(family: family, pairing: pairing, wallTime: 100000, continuousTime: 100), "Unknown clock cannot grant demo")
+check(roundTrip.clockVersion == 2 && roundTrip.requestContinuousTime == 100, "Modern anchor and version persist")
+let clockSample = FamilyAccessClock.now
+check(clockSample.isFinite && clockSample > 0 && FamilyAccessClock.now >= clockSample, "Real continuous clock is finite and monotonic")
+
 var presentations = FamilyAccessPresentationStack()
 let root = UUID(), editor = UUID(), nested = UUID()
 check(presentations.presenter == nil, "No missing presenter assumed")

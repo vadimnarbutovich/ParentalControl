@@ -330,7 +330,10 @@ final class SubscriptionService: ObservableObject {
             updatePro(from: info)
             let restored = info.entitlements[RevenueCatConfig.entitlementIdentifier]?.isActive == true
             if restored {
-                guard await confirmServerPurchase() else { return .pendingVerification }
+                guard await confirmServerPurchase() else {
+                    AppAnalytics.report("restore_result", parameters: ["result": "pending_verification"])
+                    return .pendingVerification
+                }
             }
             AppAnalytics.report("restore_result", parameters: [
                 "result": restored ? "restored" : "no_active_subscription"

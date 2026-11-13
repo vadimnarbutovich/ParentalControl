@@ -695,3 +695,14 @@
 "access.banner.setup.child.body" = "両方のスマートフォンの設定を完了するよう、保護者にお願いしてください。";
 "recovery.install.body" = "お子様のスマートフォンからもアプリを削除した場合は、[リンクを送信](%@)するか、QRコードを読み取って再インストールしてください。その後、お子様のスマートフォンでアプリを開き、「%@」を選択してください。";
 "recovery.install.continue" = "インストール済み — 次へ";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ファミリーID";
+"settings.family_id.copy" = "IDをコピー";
+"settings.family_id.unavailable" = "このデバイスにはファミリーが設定されていません。";
+
+// Optional App Store update prompt
+"app_update.title" = "アップデートがあります";
+"app_update.message" = "App Storeで新しいバージョンが公開されています。";
+"app_update.update" = "アップデート";
+"app_update.later" = "あとで";

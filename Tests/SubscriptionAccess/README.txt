@@ -1,5 +1,26 @@
 Subscription access integration — 2026-10-22
 
+Demo clock across sleep — 2026-11-11
+- Host and extensions now anchor demo access to mach_continuous_time, which
+  includes sleep. Access checks, refresh timing and expiry scheduling use the
+  same clock. The server deadline, replay/family guards and paid cache policy
+  remain unchanged. No new polling or server changes.
+- Receipt clockVersion=2. Legacy demo anchors require a fresh authenticated
+  snapshot; old awake-time values are never converted or reused. Legacy paid
+  receipts continue granting verified access offline. After updating, open the
+  child app online once before testing background use. Do not uninstall/re-pair.
+- Model tests cover sleep, real observed elapsed values, actual expiry, network
+  delay, reboot, clock changes, legacy migration and invalid anchors. Store tests
+  exercise real FamilyAccessStore with isolated defaults, including same-revision
+  migration, polling suppression, stale replies, expiry and family changes.
+- Hardware acceptance still required: active demo spanning midnight, 10-minute
+  daily limit, open child app online once, then leave it asleep overnight. Next
+  day use selected apps without opening host; verify usage and exhaustion shield.
+  Also verify parent block/unblock/+minutes and real demo expiry during sleep.
+
+xcrun swiftc -parse-as-library -module-cache-path /private/tmp/parental-access-module-cache ParentalControl/Models/FamilyAccessLease.swift ParentalControl/Services/FamilyAccessStore.swift Tests/SubscriptionAccess/ClockStoreTests.swift -o /private/tmp/parental-clock-store-tests
+/private/tmp/parental-clock-store-tests
+
 Unified verified Apple purchases — 2026-10-25 (current policy)
 - Production and Apple Sandbox purchases now use the same canonical verifier.
   RevenueCat subscription/purchase lists omit the environment filter. Only the

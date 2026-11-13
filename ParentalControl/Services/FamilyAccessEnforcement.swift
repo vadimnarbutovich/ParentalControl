@@ -54,12 +54,13 @@ nonisolated enum FamilyAccessEnforcement {
             }
             return
         }
-        let signature = "\(receipt.lease.revision):\(end)"
+        // Re-register pre-fix timers even if the server revision/deadline is unchanged.
+        let signature = "continuous-v2:\(receipt.lease.revision):\(end)"
         if d?.string(forKey: "parentalcontrol.accessMonitorRevision") == signature { return }
-        let elapsed = ProcessInfo.processInfo.systemUptime - receipt.requestUptime
-        let remaining = Double(end - receipt.lease.issuedAtMs) / 1000 - elapsed
-        guard remaining > 0, FamilyAccessStore.allowed else { _ = releaseIfNeeded(); return }
         let now = Date()
+        guard let remaining = receipt.remainingDemoSeconds(wallTime: now.timeIntervalSince1970,
+                continuousTime: FamilyAccessClock.now), remaining > 0, FamilyAccessStore.allowed
+        else { _ = releaseIfNeeded(); return }
         let calendar = Calendar.current
         let fields: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
         // Apple's minimum interval is 15 min. A past start keeps short remaining

@@ -1,12 +1,14 @@
 import Foundation
 
-/// Closed, low-cardinality event contract. Unknown events/fields never leave the app.
-/// No identifiers, user text, coordinates, app tokens, exact dates or raw errors.
+/// Closed event contract. Unknown events/fields never leave the app.
+/// User text is limited to titles on schedule saves and successful task create/edit.
+/// No family identifiers, descriptions, coordinates, app tokens or raw errors.
 enum AnalyticsSchema {
     enum Rule {
         case choice(Set<String>)
         case integer(ClosedRange<Int>)
         case boolean
+        case title
 
         func accepts(_ value: Any) -> Bool {
             switch self {
@@ -15,6 +17,9 @@ enum AnalyticsSchema {
                 guard type(of: value) == Int.self, let number = value as? Int else { return false }
                 return range.contains(number)
             case .boolean: return type(of: value) == Bool.self
+            case .title:
+                guard let title = value as? String else { return false }
+                return !title.isEmpty && title.count <= 200
             }
         }
     }
@@ -33,8 +38,8 @@ enum AnalyticsSchema {
     static let events: [String: [String: Rule]] = [
         "role_selected": ["role": role],
         "onboarding_flow_shown": ["mode": mode, "role": role],
-        "onboarding_step_shown": ["mode": mode, "step": step],
-        "onboarding_step_continue": ["step": step, "ready": .boolean],
+        "onboarding_step_shown": ["mode": mode, "step": step, "role": role],
+        "onboarding_step_continue": ["step": step, "ready": .boolean, "role": role],
         "onboarding_closed": ["mode": mode, "role": role],
         "onboarding_share_app": [:],
         "onboarding_permission_request": ["permission": permission, "role": role],
@@ -42,7 +47,7 @@ enum AnalyticsSchema {
         "pairing_code_request": ["result": result],
         "pairing_join": ["result": result],
         "devices_unlink": ["result": result],
-        "parent_mode_enter": ["result": .choice(["success", "wrong_pin", "locked_out", "not_configured"])],
+        "parent_mode_enter": ["result": .choice(["success", "wrong_pin", "locked_out", "not_configured", "unavailable"])],
         "parent_mode_exit_tap": [:],
         "parent_pin_change": ["action": .choice(["set", "clear"]), "result": result],
         "main_tab_select": ["tab": .choice(["home", "tasks", "schedule", "map", "statistics", "blocklist", "settings", "parentEntry"])],
@@ -57,11 +62,11 @@ enum AnalyticsSchema {
         "remote_block_request": ["action": .choice(["block", "unblock"])],
         "remote_block_result": ["action": .choice(["block", "unblock"]), "result": result],
         "daily_budget_saved": ["kind": .choice(["limit", "adjustment"]),
-            "seconds": .integer(-86400...86400), "limit_mode": .choice(["every_day", "weekdays"])],
+            "minutes": .integer(-1440...1440), "limit_mode": .choice(["every_day", "weekdays"])],
         "daily_budget_save_failed": ["kind": .choice(["limit", "adjustment"])],
-        "schedule_change": ["action": scheduleAction, "enabled": .boolean, "is_new": .boolean],
+        "schedule_change": ["action": scheduleAction, "enabled": .boolean, "is_new": .boolean, "title": .title],
         "schedule_sync_result": ["action": .choice(["save", "delete"]), "result": result],
-        "task_action": ["action": taskAction, "result": result],
+        "task_action": ["action": taskAction, "result": result, "title": .title],
         "location_request": [:],
         "location_request_result": ["result": result],
         "statistics_calendar_open": [:],
@@ -83,14 +88,25 @@ enum AnalyticsSchema {
         "paywall_open": ["source": .choice(["settings", "dashboard_badge", "limited_feature"])],
         "paywall_cta_tap": ["cta_type": .choice(["continue", "start_trial"])],
         "purchase_started": ["plan": .choice(["monthly", "annual", "lifetime", "other"])],
-        "purchase_result": ["plan": .choice(["monthly", "annual", "lifetime", "other"]), "result": result],
+        "purchase_result": ["plan": .choice(["monthly", "annual", "lifetime", "other"]),
+            "result": .choice(["success", "failed", "cancelled", "pending_verification"])],
         "restore_started": [:],
-        "restore_result": ["result": .choice(["restored", "no_active_subscription", "failed"])]
+        "restore_result": ["result": .choice(["restored", "no_active_subscription", "failed", "pending_verification"])]
     ]
 
     static func sanitized(_ name: String, parameters: [String: Any]?) -> [String: Any]? {
         guard let rules = events[name] else { return nil }
-        return (parameters ?? [:]).filter { key, value in rules[key]?.accepts(value) == true }
+        var values = parameters ?? [:]
+        let action = values["action"] as? String
+        let includesTitle = (name == "schedule_change" && action == "save") ||
+            (name == "task_action" && ["create", "edit"].contains(action ?? "") &&
+             values["result"] as? String == "success")
+        if includesTitle, let title = values["title"] as? String {
+            values["title"] = String(title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
+        } else {
+            values.removeValue(forKey: "title")
+        }
+        return values.filter { key, value in rules[key]?.accepts(value) == true }
     }
 
     static func isAllowedKey(_ key: String, bundleID: String?) -> Bool {

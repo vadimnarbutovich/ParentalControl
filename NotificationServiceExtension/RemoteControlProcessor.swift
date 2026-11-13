@@ -306,7 +306,7 @@ final class RemoteControlProcessor {
     private func call(_ action: String, _ payload: [String: Any], releaseAcknowledgement: Bool = false) async throws -> Data {
         try checkContext()
         let requestWall = Date().timeIntervalSince1970
-        let requestUptime = ProcessInfo.processInfo.systemUptime
+        let requestContinuousTime = FamilyAccessClock.now
         let publicKey = "sb_publishable_urT7eQPRIxyXso8VKA2tHQ_-U0I0CsO"
         var request = URLRequest(url: URL(string: "https://tttwrzgjddalgiwmgmyz.supabase.co/functions/v1/parental-control-sync")!)
         request.httpMethod = "POST"
@@ -320,7 +320,7 @@ final class RemoteControlProcessor {
         try checkContext()
         if let http = response as? HTTPURLResponse {
             FamilyAccessStore.acceptResponse(data, response: http, pairing: pairingData,
-                requestWall: requestWall, requestUptime: requestUptime)
+                requestWall: requestWall, requestContinuousTime: requestContinuousTime)
             // Recovery ACK is allowed without paid access. Do not recursively
             // release/throw 402 after the server has accepted this acknowledgement.
             if releaseAcknowledgement {

@@ -638,3 +638,14 @@
 "access.banner.setup.child.body" = "Ζήτησε από τον γονέα σου να ολοκληρώσει τη ρύθμιση και στα δύο τηλέφωνα.";
 "recovery.install.body" = "Αν η εφαρμογή διαγράφηκε και από το τηλέφωνο του παιδιού, [στείλτε τον σύνδεσμο](%@) ή σαρώστε τον κωδικό QR για να την εγκαταστήσετε ξανά. Έπειτα ανοίξτε την εφαρμογή στο τηλέφωνο του παιδιού και επιλέξτε «%@».";
 "recovery.install.continue" = "Έχει εγκατασταθεί — συνέχεια";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "ID οικογένειας";
+"settings.family_id.copy" = "Αντιγραφή ID";
+"settings.family_id.unavailable" = "Δεν υπάρχει οικογένεια σε αυτή τη συσκευή.";
+
+// Optional App Store update prompt
+"app_update.title" = "Διαθέσιμη ενημέρωση";
+"app_update.message" = "Μια νέα έκδοση είναι διαθέσιμη στο App Store.";
+"app_update.update" = "Ενημέρωση";
+"app_update.later" = "Αργότερα";

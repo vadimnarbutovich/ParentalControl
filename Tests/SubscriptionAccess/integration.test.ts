@@ -45,7 +45,7 @@ test("child controls visibly pause without changing setup, parent paywalls or ne
 });
 
 test("renewal uses server check deadline and Premium uses effective paid access", () => {
-  assert.match(source, /receipt\?\.needsRefresh\(uptime: ProcessInfo.processInfo.systemUptime\)/);
+  assert.match(source, /receipt\?\.needsRefresh\(continuousTime: FamilyAccessClock.now\)/);
   const settings = read("Views/SettingsView.swift");
   const premium = settings.slice(settings.indexOf("private var premiumSection"), settings.indexOf("private var premiumSection") + 1100);
   assert.match(premium, /appState.isFamilyAccessAllowed && FamilyAccessStore.receipt\?\.lease.state == \.paid/);

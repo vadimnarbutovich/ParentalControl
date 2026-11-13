@@ -197,36 +197,46 @@ nonisolated enum ScreenTimeEnforcer {
             return try complete(monitoring: false)
         }
 
-        struct Signature: Codable {
-            let selection: Data?
-            let day: String?
-            let seconds: Int
-            let restart: String?
+        if state.budget?.monitorRecoveryExhausted == true {
+            // Never acknowledge an unlock backed by a known unusable monitor.
+            // Manual blocking, pause and expired access were handled above.
+            try shield()
+            try system { center.stopMonitoring([usage]) }
+            throw ControlSystemWorker.Failure.busy
         }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        let signature = try encoder.encode(Signature(selection: stamp.selection, day: stamp.day,
-            seconds: stamp.budgetSeconds, restart: stamp.restart))
+        let desired = BudgetMonitoringSignature(selection: stamp.selection, day: stamp.day,
+            seconds: stamp.budgetSeconds, restart: stamp.restart)
+        let signature = try encoder.encode(desired)
         let defaults = RemoteControlGate.defaults!
         var registered = false
         try system { registered = center.activities.contains(usage) }
-        let needsRestart = !registered || (stamp.budgetEnabled && state.budget?.monitorEvent == nil) ||
-            defaults.data(forKey: armedKey) != signature
+        let previousData = defaults.data(forKey: armedKey)
+        let previous = previousData.flatMap { try? JSONDecoder().decode(BudgetMonitoringSignature.self, from: $0) }
+        let needsRestart = stamp.budgetEnabled
+            ? previous?.canReuse(for: desired, state: state.budget, registered: registered) != true
+            : !registered || previousData != signature
         if needsRestart {
             let threshold = max(1, min(stamp.available, stamp.available < 60 ? 10 : 30))
             // arm() holds only its own short data lock, never over startMonitoring.
             try validate()
             let event = stamp.budgetEnabled
-                ? try DailyBudgetStore.shared.arm(threshold: threshold, matching: state.budget) : "parentalcontrol.usageBudget"
+                ? try DailyBudgetStore.shared.arm(threshold: threshold, matching: state.budget, cumulative: true) : "parentalcontrol.usageBudget"
             if stamp.budgetEnabled { expectedEvent = event }
             try system { center.stopMonitoring([usage]) }
             do {
                 try system {
-                    try center.startMonitoring(usage, during: dailySchedule, events: [
-                        DeviceActivityEvent.Name(event): DeviceActivityEvent(applications: state.selection.applicationTokens,
-                            categories: state.selection.categoryTokens, webDomains: state.selection.webDomainTokens,
-                            threshold: DateComponents(second: threshold), includesPastActivity: false)
-                    ])
+                    let registrations = stamp.budgetEnabled
+                        ? BudgetUsagePlan.make(used: stamp.usedSeconds, available: stamp.available).events(generation: event)
+                        : [(name: event, seconds: threshold)]
+                    let events = Dictionary(uniqueKeysWithValues: registrations.map {
+                        (DeviceActivityEvent.Name($0.name), DeviceActivityEvent(
+                            applications: state.selection.applicationTokens, categories: state.selection.categoryTokens,
+                            webDomains: state.selection.webDomainTokens, threshold: DateComponents(second: $0.seconds),
+                            includesPastActivity: false))
+                    })
+                    try center.startMonitoring(usage, during: dailySchedule, events: events)
                 }
             } catch {
                 // A late / failed registration cannot be treated as a healthy monitor.
@@ -236,11 +246,12 @@ nonisolated enum ScreenTimeEnforcer {
                 try shield()
                 throw error
             }
-            defaults.set(signature, forKey: armedKey)
             defaults.set(threshold, forKey: "parentalcontrol.deviceActivityThresholdSeconds")
             defaults.set(threshold, forKey: "parentalcontrol.deviceActivityLastThresholdValue")
             defaults.set(Int(Date().timeIntervalSince1970), forKey: "parentalcontrol.deviceActivityLastStartMonitoringTimestamp")
         }
+        try validate()
+        defaults.set(signature, forKey: armedKey)
         // A late startMonitoring return must never unlock using the old command.
         try system { store.clearAllSettings() }
         return try complete(monitoring: true, signature: signature)

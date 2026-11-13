@@ -1,0 +1,97 @@
+Budget reduction not confirmed — 2026-11-13, Minsk
+
+User kept child host closed, using selected apps. Reduction after10:10 did not
+update parent counters; similar additions previously applied only on host launch.
+Read-only investigation; existing usage recovery changes are staged by user,
+not changed or unstaged here. No commands resent or server settings mutated.
+
+Server evidence:
+- Command b2b24f25-acf8-4536-91ba-d348a574cc09, tasks_updated, created10:10:34.105,
+  latest attempt10:13:01.330, retry_count4, failed10:14:01.839 max_retry_exceeded.
+- Desired daily policy24, latest child snapshot still23. Limit600, extras4800
+  before the unreceived reduction. Child continued background usage reports.
+- Unified function_edge_logs07:09–07:17UTC:81 sync +5 balance-sync requests,
+  allHTTP200. Health advisors empty. These are project-level transport results,
+  not proof of APNs delivery or identification of every request's action.
+
+Device evidence:
+/tmp/parental-budget-command-stall-20261113.logarchive
+/private/tmp/parental-budget-command-stall-20261113.ndjson
+/private/tmp/parental-command-stall-appmentions.ndjson
+- Inspected10:09–10:18. No NotificationControl received/preflight/unfinished
+  records, no NotificationServiceExtension process log entries in this interval.
+- Other processes record termination of NSE pid75354 at10:10:40. Earlier successful
+  archive proves this same pid started10:01:57 and processed both10:01/10:03
+  commands. Termination alone does NOT establish execution of the failed command.
+- apsd production NonCellular connection TCP5223 times out10:10:36 (Code60,
+  retransmissions, "Operation timed out"); reconnects. At10:14:39 another APNs
+  NonCellular stream fails its keepalive probe ("no KA ACK") and reconnects.
+  Topics/messages are private, so association of a specific packet with our
+  failed command cannot be proven from this archive.
+- dasd repeatedly denies com.apple.pushLaunch.mycompny.ParentalControl with
+  pushDisallowed=1. This is the HOST background-launch path; do not assume it
+  proves NSE denial or force-quit without more evidence.
+- DeviceActivity accounting remains active: old generation reaches600 at10:14:47,
+  new generation reaches30 at10:15:49 then60/90/120/150 through10:17:49, eachdelta30.
+  This also confirms window handoff after the previous accounting fix.
+
+Interpretation: evidence points to push delivery / OS dispatch before our
+command processor, not the previous observed Screen Time preflight timeout.
+Cannot yet attribute the failure specifically to Wi-Fi router, VPN, carrier,
+Apple or OS policy. Normal HTTPS usage uploads do not prove APNs connectivity.
+Apple reference: https://support.apple.com/en-gb/102266
+
+Pending controlled test: without opening host, switch child Wi-Fi off in Settings,
+leave cellular available, submit one new small budget correction from parent,
+report confirmation and VPN/filter status. Do not revive the failed command,
+increase retries blindly, or change accounting code based on network errors.
+
+Controlled network test completed:
+- User switched child to cellular without opening host, sent -300sec, and saw
+  both budget changes apply. VPN had been enabled temporarily earlier on child,
+  but was already disabled before the failed command.
+- New command1e1c6584... created10:22:04.551, applied10:22:11.005 (6.45sec),
+  retry_count1/error null. Oldb2b24f25... remains failed; it was NOT re-ACKed.
+- Child applied policy25; operations include rev24 -3600 and rev25 -300.
+  This is latest-policy reconciliation of both saved adjustments, not a duplicate
+  delivery or proof both push messages arrived. Snapshot10:22:10: used1470,
+  extra900, limit600, remaining30, new generation49966BC1...
+- Result corroborates failure before command processing on the prior network;
+  no host launch needed once the new wake reached NSE. APNs interruption is
+  observed, but VPN versus router/provider/OS causality is not distinguishable.
+- Runtime code/server retry configuration left unchanged. Do not blindly add
+  retries or bypass Screen Time preflight based on this occurrence. Next practical
+  isolation: return to Wi-Fi with VPN/filter disabled and repeat one small change
+  without host launch, if user wants to check the original network.
+
+Delayed +5min after exhaustion — verified follow-up10:35–10:41
+Archive /tmp/parental-unlock-delay-20261113.logarchive; filtered evidence
+/private/tmp/parental-unlock-delay-20261113.ndjson (10:34:30–10:42 inspected).
+User reconnected Wi-Fi; earlier +5min at10:28:50 applied10:28:53 first attempt.
+The next +5min was delayed, then unlocked and exhausted normally without host.
+
+Command35c94e3b-f408-4d68-a916-a6c182d0ea08:
+- Server created10:35:12.736, retry_count2, last push attempt10:36:03.521,
+  applied10:36:06.955, noerror. Total54.219sec;3.434sec after second attempt.
+- No NotificationControl first-attempt execution recorded around10:35:12.
+  apsd NonCellular streams report APSErrorDomain Code1 at10:35:43.131/.179,
+  production connection closes and reconnects. Detailed error description/topic
+  are private: do not infer VPN/router causality or identify the lost packet.
+- At10:36:04.148 apsd receives private-topic message; launchd starts NSE75712
+  at10:36:04.171; our received stage10:36:04.267. First~51.5sec of total delay
+  precede the command processor. Whether APNs transport or OS dispatch consumed
+  each part of that interval cannot be separated from retained log evidence.
+- snapshot_decoded10:36:04.917; system_monitoring_check10:36:05.099;
+  system_monitoring_ready10:36:05.107 (~8ms, NO preflight timeout).
+  locally_applied10:36:05.221 (~0.954sec after received), acknowledged10:36:07.022.
+  No recorded unfinished/deadline/recovery failure. Automatic retry succeeded.
+- Prior shield.budget_exhausted10:34:59.885; fresh usage generationDD129741...
+  emits30/60/...300 exactly once each10:36:35.989–10:41:10.326.
+  shield.budget_exhausted10:41:10.367, ~305sec after local application.
+  Per-event Usage info lines were not retained; thresholds + final server state
+  (policy27, limit600, extra1500, used2100, remaining0, recoveryAttempts null,
+  uploaded10:41:11.625) corroborate completion without duplicated allowance.
+- Server function logs07:34:30–07:37UTC contain29 sync requests, allHTTP200.
+  No code or server change warranted by this delivery-delay evidence. This
+  physical test now confirms added allowance through repeat exhaustion/shield;
+  early-terminal repair path was not triggered. Next-day test remains separate.

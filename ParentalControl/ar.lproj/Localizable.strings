@@ -695,3 +695,14 @@
 "access.banner.setup.child.body" = "اطلب من أحد والديك إكمال الإعداد على الهاتفين.";
 "recovery.install.body" = "إذا حُذف التطبيق أيضًا من هاتف طفلك، [أرسل الرابط](%@) أو امسح رمز QR لإعادة تثبيته. ثم افتح التطبيق على هاتف طفلك واختر «%@».";
 "recovery.install.continue" = "التطبيق مثبّت — متابعة";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "معرّف العائلة";
+"settings.family_id.copy" = "نسخ المعرّف";
+"settings.family_id.unavailable" = "لا توجد عائلة على هذا الجهاز.";
+
+// Optional App Store update prompt
+"app_update.title" = "يتوفر تحديث";
+"app_update.message" = "يتوفر إصدار جديد على App Store.";
+"app_update.update" = "تحديث";
+"app_update.later" = "لاحقًا";

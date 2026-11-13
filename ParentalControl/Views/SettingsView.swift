@@ -29,6 +29,8 @@ struct SettingsView: View {
     @State private var showPinClearConfirm = false
     @State private var showUnlinkConfirm = false
     @State private var isUnlinking = false
+    @State private var showFamilyID = false
+    @State private var diagnosticFamilyID: String?
     @FocusState private var focusedField: SettingsFocusField?
 
     var body: some View {
@@ -115,6 +117,20 @@ struct SettingsView: View {
                     PaywallView(isPresented: $showPaywall, openSource: .settings)
                         .environmentObject(subscriptionService)
                 }
+            }
+        }
+        .alert("settings.family_id.title", isPresented: $showFamilyID) {
+            if let diagnosticFamilyID {
+                Button("settings.family_id.copy") {
+                    UIPasteboard.general.string = diagnosticFamilyID
+                }
+            }
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            if let diagnosticFamilyID {
+                Text(verbatim: diagnosticFamilyID)
+            } else {
+                Text("settings.family_id.unavailable")
             }
         }
         .onAppear { refreshLocationPermissionStatus() }
@@ -492,6 +508,11 @@ struct SettingsView: View {
             Text("settings.section.help")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.95))
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture(count: 5).onEnded {
+                    diagnosticFamilyID = appState.pairingState?.familyID.uuidString.lowercased()
+                    showFamilyID = true
+                })
 
             settingsRow(titleKey: "settings.item.show_onboarding") {
                 AppAnalytics.report("settings_onboarding_replay_tap")

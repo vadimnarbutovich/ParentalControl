@@ -638,3 +638,14 @@
 "access.banner.setup.child.body" = "Palūdz vecākiem pabeigt iestatīšanu abos tālruņos.";
 "recovery.install.body" = "Ja lietotne tika izdzēsta arī no bērna tālruņa, [nosūtiet saiti](%@) vai skenējiet QR kodu, lai to instalētu vēlreiz. Pēc tam atveriet lietotni bērna tālrunī un izvēlieties «%@».";
 "recovery.install.continue" = "Jau instalēta — turpināt";
+
+// Hidden family diagnostics
+"settings.family_id.title" = "Ģimenes ID";
+"settings.family_id.copy" = "Kopēt ID";
+"settings.family_id.unavailable" = "Šajā ierīcē nav ģimenes.";
+
+// Optional App Store update prompt
+"app_update.title" = "Pieejams atjauninājums";
+"app_update.message" = "App Store ir pieejama jauna versija.";
+"app_update.update" = "Atjaunināt";
+"app_update.later" = "Vēlāk";

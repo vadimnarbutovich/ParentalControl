@@ -50,7 +50,7 @@ final class AppState: ObservableObject {
 
     func refreshFamilyAccess(force: Bool = false) async {
         guard pairingState?.isLinked == true, !accessCheckInFlight else { return }
-        let renewalCheckDue = FamilyAccessStore.receipt?.needsRefresh(uptime: ProcessInfo.processInfo.systemUptime) == true
+        let renewalCheckDue = FamilyAccessStore.receipt?.needsRefresh(continuousTime: FamilyAccessClock.now) == true
         let interval: TimeInterval = FamilyAccessStore.isSettingUp || purchaseRecoveryUntil.map({ $0 > Date() }) == true ? 15 :
             (renewalCheckDue ? 30 : (FamilyAccessStore.isEnrolled ? 900 : 60))
         guard force || lastAccessCheck.map({ Date().timeIntervalSince($0) >= interval }) != false else { return }
@@ -513,7 +513,6 @@ final class AppState: ObservableObject {
         clearLocalManualBlockIntent()
         storage.saveDeviceRole(role)
         deviceRole = role
-        AppAnalytics.updateContext(role: role.rawValue, parentMode: false)
         AppAnalytics.report("role_selected", parameters: ["role": role.rawValue])
         restoreParentBudgetCache()
         isParentChildStateResolved = role != .parent
@@ -882,8 +881,11 @@ final class AppState: ObservableObject {
             guard pairingState?.familyID == requestedFamily else { return false }
             receiveParentBudget(saved)
             budgetChangeIntent = nil
-            AppAnalytics.report("daily_budget_saved", parameters: ["kind": kind, "seconds": seconds,
-                "limit_mode": saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"])
+            var analyticsParameters: [String: Any] = ["kind": kind, "minutes": seconds / 60]
+            if kind == "limit" {
+                analyticsParameters["limit_mode"] = saved.policy?.weeklyLimitsSeconds == nil ? "every_day" : "weekdays"
+            }
+            AppAnalytics.report("daily_budget_saved", parameters: analyticsParameters)
             return true
         } catch {
             AppAnalytics.report("daily_budget_save_failed", parameters: ["kind": kind])
@@ -1194,7 +1196,6 @@ final class AppState: ObservableObject {
         case .notConfigured: analyticsResult = "not_configured"
         case .unavailable: analyticsResult = "unavailable"
         }
-        AppAnalytics.updateContext(role: deviceRole?.rawValue, parentMode: isParentModeActive)
         AppAnalytics.report("parent_mode_enter", parameters: ["result": analyticsResult])
         return result
     }
@@ -3472,7 +3473,7 @@ final class AppState: ObservableObject {
         let schedule = template.makeSchedule()
         guard requireFamilyAccess() else { return schedule }
         AppAnalytics.report("schedule_change", parameters: [
-            "action": "save", "is_new": true, "enabled": schedule.isEnabled
+            "action": "save", "is_new": true, "enabled": schedule.isEnabled, "title": schedule.name
         ])
         var list = blockSchedules
         list.insert(schedule, at: 0)
@@ -3489,7 +3490,7 @@ final class AppState: ObservableObject {
         guard requireFamilyAccess() else { return false }
         AppAnalytics.report("schedule_change", parameters: [
             "action": "save", "is_new": !blockSchedules.contains(where: { $0.id == schedule.id }),
-            "enabled": schedule.isEnabled
+            "enabled": schedule.isEnabled, "title": schedule.name
         ])
         var updated = schedule
         updated.updatedAt = Date()
@@ -3627,7 +3628,11 @@ final class AppState: ObservableObject {
             childTasks.removeAll { $0.id == id }
             if let result, result.isVisible(at: Date()) { childTasks.insert(result, at: 0) }
             storage.saveChildTasks(childTasks)
-            AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "success"])
+            var analyticsParameters: [String: Any] = ["action": analyticsAction, "result": "success"]
+            if (analyticsAction == "create" || analyticsAction == "edit"), let result {
+                analyticsParameters["title"] = result.title
+            }
+            AppAnalytics.report("task_action", parameters: analyticsParameters)
             return true
         } catch {
             AppAnalytics.report("task_action", parameters: ["action": analyticsAction, "result": "failed"])
@@ -4497,13 +4502,13 @@ private final class ParentalRemoteSyncService {
         let operation = { @MainActor [self] () async throws -> Data in
             // One receipt anchor per actual HTTP request, not per waiter.
             let requestWall = Date().timeIntervalSince1970
-            let requestUptime = ProcessInfo.processInfo.systemUptime
+            let requestContinuousTime = FamilyAccessClock.now
             let (data, response) = try await session.data(for: preparedRequest)
             guard let http = response as? HTTPURLResponse else {
                 throw SyncError.invalidServerResponse
             }
             FamilyAccessStore.acceptResponse(data, response: http, pairing: accessPairing,
-                requestWall: requestWall, requestUptime: requestUptime)
+                requestWall: requestWall, requestContinuousTime: requestContinuousTime)
             if http.statusCode == 402, FamilyAccessStore.paidMutations.contains(action), storage.loadDeviceRole() == .parent,
                !FamilyAccessStore.isSettingUp {
                 NotificationCenter.default.post(name: FamilyAccessStore.purchaseRequired, object: nil)

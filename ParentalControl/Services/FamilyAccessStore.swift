@@ -34,12 +34,12 @@ nonisolated enum FamilyAccessStore {
         guard let pairingData, let pair = try? JSONDecoder().decode(Pair.self, from: pairingData),
               let child = pair.childDeviceID, let receipt else { return false }
         return receipt.canControl(family: pair.familyID, pairing: child,
-            wallTime: Date().timeIntervalSince1970, uptime: ProcessInfo.processInfo.systemUptime)
+            wallTime: Date().timeIntervalSince1970, continuousTime: FamilyAccessClock.now)
     }
     /// Setup can save a selection and a limit, but never apply Screen Time restrictions.
     static var isSettingUp: Bool { isEnrolled && receipt?.lease.state == .setup }
     static let setupActions: Set<String> = ["parent_poll", "child_poll", "change_daily_budget"]
-    static func accept(_ data: Data, pairing: Data?, requestWall: TimeInterval, requestUptime: TimeInterval) {
+    static func accept(_ data: Data, pairing: Data?, requestWall: TimeInterval, requestContinuousTime: TimeInterval) {
         guard let pairing, let pair = try? JSONDecoder().decode(Pair.self, from: pairing),
               let child = pair.childDeviceID,
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -58,11 +58,11 @@ nonisolated enum FamilyAccessStore {
             } else if let lease = try? JSONDecoder().decode(FamilyAccessLease.self, from: data),
                       lease.mayReplace(receipt?.lease, family: pair.familyID, pairing: child),
                       let encoded = try? JSONEncoder().encode(ReceivedFamilyAccessLease(lease: lease,
-                        requestWallTime: requestWall, requestUptime: requestUptime)) {
+                        requestWallTime: requestWall, requestContinuousTime: requestContinuousTime)) {
                 if let previous = receipt, previous.lease.revision == lease.revision,
-                   !previous.needsRefresh(uptime: ProcessInfo.processInfo.systemUptime),
+                   !previous.needsRefresh(continuousTime: FamilyAccessClock.now),
                    previous.canControl(family: pair.familyID, pairing: child,
-                     wallTime: Date().timeIntervalSince1970, uptime: ProcessInfo.processInfo.systemUptime) {
+                     wallTime: Date().timeIntervalSince1970, continuousTime: FamilyAccessClock.now) {
                     // Ordinary polling must not reset the receipt or invalidate
                     // an in-flight system operation every few seconds.
                     return
@@ -74,12 +74,12 @@ nonisolated enum FamilyAccessStore {
         }
         if changedValue { NotificationCenter.default.post(name: changed, object: nil) }
     }
-    static func acceptResponse(_ data: Data, response: HTTPURLResponse, pairing: Data?, requestWall: TimeInterval, requestUptime: TimeInterval) {
+    static func acceptResponse(_ data: Data, response: HTTPURLResponse, pairing: Data?, requestWall: TimeInterval, requestContinuousTime: TimeInterval) {
         if let header = response.value(forHTTPHeaderField: "x-family-access"), let encoded = header.data(using: .utf8) {
-            accept(encoded, pairing: pairing, requestWall: requestWall, requestUptime: requestUptime)
+            accept(encoded, pairing: pairing, requestWall: requestWall, requestContinuousTime: requestContinuousTime)
         } else if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let access = object["access"], let encoded = try? JSONSerialization.data(withJSONObject: access) {
-            accept(encoded, pairing: pairing, requestWall: requestWall, requestUptime: requestUptime)
+            accept(encoded, pairing: pairing, requestWall: requestWall, requestContinuousTime: requestContinuousTime)
         }
     }
     static let recoveryActions: Set<String> = ["access_status", "purchase_identity", "verify_purchase", "release_control", "resume_control",

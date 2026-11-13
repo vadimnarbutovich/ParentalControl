@@ -1,0 +1,153 @@
+{
+  "status": "DRAFT_NOT_APPLIED",
+  "note": "Minimal family/parent wording changes. Existing cross-localization languages retained. Not an ASO ranking claim.",
+  "changes": [
+    {
+      "locale": "en-US",
+      "field": "subtitle",
+      "before": "App Blocker for Kids & Parents",
+      "proposed": "App Blocker for Parents",
+      "characters": 23
+    },
+    {
+      "locale": "pt-BR",
+      "field": "name",
+      "before": "GPS Locator: Child Location",
+      "proposed": "GPS Locator: Family Location",
+      "characters": 28
+    },
+    {
+      "locale": "fr-FR",
+      "field": "name",
+      "before": "Contrôle parental des enfants",
+      "proposed": "Contrôle parental en famille",
+      "characters": 28
+    },
+    {
+      "locale": "de-DE",
+      "field": "subtitle",
+      "before": "Bildschirmzeit für Kinder",
+      "proposed": "Bildschirmzeit für Familien",
+      "characters": 27
+    },
+    {
+      "locale": "ar-SA",
+      "field": "subtitle",
+      "before": "Limit Screen Time for Kids",
+      "proposed": "Limit Family Screen Time",
+      "characters": 24
+    },
+    {
+      "locale": "es-MX",
+      "field": "name",
+      "before": "Screen Time Schedule for Kids",
+      "proposed": "Family Screen Time Schedule",
+      "characters": 27
+    },
+    {
+      "locale": "el",
+      "field": "name",
+      "before": "Γονικός έλεγχος για παιδιά",
+      "proposed": "Γονικός έλεγχος για γονείς",
+      "characters": 26
+    },
+    {
+      "locale": "ko",
+      "field": "name",
+      "before": "Screen Time Control for Kids",
+      "proposed": "Family Screen Time Control",
+      "characters": 26
+    },
+    {
+      "locale": "ro",
+      "field": "name",
+      "before": "Control parental pentru copii",
+      "proposed": "Control parental în familie",
+      "characters": 27
+    },
+    {
+      "locale": "en-GB",
+      "field": "subtitle",
+      "before": "App Blocker for Kids & Parents",
+      "proposed": "App Blocker for Parents",
+      "characters": 23
+    },
+    {
+      "locale": "vi",
+      "field": "name",
+      "before": "Kids Chores: Earn Screen Time",
+      "proposed": "Family Tasks & Screen Time",
+      "characters": 26
+    },
+    {
+      "locale": "en-AU",
+      "field": "subtitle",
+      "before": "App Blocker for Kids & Parents",
+      "proposed": "App Blocker for Parents",
+      "characters": 23
+    },
+    {
+      "locale": "en-CA",
+      "field": "subtitle",
+      "before": "App Blocker for Kids & Parents",
+      "proposed": "App Blocker for Parents",
+      "characters": 23
+    },
+    {
+      "locale": "pl",
+      "field": "name",
+      "before": "Kontrola rodzicielska dzieci",
+      "proposed": "Kontrola rodzicielska",
+      "characters": 21
+    },
+    {
+      "locale": "zh-Hant",
+      "field": "name",
+      "before": "App Lock for Kids & Parents",
+      "proposed": "App Lock & Parental Control",
+      "characters": 27
+    },
+    {
+      "locale": "zh-Hant",
+      "field": "subtitle",
+      "before": "Child Control & Screen Limits",
+      "proposed": "Family Screen Time Limits",
+      "characters": 25
+    },
+    {
+      "locale": "ru",
+      "field": "name",
+      "before": "Родительский контроль детей",
+      "proposed": "Родительский контроль",
+      "characters": 21
+    },
+    {
+      "locale": "ru",
+      "field": "subtitle",
+      "before": "Ограничение времени ребенка",
+      "proposed": "Лимиты времени и блокировка",
+      "characters": 27
+    },
+    {
+      "locale": "zh-Hans",
+      "field": "name",
+      "before": "家长控制：孩子屏幕时间管理",
+      "proposed": "家长控制：家庭屏幕时间管理",
+      "characters": 13
+    },
+    {
+      "locale": "uk",
+      "field": "name",
+      "before": "Экранное время ребенка телефон",
+      "proposed": "Экранное время и лимиты",
+      "characters": 23
+    },
+    {
+      "locale": "uk",
+      "field": "subtitle",
+      "before": "Где мои дети, локатор ребенка",
+      "proposed": "Семейный локатор и блокировка",
+      "characters": 29
+    }
+  ]
+}

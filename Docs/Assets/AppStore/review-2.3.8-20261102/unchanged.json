@@ -1,0 +1,22 @@
+[
+  {
+    "file": "en/03-schedule-1206x2622.png",
+    "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/03-schedule-1206x2622.png",
+    "sha256": "f6b9cd0c6fea2cdfd563ccedfc242f033411dd88946826726ad62d7fc2704492"
+  },
+  {
+    "file": "en/04-tasks-1206x2622.png",
+    "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/04-tasks-1206x2622.png",
+    "sha256": "c057db08a528bd2efea445d987c3d1c268210e5fcb25b175dec2c283ebfcfc71"
+  },
+  {
+    "file": "ru/03-schedule-1206x2622.png",
+    "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/03-schedule-1206x2622.png",
+    "sha256": "48b30d28237341f8e515a4912b44895605176c9c0f83d42f502dce0e766ffebf"
+  },
+  {
+    "file": "ru/04-tasks-1206x2622.png",
+    "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/04-tasks-1206x2622.png",
+    "sha256": "668d9b943c0ea9148c64b35d66c9292943a07e201b7735b5e6f7c7f66c8cbfe0"
+  }
+]

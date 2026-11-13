@@ -1,0 +1,165 @@
+{
+  "out": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/review-2.3.8-20261102/clear-v2",
+  "method": "built-in image_gen; one generation from pre-edit source per asset; technical crop/resize only for required dimensions",
+  "entries": [
+    {
+      "key": "en_dash",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/02-dashboard-original.png",
+      "file": "en/02-dashboard-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-287e52bf-6153-4262-bf07-0ff86c1c0cd0.png",
+      "prompt": "Use case:precise-object-edit. Restore this original App Store artwork with visibly crisper text, clearer fine edges and brighter richer colors. High-detail finished screenshot, output1206x2622 or higher same aspect ratio. Replace upper marketing text with three centered large bold lines \"Help your family\" teal / \"use their phones\" navy / \"mindfully\" navy. Remove small subtitle. Headline almost full width with4% margins, balanced top/bottom whitespace above phone. Keep phone position/scale, every other UI label and number, map details/marker or dashboard cards and badge unchanged. Moderate vibrance and local contrast, clean dark navy panels, luminous cyan accents. All lettering very sharp, solid and accurately formed; no haze/blur, no sharpening halos, no new elements. Preserve layout.",
+      "nativeWidth": 851,
+      "nativeHeight": 1847
+    },
+    {
+      "key": "en_map",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/05-location-original.png",
+      "file": "en/05-location-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-ab42f67d-a561-49d6-adad-b5c3efff5718.png",
+      "prompt": "Use case:precise-object-edit. Restore this original App Store artwork with visibly crisper text, clearer fine edges and brighter richer colors. High-detail finished screenshot, output1206x2622 or higher same aspect ratio. Replace marketing headline with \"Know where\" teal / \"your loved\" navy / \"ones are\" navy, three centered large lines filling top area. Remove small subtitle. Replace in-phone title \"Child location\" with \"Location\". Keep phone position/scale, every other UI label and number, map details/marker or dashboard cards and badge unchanged. Moderate vibrance and local contrast, clean dark navy panels, luminous cyan accents. All lettering very sharp, solid and accurately formed; no haze/blur, no sharpening halos, no new elements. Preserve layout.",
+      "nativeWidth": 851,
+      "nativeHeight": 1847
+    },
+    {
+      "key": "en_schedule",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/03-schedule-original.png",
+      "file": "en/03-schedule-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-ced13fe5-64be-4089-9731-1d43fe1728f5.png",
+      "prompt": "Use case:precise-object-edit. High-quality restoration of supplied App Store screenshot. Make the entire image clearer and more vibrant: crisp small UI labels and icons, well-defined phone edges, slightly brighter clean cyan/purple/green accents, deeper navy dark panels, moderately improved local contrast. Eliminate soft haze on the UI. Preserve EVERY WORD and NUMBER verbatim, both large headline AND small marketing subtitle, phone position/scale, UI arrangement, all days/times, all cards and badge, mint ribbon background. No new text, no deletions, no redesign. Preserve original composition and aspect1206:2622, render maximum native detail. Avoid oversaturation, halos, blotches and broken glyphs.",
+      "nativeWidth": 851,
+      "nativeHeight": 1847
+    },
+    {
+      "key": "en_tasks",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/screenshots-features/04-tasks-original.png",
+      "file": "en/04-tasks-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-17c735e8-d882-413d-852a-1ab689a70a84.png",
+      "prompt": "Use case:precise-object-edit. High-quality restoration of supplied App Store screenshot. Make the entire image clearer and more vibrant: crisp small UI labels and icons, well-defined phone edges, slightly brighter clean cyan/purple/green accents, deeper navy dark panels, moderately improved local contrast. Eliminate soft haze on the UI. Preserve EVERY WORD and NUMBER verbatim, both large headline AND small marketing subtitle, phone position/scale, UI arrangement, all days/times, all cards and badge, mint ribbon background. No new text, no deletions, no redesign. Preserve original composition and aspect1206:2622, render maximum native detail. Avoid oversaturation, halos, blotches and broken glyphs.",
+      "nativeWidth": 851,
+      "nativeHeight": 1848
+    },
+    {
+      "key": "ru_map",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/05-location-original.png",
+      "file": "ru/05-location-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-dacc6d04-79e9-4fe5-8d8a-af1d0987b79f.png",
+      "prompt": "Use case:precise-object-edit. Restore this original App Store artwork with visibly crisper text, clearer fine edges and brighter richer colors. High-detail finished screenshot, output1206x2622 or higher same aspect ratio. Replace marketing headline with two large centered lines \"Знайте, где\" teal / \"ваши близкие\" navy, filling92% width and vertically centered above phone. Remove small subtitle. In-phone title must say only \"Местоположение\". Keep phone position/scale, every other UI label and number, map details/marker or dashboard cards and badge unchanged. Moderate vibrance and local contrast, clean dark navy panels, luminous cyan accents. All lettering very sharp, solid and accurately formed; no haze/blur, no sharpening halos, no new elements. Preserve layout.",
+      "nativeWidth": 851,
+      "nativeHeight": 1848
+    },
+    {
+      "key": "ru_schedule",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/03-schedule-original.png",
+      "file": "ru/03-schedule-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-62474f1f-7a41-4bdd-abaa-84caa18d54b6.png",
+      "prompt": "Use case:precise-object-edit. High-quality restoration of supplied App Store screenshot. Make the entire image clearer and more vibrant: crisp small UI labels and icons, well-defined phone edges, slightly brighter clean cyan/purple/green accents, deeper navy dark panels, moderately improved local contrast. Eliminate soft haze on the UI. Preserve EVERY WORD and NUMBER verbatim, both large headline AND small marketing subtitle, phone position/scale, UI arrangement, all days/times, all cards and badge, mint ribbon background. No new text, no deletions, no redesign. Preserve original composition and aspect1206:2622, render maximum native detail. Avoid oversaturation, halos, blotches and broken glyphs.",
+      "nativeWidth": 851,
+      "nativeHeight": 1848
+    },
+    {
+      "key": "ru_tasks",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/04-tasks-original.png",
+      "file": "ru/04-tasks-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-800f0faa-eb6b-4c9d-a070-450c0863b78e.png",
+      "prompt": "Use case:precise-object-edit. High-quality restoration of supplied App Store screenshot. Make the entire image clearer and more vibrant: crisp small UI labels and icons, well-defined phone edges, slightly brighter clean cyan/purple/green accents, deeper navy dark panels, moderately improved local contrast. Eliminate soft haze on the UI. Preserve EVERY WORD and NUMBER verbatim, both large headline AND small marketing subtitle, phone position/scale, UI arrangement, all days/times, all cards and badge, mint ribbon background. No new text, no deletions, no redesign. Preserve original composition and aspect1206:2622, render maximum native detail. Avoid oversaturation, halos, blotches and broken glyphs.",
+      "nativeWidth": 851,
+      "nativeHeight": 1848
+    },
+    {
+      "key": "en_cover",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/en/cover-original.png",
+      "file": "en/cover-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-392f884d-eda9-4b1a-b39c-2e4f1b210b2f.png",
+      "prompt": "Use case:precise-object-edit. Restore this finished App Store cover illustration with much sharper clean details and brighter fresh colors. Precise hair strands, eyes and faces, knit fabric, crystalline cyan shield edges, gold laurel texture, clean bold typography. Moderate vibrance and local contrast; no hazy softness, no oversaturation or halos. Replace ONLY gold wording with exactly \"With care\" / \"for your family\". Keep main headline \"Parental control.\" / \"Made simple.\" unchanged. Preserve people identities/poses, all objects, exact scale, positions, empty safe margins and composition. Do not zoom/crop. Output highest native detail, exact target aspect 1206:2622, ideally 1206x2622px. No stars, no new elements, no text errors.",
+      "nativeWidth": 851,
+      "nativeHeight": 1847
+    },
+    {
+      "key": "en_header",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/en/header-original.png",
+      "file": "en/header-3840x1646.png",
+      "w": 3840,
+      "h": 1646,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-3e6d51f0-162a-47ad-805e-21c2655716db.png",
+      "prompt": "Use case:precise-object-edit. Restore this finished App Store header illustration with much sharper clean details and brighter fresh colors. Precise hair strands, eyes and faces, knit fabric, crystalline cyan shield edges, gold laurel texture, clean bold typography. Moderate vibrance and local contrast; no hazy softness, no oversaturation or halos. Replace ONLY gold wording with exactly \"With care\" / \"for your family\". Keep main headline \"Parental control.\" / \"Made simple.\" unchanged. Preserve people identities/poses, all objects, exact scale, positions, empty safe margins and composition. Do not zoom/crop. Output highest native detail, exact target aspect 3840:1646, ideally 3840x1646px. No stars, no new elements, no text errors.",
+      "nativeWidth": 1915,
+      "nativeHeight": 821
+    },
+    {
+      "key": "en_search",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/search-safe-v2/en/search-original.png",
+      "file": "en/search-3840x2560.png",
+      "w": 3840,
+      "h": 2560,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-97336f76-3901-444b-a7a7-27d09f876a4e.png",
+      "prompt": "Use case:precise-object-edit. Restore this finished App Store search illustration with much sharper clean details and brighter fresh colors. Precise hair strands, eyes and faces, knit fabric, crystalline cyan shield edges, gold laurel texture, clean bold typography. Moderate vibrance and local contrast; no hazy softness, no oversaturation or halos. Replace ONLY gold wording with exactly \"With care\" / \"for your family\". Keep main headline \"Parental control.\" / \"Made simple.\" unchanged. Preserve people identities/poses, all objects, exact scale, positions, empty safe margins and composition. Do not zoom/crop. Output highest native detail, exact target aspect 3840:2560, ideally 3840x2560px. No stars, no new elements, no text errors.",
+      "nativeWidth": 1536,
+      "nativeHeight": 1024
+    },
+    {
+      "key": "ru_cover",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/ru/cover-original.png",
+      "file": "ru/cover-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-e86cb299-9eb4-406a-b302-8422fa0df7cb.png",
+      "prompt": "Use case:precise-object-edit. Restore supplied Russian App Store cover artwork. Sharper precise faces and hair strands, clear eyes, detailed knit fabrics, crisp crystalline cyan shield, crisp gold laurels. Brighter fresh cyan/mint, rich gold, slightly more local contrast without haze, blur, oversaturation or halos. Replace gold caption with EXACT \"С заботой\" / \"о вашей семье\". Preserve main headline verbatim \"Родительский контроль\" / \"Просто и понятно\", preserving original line breaks. Keep people identities/poses, shield, pedestal, background ribbon shapes, exact positions/scale and generous safe margins. No crop or zoom. All Cyrillic glyphs clean and accurately formed. No new objects or stars. Maximum native detail, target aspect1206:2622, ideally 1206x2622px.",
+      "nativeWidth": 784,
+      "nativeHeight": 2007,
+      "technicalCrop": {
+        "width": 784,
+        "height": 1705,
+        "anchor": "center"
+      }
+    },
+    {
+      "key": "ru_header",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/ru/header-original.png",
+      "file": "ru/header-3840x1646.png",
+      "w": 3840,
+      "h": 1646,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-cd2cebea-5e7a-4dea-a0a6-dcef944d4ed7.png",
+      "prompt": "Use case:precise-object-edit. Restore supplied Russian App Store header artwork. Sharper precise faces and hair strands, clear eyes, detailed knit fabrics, crisp crystalline cyan shield, crisp gold laurels. Brighter fresh cyan/mint, rich gold, slightly more local contrast without haze, blur, oversaturation or halos. Replace gold caption with EXACT \"С заботой\" / \"о вашей семье\". Preserve main headline verbatim \"Родительский контроль\" / \"Просто и понятно\", preserving original line breaks. Keep people identities/poses, shield, pedestal, background ribbon shapes, exact positions/scale and generous safe margins. No crop or zoom. All Cyrillic glyphs clean and accurately formed. No new objects or stars. Maximum native detail, target aspect3840:1646, ideally 3840x1646px.",
+      "nativeWidth": 1915,
+      "nativeHeight": 821
+    },
+    {
+      "key": "ru_search",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/noStars/search-safe-v2/ru/search-original.png",
+      "file": "ru/search-3840x2560.png",
+      "w": 3840,
+      "h": 2560,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-6a4bac8f-675c-4741-8a5e-150a625f77f9.png",
+      "prompt": "Use case:precise-object-edit. Restore supplied Russian App Store search artwork. Sharper precise faces and hair strands, clear eyes, detailed knit fabrics, crisp crystalline cyan shield, crisp gold laurels. Brighter fresh cyan/mint, rich gold, slightly more local contrast without haze, blur, oversaturation or halos. Replace gold caption with EXACT \"С заботой\" / \"о вашей семье\". Preserve main headline verbatim \"Родительский контроль\" / \"Просто и понятно\", preserving original line breaks. Keep people identities/poses, shield, pedestal, background ribbon shapes, exact positions/scale and generous safe margins. No crop or zoom. All Cyrillic glyphs clean and accurately formed. No new objects or stars. Maximum native detail, target aspect3840:2560, ideally 3840x2560px.",
+      "nativeWidth": 1536,
+      "nativeHeight": 1024
+    },
+    {
+      "key": "ru_dash",
+      "source": "/Users/narbutovich/Vadim/SwiftProject/ParentalControl/Docs/Assets/AppStore/ru/screenshots-features/02-dashboard-original.png",
+      "file": "ru/02-dashboard-1206x2622.png",
+      "w": 1206,
+      "h": 2622,
+      "generated": "/Users/narbutovich/.codex/generated_images/01a0661e-e96b-7741-aa30-6866bd1c801f/exec-d27d3700-fff3-4318-be1e-e81e409c80e2.png",
+      "prompt": "Create a HIGH RESOLUTION restored edit of supplied original App Store screenshot. OUTPUT at 1760 x 3840 pixels (native high resolution, not a small thumbnail), portrait aspect close1206:2622. Restore crisp precise UI text and icons and bright clean colors. Increase clarity, microcontrast and vibrance moderately, no blur, no hazy glow over text, no sharpening halos. Preserve identical phone, UI, screen numbers67/60/8/10/5 and every label, floating badge, composition, mint background.\nReplace marketing text ABOVE phone: only THREE centered large bold lines \"Помогайте семье\" in teal / \"пользоваться телефоном\" navy / \"осознанно\" navy. Remove the small two-line subtitle. Enlarge headline to use92% canvas width, center block vertically between canvas top and phone with balanced gaps. Standard bold sans-serif Cyrillic. Every lowercase а must be the SAME conventional DOUBLE-STOREY glyph throughout, including Помогайте and осознанно. Use clean normal double-storey а with continuous contours, no pale specks/notches across strokes. Do NOT substitute a single-storey round a. All letters perfectly formed. Preserve phone scale and location and all app details. No new text or symbols. Premium crisp vivid finished App Store artwork.",
+      "nativeWidth": 851,
+      "nativeHeight": 1847
+    }
+  ]
+}
