@@ -643,3 +643,9 @@
 "settings.family_id.title" = "ID οικογένειας";
 "settings.family_id.copy" = "Αντιγραφή ID";
 "settings.family_id.unavailable" = "Δεν υπάρχει οικογένεια σε αυτή τη συσκευή.";
+
+// Optional App Store update prompt
+"app_update.title" = "Διαθέσιμη ενημέρωση";
+"app_update.message" = "Μια νέα έκδοση είναι διαθέσιμη στο App Store.";
+"app_update.update" = "Ενημέρωση";
+"app_update.later" = "Αργότερα";

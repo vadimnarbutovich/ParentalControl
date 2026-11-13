@@ -39,6 +39,9 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .familyAccessPaywall(isRoot: true)
+        .appUpdatePrompt(eligible: appState.hasCompletedOnboarding && appState.deviceRole != nil
+            && !appState.isCheckingInstallationRecovery && appState.recoveredFamily == nil
+            && !appState.installationRecoveryFailed)
         .onReceive(NotificationCenter.default.publisher(for: FamilyAccessStore.changed)) { _ in
             appState.adoptFamilyAccess()
         }

@@ -700,3 +700,9 @@
 "settings.family_id.title" = "家庭 ID";
 "settings.family_id.copy" = "复制 ID";
 "settings.family_id.unavailable" = "此设备尚未设置家庭。";
+
+// Optional App Store update prompt
+"app_update.title" = "有可用更新";
+"app_update.message" = "App Store 上有新版本可供下载。";
+"app_update.update" = "更新";
+"app_update.later" = "稍后";

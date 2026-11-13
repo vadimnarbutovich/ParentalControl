@@ -643,3 +643,9 @@
 "settings.family_id.title" = "Oila ID raqami";
 "settings.family_id.copy" = "ID nusxalash";
 "settings.family_id.unavailable" = "Bu qurilmada oila mavjud emas.";
+
+// Optional App Store update prompt
+"app_update.title" = "Yangilanish mavjud";
+"app_update.message" = "App Store’da yangi versiya mavjud.";
+"app_update.update" = "Yangilash";
+"app_update.later" = "Keyinroq";

@@ -643,3 +643,9 @@
 "settings.family_id.title" = "Отбасы ID-і";
 "settings.family_id.copy" = "ID-ді көшіру";
 "settings.family_id.unavailable" = "Бұл құрылғыда отбасы жоқ.";
+
+// Optional App Store update prompt
+"app_update.title" = "Жаңарту қолжетімді";
+"app_update.message" = "App Store дүкенінде жаңа нұсқа қолжетімді.";
+"app_update.update" = "Жаңарту";
+"app_update.later" = "Кейінірек";

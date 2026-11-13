@@ -643,3 +643,9 @@
 "settings.family_id.title" = "Үй-бүлөнүн ID номери";
 "settings.family_id.copy" = "ID көчүрүү";
 "settings.family_id.unavailable" = "Бул түзмөктө үй-бүлө жок.";
+
+// Optional App Store update prompt
+"app_update.title" = "Жаңыртуу жеткиликтүү";
+"app_update.message" = "App Store дүкөнүндө жаңы версия жеткиликтүү.";
+"app_update.update" = "Жаңыртуу";
+"app_update.later" = "Кийинчерээк";

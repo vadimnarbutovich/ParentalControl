@@ -643,3 +643,9 @@
 "settings.family_id.title" = "ოჯახის ID";
 "settings.family_id.copy" = "ID-ის კოპირება";
 "settings.family_id.unavailable" = "ამ მოწყობილობაზე ოჯახი არ არის.";
+
+// Optional App Store update prompt
+"app_update.title" = "განახლება ხელმისაწვდომია";
+"app_update.message" = "App Store-ში ახალი ვერსიაა ხელმისაწვდომი.";
+"app_update.update" = "განახლება";
+"app_update.later" = "მოგვიანებით";

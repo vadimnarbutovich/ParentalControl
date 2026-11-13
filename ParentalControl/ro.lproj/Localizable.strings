@@ -643,3 +643,9 @@
 "settings.family_id.title" = "ID familie";
 "settings.family_id.copy" = "Copiază ID";
 "settings.family_id.unavailable" = "Nu există nicio familie pe acest dispozitiv.";
+
+// Optional App Store update prompt
+"app_update.title" = "Actualizare disponibilă";
+"app_update.message" = "O versiune nouă este disponibilă în App Store.";
+"app_update.update" = "Actualizează";
+"app_update.later" = "Mai târziu";

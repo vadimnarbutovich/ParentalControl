@@ -700,3 +700,9 @@
 "settings.family_id.title" = "ID de la familia";
 "settings.family_id.copy" = "Copiar ID";
 "settings.family_id.unavailable" = "No hay ninguna familia en este dispositivo.";
+
+// Optional App Store update prompt
+"app_update.title" = "Actualización disponible";
+"app_update.message" = "Hay una nueva versión disponible en el App Store.";
+"app_update.update" = "Actualizar";
+"app_update.later" = "Más tarde";

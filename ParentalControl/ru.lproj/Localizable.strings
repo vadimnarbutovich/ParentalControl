@@ -704,3 +704,9 @@
 "settings.family_id.title" = "ID семьи";
 "settings.family_id.copy" = "Скопировать ID";
 "settings.family_id.unavailable" = "На этом устройстве нет семьи.";
+
+// Optional App Store update prompt
+"app_update.title" = "Доступно обновление";
+"app_update.message" = "В App Store доступна новая версия.";
+"app_update.update" = "Обновить";
+"app_update.later" = "Позже";

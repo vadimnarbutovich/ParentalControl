@@ -700,3 +700,9 @@
 "settings.family_id.title" = "가족 ID";
 "settings.family_id.copy" = "ID 복사";
 "settings.family_id.unavailable" = "이 기기에 설정된 가족이 없습니다.";
+
+// Optional App Store update prompt
+"app_update.title" = "업데이트가 있습니다";
+"app_update.message" = "App Store에서 새 버전을 이용할 수 있습니다.";
+"app_update.update" = "업데이트";
+"app_update.later" = "나중에";

@@ -704,3 +704,9 @@
 "settings.family_id.title" = "Family ID";
 "settings.family_id.copy" = "Copy ID";
 "settings.family_id.unavailable" = "This device has no family.";
+
+// Optional App Store update prompt
+"app_update.title" = "Update available";
+"app_update.message" = "A new version is available on the App Store.";
+"app_update.update" = "Update";
+"app_update.later" = "Later";

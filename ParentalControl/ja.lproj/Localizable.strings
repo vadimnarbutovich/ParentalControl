@@ -700,3 +700,9 @@
 "settings.family_id.title" = "ファミリーID";
 "settings.family_id.copy" = "IDをコピー";
 "settings.family_id.unavailable" = "このデバイスにはファミリーが設定されていません。";
+
+// Optional App Store update prompt
+"app_update.title" = "アップデートがあります";
+"app_update.message" = "App Storeで新しいバージョンが公開されています。";
+"app_update.update" = "アップデート";
+"app_update.later" = "あとで";
